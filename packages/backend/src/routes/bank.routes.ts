@@ -13,7 +13,8 @@ const router = Router();
  */
 router.get('/available', async (req: Request, res: Response) => {
   try {
-    const banks = await openBankingService.getAvailableBanks();
+    const { country = 'BR' } = req.query; // Padrão BR para Brasil
+    const banks = await openBankingService.getAvailableBanks(country as string);
     res.json(banks);
   } catch (error) {
     console.error('Error fetching available banks:', error);

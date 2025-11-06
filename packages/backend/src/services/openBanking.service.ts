@@ -39,11 +39,19 @@ class OpenBankingService {
   async getAvailableBanks(country: string = 'DE') {
     try {
       const provider = this.getProvider();
+      console.log(`[OpenBanking] Getting banks for country: ${country}, provider: ${this.providerType}`);
 
       // Pluggy (Brasil)
       if ('getConnectors' in provider) {
+        console.log('[OpenBanking] Using Pluggy connectors...');
         const connectors = await (provider as any).getConnectors(country);
-        return this.mapConnectorsToBanks(connectors);
+        console.log(`[OpenBanking] Found ${connectors.length} connectors from Pluggy`);
+
+        if (connectors.length > 0) {
+          return this.mapConnectorsToBanks(connectors);
+        }
+
+        console.log('[OpenBanking] No connectors from API, using static list');
       }
 
       // Nordigen (Europa)
@@ -59,10 +67,12 @@ class OpenBankingService {
       }
 
       // Fallback para lista estática
+      console.log('[OpenBanking] Using static bank list');
       return this.getStaticBankList(country);
     } catch (error) {
-      console.error('Error fetching available banks:', error);
+      console.error('[OpenBanking] Error fetching available banks:', error);
       // Em caso de erro, retorna lista estática
+      console.log('[OpenBanking] Falling back to static list due to error');
       return this.getStaticBankList(country);
     }
   }
