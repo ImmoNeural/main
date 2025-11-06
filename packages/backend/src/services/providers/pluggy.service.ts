@@ -197,11 +197,12 @@ export class PluggyService {
    */
   async exchangeCodeForToken(itemId: string): Promise<OpenBankingTokenResponse> {
     try {
-      // Verificar se o item existe e está conectado
-      const item = await this.getItem(itemId);
+      // Aguardar o item ficar pronto (Pluggy precisa sincronizar após login)
+      const item = await this.waitForItemReady(itemId);
 
-      if (item.status !== 'UPDATED' && item.status !== 'LOGIN_ERROR') {
-        throw new Error(`Item status is ${item.status}. Expected UPDATED.`);
+      if (item.status === 'LOGIN_ERROR') {
+        console.error('[Pluggy] Item has LOGIN_ERROR status');
+        throw new Error('Login failed at bank. Please try again.');
       }
 
       return {
@@ -214,6 +215,31 @@ export class PluggyService {
       console.error('Error processing Pluggy item:', error);
       throw new Error('Failed to process authorization');
     }
+  }
+
+  /**
+   * Aguarda o Item do Pluggy ficar pronto para uso
+   * O Pluggy precisa de alguns segundos para processar após o login
+   */
+  private async waitForItemReady(itemId: string, maxAttempts: number = 30): Promise<any> {
+    console.log(`[Pluggy] Waiting for item ${itemId} to be ready...`);
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const item = await this.getItem(itemId);
+      console.log(`[Pluggy] Attempt ${attempt}/${maxAttempts} - Status: ${item.status}`);
+
+      // Status finais (sucesso ou erro definitivo)
+      if (item.status === 'UPDATED' || item.status === 'LOGIN_ERROR') {
+        console.log(`[Pluggy] ✅ Item ready with status: ${item.status}`);
+        return item;
+      }
+
+      // Aguardar 2 segundos antes de tentar novamente
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    // Timeout após todas as tentativas
+    throw new Error(`Timeout waiting for item ${itemId}. Status still not ready after ${maxAttempts * 2}s`);
   }
 
   /**
