@@ -59,30 +59,35 @@ const ConnectBank = () => {
     try {
       const response = await bankApi.connectBank(selectedBank.id, 'demo_user');
 
-      // Simular conexão em ambiente de desenvolvimento
-      // Em produção, o usuário seria redirecionado para o banco
-      const mockCallback = confirm(
-        `Você será redirecionado para ${selectedBank.name} para autorizar o acesso.\n\n` +
-        `Este é um ambiente de demonstração. Deseja simular a conexão bem-sucedida?`
-      );
+      // Verificar se estamos em modo mock (desenvolvimento)
+      const isMockMode = response.data.authorization_url?.includes('mock-bank-auth');
 
-      if (mockCallback) {
-        // Simular callback bem-sucedido
-        await bankApi.handleCallback(
-          'mock_code_' + Date.now(),
-          response.data.state,
-          selectedBank.name,
-          'demo_user'
+      if (isMockMode) {
+        // Modo de desenvolvimento - simular conexão
+        const mockCallback = confirm(
+          `Você será redirecionado para ${selectedBank.name} para autorizar o acesso.\n\n` +
+          `Este é um ambiente de demonstração (modo mock). Deseja simular a conexão bem-sucedida?`
         );
-        alert('Conta conectada com sucesso!');
-        navigate('/accounts');
-      }
 
-      // Em produção, você redirecionaria para a URL de autorização:
-      // window.location.href = response.data.authorization_url;
+        if (mockCallback) {
+          // Simular callback bem-sucedido
+          await bankApi.handleCallback(
+            'mock_code_' + Date.now(),
+            response.data.state,
+            selectedBank.name,
+            'demo_user'
+          );
+          alert('Conta conectada com sucesso!');
+          navigate('/accounts');
+        }
+      } else {
+        // Modo de produção - redirecionar para o banco real
+        console.log('Redirecting to:', response.data.authorization_url);
+        window.location.href = response.data.authorization_url;
+      }
     } catch (error) {
       console.error('Error connecting bank:', error);
-      alert('Erro ao conectar banco');
+      alert('Erro ao conectar banco. Verifique as credenciais do provedor Open Banking.');
     } finally {
       setConnecting(false);
     }
