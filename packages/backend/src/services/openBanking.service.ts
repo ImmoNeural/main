@@ -1,3 +1,6 @@
+// GARANTIR que .env é carregado ANTES!
+import '../config/env';
+
 import {
   OpenBankingAuthRequest,
   OpenBankingAuthResponse,
@@ -22,13 +25,30 @@ class OpenBankingService {
   private providerType: ProviderType;
 
   constructor() {
+    // LER SEMPRE DO AMBIENTE (não cachear no constructor)
+    console.log('🔧 [OpenBankingService] Constructor called');
+    console.log('   process.env.OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER);
+
     this.providerType = (process.env.OPEN_BANKING_PROVIDER || 'mock') as ProviderType;
+
+    console.log('   Using provider:', this.providerType);
+    console.log('');
   }
 
   /**
    * Obtém instância do provedor configurado
+   * LÊ DIRETAMENTE DO AMBIENTE sempre que chamado
    */
   private getProvider() {
+    // SEMPRE pegar o valor mais recente do ambiente
+    const currentProvider = (process.env.OPEN_BANKING_PROVIDER || 'mock') as ProviderType;
+
+    // Se mudou, atualizar
+    if (currentProvider !== this.providerType) {
+      console.log(`🔄 [OpenBankingService] Provider changed from ${this.providerType} to ${currentProvider}`);
+      this.providerType = currentProvider;
+    }
+
     return ProviderFactory.getProvider(this.providerType);
   }
 
