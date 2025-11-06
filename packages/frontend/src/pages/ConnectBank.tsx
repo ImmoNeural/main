@@ -97,7 +97,8 @@ const ConnectBank = () => {
 
         // Verificar se o SDK do Pluggy está disponível
         if (typeof (window as any).PluggyConnect !== 'undefined') {
-          const pluggyConnect = (window as any).PluggyConnect({
+          // Usar 'new' para instanciar corretamente (sintaxe oficial da documentação)
+          const pluggyConnect = new (window as any).PluggyConnect({
             connectToken: connectToken,
             includeSandbox: true,
             onSuccess: async (itemData: any) => {
@@ -121,6 +122,7 @@ const ConnectBank = () => {
             onError: (error: any) => {
               console.error('❌ Pluggy Connect Error:', error);
               alert('Erro ao conectar com banco: ' + (error.message || 'Erro desconhecido'));
+              setConnecting(false);
             },
             onClose: () => {
               console.log('ℹ️ Pluggy Connect closed by user');
