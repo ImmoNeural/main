@@ -49,10 +49,12 @@ export class PluggyService {
   private async getApiKey(): Promise<string> {
     // Se já temos uma API Key válida, retorna ela
     if (this.apiKey && Date.now() < this.apiKeyExpiresAt) {
+      console.log('[Pluggy] Using cached API Key');
       return this.apiKey;
     }
 
     try {
+      console.log('[Pluggy] Authenticating with Client ID:', this.clientId.substring(0, 8) + '...');
       const response = await this.client.post('/auth', {
         clientId: this.clientId,
         clientSecret: this.clientSecret,
@@ -62,10 +64,11 @@ export class PluggyService {
       // API Key do Pluggy não expira, mas vamos renovar a cada 24h por segurança
       this.apiKeyExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
+      console.log('[Pluggy] ✅ Authentication successful!');
       return this.apiKey;
     } catch (error: any) {
-      console.error('Error obtaining Pluggy API Key:', error.response?.data || error);
-      throw new Error('Failed to authenticate with Pluggy');
+      console.error('[Pluggy] ❌ Error obtaining API Key:', error.response?.data || error.message);
+      throw new Error('Failed to authenticate with Pluggy: ' + (error.response?.data?.message || error.message));
     }
   }
 
@@ -74,6 +77,7 @@ export class PluggyService {
    */
   async getConnectors(country: string = 'BR'): Promise<any[]> {
     try {
+      console.log(`[Pluggy] Fetching connectors for country: ${country}`);
       const apiKey = await this.getApiKey();
 
       const response = await this.client.get('/connectors', {
@@ -85,9 +89,21 @@ export class PluggyService {
         },
       });
 
-      return response.data.results || [];
-    } catch (error) {
-      console.error('Error fetching Pluggy connectors:', error);
+      const connectors = response.data.results || [];
+      console.log(`[Pluggy] Found ${connectors.length} connectors`);
+
+      // Log primeiro banco para debug
+      if (connectors.length > 0) {
+        console.log(`[Pluggy] Example connector:`, {
+          id: connectors[0].id,
+          name: connectors[0].name,
+          type: connectors[0].type
+        });
+      }
+
+      return connectors;
+    } catch (error: any) {
+      console.error('[Pluggy] Error fetching connectors:', error.response?.data || error.message);
       throw new Error('Failed to fetch available banks');
     }
   }
@@ -97,13 +113,15 @@ export class PluggyService {
    */
   async initiateAuth(request: OpenBankingAuthRequest): Promise<OpenBankingAuthResponse> {
     try {
+      console.log(`[Pluggy] Initiating auth for bank ID: ${request.bank_id}`);
       const apiKey = await this.getApiKey();
 
       // Criar um Item no Pluggy (conexão com o banco)
+      console.log(`[Pluggy] Creating item with connector ID: ${request.bank_id}`);
       const response = await this.client.post(
         '/items',
         {
-          connectorId: request.bank_id,
+          connectorId: parseInt(request.bank_id), // Converter para número
           parameters: {},
         },
         {
@@ -114,11 +132,14 @@ export class PluggyService {
       );
 
       const item = response.data;
+      console.log(`[Pluggy] ✅ Item created successfully! Item ID: ${item.id}`);
 
       // Pluggy Connect Widget URL
       // Em produção, você usaria o Widget do Pluggy
       // Por enquanto, vamos usar a URL de autenticação manual
       const authUrl = `https://connect.pluggy.ai?itemId=${item.id}&clientId=${this.clientId}&redirectUrl=${encodeURIComponent(request.redirect_uri)}`;
+
+      console.log(`[Pluggy] Auth URL generated: ${authUrl.substring(0, 80)}...`);
 
       return {
         authorization_url: authUrl,
@@ -126,8 +147,8 @@ export class PluggyService {
         consent_id: item.id,
       };
     } catch (error: any) {
-      console.error('Error initiating Pluggy auth:', error.response?.data || error);
-      throw new Error('Failed to initiate bank authorization');
+      console.error('[Pluggy] ❌ Error initiating auth:', error.response?.data || error.message);
+      throw new Error('Failed to initiate bank authorization: ' + (error.response?.data?.message || error.message));
     }
   }
 
