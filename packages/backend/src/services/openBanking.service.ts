@@ -13,6 +13,7 @@ import { ProviderFactory, ProviderType } from './providers/provider.factory';
  * Suporta múltiplos provedores:
  * - GoCardless/Nordigen (gratuito, excelente para Europa)
  * - Tink (popular na Europa)
+ * - Pluggy (gratuito, recomendado para Brasil) 🇧🇷
  * - Mock (para desenvolvimento/testes)
  *
  * Configure o provedor via variável de ambiente OPEN_BANKING_PROVIDER
@@ -39,12 +40,19 @@ class OpenBankingService {
     try {
       const provider = this.getProvider();
 
-      // Se o provedor tem método para listar instituições, usa ele
+      // Pluggy (Brasil)
+      if ('getConnectors' in provider) {
+        const connectors = await (provider as any).getConnectors(country);
+        return this.mapConnectorsToBanks(connectors);
+      }
+
+      // Nordigen (Europa)
       if ('getInstitutions' in provider) {
         const institutions = await (provider as any).getInstitutions(country);
         return this.mapInstitutionsToBanks(institutions);
       }
 
+      // Tink (Europa)
       if ('getProviders' in provider) {
         const providers = await (provider as any).getProviders(country);
         return this.mapProvidersToBanks(providers);
@@ -60,7 +68,7 @@ class OpenBankingService {
   }
 
   /**
-   * Lista estática de bancos alemães principais
+   * Lista estática de bancos principais por país
    */
   private getStaticBankList(country: string) {
     const banks = {
@@ -73,12 +81,36 @@ class OpenBankingService {
         { id: 'DKB_BYLADEM1', name: 'DKB', logo: '🏦', country: 'DE' },
         { id: 'POSTBANK_PBNKDEFF', name: 'Postbank', logo: '🏦', country: 'DE' },
       ],
+      BR: [
+        { id: '201', name: 'Santander', logo: '🏦', country: 'BR' },
+        { id: '341', name: 'Itaú', logo: '🏦', country: 'BR' },
+        { id: '237', name: 'Bradesco', logo: '🏦', country: 'BR' },
+        { id: '001', name: 'Banco do Brasil', logo: '🏦', country: 'BR' },
+        { id: '104', name: 'Caixa Econômica', logo: '🏦', country: 'BR' },
+        { id: '260', name: 'Nubank', logo: '💜', country: 'BR' },
+        { id: '077', name: 'Inter', logo: '🧡', country: 'BR' },
+        { id: '336', name: 'C6 Bank', logo: '🏦', country: 'BR' },
+        { id: '290', name: 'PagBank', logo: '🏦', country: 'BR' },
+        { id: '212', name: 'Original', logo: '🏦', country: 'BR' },
+      ],
       GB: [
         { id: 'REVOLUT_REVOLT21', name: 'Revolut', logo: '🏦', country: 'GB' },
       ],
     };
 
     return banks[country as keyof typeof banks] || banks.DE;
+  }
+
+  /**
+   * Mapeia conectores do Pluggy para nosso formato
+   */
+  private mapConnectorsToBanks(connectors: any[]) {
+    return connectors.map(connector => ({
+      id: connector.id.toString(),
+      name: connector.name,
+      logo: connector.imageUrl || '🏦',
+      country: connector.country || 'BR',
+    }));
   }
 
   /**

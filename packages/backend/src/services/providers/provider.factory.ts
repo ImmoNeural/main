@@ -1,5 +1,6 @@
 import { NordigenService } from './nordigen.service';
 import { TinkService } from './tink.service';
+import { PluggyService } from './pluggy.service';
 import {
   OpenBankingAuthRequest,
   OpenBankingAuthResponse,
@@ -27,7 +28,7 @@ export interface OpenBankingProvider {
 /**
  * Tipos de provedores disponíveis
  */
-export type ProviderType = 'nordigen' | 'tink' | 'mock';
+export type ProviderType = 'nordigen' | 'tink' | 'pluggy' | 'mock';
 
 /**
  * Factory para criar instâncias de provedores Open Banking
@@ -54,6 +55,10 @@ export class ProviderFactory {
 
       case 'tink':
         provider = new TinkService();
+        break;
+
+      case 'pluggy':
+        provider = new PluggyService();
         break;
 
       case 'mock':
