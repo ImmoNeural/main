@@ -1,12 +1,26 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { initDatabase } from './db/database';
 import bankRoutes from './routes/bank.routes';
 import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 
-dotenv.config();
+// Carregar .env do diretório do backend
+const envPath = path.resolve(__dirname, '../.env');
+console.log('📂 Loading .env from:', envPath);
+dotenv.config({ path: envPath });
+
+// Log para debug
+console.log('');
+console.log('🔧 Environment Configuration:');
+console.log('   PORT:', process.env.PORT || '3001');
+console.log('   NODE_ENV:', process.env.NODE_ENV || 'development');
+console.log('   OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER || 'mock (not set!)');
+console.log('   PLUGGY_CLIENT_ID:', process.env.PLUGGY_CLIENT_ID ? process.env.PLUGGY_CLIENT_ID.substring(0, 8) + '...' : 'NOT SET');
+console.log('   PLUGGY_CLIENT_SECRET:', process.env.PLUGGY_CLIENT_SECRET ? 'SET ✅' : 'NOT SET ❌');
+console.log('');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
