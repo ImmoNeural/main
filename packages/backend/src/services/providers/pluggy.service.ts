@@ -143,17 +143,14 @@ export class PluggyService {
 
       const connectToken = tokenResponse.data.accessToken;
       console.log(`[Pluggy] ✅ Connect token created successfully!`);
+      console.log(`[Pluggy] Connect token: ${connectToken}`);
 
       // Gerar URL de autenticação do Pluggy Connect Widget
       // Documentação: https://docs.pluggy.ai/docs/pluggy-connect
-      const connectParams = new URLSearchParams({
-        connectToken: connectToken,
-        includeSandbox: 'true', // Incluir bancos sandbox para testes
-      });
+      // O token deve ser passado diretamente na URL sem encoding
+      const authUrl = `https://connect.pluggy.ai?connectToken=${connectToken}&includeSandbox=true`;
 
-      const authUrl = `https://connect.pluggy.ai/?${connectParams.toString()}`;
-
-      console.log(`[Pluggy] Auth URL generated`);
+      console.log(`[Pluggy] Auth URL generated: ${authUrl.substring(0, 60)}...`);
       console.log(`[Pluggy] User will be redirected to Pluggy Connect Widget`);
 
       return {
