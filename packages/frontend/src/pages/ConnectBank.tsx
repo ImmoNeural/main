@@ -87,16 +87,58 @@ const ConnectBank = () => {
           navigate('/accounts');
         }
       } else {
-        // Modo de produção - redirecionar para o banco real
-        console.log('✅ Redirecting to real bank:', authUrl);
+        // Modo de produção - Integrar com Pluggy Connect Widget
+        console.log('✅ Opening Pluggy Connect Widget');
 
-        // Redirecionar IMEDIATAMENTE
-        window.location.href = authUrl;
+        // Extrair o connect token da URL ou do response
+        const connectToken = response.data.state; // O backend retorna o token no state
+
+        console.log('🔑 Connect Token:', connectToken);
+
+        // Verificar se o SDK do Pluggy está disponível
+        if (typeof (window as any).PluggyConnect !== 'undefined') {
+          const pluggyConnect = (window as any).PluggyConnect({
+            connectToken: connectToken,
+            includeSandbox: true,
+            onSuccess: async (itemData: any) => {
+              console.log('✅ Pluggy Connect Success!', itemData);
+
+              // Processar o callback com o itemId retornado
+              try {
+                await bankApi.handleCallback(
+                  itemData.item.id,
+                  connectToken,
+                  selectedBank.name,
+                  'demo_user'
+                );
+                alert('Conta conectada com sucesso!');
+                navigate('/accounts');
+              } catch (error) {
+                console.error('❌ Error handling callback:', error);
+                alert('Erro ao processar conexão com banco.');
+              }
+            },
+            onError: (error: any) => {
+              console.error('❌ Pluggy Connect Error:', error);
+              alert('Erro ao conectar com banco: ' + (error.message || 'Erro desconhecido'));
+            },
+            onClose: () => {
+              console.log('ℹ️ Pluggy Connect closed by user');
+              setConnecting(false);
+            },
+          });
+
+          // Abrir o widget
+          pluggyConnect.init();
+        } else {
+          // Fallback: redirecionar via URL (método antigo)
+          console.warn('⚠️ Pluggy SDK not loaded, using redirect fallback');
+          window.location.href = authUrl;
+        }
       }
     } catch (error) {
       console.error('❌ Error connecting bank:', error);
       alert('Erro ao conectar banco. Verifique as credenciais do provedor Open Banking.');
-    } finally {
       setConnecting(false);
     }
   };
