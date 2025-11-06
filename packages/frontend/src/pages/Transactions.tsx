@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Filter, Download } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -17,7 +16,6 @@ const Transactions = () => {
   }, [selectedCategory, selectedType]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
       const [transactionsRes, categoriesRes] = await Promise.all([
         transactionApi.getTransactions({
@@ -33,8 +31,6 @@ const Transactions = () => {
       setCategories(categoriesRes.data);
     } catch (error) {
       console.error('Error loading transactions:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

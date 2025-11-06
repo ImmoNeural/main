@@ -116,13 +116,23 @@ export class PluggyService {
       console.log(`[Pluggy] Initiating auth for bank ID: ${request.bank_id}`);
       const apiKey = await this.getApiKey();
 
-      // Criar um Item no Pluggy (conexão com o banco)
-      console.log(`[Pluggy] Creating item with connector ID: ${request.bank_id}`);
-      const response = await this.client.post(
-        '/items',
+      // Validar se o connector ID é um número válido
+      const connectorId = parseInt(request.bank_id);
+      if (isNaN(connectorId)) {
+        throw new Error(`Invalid connector ID: ${request.bank_id}`);
+      }
+
+      // Criar um Connect Token no Pluggy
+      // Este token será usado no Pluggy Connect Widget
+      console.log(`[Pluggy] Creating connect token for connector ID: ${connectorId}`);
+      const tokenResponse = await this.client.post(
+        '/connect_token',
         {
-          connectorId: parseInt(request.bank_id), // Converter para número
-          parameters: {},
+          itemId: null, // null para criar novo item
+          options: {
+            connectorId: connectorId, // Pré-selecionar o conector
+            clientUserId: request.user_id || 'demo_user', // ID do usuário na sua aplicação
+          },
         },
         {
           headers: {
@@ -131,24 +141,37 @@ export class PluggyService {
         }
       );
 
-      const item = response.data;
-      console.log(`[Pluggy] ✅ Item created successfully! Item ID: ${item.id}`);
+      const connectToken = tokenResponse.data.accessToken;
+      console.log(`[Pluggy] ✅ Connect token created successfully!`);
 
-      // Pluggy Connect Widget URL
-      // Em produção, você usaria o Widget do Pluggy
-      // Por enquanto, vamos usar a URL de autenticação manual
-      const authUrl = `https://connect.pluggy.ai?itemId=${item.id}&clientId=${this.clientId}&redirectUrl=${encodeURIComponent(request.redirect_uri)}`;
+      // Gerar URL de autenticação do Pluggy Connect Widget
+      // Documentação: https://docs.pluggy.ai/docs/pluggy-connect
+      const connectParams = new URLSearchParams({
+        connectToken: connectToken,
+        includeSandbox: 'true', // Incluir bancos sandbox para testes
+      });
 
-      console.log(`[Pluggy] Auth URL generated: ${authUrl.substring(0, 80)}...`);
+      const authUrl = `https://connect.pluggy.ai/?${connectParams.toString()}`;
+
+      console.log(`[Pluggy] Auth URL generated`);
+      console.log(`[Pluggy] User will be redirected to Pluggy Connect Widget`);
 
       return {
         authorization_url: authUrl,
-        state: item.id,
-        consent_id: item.id,
+        state: connectToken, // Usar o connect token como state
+        consent_id: connectToken,
       };
     } catch (error: any) {
-      console.error('[Pluggy] ❌ Error initiating auth:', error.response?.data || error.message);
-      throw new Error('Failed to initiate bank authorization: ' + (error.response?.data?.message || error.message));
+      console.error('[Pluggy] ❌ Error initiating auth:');
+      console.error('[Pluggy]    Status:', error.response?.status);
+      console.error('[Pluggy]    Message:', error.response?.data?.message || error.message);
+
+      if (error.response?.data) {
+        console.error('[Pluggy]    Details:', JSON.stringify(error.response.data, null, 2));
+      }
+
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      throw new Error('Failed to initiate bank authorization: ' + errorMessage);
     }
   }
 

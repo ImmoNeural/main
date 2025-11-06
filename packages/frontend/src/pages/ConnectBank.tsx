@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Building2, CheckCircle, Shield, Lock, RefreshCw } from 'lucide-react';
+import { CheckCircle, Shield, Lock, RefreshCw } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { Bank } from '../types';
 
@@ -159,7 +159,22 @@ const ConnectBank = () => {
               className="card hover:shadow-lg transition-shadow text-left p-6"
             >
               <div className="flex items-center space-x-4">
-                <div className="text-4xl">{bank.logo}</div>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  {bank.logo?.startsWith('http') ? (
+                    <img
+                      src={bank.logo}
+                      alt={bank.name}
+                      className="w-12 h-12 object-contain"
+                      onError={(e) => {
+                        // Fallback para emoji se a imagem falhar
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement!.innerHTML = '🏦';
+                      }}
+                    />
+                  ) : (
+                    <span className="text-4xl">{bank.logo || '🏦'}</span>
+                  )}
+                </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">{bank.name}</h3>
                   <p className="text-sm text-gray-500">{bank.country}</p>
@@ -174,7 +189,22 @@ const ConnectBank = () => {
       {showConsent && selectedBank && (
         <div className="card max-w-2xl mx-auto">
           <div className="text-center mb-6">
-            <div className="text-6xl mb-4">{selectedBank.logo}</div>
+            <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+              {selectedBank.logo?.startsWith('http') ? (
+                <img
+                  src={selectedBank.logo}
+                  alt={selectedBank.name}
+                  className="w-24 h-24 object-contain"
+                  onError={(e) => {
+                    // Fallback para emoji se a imagem falhar
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<span class="text-6xl">🏦</span>';
+                  }}
+                />
+              ) : (
+                <span className="text-6xl">{selectedBank.logo || '🏦'}</span>
+              )}
+            </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Conectar com {selectedBank.name}
             </h2>

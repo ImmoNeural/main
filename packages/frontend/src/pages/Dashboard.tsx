@@ -203,7 +203,7 @@ const Dashboard = () => {
                 outerRadius={100}
                 label={(entry) => `${entry.category} (${entry.percentage.toFixed(1)}%)`}
               >
-                {categoryStats.map((entry, index) => (
+                {categoryStats.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
