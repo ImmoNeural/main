@@ -59,8 +59,14 @@ const ConnectBank = () => {
     try {
       const response = await bankApi.connectBank(selectedBank.id, 'demo_user');
 
+      console.log('🔗 Connect response:', response.data);
+      console.log('🔗 Authorization URL:', response.data.authorization_url);
+
       // Verificar se estamos em modo mock (desenvolvimento)
-      const isMockMode = response.data.authorization_url?.includes('mock-bank-auth');
+      const authUrl = response.data.authorization_url || '';
+      const isMockMode = authUrl.includes('mock-bank-auth') || authUrl.includes('localhost:3001/mock');
+
+      console.log('🔍 Is Mock Mode?', isMockMode);
 
       if (isMockMode) {
         // Modo de desenvolvimento - simular conexão
@@ -82,11 +88,13 @@ const ConnectBank = () => {
         }
       } else {
         // Modo de produção - redirecionar para o banco real
-        console.log('Redirecting to:', response.data.authorization_url);
-        window.location.href = response.data.authorization_url;
+        console.log('✅ Redirecting to real bank:', authUrl);
+
+        // Redirecionar IMEDIATAMENTE
+        window.location.href = authUrl;
       }
     } catch (error) {
-      console.error('Error connecting bank:', error);
+      console.error('❌ Error connecting bank:', error);
       alert('Erro ao conectar banco. Verifique as credenciais do provedor Open Banking.');
     } finally {
       setConnecting(false);
