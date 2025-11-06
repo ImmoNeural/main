@@ -88,6 +88,7 @@ router.post('/callback', async (req: Request, res: Response) => {
         consent_expires_at: now + 90 * 24 * 60 * 60 * 1000, // 90 dias
         connected_at: now,
         status: 'active',
+        provider_account_id: account.id, // ID da conta no provedor (Pluggy, etc)
         created_at: now,
         updated_at: now,
       };
@@ -96,8 +97,9 @@ router.post('/callback', async (req: Request, res: Response) => {
         INSERT INTO bank_accounts (
           id, user_id, bank_name, account_number, iban, account_type,
           balance, currency, access_token, refresh_token, token_expires_at,
-          consent_id, consent_expires_at, connected_at, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          consent_id, consent_expires_at, connected_at, status, provider_account_id,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run(
@@ -116,6 +118,7 @@ router.post('/callback', async (req: Request, res: Response) => {
         bankAccount.consent_expires_at,
         bankAccount.connected_at,
         bankAccount.status,
+        bankAccount.provider_account_id,
         bankAccount.created_at,
         bankAccount.updated_at
       );
@@ -240,7 +243,25 @@ router.delete('/accounts/:accountId', async (req: Request, res: Response) => {
  * Função auxiliar para sincronizar transações
  */
 async function syncTransactions(accountId: string, accessToken: string): Promise<number> {
-  const transactions = await openBankingService.getTransactions(accessToken, accountId, 90);
+  // Buscar o provider_account_id do banco de dados
+  const account = db
+    .prepare('SELECT provider_account_id FROM bank_accounts WHERE id = ?')
+    .get(accountId) as { provider_account_id?: string } | undefined;
+
+  if (!account || !account.provider_account_id) {
+    console.warn(`[Sync] Account ${accountId} has no provider_account_id, skipping transactions sync`);
+    return 0;
+  }
+
+  console.log(`[Sync] Fetching transactions for account ${accountId} (provider: ${account.provider_account_id})`);
+
+  const transactions = await openBankingService.getTransactions(
+    accessToken,
+    account.provider_account_id, // Usar o ID da conta no provedor
+    90
+  );
+
+  console.log(`[Sync] Found ${transactions.length} transactions`);
 
   let count = 0;
 

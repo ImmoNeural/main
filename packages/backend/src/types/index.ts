@@ -15,6 +15,7 @@ export interface BankAccount {
   connected_at: number;
   last_sync_at?: number;
   status: 'active' | 'expired' | 'disconnected';
+  provider_account_id?: string; // ID da conta no provedor (ex: Pluggy account ID)
   created_at: number;
   updated_at: number;
 }

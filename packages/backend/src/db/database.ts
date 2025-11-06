@@ -92,6 +92,20 @@ export function initDatabase() {
     ON bank_accounts(user_id);
   `);
 
+  // Migração: Adicionar coluna provider_account_id se não existir
+  try {
+    const tableInfo = db.pragma('table_info(bank_accounts)') as Array<{ name: string }>;
+    const hasProviderAccountId = tableInfo.some((col) => col.name === 'provider_account_id');
+
+    if (!hasProviderAccountId) {
+      console.log('📝 Adding provider_account_id column to bank_accounts...');
+      db.exec(`ALTER TABLE bank_accounts ADD COLUMN provider_account_id TEXT`);
+      console.log('✅ Migration completed: provider_account_id added');
+    }
+  } catch (error) {
+    console.warn('⚠️ Error during migration:', error);
+  }
+
   console.log('✅ Database initialized successfully');
 }
 
