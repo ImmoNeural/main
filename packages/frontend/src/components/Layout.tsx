@@ -19,7 +19,7 @@ const Layout = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-primary-600">
-                💰 FinanzGuru
+                💰 gurudodindin
               </h1>
             </div>
             <div className="flex items-center space-x-4">
