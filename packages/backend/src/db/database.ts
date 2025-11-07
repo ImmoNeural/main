@@ -18,6 +18,18 @@ db.pragma('foreign_keys = ON');
 export function initDatabase() {
   console.log('📦 Initializing database...');
 
+  // Tabela de usuários
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `);
+
   // Tabela de contas bancárias conectadas
   db.exec(`
     CREATE TABLE IF NOT EXISTS bank_accounts (
@@ -79,6 +91,9 @@ export function initDatabase() {
 
   // Índices para performance
   db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_users_email
+    ON users(email);
+
     CREATE INDEX IF NOT EXISTS idx_transactions_account_date
     ON transactions(account_id, date DESC);
 

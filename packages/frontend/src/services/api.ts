@@ -16,18 +16,65 @@ const api = axios.create({
   timeout: 30000,
 });
 
+// Interceptor para adicionar token JWT em todas as requisições
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para tratar erros de autenticação
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado ou inválido
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
+      // Redirecionar para login apenas se não estiver já na página de login/register
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth APIs
+export const authApi = {
+  register: (name: string, email: string, password: string) =>
+    api.post('/auth/register', { name, email, password }),
+
+  login: (email: string, password: string) =>
+    api.post('/auth/login', { email, password }),
+
+  logout: () =>
+    api.post('/auth/logout'),
+
+  getMe: () =>
+    api.get('/auth/me'),
+};
+
 // Bank APIs
 export const bankApi = {
   getAvailableBanks: () => api.get<Bank[]>('/bank/available'),
 
-  connectBank: (bankId: string, userId?: string) =>
-    api.post('/bank/connect', { bank_id: bankId, user_id: userId }),
+  connectBank: (bankId: string) =>
+    api.post('/bank/connect', { bank_id: bankId }),
 
-  handleCallback: (code: string, state: string, bankName: string, userId?: string) =>
-    api.post('/bank/callback', { code, state, bank_name: bankName, user_id: userId }),
+  handleCallback: (code: string, state: string, bankName: string) =>
+    api.post('/bank/callback', { code, state, bank_name: bankName }),
 
-  getAccounts: (userId?: string) =>
-    api.get<BankAccount[]>('/bank/accounts', { params: { user_id: userId } }),
+  getAccounts: () =>
+    api.get<BankAccount[]>('/bank/accounts'),
 
   syncAccount: (accountId: string) =>
     api.post(`/bank/accounts/${accountId}/sync`),
@@ -39,7 +86,6 @@ export const bankApi = {
 // Transaction APIs
 export const transactionApi = {
   getTransactions: (params?: {
-    user_id?: string;
     account_id?: string;
     category?: string;
     type?: string;
@@ -67,29 +113,29 @@ export const transactionApi = {
 
 // Dashboard APIs
 export const dashboardApi = {
-  getStats: (userId?: string, days?: number) =>
+  getStats: (days?: number) =>
     api.get<DashboardStats>('/dashboard/stats', {
-      params: { user_id: userId, days },
+      params: { days },
     }),
 
-  getExpensesByCategory: (userId?: string, days?: number) =>
+  getExpensesByCategory: (days?: number) =>
     api.get<CategoryStats[]>('/dashboard/expenses-by-category', {
-      params: { user_id: userId, days },
+      params: { days },
     }),
 
-  getDailyStats: (userId?: string, days?: number) =>
+  getDailyStats: (days?: number) =>
     api.get<DailyStats[]>('/dashboard/daily-stats', {
-      params: { user_id: userId, days },
+      params: { days },
     }),
 
-  getTopMerchants: (userId?: string, days?: number, limit?: number) =>
+  getTopMerchants: (days?: number, limit?: number) =>
     api.get<TopMerchant[]>('/dashboard/top-merchants', {
-      params: { user_id: userId, days, limit },
+      params: { days, limit },
     }),
 
-  getMonthlyComparison: (userId?: string, months?: number) =>
+  getMonthlyComparison: (months?: number) =>
     api.get<MonthlyStats[]>('/dashboard/monthly-comparison', {
-      params: { user_id: userId, months },
+      params: { months },
     }),
 };
 

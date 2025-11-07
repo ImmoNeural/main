@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { startOfDay, subDays, format } from 'date-fns';
 import db from '../db/database';
+import { authMiddleware } from '../middleware/auth.middleware';
 import { DashboardStats, CategoryStats, DailyStats } from '../types';
 
 const router = Router();
@@ -9,9 +10,10 @@ const router = Router();
  * GET /api/dashboard/stats
  * Retorna estatísticas gerais do dashboard
  */
-router.get('/stats', (req: Request, res: Response) => {
+router.get('/stats', authMiddleware, (req: Request, res: Response) => {
   try {
-    const { user_id = 'demo_user', days = '90' } = req.query;
+    const user_id = req.userId!; // Obtido do token JWT
+    const { days = '90' } = req.query;
 
     const daysNum = Number(days);
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
@@ -72,9 +74,10 @@ router.get('/stats', (req: Request, res: Response) => {
  * GET /api/dashboard/expenses-by-category
  * Retorna despesas agrupadas por categoria
  */
-router.get('/expenses-by-category', (req: Request, res: Response) => {
+router.get('/expenses-by-category', authMiddleware, (req: Request, res: Response) => {
   try {
-    const { user_id = 'demo_user', days = '90' } = req.query;
+    const user_id = req.userId!; // Obtido do token JWT
+    const { days = '90' } = req.query;
 
     const daysNum = Number(days);
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
@@ -119,9 +122,10 @@ router.get('/expenses-by-category', (req: Request, res: Response) => {
  * GET /api/dashboard/daily-stats
  * Retorna estatísticas diárias
  */
-router.get('/daily-stats', (req: Request, res: Response) => {
+router.get('/daily-stats', authMiddleware, (req: Request, res: Response) => {
   try {
-    const { user_id = 'demo_user', days = '30' } = req.query;
+    const user_id = req.userId!; // Obtido do token JWT
+    const { days = '30' } = req.query;
 
     const daysNum = Number(days);
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
@@ -186,9 +190,10 @@ router.get('/daily-stats', (req: Request, res: Response) => {
  * GET /api/dashboard/top-merchants
  * Retorna os comerciantes com mais gastos
  */
-router.get('/top-merchants', (req: Request, res: Response) => {
+router.get('/top-merchants', authMiddleware, (req: Request, res: Response) => {
   try {
-    const { user_id = 'demo_user', days = '90', limit = '10' } = req.query;
+    const user_id = req.userId!; // Obtido do token JWT
+    const { days = '90', limit = '10' } = req.query;
 
     const daysNum = Number(days);
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
@@ -227,9 +232,10 @@ router.get('/top-merchants', (req: Request, res: Response) => {
  * GET /api/dashboard/monthly-comparison
  * Compara gastos mensais
  */
-router.get('/monthly-comparison', (req: Request, res: Response) => {
+router.get('/monthly-comparison', authMiddleware, (req: Request, res: Response) => {
   try {
-    const { user_id = 'demo_user', months = '6' } = req.query;
+    const user_id = req.userId!; // Obtido do token JWT
+    const { months = '6' } = req.query;
 
     const monthsNum = Number(months);
     const results: Array<{

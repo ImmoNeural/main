@@ -1,8 +1,16 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Wallet, PlusCircle } from 'lucide-react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Receipt, Wallet, PlusCircle, LogOut, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Layout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const navigation = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -23,7 +31,20 @@ const Layout = () => {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">Demo User</span>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-gray-700">
+                  <User className="w-5 h-5" />
+                  <span className="text-sm font-medium">{user?.name}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Sair"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sair</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

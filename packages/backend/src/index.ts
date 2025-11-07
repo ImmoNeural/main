@@ -5,6 +5,7 @@ import './config/env';
 import express from 'express';
 import cors from 'cors';
 import { initDatabase } from './db/database';
+import authRoutes from './routes/auth.routes';
 import bankRoutes from './routes/bank.routes';
 import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
@@ -23,6 +24,7 @@ app.use(express.json());
 initDatabase();
 
 // Rotas
+app.use('/api/auth', authRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);

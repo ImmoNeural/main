@@ -36,10 +36,10 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const [statsRes, categoryRes, dailyRes, transactionsRes] = await Promise.all([
-        dashboardApi.getStats('demo_user', period),
-        dashboardApi.getExpensesByCategory('demo_user', period),
-        dashboardApi.getDailyStats('demo_user', 30),
-        transactionApi.getTransactions({ user_id: 'demo_user', limit: 10 }),
+        dashboardApi.getStats(period),
+        dashboardApi.getExpensesByCategory(period),
+        dashboardApi.getDailyStats(30),
+        transactionApi.getTransactions({ limit: 10 }),
       ]);
 
       setStats(statsRes.data);

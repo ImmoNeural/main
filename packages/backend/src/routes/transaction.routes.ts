@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import db from '../db/database';
 import categorizationService from '../services/categorization.service';
+import { authMiddleware } from '../middleware/auth.middleware';
 import { Transaction } from '../types';
 
 const router = Router();
@@ -9,10 +10,10 @@ const router = Router();
  * GET /api/transactions
  * Lista transações com filtros opcionais
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', authMiddleware, (req: Request, res: Response) => {
   try {
+    const user_id = req.userId!; // Obtido do token JWT
     const {
-      user_id = 'demo_user',
       account_id,
       category,
       type,
@@ -110,7 +111,7 @@ router.get('/', (req: Request, res: Response) => {
  * GET /api/transactions/:id
  * Busca uma transação específica
  */
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', authMiddleware, (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -133,7 +134,7 @@ router.get('/:id', (req: Request, res: Response) => {
  * PATCH /api/transactions/:id/category
  * Atualiza a categoria de uma transação
  */
-router.patch('/:id/category', (req: Request, res: Response) => {
+router.patch('/:id/category', authMiddleware, (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { category } = req.body;

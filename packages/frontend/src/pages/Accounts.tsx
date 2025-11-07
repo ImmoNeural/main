@@ -17,7 +17,7 @@ const Accounts = () => {
   const loadAccounts = async () => {
     setLoading(true);
     try {
-      const response = await bankApi.getAccounts('demo_user');
+      const response = await bankApi.getAccounts();
       setAccounts(response.data);
     } catch (error) {
       console.error('Error loading accounts:', error);

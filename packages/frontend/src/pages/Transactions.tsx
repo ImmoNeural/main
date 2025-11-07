@@ -19,7 +19,6 @@ const Transactions = () => {
     try {
       const [transactionsRes, categoriesRes] = await Promise.all([
         transactionApi.getTransactions({
-          user_id: 'demo_user',
           category: selectedCategory || undefined,
           type: selectedType || undefined,
           limit: 100,

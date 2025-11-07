@@ -37,7 +37,7 @@ const ConnectBank = () => {
 
     if (code && state && bankName) {
       try {
-        await bankApi.handleCallback(code, state, bankName, 'demo_user');
+        await bankApi.handleCallback(code, state, bankName);
         alert('Conta conectada com sucesso!');
         navigate('/accounts');
       } catch (error) {
@@ -57,7 +57,7 @@ const ConnectBank = () => {
 
     setConnecting(true);
     try {
-      const response = await bankApi.connectBank(selectedBank.id, 'demo_user');
+      const response = await bankApi.connectBank(selectedBank.id);
 
       console.log('🔗 Connect response:', response.data);
       console.log('🔗 Authorization URL:', response.data.authorization_url);
@@ -80,8 +80,7 @@ const ConnectBank = () => {
           await bankApi.handleCallback(
             'mock_code_' + Date.now(),
             response.data.state,
-            selectedBank.name,
-            'demo_user'
+            selectedBank.name
           );
           alert('Conta conectada com sucesso!');
           navigate('/accounts');
@@ -109,8 +108,7 @@ const ConnectBank = () => {
                 await bankApi.handleCallback(
                   itemData.item.id,
                   connectToken,
-                  selectedBank.name,
-                  'demo_user'
+                  selectedBank.name
                 );
                 alert('Conta conectada com sucesso!');
                 navigate('/accounts');

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../db/database';
 import openBankingService from '../services/openBanking.service';
 import categorizationService from '../services/categorization.service';
+import { authMiddleware } from '../middleware/auth.middleware';
 import { BankAccount, Transaction } from '../types';
 
 const router = Router();
@@ -26,9 +27,10 @@ router.get('/available', async (req: Request, res: Response) => {
  * POST /api/bank/connect
  * Inicia o processo de conexão com um banco
  */
-router.post('/connect', async (req: Request, res: Response) => {
+router.post('/connect', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { bank_id, user_id = 'demo_user' } = req.body;
+    const { bank_id } = req.body;
+    const user_id = req.userId!; // Obtido do token JWT
 
     if (!bank_id) {
       return res.status(400).json({ error: 'bank_id is required' });
@@ -51,9 +53,10 @@ router.post('/connect', async (req: Request, res: Response) => {
  * POST /api/bank/callback
  * Processa o callback após autorização do banco
  */
-router.post('/callback', async (req: Request, res: Response) => {
+router.post('/callback', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { code, state, bank_name, user_id = 'demo_user' } = req.body;
+    const { code, state, bank_name } = req.body;
+    const user_id = req.userId!; // Obtido do token JWT
 
     if (!code || !state) {
       return res.status(400).json({ error: 'code and state are required' });
@@ -149,9 +152,9 @@ router.post('/callback', async (req: Request, res: Response) => {
  * GET /api/bank/accounts
  * Lista todas as contas conectadas
  */
-router.get('/accounts', (req: Request, res: Response) => {
+router.get('/accounts', authMiddleware, (req: Request, res: Response) => {
   try {
-    const { user_id = 'demo_user' } = req.query;
+    const user_id = req.userId!; // Obtido do token JWT
 
     const accounts = db
       .prepare(
@@ -172,7 +175,7 @@ router.get('/accounts', (req: Request, res: Response) => {
  * POST /api/bank/accounts/:accountId/sync
  * Sincroniza transações de uma conta
  */
-router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => {
+router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
 
@@ -208,7 +211,7 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
  * DELETE /api/bank/accounts/:accountId
  * Remove uma conta conectada
  */
-router.delete('/accounts/:accountId', async (req: Request, res: Response) => {
+router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
 
