@@ -1,7 +1,7 @@
 {
   "buildCommand": "cd packages/frontend && npm run build",
   "outputDirectory": "packages/frontend/dist",
-  "installCommand": "npm install --include=dev && cd packages/frontend && npm install --include=dev",
+  "installCommand": "npm install --include=dev",
   "framework": null,
   "rewrites": [
     {
