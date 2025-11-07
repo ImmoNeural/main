@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm install && npm run build:backend && npm run build:frontend",
+  "buildCommand": "npm install --include=dev && npm install --workspace=backend --include=dev && npm install --workspace=frontend --include=dev && npm run build:backend && npm run build:frontend",
   "outputDirectory": "packages/frontend/dist",
-  "installCommand": "npm install",
+  "installCommand": "npm install --include=dev",
   "rewrites": [
     {
       "source": "/api/:path*",
