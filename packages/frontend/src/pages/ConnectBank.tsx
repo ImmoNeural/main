@@ -63,8 +63,8 @@ const ConnectBank = () => {
       console.log('🔗 Authorization URL:', response.data.authorization_url);
 
       // Verificar se estamos em modo demo
-      const isDemoMode = response.data.demo_mode === true ||
-                         response.data.authorization_url?.startsWith('demo-mode://');
+      const authUrl = response.data.authorization_url || '';
+      const isDemoMode = response.data.demo_mode === true || authUrl.startsWith('demo-mode://');
 
       console.log('🔍 Is Demo Mode?', isDemoMode);
 
