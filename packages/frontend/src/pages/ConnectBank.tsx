@@ -62,28 +62,34 @@ const ConnectBank = () => {
       console.log('🔗 Connect response:', response.data);
       console.log('🔗 Authorization URL:', response.data.authorization_url);
 
-      // Verificar se estamos em modo mock (desenvolvimento)
-      const authUrl = response.data.authorization_url || '';
-      const isMockMode = authUrl.includes('mock-bank-auth') || authUrl.includes('localhost:3001/mock');
+      // Verificar se estamos em modo demo
+      const isDemoMode = response.data.demo_mode === true ||
+                         response.data.authorization_url?.startsWith('demo-mode://');
 
-      console.log('🔍 Is Mock Mode?', isMockMode);
+      console.log('🔍 Is Demo Mode?', isDemoMode);
 
-      if (isMockMode) {
-        // Modo de desenvolvimento - simular conexão
-        const mockCallback = confirm(
-          `Você será redirecionado para ${selectedBank.name} para autorizar o acesso.\n\n` +
-          `Este é um ambiente de demonstração (modo mock). Deseja simular a conexão bem-sucedida?`
+      if (isDemoMode) {
+        // Modo de demonstração - simular conexão bancária
+        console.log('🎭 DEMO MODE activated for', selectedBank.name);
+
+        const userConfirmed = confirm(
+          `🎭 MODO DEMONSTRAÇÃO\n\n` +
+          `Você está conectando ao ${selectedBank.name} em modo de demonstração.\n\n` +
+          `Serão geradas transações fictícias realistas brasileiras para você explorar o app.\n\n` +
+          `Deseja continuar?`
         );
 
-        if (mockCallback) {
-          // Simular callback bem-sucedido
+        if (userConfirmed) {
+          // Simular callback bem-sucedido com dados demo
           await bankApi.handleCallback(
-            'mock_code_' + Date.now(),
+            'DEMO_' + Date.now(),
             response.data.state,
             selectedBank.name
           );
-          alert('Conta conectada com sucesso!');
+          alert(`✅ Conta ${selectedBank.name} conectada com sucesso!\n\nDados de demonstração foram gerados.`);
           navigate('/accounts');
+        } else {
+          setConnecting(false);
         }
       } else {
         // Modo de produção - Integrar com Pluggy Connect Widget

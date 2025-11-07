@@ -4,6 +4,7 @@ import db from '../db/database';
 import openBankingService from '../services/openBanking.service';
 import categorizationService from '../services/categorization.service';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { createMockBankAccount } from '../services/providers/mock.service';
 import { BankAccount, Transaction } from '../types';
 
 const router = Router();
@@ -36,13 +37,30 @@ router.post('/connect', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'bank_id is required' });
     }
 
-    const authResponse = await openBankingService.initiateAuth({
-      bank_id,
-      redirect_uri: process.env.OPEN_BANKING_REDIRECT_URI || 'http://localhost:3000/bank/callback',
-      user_id,
-    });
+    try {
+      // Tentar autenticação real com Pluggy
+      const authResponse = await openBankingService.initiateAuth({
+        bank_id,
+        redirect_uri: process.env.OPEN_BANKING_REDIRECT_URI || 'http://localhost:3000/bank/callback',
+        user_id,
+      });
 
-    res.json(authResponse);
+      res.json(authResponse);
+    } catch (pluggyError) {
+      // Se falhar com Pluggy (credenciais expiradas, etc), usar modo demo
+      console.log('[Bank] ⚠️ Pluggy authentication failed, activating DEMO MODE');
+      console.log('[Bank] 🎭 Demo mode activated for bank_id:', bank_id);
+
+      // Retornar URL de demonstração
+      const mockState = `DEMO_${bank_id}_${Date.now()}`;
+      res.json({
+        authorization_url: `demo-mode://connect/${bank_id}`,
+        state: mockState,
+        consent_id: mockState,
+        demo_mode: true,
+        bank_id: bank_id,
+      });
+    }
   } catch (error) {
     console.error('Error initiating bank connection:', error);
     res.status(500).json({ error: 'Failed to initiate bank connection' });
@@ -61,6 +79,37 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
     if (!code || !state) {
       return res.status(400).json({ error: 'code and state are required' });
     }
+
+    // Verificar se é modo demo
+    if (state.startsWith('DEMO_')) {
+      console.log('[Bank] 🎭 Processing DEMO MODE callback');
+
+      // Extrair bank_id do state: DEMO_341_1234567890
+      const parts = state.split('_');
+      const bank_id = parts[1];
+
+      console.log('[Bank] Creating mock account for bank_id:', bank_id, 'bank_name:', bank_name);
+
+      // Criar conta fictícia com transações
+      const { account, transactions } = await createMockBankAccount(user_id, bank_id, bank_name);
+
+      console.log(`[Bank] ✅ Demo account created with ${transactions.length} transactions`);
+
+      return res.json({
+        success: true,
+        demo_mode: true,
+        accounts: [{
+          id: account.id,
+          bank_name: account.bank_name,
+          account_number: account.account_number,
+          balance: account.balance,
+          currency: account.currency,
+        }],
+      });
+    }
+
+    // Modo real com Pluggy
+    console.log('[Bank] Processing real Pluggy callback');
 
     // Trocar código por token
     const tokenResponse = await openBankingService.exchangeCodeForToken(code, state);
