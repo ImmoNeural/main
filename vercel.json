@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "packages/backend/dist/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "packages/backend/dist/index.js"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|svg|ico|json|woff2|woff|ttf))",
+      "dest": "packages/frontend/dist/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "packages/frontend/dist/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
