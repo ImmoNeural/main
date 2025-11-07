@@ -1,26 +1,11 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "npm install && npm run build:backend && npm run build:frontend",
+  "outputDirectory": "packages/frontend/dist",
+  "installCommand": "npm install",
+  "rewrites": [
     {
-      "src": "packages/backend/dist/index.js",
-      "use": "@vercel/node"
+      "source": "/api/:path*",
+      "destination": "/api"
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "packages/backend/dist/index.js"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|svg|ico|json|woff2|woff|ttf))",
-      "dest": "packages/frontend/dist/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "packages/frontend/dist/index.html"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }

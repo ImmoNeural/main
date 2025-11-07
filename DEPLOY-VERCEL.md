@@ -38,45 +38,32 @@ No seu repositório GitHub, certifique-se de que está no branch correto:
 git pull origin claude/review-example-011CUs1fvaKkgh1rks31FTYi
 ```
 
-### **Passo 3: Criar arquivo de configuração do Vercel**
+### **Passo 3: Verificar arquivos de configuração**
 
-No seu projeto local, crie um arquivo `vercel.json` na raiz:
+✅ **Já está pronto!** O repositório já tem:
+- `vercel.json` - configuração do Vercel
+- `api/index.js` - função serverless
+- Scripts de build configurados
 
+**O arquivo vercel.json contém:**
 ```json
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "npm install && npm run build:backend && npm run build:frontend",
+  "outputDirectory": "packages/frontend/dist",
+  "installCommand": "npm install",
+  "rewrites": [
     {
-      "src": "packages/backend/dist/index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "packages/frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "packages/backend/dist/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "packages/frontend/dist/$1"
+      "source": "/api/:path*",
+      "destination": "/api"
     }
   ]
 }
 ```
 
-Commit e push:
+Sincronize com o repositório:
 
 ```bash
-git add vercel.json
-git commit -m "Adiciona configuração do Vercel"
-git push
+git pull origin claude/review-example-011CUs1fvaKkgh1rks31FTYi
 ```
 
 ### **Passo 4: Importar projeto no Vercel**
@@ -87,13 +74,17 @@ git push
 
 ### **Passo 5: Configurar Build Settings**
 
-Na tela de configuração:
+✅ **Configuração automática!** O `vercel.json` já configura tudo.
+
+Na tela de configuração do Vercel, você pode simplesmente:
+1. Deixar as configurações padrão
+2. OU manualmente configurar:
 
 **Framework Preset:** `Other`
 
 **Build & Development Settings:**
 ```
-Build Command: npm run build:vercel
+Build Command: npm install && npm run build:backend && npm run build:frontend
 Output Directory: packages/frontend/dist
 Install Command: npm install
 ```
