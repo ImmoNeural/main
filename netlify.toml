@@ -8,19 +8,15 @@
   # Diretório base (raiz do projeto)
   base = "/"
 
+# Redirect da API para o backend no Render
+[[redirects]]
+  from = "/api/*"
+  to = "https://main-swf3.onrender.com/api/:splat"
+  status = 200
+  force = true
+
 # Configuração de redirecionamento para SPA (Single Page Application)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# ⚠️ IMPORTANTE: Depois de criar o backend no Render.com, descomente e configure abaixo:
-# Redirect da API para o backend no Render
-# [[redirects]]
-#   from = "/api/*"
-#   to = "https://SEU-BACKEND.onrender.com/api/:splat"
-#   status = 200
-#   force = true
-#
-# Substitua "SEU-BACKEND.onrender.com" pela URL real do seu backend no Render
-# Exemplo: https://gurudodindin-api.onrender.com
