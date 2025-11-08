@@ -102,8 +102,11 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password }: LoginRequest = req.body;
 
+    console.log('🔐 Login attempt for:', email);
+
     // Validação
     if (!email || !password) {
+      console.log('❌ Missing email or password');
       return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
@@ -113,20 +116,31 @@ router.post('/login', async (req: Request, res: Response) => {
       .get(email.toLowerCase()) as User | undefined;
 
     if (!user) {
+      console.log('❌ User not found:', email.toLowerCase());
+      // Listar todos os usuários para debug (apenas em dev/staging)
+      const allUsers = db.prepare('SELECT email FROM users').all();
+      console.log('📋 All users in DB:', allUsers);
       return res.status(401).json({ error: 'Email ou senha incorretos' });
     }
+
+    console.log('✅ User found:', user.email);
 
     // Verificar senha
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isPasswordValid) {
+      console.log('❌ Invalid password for:', email);
       return res.status(401).json({ error: 'Email ou senha incorretos' });
     }
+
+    console.log('✅ Password valid, generating token');
 
     // Gerar token JWT
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
+
+    console.log('🎉 Login successful for:', email);
 
     res.json({
       message: 'Login realizado com sucesso',
@@ -138,7 +152,7 @@ router.post('/login', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error logging in:', error);
+    console.error('❌ Error logging in:', error);
     res.status(500).json({ error: 'Erro ao fazer login' });
   }
 });

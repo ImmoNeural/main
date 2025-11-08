@@ -15,7 +15,7 @@ services:
       - key: PORT
         value: 3001
       - key: DATABASE_PATH
-        value: ./data/database.sqlite
+        value: /opt/render/project/.data/database.sqlite
       - key: OPEN_BANKING_PROVIDER
         value: mock
       - key: JWT_SECRET
