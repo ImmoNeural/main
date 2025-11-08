@@ -17,7 +17,13 @@ services:
       - key: DATABASE_PATH
         value: /opt/render/project/.data/database.sqlite
       - key: OPEN_BANKING_PROVIDER
-        value: mock
+        value: pluggy
+      - key: PLUGGY_CLIENT_ID
+        value: 7015037f-203b-4f6c-9f9c-ca154f2c203d
+      - key: PLUGGY_CLIENT_SECRET
+        value: 95d02985-474e-4067-a708-81949ac095b0
+      - key: PLUGGY_BASE_URL
+        value: https://api.pluggy.ai
       - key: JWT_SECRET
         generateValue: true
       - key: SESSION_SECRET
