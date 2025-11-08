@@ -11,7 +11,7 @@
 # Redirect da API para o backend no Render
 [[redirects]]
   from = "/api/*"
-  to = "https://main-swf3.onrender.com/api/:splat"
+  to = "https://gurudodindin-api.onrender.com/api/:splat"
   status = 200
   force = true
 
