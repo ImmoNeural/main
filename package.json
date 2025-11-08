@@ -14,7 +14,7 @@
     "build": "npm run build --workspaces",
     "build:backend": "npm run build --workspace=backend",
     "build:frontend": "npm run build --workspace=frontend",
-    "build:vercel": "npm install && npm run build:backend && npm run build:frontend",
+    "build:vercel": "npm run build:frontend && mkdir -p dist && cp -r packages/frontend/dist/* dist/",
     "start": "npm run start --workspace=backend",
     "install:all": "npm install && npm install --workspaces"
   },

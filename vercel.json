@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build --workspace=frontend && cp -r packages/frontend/dist ./dist",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
   "installCommand": "npm install --include=dev",
   "framework": null,
