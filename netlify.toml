@@ -1,0 +1,22 @@
+[build]
+  # Comando para instalar dependências
+  command = "npm install --include=dev && npm run build:vercel"
+
+  # Diretório onde está o build final
+  publish = "dist"
+
+  # Diretório base (raiz do projeto)
+  base = "/"
+
+# Configuração de redirecionamento para SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Redirect da API para o backend (se precisar no futuro)
+[[redirects]]
+  from = "/api/*"
+  to = "https://seu-backend-url.com/api/:splat"
+  status = 200
+  force = false
