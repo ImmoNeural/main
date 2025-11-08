@@ -29,8 +29,8 @@ services:
       - key: SESSION_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://darling-tiramisu-6751d1.netlify.app
+        value: https://mycleverbot.com.br
       - key: OPEN_BANKING_REDIRECT_URI
-        value: https://darling-tiramisu-6751d1.netlify.app/bank/callback
+        value: https://mycleverbot.com.br/bank/callback
     healthCheckPath: /api/health
     autoDeploy: true
