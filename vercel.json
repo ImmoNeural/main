@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build --workspace=frontend",
+  "buildCommand": "npm run build --workspace=frontend && ls -la packages/frontend/ && ls -la packages/frontend/dist/",
   "outputDirectory": "packages/frontend/dist",
   "installCommand": "npm install --include=dev",
   "framework": null,
