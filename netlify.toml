@@ -14,9 +14,13 @@
   to = "/index.html"
   status = 200
 
-# Redirect da API para o backend (se precisar no futuro)
-[[redirects]]
-  from = "/api/*"
-  to = "https://seu-backend-url.com/api/:splat"
-  status = 200
-  force = false
+# ⚠️ IMPORTANTE: Depois de criar o backend no Render.com, descomente e configure abaixo:
+# Redirect da API para o backend no Render
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://SEU-BACKEND.onrender.com/api/:splat"
+#   status = 200
+#   force = true
+#
+# Substitua "SEU-BACKEND.onrender.com" pela URL real do seu backend no Render
+# Exemplo: https://gurudodindin-api.onrender.com

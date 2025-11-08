@@ -1,0 +1,28 @@
+services:
+  # Backend API
+  - type: web
+    name: gurudodindin-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: cd packages/backend && npm install && npm run build && npm run migrate
+    startCommand: cd packages/backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_PATH
+        value: ./data/database.sqlite
+      - key: OPEN_BANKING_PROVIDER
+        value: mock
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://seu-site.netlify.app
+      - key: OPEN_BANKING_REDIRECT_URI
+        value: https://seu-site.netlify.app/bank/callback
+    healthCheckPath: /api/health
+    autoDeploy: true
