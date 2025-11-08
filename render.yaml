@@ -8,6 +8,8 @@ services:
     buildCommand: cd packages/backend && npm install && npm run build && npm run migrate
     startCommand: cd packages/backend && npm start
     envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
       - key: NODE_ENV
         value: production
       - key: PORT
