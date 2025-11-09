@@ -177,4 +177,60 @@ router.get('/categories/list', (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/transactions/recategorize
+ * Recategoriza todas as transações do usuário usando IA
+ */
+router.post('/recategorize', authMiddleware, (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+
+    console.log('🤖 Iniciando recategorização automática para user:', user_id);
+
+    // Buscar todas as transações do usuário
+    const transactions = db.prepare(`
+      SELECT t.* FROM transactions t
+      INNER JOIN bank_accounts ba ON t.account_id = ba.id
+      WHERE ba.user_id = ?
+    `).all(user_id) as Transaction[];
+
+    console.log(`📊 Encontradas ${transactions.length} transações para recategorizar`);
+
+    let updated = 0;
+    let unchanged = 0;
+
+    for (const transaction of transactions) {
+      const categorization = categorizationService.categorizeTransaction(
+        transaction.description || '',
+        transaction.merchant || '',
+        transaction.amount
+      );
+
+      // Atualizar apenas se a categoria mudou ou se estava vazia/Outros
+      if (transaction.category !== categorization.category) {
+        db.prepare('UPDATE transactions SET category = ?, updated_at = ? WHERE id = ?')
+          .run(categorization.category, Date.now(), transaction.id);
+        updated++;
+
+        console.log(`✅ ${transaction.description?.substring(0, 50)} → ${categorization.category} (${categorization.confidence}%)`);
+      } else {
+        unchanged++;
+      }
+    }
+
+    console.log(`✨ Recategorização concluída: ${updated} atualizadas, ${unchanged} mantidas`);
+
+    res.json({
+      success: true,
+      total: transactions.length,
+      updated,
+      unchanged,
+      message: `${updated} transações foram recategorizadas automaticamente`
+    });
+  } catch (error) {
+    console.error('❌ Error recategorizing transactions:', error);
+    res.status(500).json({ error: 'Erro ao recategorizar transações' });
+  }
+});
+
 export default router;

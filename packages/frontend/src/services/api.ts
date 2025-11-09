@@ -109,6 +109,9 @@ export const transactionApi = {
 
   getCategories: () =>
     api.get<Category[]>('/transactions/categories/list'),
+
+  recategorizeAll: () =>
+    api.post<{ success: boolean; total: number; updated: number; unchanged: number; message: string }>('/transactions/recategorize'),
 };
 
 // Dashboard APIs

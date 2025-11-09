@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, Sparkles, AlertCircle } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 
@@ -10,6 +10,7 @@ const Transactions = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [isRecategorizing, setIsRecategorizing] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -62,6 +63,24 @@ const Transactions = () => {
     }
   };
 
+  const handleRecategorize = async () => {
+    if (!confirm('Deseja recategorizar todas as transações automaticamente? As categorias manuais serão substituídas.')) {
+      return;
+    }
+
+    setIsRecategorizing(true);
+    try {
+      const response = await transactionApi.recategorizeAll();
+      alert(`✨ ${response.data.message}\n\n📊 Total: ${response.data.total}\n✅ Atualizadas: ${response.data.updated}\n⏭️ Mantidas: ${response.data.unchanged}`);
+      await loadData(); // Recarregar transações
+    } catch (error) {
+      console.error('Error recategorizing:', error);
+      alert('Erro ao recategorizar transações. Tente novamente.');
+    } finally {
+      setIsRecategorizing(false);
+    }
+  };
+
   const exportToCSV = () => {
     const headers = ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor'];
     const rows = filteredTransactions.map((t) => [
@@ -90,10 +109,20 @@ const Transactions = () => {
           <h1 className="text-3xl font-bold text-gray-900">Transações</h1>
           <p className="text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
         </div>
-        <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
-          <Download className="w-5 h-5" />
-          <span>Exportar CSV</span>
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={handleRecategorize}
+            disabled={isRecategorizing}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Sparkles className="w-5 h-5" />
+            <span>{isRecategorizing ? 'Categorizando...' : 'Categorizar Automaticamente'}</span>
+          </button>
+          <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
+            <Download className="w-5 h-5" />
+            <span>Exportar CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -162,34 +191,51 @@ const Transactions = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {format(new Date(transaction.date), 'dd/MM/yyyy')}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {transaction.merchant || transaction.description}
-                      </p>
-                      {transaction.reference && (
-                        <p className="text-xs text-gray-500">{transaction.reference}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <select
-                      value={transaction.category || ''}
-                      onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                      className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat.category} value={cat.category}>
-                          {cat.icon} {cat.category}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+              {filteredTransactions.map((transaction) => {
+                const isUncategorized = !transaction.category || transaction.category === 'Outros';
+                return (
+                  <tr
+                    key={transaction.id}
+                    className={`hover:bg-gray-50 ${isUncategorized ? 'bg-pink-50' : ''}`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {transaction.merchant || transaction.description}
+                        </p>
+                        {transaction.reference && (
+                          <p className="text-xs text-gray-500">{transaction.reference}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center space-x-2">
+                        {isUncategorized && (
+                          <div className="group relative">
+                            <AlertCircle className="w-4 h-4 text-orange-500" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                              ⚠️ Categoria não encontrada. Favor categorizar manualmente.
+                            </div>
+                          </div>
+                        )}
+                        <select
+                          value={transaction.category || ''}
+                          onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
+                          className={`text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                            isUncategorized ? 'border-orange-400 bg-orange-50' : 'border-gray-300'
+                          }`}
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat.category} value={cat.category}>
+                              {cat.icon} {cat.category}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -210,9 +256,10 @@ const Transactions = () => {
                       {transaction.type === 'credit' ? '+' : '-'}
                       {formatCurrency(Math.abs(transaction.amount))}
                     </span>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
