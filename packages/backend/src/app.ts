@@ -4,8 +4,9 @@ import './config/env';
 
 import express from 'express';
 import cors from 'cors';
-import { initDatabase } from './db/database';
-import authRoutes from './routes/auth.routes';
+// import { initDatabase } from './db/database'; // SQLite - desabilitado
+// import authRoutes from './routes/auth.routes'; // SQLite auth - desabilitado
+import authRoutes from './routes/auth.supabase.routes'; // ✅ Supabase Auth
 import bankRoutes from './routes/bank.routes';
 import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
@@ -38,8 +39,8 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Inicializar banco de dados
-initDatabase();
+// SQLite desabilitado - usando Supabase agora
+// initDatabase();
 
 // Rotas
 app.use('/api/auth', authRoutes);

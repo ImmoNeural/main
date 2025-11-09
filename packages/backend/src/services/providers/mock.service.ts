@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../../db/database';
+import { supabase } from '../../config/supabase';
 import categorizationService from '../categorization.service';
 import { BankAccount, Transaction } from '../../types';
 
@@ -166,65 +166,64 @@ export async function createMockBankAccount(
   };
 
   // Salvar conta no banco de dados
-  const stmt = db.prepare(`
-    INSERT INTO bank_accounts (
-      id, user_id, bank_name, account_number, iban, account_type,
-      balance, currency, access_token, refresh_token, token_expires_at,
-      consent_id, consent_expires_at, connected_at, status, provider_account_id,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  const { error: accountError } = await supabase
+    .from('bank_accounts')
+    .insert({
+      id: bankAccount.id,
+      user_id: bankAccount.user_id,
+      bank_name: bankAccount.bank_name,
+      account_number: bankAccount.account_number,
+      iban: bankAccount.iban,
+      account_type: bankAccount.account_type,
+      balance: bankAccount.balance,
+      currency: bankAccount.currency,
+      access_token: bankAccount.access_token,
+      refresh_token: bankAccount.refresh_token,
+      token_expires_at: bankAccount.token_expires_at,
+      consent_id: bankAccount.consent_id,
+      consent_expires_at: bankAccount.consent_expires_at,
+      connected_at: bankAccount.connected_at,
+      status: bankAccount.status,
+      provider_account_id: bankAccount.provider_account_id,
+      created_at: bankAccount.created_at,
+      updated_at: bankAccount.updated_at,
+    });
 
-  stmt.run(
-    bankAccount.id,
-    bankAccount.user_id,
-    bankAccount.bank_name,
-    bankAccount.account_number,
-    bankAccount.iban,
-    bankAccount.account_type,
-    bankAccount.balance,
-    bankAccount.currency,
-    bankAccount.access_token,
-    bankAccount.refresh_token,
-    bankAccount.token_expires_at,
-    bankAccount.consent_id,
-    bankAccount.consent_expires_at,
-    bankAccount.connected_at,
-    bankAccount.status,
-    bankAccount.provider_account_id,
-    bankAccount.created_at,
-    bankAccount.updated_at
-  );
+  if (accountError) {
+    console.error('[Mock] Error inserting account:', accountError);
+    throw accountError;
+  }
 
   // Gerar e salvar transações
   const transactions = generateMockTransactions(accountId, bankName);
 
-  const transactionStmt = db.prepare(`
-    INSERT INTO transactions (
-      id, account_id, transaction_id, date, amount, currency, description,
-      merchant, category, type, balance_after, reference, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  // Inserir todas as transações de uma vez
+  const transactionsData = transactions.map((tx) => ({
+    id: tx.id,
+    account_id: tx.account_id,
+    transaction_id: tx.transaction_id,
+    date: tx.date,
+    amount: tx.amount,
+    currency: tx.currency,
+    description: tx.description,
+    merchant: tx.merchant,
+    category: tx.category,
+    type: tx.type,
+    balance_after: tx.balance_after,
+    reference: tx.reference,
+    status: tx.status,
+    created_at: tx.created_at,
+    updated_at: tx.updated_at,
+  }));
 
-  transactions.forEach((tx) => {
-    transactionStmt.run(
-      tx.id,
-      tx.account_id,
-      tx.transaction_id,
-      tx.date,
-      tx.amount,
-      tx.currency,
-      tx.description,
-      tx.merchant,
-      tx.category,
-      tx.type,
-      tx.balance_after,
-      tx.reference,
-      tx.status,
-      tx.created_at,
-      tx.updated_at
-    );
-  });
+  const { error: transactionsError } = await supabase
+    .from('transactions')
+    .insert(transactionsData);
+
+  if (transactionsError) {
+    console.error('[Mock] Error inserting transactions:', transactionsError);
+    throw transactionsError;
+  }
 
   console.log(`[Mock] ✅ Created mock account for ${mockData.name} with ${transactions.length} transactions`);
 

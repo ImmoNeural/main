@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import db from '../db/database';
+import { supabase } from '../config/supabase';
 import categorizationService from '../services/categorization.service';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware } from '../middleware/auth.supabase.middleware';
 import { Transaction } from '../types';
 
 const router = Router();
@@ -10,7 +10,7 @@ const router = Router();
  * GET /api/transactions
  * Lista transações com filtros opcionais
  */
-router.get('/', authMiddleware, (req: Request, res: Response) => {
+router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const {
@@ -23,83 +23,51 @@ router.get('/', authMiddleware, (req: Request, res: Response) => {
       offset = '0',
     } = req.query;
 
-    let query = `
-      SELECT t.* FROM transactions t
-      INNER JOIN bank_accounts ba ON t.account_id = ba.id
-      WHERE ba.user_id = ?
-    `;
-    const params: any[] = [user_id];
+    // Construir query base com JOIN
+    let query = supabase
+      .from('transactions')
+      .select('*, bank_accounts!inner(user_id)', { count: 'exact' })
+      .eq('bank_accounts.user_id', user_id);
 
+    // Aplicar filtros
     if (account_id) {
-      query += ' AND t.account_id = ?';
-      params.push(account_id);
+      query = query.eq('account_id', account_id as string);
     }
 
     if (category) {
-      query += ' AND t.category = ?';
-      params.push(category);
+      query = query.eq('category', category as string);
     }
 
     if (type) {
-      query += ' AND t.type = ?';
-      params.push(type);
+      query = query.eq('type', type as string);
     }
 
     if (start_date) {
-      query += ' AND t.date >= ?';
-      params.push(new Date(start_date as string).getTime());
+      query = query.gte('date', new Date(start_date as string).getTime());
     }
 
     if (end_date) {
-      query += ' AND t.date <= ?';
-      params.push(new Date(end_date as string).getTime());
+      query = query.lte('date', new Date(end_date as string).getTime());
     }
 
-    query += ' ORDER BY t.date DESC LIMIT ? OFFSET ?';
-    params.push(Number(limit), Number(offset));
+    // Ordenar e paginar
+    const limitNum = Number(limit);
+    const offsetNum = Number(offset);
+    query = query
+      .order('date', { ascending: false })
+      .range(offsetNum, offsetNum + limitNum - 1);
 
-    const transactions = db.prepare(query).all(...params) as Transaction[];
+    const { data: transactions, error, count } = await query;
 
-    // Contar total
-    let countQuery = `
-      SELECT COUNT(*) as total FROM transactions t
-      INNER JOIN bank_accounts ba ON t.account_id = ba.id
-      WHERE ba.user_id = ?
-    `;
-    const countParams: any[] = [user_id];
-
-    if (account_id) {
-      countQuery += ' AND t.account_id = ?';
-      countParams.push(account_id);
+    if (error) {
+      throw error;
     }
-
-    if (category) {
-      countQuery += ' AND t.category = ?';
-      countParams.push(category);
-    }
-
-    if (type) {
-      countQuery += ' AND t.type = ?';
-      countParams.push(type);
-    }
-
-    if (start_date) {
-      countQuery += ' AND t.date >= ?';
-      countParams.push(new Date(start_date as string).getTime());
-    }
-
-    if (end_date) {
-      countQuery += ' AND t.date <= ?';
-      countParams.push(new Date(end_date as string).getTime());
-    }
-
-    const { total } = db.prepare(countQuery).get(...countParams) as { total: number };
 
     res.json({
-      transactions,
-      total,
-      limit: Number(limit),
-      offset: Number(offset),
+      transactions: transactions || [],
+      total: count || 0,
+      limit: limitNum,
+      offset: offsetNum,
     });
   } catch (error) {
     console.error('Error fetching transactions:', error);
@@ -111,15 +79,17 @@ router.get('/', authMiddleware, (req: Request, res: Response) => {
  * GET /api/transactions/:id
  * Busca uma transação específica
  */
-router.get('/:id', authMiddleware, (req: Request, res: Response) => {
+router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const transaction = db
-      .prepare('SELECT * FROM transactions WHERE id = ?')
-      .get(id) as Transaction | undefined;
+    const { data: transaction, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!transaction) {
+    if (error || !transaction) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
@@ -134,7 +104,7 @@ router.get('/:id', authMiddleware, (req: Request, res: Response) => {
  * PATCH /api/transactions/:id/category
  * Atualiza a categoria de uma transação
  */
-router.patch('/:id/category', authMiddleware, (req: Request, res: Response) => {
+router.patch('/:id/category', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { category } = req.body;
@@ -143,18 +113,28 @@ router.patch('/:id/category', authMiddleware, (req: Request, res: Response) => {
       return res.status(400).json({ error: 'category is required' });
     }
 
-    const transaction = db
-      .prepare('SELECT * FROM transactions WHERE id = ?')
-      .get(id) as Transaction | undefined;
+    // Verificar se transação existe
+    const { data: transaction, error: fetchError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!transaction) {
+    if (fetchError || !transaction) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
-    db.prepare('UPDATE transactions SET category = ?, updated_at = ? WHERE id = ?')
-      .run(category, Date.now(), id);
+    // Atualizar categoria
+    const { data: updated, error: updateError } = await supabase
+      .from('transactions')
+      .update({ category, updated_at: Date.now() })
+      .eq('id', id)
+      .select()
+      .single();
 
-    const updated = db.prepare('SELECT * FROM transactions WHERE id = ?').get(id);
+    if (updateError) {
+      throw updateError;
+    }
 
     res.json(updated);
   } catch (error) {
@@ -181,25 +161,28 @@ router.get('/categories/list', (req: Request, res: Response) => {
  * POST /api/transactions/recategorize
  * Recategoriza todas as transações do usuário usando IA
  */
-router.post('/recategorize', authMiddleware, (req: Request, res: Response) => {
+router.post('/recategorize', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
     console.log('🤖 Iniciando recategorização automática para user:', user_id);
 
     // Buscar todas as transações do usuário
-    const transactions = db.prepare(`
-      SELECT t.* FROM transactions t
-      INNER JOIN bank_accounts ba ON t.account_id = ba.id
-      WHERE ba.user_id = ?
-    `).all(user_id) as Transaction[];
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('*, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id);
 
-    console.log(`📊 Encontradas ${transactions.length} transações para recategorizar`);
+    if (error) {
+      throw error;
+    }
+
+    console.log(`📊 Encontradas ${transactions?.length || 0} transações para recategorizar`);
 
     let updated = 0;
     let unchanged = 0;
 
-    for (const transaction of transactions) {
+    for (const transaction of transactions || []) {
       const categorization = categorizationService.categorizeTransaction(
         transaction.description || '',
         transaction.merchant || '',
@@ -208,11 +191,15 @@ router.post('/recategorize', authMiddleware, (req: Request, res: Response) => {
 
       // Atualizar apenas se a categoria mudou ou se estava vazia/Outros
       if (transaction.category !== categorization.category) {
-        db.prepare('UPDATE transactions SET category = ?, updated_at = ? WHERE id = ?')
-          .run(categorization.category, Date.now(), transaction.id);
-        updated++;
+        const { error: updateError } = await supabase
+          .from('transactions')
+          .update({ category: categorization.category, updated_at: Date.now() })
+          .eq('id', transaction.id);
 
-        console.log(`✅ ${transaction.description?.substring(0, 50)} → ${categorization.category} (${categorization.confidence}%)`);
+        if (!updateError) {
+          updated++;
+          console.log(`✅ ${transaction.description?.substring(0, 50)} → ${categorization.category} (${categorization.confidence}%)`);
+        }
       } else {
         unchanged++;
       }
@@ -222,7 +209,7 @@ router.post('/recategorize', authMiddleware, (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      total: transactions.length,
+      total: transactions?.length || 0,
       updated,
       unchanged,
       message: `${updated} transações foram recategorizadas automaticamente`

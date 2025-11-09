@@ -14,8 +14,6 @@ services:
         value: production
       - key: PORT
         value: 3001
-      - key: DATABASE_PATH
-        value: /opt/render/project/.data/database.sqlite
       - key: OPEN_BANKING_PROVIDER
         value: pluggy
       - key: PLUGGY_CLIENT_ID
@@ -32,5 +30,11 @@ services:
         value: https://mycleverbot.com.br
       - key: OPEN_BANKING_REDIRECT_URI
         value: https://mycleverbot.com.br/bank/callback
+      - key: SUPABASE_URL
+        value: https://bhkvenyaxkkqzcsfyjvb.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoa3ZlbnlheGtrcXpjc2Z5anZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MTI0MzEsImV4cCI6MjA3ODI4ODQzMX0.IYDBpAbEF4VHzPmq_xEtlH1TnOk5o2Zp1eoleXao3po
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoa3ZlbnlheGtrcXpjc2Z5anZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjcxMjQzMSwiZXhwIjoyMDc4Mjg4NDMxfQ.Fp0u41-mSU1cQGKmw_4DHeV208HNXORQdbWPt_vLZ3E
     healthCheckPath: /api/health
     autoDeploy: true
