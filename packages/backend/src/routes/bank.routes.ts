@@ -10,6 +10,14 @@ import { BankAccount, Transaction } from '../types';
 const router = Router();
 
 /**
+ * Converte timestamp em milissegundos para formato ISO string (para TIMESTAMPTZ do PostgreSQL)
+ */
+function toISOString(timestamp: number | undefined): string | null {
+  if (!timestamp) return null;
+  return new Date(timestamp).toISOString();
+}
+
+/**
  * GET /api/bank/available
  * Lista os bancos disponíveis para conexão
  */
@@ -170,14 +178,14 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
           currency: bankAccount.currency,
           access_token: bankAccount.access_token,
           refresh_token: bankAccount.refresh_token,
-          token_expires_at: bankAccount.token_expires_at,
+          token_expires_at: toISOString(bankAccount.token_expires_at),
           consent_id: bankAccount.consent_id,
-          consent_expires_at: bankAccount.consent_expires_at,
-          connected_at: bankAccount.connected_at,
+          consent_expires_at: toISOString(bankAccount.consent_expires_at),
+          connected_at: toISOString(bankAccount.connected_at),
           status: bankAccount.status,
           provider_account_id: bankAccount.provider_account_id,
-          created_at: bankAccount.created_at,
-          updated_at: bankAccount.updated_at,
+          created_at: toISOString(bankAccount.created_at),
+          updated_at: toISOString(bankAccount.updated_at),
         });
 
       if (insertError) {
@@ -259,7 +267,10 @@ router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, re
     // Atualizar last_sync_at
     await supabase
       .from('bank_accounts')
-      .update({ last_sync_at: Date.now(), updated_at: Date.now() })
+      .update({
+        last_sync_at: toISOString(Date.now()),
+        updated_at: toISOString(Date.now())
+      })
       .eq('id', accountId);
 
     res.json({
@@ -387,7 +398,7 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
           id: transaction.id,
           account_id: transaction.account_id,
           transaction_id: transaction.transaction_id,
-          date: transaction.date,
+          date: transaction.date, // BIGINT - manter em ms
           amount: transaction.amount,
           currency: transaction.currency,
           description: transaction.description,
@@ -397,8 +408,8 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
           balance_after: transaction.balance_after,
           reference: transaction.reference,
           status: transaction.status,
-          created_at: transaction.created_at,
-          updated_at: transaction.updated_at,
+          created_at: toISOString(transaction.created_at), // TIMESTAMPTZ - converter
+          updated_at: toISOString(transaction.updated_at), // TIMESTAMPTZ - converter
         });
 
       if (!insertError) {

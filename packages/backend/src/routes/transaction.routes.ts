@@ -7,6 +7,14 @@ import { Transaction } from '../types';
 const router = Router();
 
 /**
+ * Converte timestamp em milissegundos para formato ISO string (para TIMESTAMPTZ do PostgreSQL)
+ */
+function toISOString(timestamp: number | undefined): string | null {
+  if (!timestamp) return null;
+  return new Date(timestamp).toISOString();
+}
+
+/**
  * GET /api/transactions
  * Lista transações com filtros opcionais
  */
@@ -127,7 +135,7 @@ router.patch('/:id/category', authMiddleware, async (req: Request, res: Response
     // Atualizar categoria
     const { data: updated, error: updateError } = await supabase
       .from('transactions')
-      .update({ category, updated_at: Date.now() })
+      .update({ category, updated_at: toISOString(Date.now()) })
       .eq('id', id)
       .select()
       .single();
@@ -193,7 +201,7 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
       if (transaction.category !== categorization.category) {
         const { error: updateError } = await supabase
           .from('transactions')
-          .update({ category: categorization.category, updated_at: Date.now() })
+          .update({ category: categorization.category, updated_at: toISOString(Date.now()) })
           .eq('id', transaction.id);
 
         if (!updateError) {

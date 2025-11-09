@@ -9,6 +9,14 @@ import { BankAccount, Transaction } from '../../types';
  * Simula conexão bancária e gera dados fictícios realistas
  */
 
+/**
+ * Converte timestamp em milissegundos para formato ISO string (para TIMESTAMPTZ do PostgreSQL)
+ */
+function toISOString(timestamp: number | undefined): string | null {
+  if (!timestamp) return null;
+  return new Date(timestamp).toISOString();
+}
+
 interface MockBankData {
   name: string;
   accountNumber: string;
@@ -186,14 +194,14 @@ export async function createMockBankAccount(
       currency: bankAccount.currency,
       access_token: bankAccount.access_token,
       refresh_token: bankAccount.refresh_token,
-      token_expires_at: bankAccount.token_expires_at,
+      token_expires_at: toISOString(bankAccount.token_expires_at),
       consent_id: bankAccount.consent_id,
-      consent_expires_at: bankAccount.consent_expires_at,
-      connected_at: bankAccount.connected_at,
+      consent_expires_at: toISOString(bankAccount.consent_expires_at),
+      connected_at: toISOString(bankAccount.connected_at),
       status: bankAccount.status,
       provider_account_id: bankAccount.provider_account_id,
-      created_at: bankAccount.created_at,
-      updated_at: bankAccount.updated_at,
+      created_at: toISOString(bankAccount.created_at),
+      updated_at: toISOString(bankAccount.updated_at),
     });
 
   if (accountError) {
@@ -213,7 +221,7 @@ export async function createMockBankAccount(
     id: tx.id,
     account_id: tx.account_id,
     transaction_id: tx.transaction_id,
-    date: tx.date,
+    date: tx.date, // BIGINT - manter em ms
     amount: tx.amount,
     currency: tx.currency,
     description: tx.description,
@@ -223,8 +231,8 @@ export async function createMockBankAccount(
     balance_after: tx.balance_after,
     reference: tx.reference,
     status: tx.status,
-    created_at: tx.created_at,
-    updated_at: tx.updated_at,
+    created_at: toISOString(tx.created_at), // TIMESTAMPTZ - converter para ISO
+    updated_at: toISOString(tx.updated_at), // TIMESTAMPTZ - converter para ISO
   }));
 
   console.log('[Mock] 📝 Attempting to insert transactions...');
