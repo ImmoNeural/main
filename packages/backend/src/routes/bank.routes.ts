@@ -83,6 +83,10 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
     // Verificar se é modo demo
     if (state.startsWith('DEMO_')) {
       console.log('[Bank] 🎭 Processing DEMO MODE callback');
+      console.log('[Bank] user_id:', user_id);
+      console.log('[Bank] code:', code);
+      console.log('[Bank] state:', state);
+      console.log('[Bank] bank_name:', bank_name);
 
       // Extrair bank_id do state: DEMO_341_1234567890
       const parts = state.split('_');
@@ -90,22 +94,30 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
 
       console.log('[Bank] Creating mock account for bank_id:', bank_id, 'bank_name:', bank_name);
 
-      // Criar conta fictícia com transações
-      const { account, transactions } = await createMockBankAccount(user_id, bank_id, bank_name);
+      try {
+        // Criar conta fictícia com transações
+        const { account, transactions } = await createMockBankAccount(user_id, bank_id, bank_name);
 
-      console.log(`[Bank] ✅ Demo account created with ${transactions.length} transactions`);
+        console.log(`[Bank] ✅ Demo account created with ${transactions.length} transactions`);
 
-      return res.json({
-        success: true,
-        demo_mode: true,
-        accounts: [{
-          id: account.id,
-          bank_name: account.bank_name,
-          account_number: account.account_number,
-          balance: account.balance,
-          currency: account.currency,
-        }],
-      });
+        return res.json({
+          success: true,
+          demo_mode: true,
+          accounts: [{
+            id: account.id,
+            bank_name: account.bank_name,
+            account_number: account.account_number,
+            balance: account.balance,
+            currency: account.currency,
+          }],
+        });
+      } catch (mockError) {
+        console.error('[Bank] ❌ Error creating mock account:', mockError);
+        return res.status(500).json({
+          error: 'Erro ao criar conta demonstração',
+          details: mockError instanceof Error ? mockError.message : String(mockError)
+        });
+      }
     }
 
     // Modo real com Pluggy

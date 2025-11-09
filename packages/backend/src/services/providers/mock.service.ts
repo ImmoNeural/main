@@ -166,6 +166,13 @@ export async function createMockBankAccount(
   };
 
   // Salvar conta no banco de dados
+  console.log('[Mock] 📝 Attempting to insert bank account...');
+  console.log('[Mock] Account data:', {
+    id: bankAccount.id,
+    user_id: bankAccount.user_id,
+    bank_name: bankAccount.bank_name,
+  });
+
   const { error: accountError } = await supabase
     .from('bank_accounts')
     .insert({
@@ -190,12 +197,16 @@ export async function createMockBankAccount(
     });
 
   if (accountError) {
-    console.error('[Mock] Error inserting account:', accountError);
-    throw accountError;
+    console.error('[Mock] ❌ Error inserting account:', accountError);
+    console.error('[Mock] Error details:', JSON.stringify(accountError, null, 2));
+    throw new Error(`Failed to insert bank account: ${accountError.message}`);
   }
+
+  console.log('[Mock] ✅ Bank account inserted successfully');
 
   // Gerar e salvar transações
   const transactions = generateMockTransactions(accountId, bankName);
+  console.log(`[Mock] 📝 Generated ${transactions.length} mock transactions`);
 
   // Inserir todas as transações de uma vez
   const transactionsData = transactions.map((tx) => ({
@@ -216,13 +227,16 @@ export async function createMockBankAccount(
     updated_at: tx.updated_at,
   }));
 
+  console.log('[Mock] 📝 Attempting to insert transactions...');
+
   const { error: transactionsError } = await supabase
     .from('transactions')
     .insert(transactionsData);
 
   if (transactionsError) {
-    console.error('[Mock] Error inserting transactions:', transactionsError);
-    throw transactionsError;
+    console.error('[Mock] ❌ Error inserting transactions:', transactionsError);
+    console.error('[Mock] Error details:', JSON.stringify(transactionsError, null, 2));
+    throw new Error(`Failed to insert transactions: ${transactionsError.message}`);
   }
 
   console.log(`[Mock] ✅ Created mock account for ${mockData.name} with ${transactions.length} transactions`);
