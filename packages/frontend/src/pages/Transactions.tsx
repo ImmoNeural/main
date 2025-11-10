@@ -1,8 +1,173 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, X } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
+
+interface SimilarTransactionsModalProps {
+  isOpen: boolean;
+  transaction: Transaction | null;
+  similarTransactions: Transaction[];
+  selectedCategory: string;
+  onClose: () => void;
+  onApply: (transactionIds: string[]) => void;
+}
+
+const SimilarTransactionsModal = ({
+  isOpen,
+  transaction,
+  similarTransactions,
+  selectedCategory,
+  onClose,
+  onApply,
+}: SimilarTransactionsModalProps) => {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Selecionar todas por padrão
+      setSelectedIds(similarTransactions.map((t) => t.id));
+    } else {
+      setSelectedIds([]);
+    }
+  }, [isOpen, similarTransactions]);
+
+  if (!isOpen || !transaction) return null;
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(value);
+  };
+
+  const handleToggle = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === similarTransactions.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(similarTransactions.map((t) => t.id));
+    }
+  };
+
+  const totalAmount = similarTransactions
+    .filter((t) => selectedIds.includes(t.id))
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Transações Similares Encontradas
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Encontramos {similarTransactions.length} transação(ões) similar(es) a:{' '}
+              <span className="font-semibold">{transaction.merchant || transaction.description}</span>
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              Deseja aplicar a categoria{' '}
+              <span className="font-semibold text-primary-600">{selectedCategory}</span> para todas?
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-4">
+            {/* Select All */}
+            <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.length === similarTransactions.length}
+                  onChange={handleSelectAll}
+                  className="w-5 h-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                />
+                <span className="font-medium text-gray-900">
+                  Selecionar todas ({similarTransactions.length})
+                </span>
+              </label>
+              <div className="text-sm text-gray-600">
+                Total selecionado:{' '}
+                <span className="font-semibold text-gray-900">
+                  {formatCurrency(totalAmount)}
+                </span>
+              </div>
+            </div>
+
+            {/* Transaction List */}
+            {similarTransactions.map((trans) => (
+              <label
+                key={trans.id}
+                className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(trans.id)}
+                  onChange={() => handleToggle(trans.id)}
+                  className="w-5 h-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {trans.merchant || trans.description}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(trans.date), 'dd/MM/yyyy')}
+                      </p>
+                      {trans.category && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Categoria atual: {trans.category}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`text-sm font-semibold ${
+                        trans.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {trans.type === 'credit' ? '+' : '-'}
+                      {formatCurrency(Math.abs(trans.amount))}
+                    </span>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <button onClick={onClose} className="btn-secondary">
+            Cancelar
+          </button>
+          <button
+            onClick={() => onApply(selectedIds)}
+            disabled={selectedIds.length === 0}
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Aplicar a {selectedIds.length} transação(ões)
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -10,6 +175,16 @@ const Transactions = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    transaction: Transaction | null;
+    similarTransactions: Transaction[];
+    newCategory: string;
+  }>({
+    transaction: null,
+    similarTransactions: [],
+    newCategory: '',
+  });
 
   useEffect(() => {
     loadData();
@@ -51,15 +226,61 @@ const Transactions = () => {
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
     try {
+      // Primeiro, atualizar a transação atual
       await transactionApi.updateCategory(transactionId, newCategory);
       setTransactions((prev) =>
         prev.map((t) =>
           t.id === transactionId ? { ...t, category: newCategory } : t
         )
       );
+
+      // Depois, buscar transações similares
+      const similarRes = await transactionApi.findSimilar(transactionId);
+
+      if (similarRes.data.count > 0) {
+        // Abrir modal se houver transações similares
+        setModalData({
+          transaction: similarRes.data.transaction,
+          similarTransactions: similarRes.data.similar,
+          newCategory,
+        });
+        setIsModalOpen(true);
+      }
     } catch (error) {
       console.error('Error updating category:', error);
     }
+  };
+
+  const handleApplySimilar = async (transactionIds: string[]) => {
+    try {
+      if (transactionIds.length === 0) {
+        setIsModalOpen(false);
+        return;
+      }
+
+      // Atualizar múltiplas transações
+      await transactionApi.bulkUpdateCategory(transactionIds, modalData.newCategory);
+
+      // Atualizar state local
+      setTransactions((prev) =>
+        prev.map((t) =>
+          transactionIds.includes(t.id) ? { ...t, category: modalData.newCategory } : t
+        )
+      );
+
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error applying category to similar transactions:', error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalData({
+      transaction: null,
+      similarTransactions: [],
+      newCategory: '',
+    });
   };
 
   const exportToCSV = () => {
@@ -217,6 +438,16 @@ const Transactions = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal de Transações Similares */}
+      <SimilarTransactionsModal
+        isOpen={isModalOpen}
+        transaction={modalData.transaction}
+        similarTransactions={modalData.similarTransactions}
+        selectedCategory={modalData.newCategory}
+        onClose={handleCloseModal}
+        onApply={handleApplySimilar}
+      />
     </div>
   );
 };

@@ -147,7 +147,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Transporte',
     subcategory: 'Apps de Transporte',
-    keywords: ['corrida', 'viagem', 'transporte'],
+    keywords: ['corrida', 'trip', 'ride'],
     brands: [
       'uber', '99', '99 pop', '99pop', 'cabify', 'indriver', 'lady driver',
       'vem de van', 'blablacar',
@@ -175,10 +175,10 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Transporte',
     subcategory: 'Transporte Público',
-    keywords: ['metro', 'trem', 'onibus', 'bilhete', 'recarga', 'cartao'],
+    keywords: ['metro', 'metrô', 'trem', 'onibus', 'ônibus'],
     brands: [
       'metro', 'metrô', 'cptm', 'sptrans', 'bilhete unico', 'bom',
-      'riocard', 'transporte', 'circular', 'move', 'tem',
+      'riocard', 'circular', 'move', 'tem', 'estaçao', 'estacao',
     ],
     icon: '🚌',
     color: '#3F51B5',
@@ -347,7 +347,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Viagens',
     subcategory: 'Aéreo e Turismo',
-    keywords: ['viagem', 'passagem', 'hotel', 'hospedagem', 'turismo', 'aereo'],
+    keywords: ['viagem', 'passagem', 'hotel', 'hospedagem', 'turismo', 'aereo', 'voo', 'cia aerea'],
     brands: [
       'decolar', 'booking', 'airbnb', 'latam', 'gol', 'azul', 'voepass',
       '123 milhas', '123milhas', 'max milhas', 'maxmilhas', 'hurb',
@@ -355,7 +355,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     ],
     icon: '✈️',
     color: '#2196F3',
-    priority: 8,
+    priority: 9, // Aumentar prioridade para evitar conflito com Transporte
   },
 
   // 💰 RECEITAS - SALÁRIO
