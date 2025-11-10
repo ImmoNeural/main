@@ -336,7 +336,7 @@ const Dashboard = () => {
         <div className="xl:col-span-1">
           <div className="card h-full">
             <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Legenda dos Gráficos</h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+            <div className="space-y-2">
               {Array.from(allCategories).map((category) => (
                 <div key={category} className="flex items-center gap-3 py-1.5">
                   <span
@@ -357,7 +357,7 @@ const Dashboard = () => {
           {/* Weekly Bar Chart */}
           <div className="card">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
-              📊 Receitas vs Despesas Semanal
+              📊 Receitas vs Despesas Semanal (em Reais R$)
             </h2>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={weeklyChartData}>
@@ -440,7 +440,7 @@ const Dashboard = () => {
         {/* Top Categories */}
         <div className="card">
           <h2 className="text-lg font-bold text-gray-900 mb-2">
-            🏆 Top Categorias de Gastos
+            🏆 Top Categorias de Gastos (em Reais R$)
           </h2>
           <p className="text-sm text-gray-600 mb-2">
             Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
@@ -506,11 +506,23 @@ const Dashboard = () => {
                   className="w-6 h-6 rounded"
                   style={{ backgroundColor: categoryColorMap.get(selectedCategory) }}
                 />
-                📈 Evolução Mensal: {selectedCategory}
+                📈 Evolução Mensal: {selectedCategory} (em Reais R$)
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 mt-1 mb-3">
                 Análise detalhada dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
               </p>
+
+              {/* Legenda de cores */}
+              <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Legenda:</span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-4 h-4 rounded"
+                    style={{ backgroundColor: categoryColorMap.get(selectedCategory) }}
+                  />
+                  <span className="text-sm text-gray-600">{selectedCategory}</span>
+                </div>
+              </div>
             </div>
             <button
               onClick={() => setSelectedCategory(null)}
@@ -521,8 +533,8 @@ const Dashboard = () => {
             </button>
           </div>
 
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={getCategoryMonthlyData(selectedCategory)}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={getCategoryMonthlyData(selectedCategory)} barSize={50}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
                 dataKey="month"
