@@ -113,37 +113,42 @@ export function getAllCategoryColors(categories: string[]): Map<string, string> 
   const colorMap = new Map<string, string>();
   const usedColors = new Set<string>();
 
-  // Criar pool de cores disponíveis: primeiro as predefinidas, depois fallback
-  // Remover duplicatas imediatamente
-  const uniqueColors = Array.from(new Set([
-    ...Object.values(CATEGORY_COLORS),
-    ...FALLBACK_COLORS,
-  ]));
+  // Criar pool de cores disponíveis eliminando duplicatas
+  const uniqueColors = Array.from(new Set([...FALLBACK_COLORS]));
 
-  console.log(`Total de cores únicas disponíveis: ${uniqueColors.length}`);
-  console.log(`Total de categorias para colorir: ${categories.length}`);
+  console.log(`🎨 Total de cores únicas disponíveis: ${uniqueColors.length}`);
+  console.log(`📊 Total de entradas para colorir: ${categories.length}`);
+  console.log(`📝 Entradas:`, categories);
 
-  categories.forEach((category, index) => {
-    let color: string;
+  let colorIndex = 0;
 
-    // Primeiro, verificar se existe cor predefinida E se não está em uso
-    if (CATEGORY_COLORS[category] && !usedColors.has(CATEGORY_COLORS[category])) {
-      color = CATEGORY_COLORS[category];
-    } else if (CATEGORY_COLORS[category] && usedColors.has(CATEGORY_COLORS[category])) {
-      // Se a cor predefinida já está em uso, pegar próxima disponível
-      console.warn(`Cor predefinida para ${category} já em uso, usando cor alternativa`);
-      const availableColor = uniqueColors.find(c => !usedColors.has(c));
-      color = availableColor || `#${Math.floor(Math.random()*16777215).toString(16)}`;
-    } else {
-      // Procurar primeira cor não usada no pool
-      const availableColor = uniqueColors.find(c => !usedColors.has(c));
+  categories.forEach((category) => {
+    // Extrair nome base da categoria (remove sufixos _D, _R, _PIE)
+    const baseName = category.replace(/_D$|_R$|_PIE$/, '');
 
-      if (availableColor) {
-        color = availableColor;
+    // Tentar usar cor predefinida APENAS se não estiver em uso
+    let color: string | undefined;
+
+    if (CATEGORY_COLORS[baseName] && !usedColors.has(CATEGORY_COLORS[baseName])) {
+      color = CATEGORY_COLORS[baseName];
+      console.log(`✅ ${category} → ${color} (predefinida)`);
+    }
+
+    // Se não tem cor predefinida OU já está em uso, pegar próxima do pool
+    if (!color) {
+      // Procurar próxima cor não usada
+      while (colorIndex < uniqueColors.length && usedColors.has(uniqueColors[colorIndex])) {
+        colorIndex++;
+      }
+
+      if (colorIndex < uniqueColors.length) {
+        color = uniqueColors[colorIndex];
+        colorIndex++;
+        console.log(`🔵 ${category} → ${color} (pool #${colorIndex})`);
       } else {
-        // Fallback final: gerar cor aleatória se esgotar as 120+ cores
-        console.error('TODAS as cores foram usadas! Gerando cor aleatória.');
-        color = `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
+        // Fallback: gerar cor aleatória
+        console.error(`⚠️ ESGOTOU as ${uniqueColors.length} cores! Gerando aleatória para ${category}`);
+        color = `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
       }
     }
 
@@ -151,11 +156,15 @@ export function getAllCategoryColors(categories: string[]): Map<string, string> 
     usedColors.add(color);
   });
 
-  // Verificar se há duplicatas (não deveria haver)
+  // Verificação final de duplicatas
   const colorsUsed = Array.from(colorMap.values());
   const uniqueColorsUsed = new Set(colorsUsed);
+
   if (colorsUsed.length !== uniqueColorsUsed.size) {
-    console.error('ERRO: Cores duplicadas detectadas!');
+    console.error('❌ ERRO CRÍTICO: Cores duplicadas detectadas!');
+    console.error('Mapa de cores:', Array.from(colorMap.entries()));
+  } else {
+    console.log(`✅ Sucesso! ${colorsUsed.length} cores únicas atribuídas sem duplicatas`);
   }
 
   return colorMap;

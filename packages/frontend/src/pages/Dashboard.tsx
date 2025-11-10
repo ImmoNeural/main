@@ -67,16 +67,25 @@ const Dashboard = () => {
     );
   }
 
-  // Obter todas as categorias únicas (despesas + receitas do weekly E do category stats)
-  const allCategories = new Set<string>();
-  weeklyStats.forEach((week) => {
-    week.expenses.byCategory.forEach((cat) => allCategories.add(cat.category));
-    week.income.byCategory.forEach((cat) => allCategories.add(cat.category));
-  });
-  // Adicionar categorias do gráfico pizza também
-  categoryStats.forEach((cat) => allCategories.add(cat.category));
+  // Obter TODAS as entradas únicas com seus tipos (D ou R)
+  // Isso garante que "Investimentos (D)" e "Investimentos (R)" terão cores DIFERENTES
+  const allUniqueEntries = new Set<string>();
 
-  const categoryColorMap = getAllCategoryColors(Array.from(allCategories));
+  // Adicionar despesas com sufixo _D
+  weeklyStats.forEach((week) => {
+    week.expenses.byCategory.forEach((cat) => allUniqueEntries.add(`${cat.category}_D`));
+  });
+
+  // Adicionar receitas com sufixo _R
+  weeklyStats.forEach((week) => {
+    week.income.byCategory.forEach((cat) => allUniqueEntries.add(`${cat.category}_R`));
+  });
+
+  // Adicionar categorias do gráfico pizza (são apenas despesas)
+  categoryStats.forEach((cat) => allUniqueEntries.add(`${cat.category}_PIE`));
+
+  // Criar mapa de cores único para cada entrada
+  const categoryColorMap = getAllCategoryColors(Array.from(allUniqueEntries));
 
   // Preparar dados para o gráfico semanal
   const weeklyChartData = weeklyStats.map((week) => {
@@ -285,7 +294,7 @@ const Dashboard = () => {
                   key={`expense_${category}`}
                   dataKey={`expense_${category}`}
                   stackId="expenses"
-                  fill={categoryColorMap.get(category) || '#ef4444'}
+                  fill={categoryColorMap.get(`${category}_D`) || '#ef4444'}
                   name={`${category} (D)`}
                 />
               ))}
@@ -296,7 +305,7 @@ const Dashboard = () => {
                   key={`income_${category}`}
                   dataKey={`income_${category}`}
                   stackId="income"
-                  fill={categoryColorMap.get(category) || '#10b981'}
+                  fill={categoryColorMap.get(`${category}_R`) || '#10b981'}
                   name={`${category} (R)`}
                 />
               ))}
@@ -321,7 +330,7 @@ const Dashboard = () => {
                 {categoryStats.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={categoryColorMap.get(entry.category) || '#94a3b8'}
+                    fill={categoryColorMap.get(`${entry.category}_PIE`) || '#94a3b8'}
                   />
                 ))}
               </Pie>
