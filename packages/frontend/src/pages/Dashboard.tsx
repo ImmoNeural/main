@@ -13,7 +13,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { format } from 'date-fns';
@@ -34,10 +33,13 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
+      // Calcular número de semanas baseado no período
+      const weeks = Math.ceil(period / 7);
+
       const [statsRes, categoryRes, weeklyRes, transactionsRes] = await Promise.all([
         dashboardApi.getStats(period),
         dashboardApi.getExpensesByCategory(period),
-        dashboardApi.getWeeklyStats(12), // 12 semanas
+        dashboardApi.getWeeklyStats(weeks),
         transactionApi.getTransactions({ limit: 10 }),
       ]);
 
@@ -59,6 +61,10 @@ const Dashboard = () => {
     }).format(value);
   };
 
+  const getMonthsCount = () => {
+    return Math.round(period / 30);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -67,25 +73,16 @@ const Dashboard = () => {
     );
   }
 
-  // Obter TODAS as entradas únicas com seus tipos (D ou R)
-  // Isso garante que "Investimentos (D)" e "Investimentos (R)" terão cores DIFERENTES
-  const allUniqueEntries = new Set<string>();
-
-  // Adicionar despesas com sufixo _D
+  // Coletar TODAS as categorias únicas (despesas + receitas)
+  const allCategories = new Set<string>();
   weeklyStats.forEach((week) => {
-    week.expenses.byCategory.forEach((cat) => allUniqueEntries.add(`${cat.category}_D`));
+    week.expenses.byCategory.forEach((cat) => allCategories.add(cat.category));
+    week.income.byCategory.forEach((cat) => allCategories.add(cat.category));
   });
+  categoryStats.forEach((cat) => allCategories.add(cat.category));
 
-  // Adicionar receitas com sufixo _R
-  weeklyStats.forEach((week) => {
-    week.income.byCategory.forEach((cat) => allUniqueEntries.add(`${cat.category}_R`));
-  });
-
-  // Adicionar categorias do gráfico pizza (são apenas despesas)
-  categoryStats.forEach((cat) => allUniqueEntries.add(`${cat.category}_PIE`));
-
-  // Criar mapa de cores único para cada entrada
-  const categoryColorMap = getAllCategoryColors(Array.from(allUniqueEntries));
+  // Criar mapa de cores ÚNICO para todas as categorias
+  const categoryColorMap = getAllCategoryColors(Array.from(allCategories));
 
   // Preparar dados para o gráfico semanal
   const weeklyChartData = weeklyStats.map((week) => {
@@ -95,12 +92,12 @@ const Dashboard = () => {
       dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
     };
 
-    // Adicionar despesas por categoria
+    // Adicionar despesas
     week.expenses.byCategory.forEach((cat) => {
       data[`expense_${cat.category}`] = cat.amount;
     });
 
-    // Adicionar receitas por categoria
+    // Adicionar receitas
     week.income.byCategory.forEach((cat) => {
       data[`income_${cat.category}`] = cat.amount;
     });
@@ -108,7 +105,7 @@ const Dashboard = () => {
     return data;
   });
 
-  // Criar arrays de categorias para despesas e receitas
+  // Categorias de despesas e receitas
   const expenseCategories = Array.from(
     new Set(weeklyStats.flatMap((w) => w.expenses.byCategory.map((c) => c.category)))
   );
@@ -121,27 +118,27 @@ const Dashboard = () => {
     if (active && payload && payload.length) {
       const weekData = weeklyChartData.find((d) => d.week === label);
       return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900">{weekData?.weekLabel}</p>
-          <p className="text-sm text-gray-600 mb-2">{weekData?.dateRange}</p>
+        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl">
+          <p className="font-bold text-gray-900 text-base">{weekData?.weekLabel}</p>
+          <p className="text-sm text-gray-600 mb-3">{weekData?.dateRange}</p>
 
           {payload.filter((p: any) => p.dataKey.startsWith('expense_')).length > 0 && (
             <>
-              <p className="font-semibold text-red-600 mt-2">Despesas:</p>
+              <p className="font-bold text-red-600 mt-2 mb-1">💸 Despesas:</p>
               {payload
                 .filter((p: any) => p.dataKey.startsWith('expense_'))
                 .map((entry: any, index: number) => {
                   const category = entry.dataKey.replace('expense_', '');
                   return (
-                    <div key={index} className="flex justify-between items-center gap-4">
-                      <span className="flex items-center gap-1">
+                    <div key={index} className="flex justify-between items-center gap-6 py-1">
+                      <span className="flex items-center gap-2">
                         <span
-                          className="w-3 h-3 rounded-sm"
+                          className="w-4 h-4 rounded"
                           style={{ backgroundColor: entry.color }}
                         />
-                        {category}:
+                        <span className="text-sm">{category}</span>
                       </span>
-                      <span className="font-medium">{formatCurrency(entry.value)}</span>
+                      <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
                     </div>
                   );
                 })}
@@ -150,21 +147,21 @@ const Dashboard = () => {
 
           {payload.filter((p: any) => p.dataKey.startsWith('income_')).length > 0 && (
             <>
-              <p className="font-semibold text-green-600 mt-2">Receitas:</p>
+              <p className="font-bold text-green-600 mt-3 mb-1">💰 Receitas:</p>
               {payload
                 .filter((p: any) => p.dataKey.startsWith('income_'))
                 .map((entry: any, index: number) => {
                   const category = entry.dataKey.replace('income_', '');
                   return (
-                    <div key={index} className="flex justify-between items-center gap-4">
-                      <span className="flex items-center gap-1">
+                    <div key={index} className="flex justify-between items-center gap-6 py-1">
+                      <span className="flex items-center gap-2">
                         <span
-                          className="w-3 h-3 rounded-sm"
+                          className="w-4 h-4 rounded"
                           style={{ backgroundColor: entry.color }}
                         />
-                        {category}:
+                        <span className="text-sm">{category}</span>
                       </span>
-                      <span className="font-medium">{formatCurrency(entry.value)}</span>
+                      <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
                     </div>
                   );
                 })}
@@ -181,10 +178,13 @@ const Dashboard = () => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900">{data.category}</p>
-          <p className="text-sm text-gray-600">
-            {formatCurrency(data.total)} ({data.percentage.toFixed(1)}%)
+        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl">
+          <p className="font-bold text-gray-900 text-base">{data.category}</p>
+          <p className="text-sm text-gray-600 mt-1">
+            {formatCurrency(data.total)}
+          </p>
+          <p className="text-lg font-bold text-primary-600 mt-2">
+            {data.percentage.toFixed(1)}%
           </p>
         </div>
       );
@@ -193,36 +193,36 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <select
             value={period}
             onChange={(e) => setPeriod(Number(e.target.value))}
-            className="input"
+            className="input text-sm sm:text-base"
           >
             <option value={30}>Últimos 30 dias</option>
             <option value={60}>Últimos 60 dias</option>
             <option value={90}>Últimos 90 dias</option>
           </select>
-          <button onClick={loadDashboardData} className="btn-primary">
+          <button onClick={loadDashboardData} className="btn-primary p-2 sm:p-3">
             <RefreshCw className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Saldo Total</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
                 {formatCurrency(stats?.total_balance || 0)}
               </p>
             </div>
@@ -232,11 +232,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Receitas</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
                 {formatCurrency(stats?.total_income || 0)}
               </p>
             </div>
@@ -246,11 +246,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Despesas</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
                 {formatCurrency(stats?.total_expenses || 0)}
               </p>
             </div>
@@ -260,11 +260,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Transações</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
                 {stats?.transaction_count || 0}
               </p>
             </div>
@@ -275,90 +275,149 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Weekly Stats Chart */}
-        <div className="card">
-          <h2 className="text-lg font-semibold mb-4">Receitas vs Despesas (12 semanas)</h2>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={weeklyChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="week" />
-              <YAxis />
-              <Tooltip content={<CustomWeeklyTooltip />} />
-              <Legend />
-
-              {/* Barras de despesas empilhadas */}
-              {expenseCategories.map((category) => (
-                <Bar
-                  key={`expense_${category}`}
-                  dataKey={`expense_${category}`}
-                  stackId="expenses"
-                  fill={categoryColorMap.get(`${category}_D`) || '#ef4444'}
-                  name={`${category} (D)`}
-                />
+      {/* Charts Section with Unified Legend */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Unified Legend */}
+        <div className="xl:col-span-1">
+          <div className="card h-full">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Legenda dos Gráficos</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+              {Array.from(allCategories).map((category) => (
+                <div key={category} className="flex items-center gap-3 py-1.5">
+                  <span
+                    className="w-5 h-5 rounded flex-shrink-0"
+                    style={{ backgroundColor: categoryColorMap.get(category) }}
+                  />
+                  <span className="text-sm font-medium text-gray-700 truncate">
+                    {category}
+                  </span>
+                </div>
               ))}
-
-              {/* Barras de receitas empilhadas */}
-              {incomeCategories.map((category) => (
-                <Bar
-                  key={`income_${category}`}
-                  dataKey={`income_${category}`}
-                  stackId="income"
-                  fill={categoryColorMap.get(`${category}_R`) || '#10b981'}
-                  name={`${category} (R)`}
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
+            </div>
+          </div>
         </div>
 
-        {/* Category Pie Chart */}
-        <div className="card">
-          <h2 className="text-lg font-semibold mb-4">Despesas por Categoria</h2>
-          <ResponsiveContainer width="100%" height={480}>
-            <PieChart>
-              <Pie
-                data={categoryStats}
-                dataKey="total"
-                nameKey="category"
-                cx="50%"
-                cy="45%"
-                outerRadius={100}
-                label={false}
-              >
-                {categoryStats.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={categoryColorMap.get(`${entry.category}_PIE`) || '#94a3b8'}
+        {/* Charts */}
+        <div className="xl:col-span-3 space-y-6">
+          {/* Weekly Bar Chart */}
+          <div className="card">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              📊 Receitas vs Despesas Semanal
+            </h2>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={weeklyChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="week"
+                  tick={{ fontSize: 12 }}
+                  stroke="#888"
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  stroke="#888"
+                />
+                <Tooltip content={<CustomWeeklyTooltip />} />
+
+                {/* Barras de despesas */}
+                {expenseCategories.map((category) => (
+                  <Bar
+                    key={`expense_${category}`}
+                    dataKey={`expense_${category}`}
+                    stackId="expenses"
+                    fill={categoryColorMap.get(category) || '#ef4444'}
+                    isAnimationActive={true}
+                    animationDuration={800}
+                    animationBegin={0}
                   />
                 ))}
-              </Pie>
-              <Tooltip content={<CustomPieTooltip />} />
-              <Legend
-                verticalAlign="bottom"
-                height={80}
-                wrapperStyle={{ paddingTop: '20px' }}
-                formatter={(value) => {
-                  const data = categoryStats.find((c) => c.category === value);
-                  return `${value} (${data?.percentage.toFixed(1)}%)`;
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+
+                {/* Barras de receitas */}
+                {incomeCategories.map((category) => (
+                  <Bar
+                    key={`income_${category}`}
+                    dataKey={`income_${category}`}
+                    stackId="income"
+                    fill={categoryColorMap.get(category) || '#10b981'}
+                    isAnimationActive={true}
+                    animationDuration={800}
+                    animationBegin={0}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Pie Chart */}
+          <div className="card">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              🍰 Despesas por Categoria em %
+            </h2>
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={categoryStats}
+                  dataKey="total"
+                  nameKey="category"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={120}
+                  label={false}
+                  isAnimationActive={true}
+                  animationDuration={800}
+                  animationBegin={0}
+                >
+                  {categoryStats.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={categoryColorMap.get(entry.category) || '#94a3b8'}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomPieTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      {/* Category Bar Chart */}
+      {/* Top Categories */}
       <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Top Categorias de Gastos</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">
+          🏆 Top Categorias de Gastos
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
+        </p>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={categoryStats.slice(0, 8)}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="category" />
-            <YAxis />
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
-            <Bar dataKey="total" fill="#0ea5e9" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis
+              dataKey="category"
+              tick={{ fontSize: 11 }}
+              angle={-45}
+              textAnchor="end"
+              height={100}
+            />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip
+              formatter={(value: number) => formatCurrency(value / getMonthsCount())}
+              labelFormatter={(label) => `${label} (média mensal)`}
+            />
+            <Bar
+              dataKey="total"
+              fill="#3b82f6"
+              isAnimationActive={true}
+              animationDuration={800}
+              animationBegin={0}
+              radius={[8, 8, 0, 0]}
+            >
+              {categoryStats.slice(0, 8).map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={categoryColorMap.get(entry.category) || '#3b82f6'}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -366,22 +425,25 @@ const Dashboard = () => {
       {/* Recent Transactions */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Transações Recentes</h2>
-          <Link to="/transactions" className="text-primary-600 hover:text-primary-700 flex items-center">
+          <h2 className="text-lg font-bold text-gray-900">💳 Transações Recentes</h2>
+          <Link
+            to="/transactions"
+            className="text-primary-600 hover:text-primary-700 flex items-center text-sm font-semibold"
+          >
             Ver todas
             <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {recentTransactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all hover:shadow gap-2"
             >
               <div className="flex items-center space-x-3">
-                <div className="text-2xl">{getCategoryIcon(transaction.category)}</div>
-                <div>
-                  <p className="font-medium text-gray-900">
+                <div className="text-2xl flex-shrink-0">{getCategoryIcon(transaction.category)}</div>
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 truncate">
                     {transaction.merchant || transaction.description}
                   </p>
                   <p className="text-sm text-gray-500">
@@ -389,9 +451,9 @@ const Dashboard = () => {
                   </p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right sm:ml-4">
                 <p
-                  className={`font-semibold ${
+                  className={`font-bold text-lg ${
                     transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
                   }`}
                 >
@@ -422,6 +484,7 @@ const getCategoryIcon = (category?: string) => {
     'Transferência': '💸',
     'Educação': '📚',
     'Casa': '🏠',
+    'Investimentos': '📈',
     'Outros': '📊',
   };
   return icons[category || 'Outros'] || '📊';
