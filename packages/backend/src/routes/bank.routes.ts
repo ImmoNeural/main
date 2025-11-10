@@ -348,7 +348,7 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
   const transactions = await openBankingService.getTransactions(
     accessToken,
     account.provider_account_id, // Usar o ID da conta no provedor
-    90
+    365 // ✅ Buscar 1 ANO de histórico!
   );
 
   console.log(`[Sync] Found ${transactions.length} transactions`);
