@@ -325,6 +325,8 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
     const endDate = new Date();
     const startDate = subDays(endDate, weeksNum * 7);
 
+    console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., weeks=${weeksNum}, date range=${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`);
+
     // Buscar todas as transações no período
     const { data: transactions, error } = await supabase
       .from('transactions')
@@ -388,6 +390,7 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
         return a.weekNumber - b.weekNumber;
       });
 
+    console.log(`✅ Returning ${result.length} weeks (found ${transactions?.length || 0} transactions in period)`);
     res.json(result);
   } catch (error) {
     console.error('Error fetching weekly stats:', error);

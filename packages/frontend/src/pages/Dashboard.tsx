@@ -38,6 +38,7 @@ const Dashboard = () => {
     try {
       // Calcular número de semanas baseado no período
       const weeks = Math.ceil(period / 7);
+      console.log(`📊 Loading dashboard data: period=${period} days, weeks=${weeks}`);
 
       const [statsRes, categoryRes, weeklyRes, transactionsRes] = await Promise.all([
         dashboardApi.getStats(period),
@@ -45,6 +46,8 @@ const Dashboard = () => {
         dashboardApi.getWeeklyStats(weeks),
         transactionApi.getTransactions({ limit: 10 }),
       ]);
+
+      console.log(`📈 Received weekly stats: ${weeklyRes.data.length} weeks`);
 
       setStats(statsRes.data);
       setCategoryStats(categoryRes.data);
