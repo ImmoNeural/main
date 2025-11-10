@@ -67,12 +67,15 @@ const Dashboard = () => {
     );
   }
 
-  // Obter todas as categorias únicas (despesas + receitas)
+  // Obter todas as categorias únicas (despesas + receitas do weekly E do category stats)
   const allCategories = new Set<string>();
   weeklyStats.forEach((week) => {
     week.expenses.byCategory.forEach((cat) => allCategories.add(cat.category));
     week.income.byCategory.forEach((cat) => allCategories.add(cat.category));
   });
+  // Adicionar categorias do gráfico pizza também
+  categoryStats.forEach((cat) => allCategories.add(cat.category));
+
   const categoryColorMap = getAllCategoryColors(Array.from(allCategories));
 
   // Preparar dados para o gráfico semanal
@@ -304,28 +307,29 @@ const Dashboard = () => {
         {/* Category Pie Chart */}
         <div className="card">
           <h2 className="text-lg font-semibold mb-4">Despesas por Categoria</h2>
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={480}>
             <PieChart>
               <Pie
                 data={categoryStats}
                 dataKey="total"
                 nameKey="category"
                 cx="50%"
-                cy="50%"
+                cy="45%"
                 outerRadius={100}
                 label={false}
               >
                 {categoryStats.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={getCategoryColor(entry.category, index)}
+                    fill={categoryColorMap.get(entry.category) || '#94a3b8'}
                   />
                 ))}
               </Pie>
               <Tooltip content={<CustomPieTooltip />} />
               <Legend
                 verticalAlign="bottom"
-                height={36}
+                height={80}
+                wrapperStyle={{ paddingTop: '20px' }}
                 formatter={(value) => {
                   const data = categoryStats.find((c) => c.category === value);
                   return `${value} (${data?.percentage.toFixed(1)}%)`;
