@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
-import type { DashboardStats, CategoryStats, DailyStats, Transaction } from '../types';
+import type { DashboardStats, CategoryStats, DailyStats, MonthlyStats, Transaction } from '../types';
 import {
   LineChart,
   Line,
@@ -24,6 +24,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(90);
@@ -35,16 +36,19 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsRes, categoryRes, dailyRes, transactionsRes] = await Promise.all([
+      const monthsToFetch = period >= 365 ? 12 : Math.ceil(period / 30);
+      const [statsRes, categoryRes, dailyRes, monthlyRes, transactionsRes] = await Promise.all([
         dashboardApi.getStats(period),
         dashboardApi.getExpensesByCategory(period),
         dashboardApi.getDailyStats(30),
+        dashboardApi.getMonthlyComparison(monthsToFetch),
         transactionApi.getTransactions({ limit: 10 }),
       ]);
 
       setStats(statsRes.data);
       setCategoryStats(categoryRes.data);
       setDailyStats(dailyRes.data);
+      setMonthlyStats(monthlyRes.data);
       setRecentTransactions(transactionsRes.data.transactions);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -54,9 +58,9 @@ const Dashboard = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -87,6 +91,8 @@ const Dashboard = () => {
             <option value={30}>Últimos 30 dias</option>
             <option value={60}>Últimos 60 dias</option>
             <option value={90}>Últimos 90 dias</option>
+            <option value={180}>Últimos 180 dias</option>
+            <option value={365}>Últimos 365 dias</option>
           </select>
           <button onClick={loadDashboardData} className="btn-primary">
             <RefreshCw className="w-5 h-5" />
@@ -226,6 +232,53 @@ const Dashboard = () => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Monthly Evolution Chart */}
+      {monthlyStats.length > 0 && (
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-4">📈 Evolução Mensal: Transferências</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={monthlyStats}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="month"
+                tickFormatter={(month) => {
+                  const monthNames: Record<string, string> = {
+                    '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
+                    '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Ago',
+                    '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
+                  };
+                  // Formato esperado: "2025-01" ou "Jan 2025"
+                  const parts = month.split('-');
+                  if (parts.length === 2) {
+                    return monthNames[parts[1]] || month;
+                  }
+                  return month.split(' ')[0] || month;
+                }}
+              />
+              <YAxis />
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value)}
+                labelFormatter={(month) => {
+                  const monthNames: Record<string, string> = {
+                    '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+                    '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+                    '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+                  };
+                  const parts = month.split('-');
+                  if (parts.length === 2) {
+                    return `${monthNames[parts[1]]} ${parts[0]}`;
+                  }
+                  return month;
+                }}
+              />
+              <Legend />
+              <Bar dataKey="income" fill="#10b981" name="Receitas" />
+              <Bar dataKey="expenses" fill="#ef4444" name="Despesas" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Recent Transactions */}
       <div className="card">

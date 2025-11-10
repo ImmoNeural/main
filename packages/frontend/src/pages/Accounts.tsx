@@ -56,9 +56,9 @@ const Accounts = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BRL',
     }).format(value);
   };
 
