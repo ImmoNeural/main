@@ -30,7 +30,7 @@ const Dashboard = () => {
   }>>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState(90);
+  const [period, setPeriod] = useState(365);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
