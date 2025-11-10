@@ -17,7 +17,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { format } from 'date-fns';
-import { getAllCategoryColors, getCategoryColor } from '../utils/colors';
+import { getAllCategoryColors } from '../utils/colors';
 
 const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
