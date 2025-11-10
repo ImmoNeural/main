@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { startOfDay, subDays, format } from 'date-fns';
+import { startOfDay, subDays, format, startOfWeek, endOfWeek, getWeek, getYear } from 'date-fns';
 import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth.supabase.middleware';
-import { DashboardStats, CategoryStats, DailyStats } from '../types';
+import { DashboardStats, CategoryStats, DailyStats, WeeklyStats } from '../types';
 
 const router = Router();
 
@@ -309,6 +309,89 @@ router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Resp
   } catch (error) {
     console.error('Error fetching monthly comparison:', error);
     res.status(500).json({ error: 'Failed to fetch monthly comparison' });
+  }
+});
+
+/**
+ * GET /api/dashboard/weekly-stats
+ * Retorna estatísticas semanais com categorias
+ */
+router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { weeks = '12' } = req.query; // Padrão: 12 semanas (~ 3 meses)
+
+    const weeksNum = Number(weeks);
+    const endDate = new Date();
+    const startDate = subDays(endDate, weeksNum * 7);
+
+    // Buscar todas as transações no período
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('date, amount, type, category, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .gte('date', startDate.getTime())
+      .lte('date', endDate.getTime())
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+
+    // Agrupar por semana
+    const weeklyMap = new Map<string, WeeklyStats>();
+
+    transactions?.forEach((trans) => {
+      const transDate = new Date(trans.date);
+      const weekStart = startOfWeek(transDate, { weekStartsOn: 0 }); // Domingo
+      const weekEnd = endOfWeek(transDate, { weekStartsOn: 0 });
+      const weekNumber = getWeek(transDate, { weekStartsOn: 0 });
+      const year = getYear(transDate);
+      const weekKey = `${year}-W${weekNumber}`;
+
+      if (!weeklyMap.has(weekKey)) {
+        weeklyMap.set(weekKey, {
+          weekNumber,
+          year,
+          startDate: format(weekStart, 'yyyy-MM-dd'),
+          endDate: format(weekEnd, 'yyyy-MM-dd'),
+          expenses: { total: 0, byCategory: [] },
+          income: { total: 0, byCategory: [] },
+        });
+      }
+
+      const week = weeklyMap.get(weekKey)!;
+      const category = trans.category || 'Outros';
+      const amount = Math.abs(trans.amount);
+
+      if (trans.type === 'debit') {
+        week.expenses.total += amount;
+        const catIndex = week.expenses.byCategory.findIndex(c => c.category === category);
+        if (catIndex >= 0) {
+          week.expenses.byCategory[catIndex].amount += amount;
+        } else {
+          week.expenses.byCategory.push({ category, amount });
+        }
+      } else {
+        week.income.total += amount;
+        const catIndex = week.income.byCategory.findIndex(c => c.category === category);
+        if (catIndex >= 0) {
+          week.income.byCategory[catIndex].amount += amount;
+        } else {
+          week.income.byCategory.push({ category, amount });
+        }
+      }
+    });
+
+    // Converter para array e ordenar por data
+    const result: WeeklyStats[] = Array.from(weeklyMap.values())
+      .sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.weekNumber - b.weekNumber;
+      });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching weekly stats:', error);
+    res.status(500).json({ error: 'Failed to fetch weekly stats' });
   }
 });
 

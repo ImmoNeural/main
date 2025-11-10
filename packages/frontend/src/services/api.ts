@@ -140,6 +140,11 @@ export const dashboardApi = {
     api.get<MonthlyStats[]>('/dashboard/monthly-comparison', {
       params: { months },
     }),
+
+  getWeeklyStats: (weeks?: number) =>
+    api.get<import('../types').WeeklyStats[]>('/dashboard/weekly-stats', {
+      params: { weeks },
+    }),
 };
 
 export default api;

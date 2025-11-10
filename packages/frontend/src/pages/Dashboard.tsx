@@ -2,10 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
-import type { DashboardStats, CategoryStats, DailyStats, Transaction } from '../types';
+import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -19,11 +17,12 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { format } from 'date-fns';
+import { getAllCategoryColors, getCategoryColor } from '../utils/colors';
 
 const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
-  const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyStats[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(90);
@@ -35,16 +34,16 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsRes, categoryRes, dailyRes, transactionsRes] = await Promise.all([
+      const [statsRes, categoryRes, weeklyRes, transactionsRes] = await Promise.all([
         dashboardApi.getStats(period),
         dashboardApi.getExpensesByCategory(period),
-        dashboardApi.getDailyStats(30),
+        dashboardApi.getWeeklyStats(12), // 12 semanas
         transactionApi.getTransactions({ limit: 10 }),
       ]);
 
       setStats(statsRes.data);
       setCategoryStats(categoryRes.data);
-      setDailyStats(dailyRes.data);
+      setWeeklyStats(weeklyRes.data);
       setRecentTransactions(transactionsRes.data.transactions);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -54,9 +53,9 @@ const Dashboard = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -68,7 +67,118 @@ const Dashboard = () => {
     );
   }
 
-  const COLORS = ['#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
+  // Obter todas as categorias únicas (despesas + receitas)
+  const allCategories = new Set<string>();
+  weeklyStats.forEach((week) => {
+    week.expenses.byCategory.forEach((cat) => allCategories.add(cat.category));
+    week.income.byCategory.forEach((cat) => allCategories.add(cat.category));
+  });
+  const categoryColorMap = getAllCategoryColors(Array.from(allCategories));
+
+  // Preparar dados para o gráfico semanal
+  const weeklyChartData = weeklyStats.map((week) => {
+    const data: any = {
+      week: `S${week.weekNumber}`,
+      weekLabel: `Semana ${week.weekNumber}/${week.year}`,
+      dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
+    };
+
+    // Adicionar despesas por categoria
+    week.expenses.byCategory.forEach((cat) => {
+      data[`expense_${cat.category}`] = cat.amount;
+    });
+
+    // Adicionar receitas por categoria
+    week.income.byCategory.forEach((cat) => {
+      data[`income_${cat.category}`] = cat.amount;
+    });
+
+    return data;
+  });
+
+  // Criar arrays de categorias para despesas e receitas
+  const expenseCategories = Array.from(
+    new Set(weeklyStats.flatMap((w) => w.expenses.byCategory.map((c) => c.category)))
+  );
+  const incomeCategories = Array.from(
+    new Set(weeklyStats.flatMap((w) => w.income.byCategory.map((c) => c.category)))
+  );
+
+  // Tooltip customizado para o gráfico semanal
+  const CustomWeeklyTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const weekData = weeklyChartData.find((d) => d.week === label);
+      return (
+        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-semibold text-gray-900">{weekData?.weekLabel}</p>
+          <p className="text-sm text-gray-600 mb-2">{weekData?.dateRange}</p>
+
+          {payload.filter((p: any) => p.dataKey.startsWith('expense_')).length > 0 && (
+            <>
+              <p className="font-semibold text-red-600 mt-2">Despesas:</p>
+              {payload
+                .filter((p: any) => p.dataKey.startsWith('expense_'))
+                .map((entry: any, index: number) => {
+                  const category = entry.dataKey.replace('expense_', '');
+                  return (
+                    <div key={index} className="flex justify-between items-center gap-4">
+                      <span className="flex items-center gap-1">
+                        <span
+                          className="w-3 h-3 rounded-sm"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        {category}:
+                      </span>
+                      <span className="font-medium">{formatCurrency(entry.value)}</span>
+                    </div>
+                  );
+                })}
+            </>
+          )}
+
+          {payload.filter((p: any) => p.dataKey.startsWith('income_')).length > 0 && (
+            <>
+              <p className="font-semibold text-green-600 mt-2">Receitas:</p>
+              {payload
+                .filter((p: any) => p.dataKey.startsWith('income_'))
+                .map((entry: any, index: number) => {
+                  const category = entry.dataKey.replace('income_', '');
+                  return (
+                    <div key={index} className="flex justify-between items-center gap-4">
+                      <span className="flex items-center gap-1">
+                        <span
+                          className="w-3 h-3 rounded-sm"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        {category}:
+                      </span>
+                      <span className="font-medium">{formatCurrency(entry.value)}</span>
+                    </div>
+                  );
+                })}
+            </>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Tooltip customizado para o gráfico pizza
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-semibold text-gray-900">{data.category}</p>
+          <p className="text-sm text-gray-600">
+            {formatCurrency(data.total)} ({data.percentage.toFixed(1)}%)
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -155,44 +265,46 @@ const Dashboard = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Stats Chart */}
+        {/* Weekly Stats Chart */}
         <div className="card">
-          <h2 className="text-lg font-semibold mb-4">Receitas vs Despesas (30 dias)</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dailyStats}>
+          <h2 className="text-lg font-semibold mb-4">Receitas vs Despesas (12 semanas)</h2>
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={weeklyChartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => format(new Date(date), 'dd/MM')}
-              />
+              <XAxis dataKey="week" />
               <YAxis />
-              <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
-                labelFormatter={(date) => format(new Date(date), 'dd/MM/yyyy')}
-              />
+              <Tooltip content={<CustomWeeklyTooltip />} />
               <Legend />
-              <Line
-                type="monotone"
-                dataKey="income"
-                stroke="#10b981"
-                name="Receitas"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="expenses"
-                stroke="#ef4444"
-                name="Despesas"
-                strokeWidth={2}
-              />
-            </LineChart>
+
+              {/* Barras de despesas empilhadas */}
+              {expenseCategories.map((category) => (
+                <Bar
+                  key={`expense_${category}`}
+                  dataKey={`expense_${category}`}
+                  stackId="expenses"
+                  fill={categoryColorMap.get(category) || '#ef4444'}
+                  name={`${category} (D)`}
+                />
+              ))}
+
+              {/* Barras de receitas empilhadas */}
+              {incomeCategories.map((category) => (
+                <Bar
+                  key={`income_${category}`}
+                  dataKey={`income_${category}`}
+                  stackId="income"
+                  fill={categoryColorMap.get(category) || '#10b981'}
+                  name={`${category} (R)`}
+                />
+              ))}
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Category Pie Chart */}
         <div className="card">
           <h2 className="text-lg font-semibold mb-4">Despesas por Categoria</h2>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={400}>
             <PieChart>
               <Pie
                 data={categoryStats}
@@ -201,13 +313,24 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={(entry) => `${entry.category} (${entry.percentage.toFixed(1)}%)`}
+                label={false}
               >
-                {categoryStats.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {categoryStats.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={getCategoryColor(entry.category, index)}
+                  />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Tooltip content={<CustomPieTooltip />} />
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value, entry: any) => {
+                  const data = categoryStats.find((c) => c.category === value);
+                  return `${value} (${data?.percentage.toFixed(1)}%)`;
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -274,6 +397,7 @@ const Dashboard = () => {
 const getCategoryIcon = (category?: string) => {
   const icons: Record<string, string> = {
     'Supermercado': '🛒',
+    'Alimentação': '🍽️',
     'Restaurantes': '🍽️',
     'Transporte': '🚗',
     'Compras': '🛍️',
@@ -282,6 +406,7 @@ const getCategoryIcon = (category?: string) => {
     'Contas': '📄',
     'Salário': '💰',
     'Transferências': '💸',
+    'Transferência': '💸',
     'Educação': '📚',
     'Casa': '🏠',
     'Outros': '📊',
