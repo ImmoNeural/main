@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, X, MousePointerClick } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import {
@@ -14,6 +14,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from 'recharts';
 import { format } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
@@ -25,6 +27,7 @@ const Dashboard = () => {
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(90);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -113,6 +116,19 @@ const Dashboard = () => {
     new Set(weeklyStats.flatMap((w) => w.income.byCategory.map((c) => c.category)))
   );
 
+  // Preparar dados para o detalhamento da categoria selecionada
+  const getCategoryWeeklyData = (category: string) => {
+    return weeklyStats.map((week) => {
+      const categoryExpense = week.expenses.byCategory.find((c) => c.category === category);
+      return {
+        week: `S${week.weekNumber}`,
+        weekLabel: `Semana ${week.weekNumber}/${week.year}`,
+        dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
+        amount: categoryExpense?.amount || 0,
+      };
+    });
+  };
+
   // Tooltip customizado para o gráfico semanal
   const CustomWeeklyTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -192,6 +208,22 @@ const Dashboard = () => {
     return null;
   };
 
+  // Tooltip customizado para o detalhamento de categoria
+  const CustomCategoryTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl">
+          <p className="font-bold text-gray-900">{payload[0].payload.weekLabel}</p>
+          <p className="text-sm text-gray-600 mb-2">{payload[0].payload.dateRange}</p>
+          <p className="font-bold text-red-600 text-lg">
+            {formatCurrency(payload[0].value)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
@@ -209,6 +241,8 @@ const Dashboard = () => {
             <option value={30}>Últimos 30 dias</option>
             <option value={60}>Últimos 60 dias</option>
             <option value={90}>Últimos 90 dias</option>
+            <option value={120}>Últimos 120 dias</option>
+            <option value={365}>Último ano</option>
           </select>
           <button onClick={loadDashboardData} className="btn-primary p-2 sm:p-3">
             <RefreshCw className="w-5 h-5" />
@@ -385,9 +419,15 @@ const Dashboard = () => {
         <h2 className="text-lg font-bold text-gray-900 mb-2">
           🏆 Top Categorias de Gastos
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 mb-2">
           Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
         </p>
+        <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <MousePointerClick className="w-5 h-5 text-blue-600 flex-shrink-0" />
+          <p className="text-sm text-blue-800">
+            <span className="font-bold">Dica:</span> Clique em qualquer barra para ver o detalhamento semanal da categoria!
+          </p>
+        </div>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={categoryStats.slice(0, 8)}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -410,6 +450,17 @@ const Dashboard = () => {
               animationDuration={800}
               animationBegin={0}
               radius={[8, 8, 0, 0]}
+              cursor="pointer"
+              onClick={(data) => {
+                setSelectedCategory(data.category);
+                // Scroll suave até a seção de detalhamento
+                setTimeout(() => {
+                  document.getElementById('category-detail')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                  });
+                }, 100);
+              }}
             >
               {categoryStats.slice(0, 8).map((entry, index) => (
                 <Cell
@@ -421,6 +472,91 @@ const Dashboard = () => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Category Weekly Detail */}
+      {selectedCategory && (
+        <div id="category-detail" className="card border-2 border-primary-500 shadow-xl">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span
+                  className="w-6 h-6 rounded"
+                  style={{ backgroundColor: categoryColorMap.get(selectedCategory) }}
+                />
+                📈 Evolução Semanal: {selectedCategory}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Análise detalhada dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Fechar"
+            >
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={getCategoryWeeklyData(selectedCategory)}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="week"
+                tick={{ fontSize: 12 }}
+                stroke="#888"
+              />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                stroke="#888"
+              />
+              <Tooltip content={<CustomCategoryTooltip />} />
+              <Line
+                type="monotone"
+                dataKey="amount"
+                stroke={categoryColorMap.get(selectedCategory) || '#3b82f6'}
+                strokeWidth={3}
+                dot={{
+                  fill: categoryColorMap.get(selectedCategory) || '#3b82f6',
+                  r: 6
+                }}
+                activeDot={{ r: 8 }}
+                isAnimationActive={true}
+                animationDuration={1000}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t">
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Total no Período</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">
+                {formatCurrency(
+                  getCategoryWeeklyData(selectedCategory).reduce((sum, w) => sum + w.amount, 0)
+                )}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Média Semanal</p>
+              <p className="text-xl font-bold text-blue-600 mt-1">
+                {formatCurrency(
+                  getCategoryWeeklyData(selectedCategory).reduce((sum, w) => sum + w.amount, 0) /
+                  getCategoryWeeklyData(selectedCategory).length
+                )}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Maior Gasto</p>
+              <p className="text-xl font-bold text-red-600 mt-1">
+                {formatCurrency(
+                  Math.max(...getCategoryWeeklyData(selectedCategory).map(w => w.amount))
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Transactions */}
       <div className="card">
