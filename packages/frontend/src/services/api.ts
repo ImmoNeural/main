@@ -119,6 +119,19 @@ export const transactionApi = {
 
   recategorizeAll: () =>
     api.post<{ success: boolean; total: number; updated: number; unchanged: number; message: string }>('/transactions/recategorize'),
+
+  findSimilar: (description: string, merchant?: string, excludeId?: string) =>
+    api.post<{
+      similar: Array<Transaction & { matchScore: number; matchedWords: string[] }>;
+      keywords: string[];
+      totalMatches: number;
+    }>('/transactions/find-similar', { description, merchant, excludeId }),
+
+  bulkUpdateCategory: (transactionIds: string[], newCategory: string) =>
+    api.post<{ success: boolean; updated: number; category: string; message: string }>(
+      '/transactions/bulk-update-category',
+      { transactionIds, newCategory }
+    ),
 };
 
 // Dashboard APIs

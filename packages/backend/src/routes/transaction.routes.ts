@@ -228,4 +228,130 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
   }
 });
 
+/**
+ * POST /api/transactions/find-similar
+ * Busca transações similares com base em palavras-chave
+ */
+router.post('/find-similar', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { description, merchant, excludeId } = req.body;
+
+    if (!description && !merchant) {
+      return res.status(400).json({ error: 'Descrição ou merchant obrigatório' });
+    }
+
+    // Extrair palavras-chave (mínimo 3 caracteres)
+    const text = `${description || ''} ${merchant || ''}`.toLowerCase();
+    const words = text
+      .split(/\s+/)
+      .filter(word => word.length >= 3)
+      .filter(word => !['the', 'and', 'for', 'with', 'from', 'que', 'para', 'com', 'por'].includes(word));
+
+    if (words.length === 0) {
+      return res.json({ similar: [] });
+    }
+
+    // Buscar todas as transações do usuário
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('*, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id);
+
+    if (error) {
+      throw error;
+    }
+
+    // Filtrar transações similares
+    const similar = (transactions || [])
+      .filter(t => t.id !== excludeId)
+      .map(t => {
+        const tText = `${t.description || ''} ${t.merchant || ''}`.toLowerCase();
+        const matchedWords = words.filter(word => tText.includes(word));
+        const score = matchedWords.length / words.length;
+
+        return {
+          ...t,
+          matchScore: score,
+          matchedWords: matchedWords,
+        };
+      })
+      .filter(t => t.matchScore >= 0.4) // Mínimo 40% de match
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 20); // Máximo 20 resultados
+
+    console.log(`🔍 Encontradas ${similar.length} transações similares a: "${description || merchant}"`);
+
+    res.json({
+      similar,
+      keywords: words,
+      totalMatches: similar.length,
+    });
+  } catch (error) {
+    console.error('Error finding similar transactions:', error);
+    res.status(500).json({ error: 'Erro ao buscar transações similares' });
+  }
+});
+
+/**
+ * POST /api/transactions/bulk-update-category
+ * Atualiza categoria de múltiplas transações
+ */
+router.post('/bulk-update-category', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { transactionIds, newCategory } = req.body;
+
+    if (!transactionIds || !Array.isArray(transactionIds) || transactionIds.length === 0) {
+      return res.status(400).json({ error: 'IDs de transações obrigatórios' });
+    }
+
+    if (!newCategory) {
+      return res.status(400).json({ error: 'Nova categoria obrigatória' });
+    }
+
+    console.log(`📝 Atualizando categoria de ${transactionIds.length} transações para: ${newCategory}`);
+
+    // Verificar se todas as transações pertencem ao usuário
+    const { data: userTransactions, error: checkError } = await supabase
+      .from('transactions')
+      .select('id, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .in('id', transactionIds);
+
+    if (checkError) {
+      throw checkError;
+    }
+
+    if (!userTransactions || userTransactions.length !== transactionIds.length) {
+      return res.status(403).json({ error: 'Algumas transações não pertencem ao usuário' });
+    }
+
+    // Atualizar em lote
+    const { error: updateError } = await supabase
+      .from('transactions')
+      .update({
+        category: newCategory,
+        updated_at: toISOString(Date.now()),
+      })
+      .in('id', transactionIds);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    console.log(`✅ ${transactionIds.length} transações atualizadas com sucesso`);
+
+    res.json({
+      success: true,
+      updated: transactionIds.length,
+      category: newCategory,
+      message: `${transactionIds.length} transações foram recategorizadas para "${newCategory}"`,
+    });
+  } catch (error) {
+    console.error('Error bulk updating category:', error);
+    res.status(500).json({ error: 'Erro ao atualizar transações em lote' });
+  }
+});
+
 export default router;
