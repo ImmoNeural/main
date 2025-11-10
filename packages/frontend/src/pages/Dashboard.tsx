@@ -241,7 +241,7 @@ const Dashboard = () => {
             <option value={30}>Últimos 30 dias</option>
             <option value={60}>Últimos 60 dias</option>
             <option value={90}>Últimos 90 dias</option>
-            <option value={120}>Últimos 120 dias</option>
+            <option value={180}>Últimos 180 dias</option>
             <option value={365}>Último ano</option>
           </select>
           <button onClick={loadDashboardData} className="btn-primary p-2 sm:p-3">
@@ -499,7 +499,7 @@ const Dashboard = () => {
           </div>
 
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={getCategoryWeeklyData(selectedCategory)}>
+            <BarChart data={getCategoryWeeklyData(selectedCategory)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
                 dataKey="week"
@@ -511,20 +511,14 @@ const Dashboard = () => {
                 stroke="#888"
               />
               <Tooltip content={<CustomCategoryTooltip />} />
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="amount"
-                stroke={categoryColorMap.get(selectedCategory) || '#3b82f6'}
-                strokeWidth={3}
-                dot={{
-                  fill: categoryColorMap.get(selectedCategory) || '#3b82f6',
-                  r: 6
-                }}
-                activeDot={{ r: 8 }}
+                fill={categoryColorMap.get(selectedCategory) || '#3b82f6'}
+                radius={[8, 8, 0, 0]}
                 isAnimationActive={true}
                 animationDuration={1000}
               />
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
 
           {/* Summary Stats */}
