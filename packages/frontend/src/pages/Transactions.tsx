@@ -302,7 +302,7 @@ const Transactions = () => {
                 return (
                   <tr
                     key={transaction.id}
-                    className={`hover:bg-gray-50 ${isUncategorized ? 'bg-pink-50' : ''}`}
+                    className={`hover:bg-gray-50 ${isUncategorized ? 'bg-purple-50' : ''}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {format(new Date(transaction.date), 'dd/MM/yyyy')}

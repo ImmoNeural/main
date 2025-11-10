@@ -59,6 +59,8 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       // Fast Food
       'mcdonalds', 'mc donalds', 'bobs', 'girafas', 'habbibs', 'subway', 'burger king',
       'burguer king', 'kfc', 'pizza hut', 'dominos', 'spoleto', 'china in box',
+      // Hamburguerias Premium
+      'madero', 'madero container', 'outback', 'fogo de chao', 'barbecue', 'grill',
       // Cafeterias
       'starbucks', 'coffee', 'cafe', 'rei do mate', 'ofner', 'kopenhagen',
       // Padarias
@@ -66,7 +68,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     ],
     icon: '🍕',
     color: '#FF5722',
-    priority: 7,
+    priority: 8, // Aumentar prioridade para evitar conflitos
   },
 
   // 🏥 SAÚDE - ODONTOLOGIA
@@ -304,11 +306,26 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
+  // 📚 LIVRARIAS E PAPELARIAS
+  {
+    category: 'Educação',
+    subcategory: 'Livrarias e Papelarias',
+    keywords: ['livraria', 'livros', 'papelaria', 'leitura', 'editora', 'livreiro'],
+    brands: [
+      'livraria', 'saraiva', 'cultura', 'fnac', 'travessa', 'curitiba',
+      'leitura', 'nobel', 'payot', 'argumento', 'megastore', 'da vila',
+      'kalunga', 'papelaria', 'loja do livro', 'amazon livros', 'estante virtual',
+    ],
+    icon: '📚',
+    color: '#5C6BC0',
+    priority: 9, // Alta prioridade para evitar conflitos
+  },
+
   // 🏫 EDUCAÇÃO
   {
     category: 'Educação',
     subcategory: 'Cursos e Ensino',
-    keywords: ['escola', 'faculdade', 'universidade', 'curso', 'aula', 'ensino'],
+    keywords: ['escola', 'faculdade', 'universidade', 'curso', 'aula', 'ensino', 'matricula'],
     brands: [
       'estacio', 'unip', 'anhanguera', 'unopar', 'usp', 'unicamp',
       'kumon', 'ccaa', 'wizard', 'fisk', 'cultura inglesa', 'udemy',
@@ -555,7 +572,7 @@ class CategorizationService {
       category: 'Definir Categoria',
       subcategory: 'Aguardando Classificação',
       icon: '❓',
-      color: '#FFC1E3', // Rosa claro
+      color: '#E9D5FF', // Roxo clarinho
       confidence: 0,
       matchedBy: 'nenhum match encontrado',
     };
