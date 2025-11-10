@@ -331,19 +331,38 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
     const startDate = subDays(endDate, weeksNum * 7);
 
     console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., weeks=${weeksNum}, date range=${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`);
+    console.log(`🔍 Start timestamp: ${startDate.getTime()}, End timestamp: ${endDate.getTime()}`);
+
+    // Primeiro, verificar TOTAL de transações do usuário (sem filtro de data)
+    const { count: totalCount } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('bank_accounts.user_id', user_id);
+
+    console.log(`📈 Total transactions in database for user: ${totalCount}`);
 
     // Buscar todas as transações no período
     // IMPORTANTE: Sem limit() para buscar TODAS as transações do período
-    const { data: transactions, error } = await supabase
+    const { data: transactions, error, count } = await supabase
       .from('transactions')
-      .select('date, amount, type, category, bank_accounts!inner(user_id)')
+      .select('date, amount, type, category, bank_accounts!inner(user_id)', { count: 'exact' })
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate.getTime())
       .lte('date', endDate.getTime())
       .order('date', { ascending: true })
       .limit(10000); // Limite alto para garantir que pegue todos os dados
 
-    if (error) throw error;
+    console.log(`📊 Query returned ${transactions?.length || 0} transactions (count: ${count})`);
+
+    if (error) {
+      console.error('❌ Error fetching transactions:', error);
+      throw error;
+    }
+
+    if (transactions && transactions.length > 0) {
+      console.log(`📅 First transaction date: ${format(new Date(transactions[0].date), 'yyyy-MM-dd')}`);
+      console.log(`📅 Last transaction date: ${format(new Date(transactions[transactions.length - 1].date), 'yyyy-MM-dd')}`);
+    }
 
     // Agrupar por semana
     const weeklyMap = new Map<string, WeeklyStats>();
@@ -398,6 +417,13 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
       });
 
     console.log(`✅ Returning ${result.length} weeks (found ${transactions?.length || 0} transactions in period)`);
+    console.log(`📊 Weeks: ${result.map(w => `${w.year}-W${w.weekNumber}`).join(', ')}`);
+
+    if (result.length < weeksNum) {
+      console.warn(`⚠️ WARNING: Expected ${weeksNum} weeks but only got ${result.length} weeks!`);
+      console.warn(`⚠️ This means there are NO transactions for ${weeksNum - result.length} weeks in the period`);
+    }
+
     res.json(result);
   } catch (error) {
     console.error('Error fetching weekly stats:', error);
