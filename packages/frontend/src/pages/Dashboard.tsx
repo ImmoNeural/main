@@ -130,16 +130,21 @@ const Dashboard = () => {
     // Agrupar dados semanais em mensais
     const monthlyMap = new Map<string, { amount: number; monthLabel: string }>();
 
-    weeklyStats.forEach((week) => {
+    console.log(`📅 Processando dados mensais para categoria: ${category}`);
+
+    weeklyStats.forEach((week, index) => {
       const categoryExpense = week.expenses.byCategory.find((c) => c.category === category);
       const amount = categoryExpense?.amount || 0;
 
-      // week.startDate vem como string ISO do backend
-      const weekDate = new Date(week.startDate);
+      // week.startDate vem como string ISO do backend (yyyy-MM-dd)
+      console.log(`Week ${index}: startDate="${week.startDate}", amount=${amount}`);
+
+      const weekDate = new Date(week.startDate + 'T12:00:00'); // Adicionar horário do meio-dia para evitar problemas de timezone
       const monthKey = format(weekDate, 'yyyy-MM');
-      // Capitalizar primeira letra: Jan, Fev, Mar, etc.
       const monthLabel = format(weekDate, 'MMM/yy', { locale: ptBR })
         .replace(/^\w/, (c) => c.toUpperCase());
+
+      console.log(`  → Convertido para: ${weekDate.toISOString()} → ${monthKey} (${monthLabel})`);
 
       if (monthlyMap.has(monthKey)) {
         monthlyMap.get(monthKey)!.amount += amount;
@@ -149,13 +154,16 @@ const Dashboard = () => {
     });
 
     // Converter para array e ordenar por data
-    return Array.from(monthlyMap.entries())
+    const result = Array.from(monthlyMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([monthKey, data]) => ({
         month: data.monthLabel,
         monthKey,
         amount: data.amount,
       }));
+
+    console.log(`📊 Resultado final:`, result);
+    return result;
   };
 
   // Tooltip customizado para o gráfico semanal
