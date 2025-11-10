@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { getAllCategoryColors } from '../utils/colors';
 
 const Dashboard = () => {
@@ -117,17 +118,37 @@ const Dashboard = () => {
     new Set(weeklyStats.flatMap((w) => w.income.byCategory.map((c) => c.category)))
   );
 
-  // Preparar dados para o detalhamento da categoria selecionada
-  const getCategoryWeeklyData = (category: string) => {
-    return weeklyStats.map((week) => {
+  // Preparar dados mensais para o detalhamento da categoria selecionada
+  const getCategoryMonthlyData = (category: string) => {
+    // Agrupar dados semanais em mensais
+    const monthlyMap = new Map<string, { amount: number; monthLabel: string }>();
+
+    weeklyStats.forEach((week) => {
       const categoryExpense = week.expenses.byCategory.find((c) => c.category === category);
-      return {
-        week: `S${week.weekNumber}`,
-        weekLabel: `Semana ${week.weekNumber}/${week.year}`,
-        dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
-        amount: categoryExpense?.amount || 0,
-      };
+      const amount = categoryExpense?.amount || 0;
+
+      // Usar a data de início da semana para determinar o mês
+      const weekDate = new Date(week.startDate);
+      const monthKey = format(weekDate, 'yyyy-MM');
+      // Capitalizar primeira letra: Jan, Fev, Mar, etc.
+      const monthLabel = format(weekDate, 'MMM/yy', { locale: ptBR })
+        .replace(/^\w/, (c) => c.toUpperCase());
+
+      if (monthlyMap.has(monthKey)) {
+        monthlyMap.get(monthKey)!.amount += amount;
+      } else {
+        monthlyMap.set(monthKey, { amount, monthLabel });
+      }
     });
+
+    // Converter para array e ordenar por data
+    return Array.from(monthlyMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([monthKey, data]) => ({
+        month: data.monthLabel,
+        monthKey,
+        amount: data.amount,
+      }));
   };
 
   // Tooltip customizado para o gráfico semanal
@@ -209,14 +230,13 @@ const Dashboard = () => {
     return null;
   };
 
-  // Tooltip customizado para o detalhamento de categoria
+  // Tooltip customizado para o detalhamento de categoria mensal
   const CustomCategoryTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl">
-          <p className="font-bold text-gray-900">{payload[0].payload.weekLabel}</p>
-          <p className="text-sm text-gray-600 mb-2">{payload[0].payload.dateRange}</p>
-          <p className="font-bold text-red-600 text-lg">
+          <p className="font-bold text-gray-900">{payload[0].payload.month}</p>
+          <p className="font-bold text-red-600 text-lg mt-2">
             {formatCurrency(payload[0].value)}
           </p>
         </div>
@@ -484,7 +504,7 @@ const Dashboard = () => {
                   className="w-6 h-6 rounded"
                   style={{ backgroundColor: categoryColorMap.get(selectedCategory) }}
                 />
-                📈 Evolução Semanal: {selectedCategory}
+                📈 Evolução Mensal: {selectedCategory}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 Análise detalhada dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
@@ -500,10 +520,10 @@ const Dashboard = () => {
           </div>
 
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={getCategoryWeeklyData(selectedCategory)}>
+            <BarChart data={getCategoryMonthlyData(selectedCategory)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
-                dataKey="week"
+                dataKey="month"
                 tick={{ fontSize: 12 }}
                 stroke="#888"
               />
@@ -528,24 +548,28 @@ const Dashboard = () => {
               <p className="text-sm text-gray-600">Total no Período</p>
               <p className="text-xl font-bold text-gray-900 mt-1">
                 {formatCurrency(
-                  getCategoryWeeklyData(selectedCategory).reduce((sum, w) => sum + w.amount, 0)
+                  getCategoryMonthlyData(selectedCategory).reduce((sum, m) => sum + m.amount, 0)
                 )}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-600">Média Semanal</p>
+              <p className="text-sm text-gray-600">Média Mensal</p>
               <p className="text-xl font-bold text-blue-600 mt-1">
                 {formatCurrency(
-                  getCategoryWeeklyData(selectedCategory).reduce((sum, w) => sum + w.amount, 0) /
-                  getCategoryWeeklyData(selectedCategory).length
+                  getCategoryMonthlyData(selectedCategory).length > 0
+                    ? getCategoryMonthlyData(selectedCategory).reduce((sum, m) => sum + m.amount, 0) /
+                      getCategoryMonthlyData(selectedCategory).length
+                    : 0
                 )}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-600">Maior Gasto</p>
+              <p className="text-sm text-gray-600">Maior Gasto Mensal</p>
               <p className="text-xl font-bold text-red-600 mt-1">
                 {formatCurrency(
-                  Math.max(...getCategoryWeeklyData(selectedCategory).map(w => w.amount))
+                  getCategoryMonthlyData(selectedCategory).length > 0
+                    ? Math.max(...getCategoryMonthlyData(selectedCategory).map(m => m.amount))
+                    : 0
                 )}
               </p>
             </div>

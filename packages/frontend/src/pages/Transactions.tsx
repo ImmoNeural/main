@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Download, Sparkles, AlertCircle } from 'lucide-react';
+import { Search, Download, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 
@@ -10,6 +10,7 @@ const Transactions = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [isRecategorizing, setIsRecategorizing] = useState(false);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ const Transactions = () => {
         transactionApi.getTransactions({
           category: selectedCategory || undefined,
           type: selectedType || undefined,
-          limit: 100,
+          limit: 10000, // Buscar todas as transações
         }),
         transactionApi.getCategories(),
       ]);
@@ -35,19 +36,24 @@ const Transactions = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BRL',
     }).format(value);
   };
 
   const filteredTransactions = transactions.filter((transaction) => {
     const searchLower = search.toLowerCase();
-    return (
+    const matchesSearch =
       transaction.merchant?.toLowerCase().includes(searchLower) ||
       transaction.description?.toLowerCase().includes(searchLower) ||
-      transaction.category?.toLowerCase().includes(searchLower)
-    );
+      transaction.category?.toLowerCase().includes(searchLower);
+
+    const matchesMonth = selectedMonth
+      ? format(new Date(transaction.date), 'yyyy-MM') === selectedMonth
+      : true;
+
+    return matchesSearch && matchesMonth;
   });
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
@@ -110,6 +116,9 @@ const Transactions = () => {
           <p className="text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
         </div>
         <div className="flex space-x-3">
+          <button onClick={loadData} className="btn-primary p-3">
+            <RefreshCw className="w-5 h-5" />
+          </button>
           <button
             onClick={handleRecategorize}
             disabled={isRecategorizing}
@@ -127,7 +136,7 @@ const Transactions = () => {
 
       {/* Filters */}
       <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -139,6 +148,28 @@ const Transactions = () => {
               className="input pl-10"
             />
           </div>
+
+          {/* Month Filter */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="input"
+          >
+            <option value="">Todos os meses</option>
+            <option value="2025-01">Janeiro 2025</option>
+            <option value="2024-12">Dezembro 2024</option>
+            <option value="2024-11">Novembro 2024</option>
+            <option value="2024-10">Outubro 2024</option>
+            <option value="2024-09">Setembro 2024</option>
+            <option value="2024-08">Agosto 2024</option>
+            <option value="2024-07">Julho 2024</option>
+            <option value="2024-06">Junho 2024</option>
+            <option value="2024-05">Maio 2024</option>
+            <option value="2024-04">Abril 2024</option>
+            <option value="2024-03">Março 2024</option>
+            <option value="2024-02">Fevereiro 2024</option>
+            <option value="2024-01">Janeiro 2024</option>
+          </select>
 
           {/* Category Filter */}
           <select
