@@ -36,7 +36,8 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .select('amount, type, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lte('date', endDate)
+      .limit(10000); // Limite alto para garantir todos os dados
 
     if (transactionsError) throw transactionsError;
 
@@ -88,7 +89,8 @@ router.get('/expenses-by-category', authMiddleware, async (req: Request, res: Re
       .eq('bank_accounts.user_id', user_id)
       .eq('type', 'debit')
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lte('date', endDate)
+      .limit(10000); // Limite alto para garantir todos os dados
 
     if (error) throw error;
 
@@ -148,7 +150,8 @@ router.get('/daily-stats', authMiddleware, async (req: Request, res: Response) =
       .select('date, amount, type, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate)
-      .order('date', { ascending: true });
+      .order('date', { ascending: true })
+      .limit(10000); // Limite alto para garantir todos os dados
 
     if (error) throw error;
 
@@ -215,7 +218,8 @@ router.get('/top-merchants', authMiddleware, async (req: Request, res: Response)
       .not('merchant', 'is', null)
       .neq('merchant', '')
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lte('date', endDate)
+      .limit(10000); // Limite alto para garantir todos os dados
 
     if (error) throw error;
 
@@ -282,7 +286,8 @@ router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Resp
         .select('type, amount, bank_accounts!inner(user_id)')
         .eq('bank_accounts.user_id', user_id)
         .gte('date', startDate)
-        .lte('date', endDate);
+        .lte('date', endDate)
+        .limit(10000); // Limite alto para garantir todos os dados
 
       if (error) throw error;
 
@@ -328,13 +333,15 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
     console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., weeks=${weeksNum}, date range=${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`);
 
     // Buscar todas as transações no período
+    // IMPORTANTE: Sem limit() para buscar TODAS as transações do período
     const { data: transactions, error } = await supabase
       .from('transactions')
       .select('date, amount, type, category, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate.getTime())
       .lte('date', endDate.getTime())
-      .order('date', { ascending: true });
+      .order('date', { ascending: true })
+      .limit(10000); // Limite alto para garantir que pegue todos os dados
 
     if (error) throw error;
 
