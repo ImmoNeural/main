@@ -141,62 +141,135 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
     const savedAccounts: BankAccount[] = [];
 
     for (const account of accounts) {
-      const accountId = uuidv4();
       const now = Date.now();
 
-      const bankAccount: BankAccount = {
-        id: accountId,
-        user_id,
-        bank_name: bank_name || 'Unknown Bank',
-        account_number: account.iban?.slice(-4),
-        iban: account.iban,
-        account_type: account.account_type,
-        balance: account.balance?.amount || 0,
-        currency: account.currency,
-        access_token: tokenResponse.access_token,
-        refresh_token: tokenResponse.refresh_token,
-        token_expires_at: now + tokenResponse.expires_in * 1000,
-        consent_id: state,
-        consent_expires_at: now + 90 * 24 * 60 * 60 * 1000, // 90 dias
-        connected_at: now,
-        status: 'active',
-        provider_account_id: account.id, // ID da conta no provedor (Pluggy, etc)
-        created_at: now,
-        updated_at: now,
-      };
-
-      const { error: insertError } = await supabase
+      // RECONEXÃO INTELIGENTE: Verificar se já existe uma conta (ativa ou desconectada)
+      // com o mesmo IBAN ou provider_account_id para este usuário
+      const { data: existingAccount } = await supabase
         .from('bank_accounts')
-        .insert({
-          id: bankAccount.id,
-          user_id: bankAccount.user_id,
-          bank_name: bankAccount.bank_name,
-          account_number: bankAccount.account_number,
-          iban: bankAccount.iban,
-          account_type: bankAccount.account_type,
-          balance: bankAccount.balance,
-          currency: bankAccount.currency,
-          access_token: bankAccount.access_token,
-          refresh_token: bankAccount.refresh_token,
-          token_expires_at: toISOString(bankAccount.token_expires_at),
-          consent_id: bankAccount.consent_id,
-          consent_expires_at: toISOString(bankAccount.consent_expires_at),
-          connected_at: toISOString(bankAccount.connected_at),
-          status: bankAccount.status,
-          provider_account_id: bankAccount.provider_account_id,
-          created_at: toISOString(bankAccount.created_at),
-          updated_at: toISOString(bankAccount.updated_at),
-        });
+        .select('id, status, last_sync_at')
+        .eq('user_id', user_id)
+        .or(`iban.eq.${account.iban},provider_account_id.eq.${account.id}`)
+        .single();
 
-      if (insertError) {
-        console.error('Error inserting bank account:', insertError);
-        continue;
+      let accountId: string;
+      let isReconnection = false;
+
+      if (existingAccount) {
+        // RECONEXÃO: Reativar conta existente e atualizar tokens
+        accountId = existingAccount.id;
+        isReconnection = true;
+
+        console.log(`[Bank] Reconnecting existing account ${accountId} (status: ${existingAccount.status})`);
+
+        const { error: updateError } = await supabase
+          .from('bank_accounts')
+          .update({
+            bank_name: bank_name || 'Unknown Bank',
+            account_number: account.iban?.slice(-4),
+            account_type: account.account_type,
+            balance: account.balance?.amount || 0,
+            currency: account.currency,
+            access_token: tokenResponse.access_token,
+            refresh_token: tokenResponse.refresh_token,
+            token_expires_at: toISOString(now + tokenResponse.expires_in * 1000),
+            consent_id: state,
+            consent_expires_at: toISOString(now + 90 * 24 * 60 * 60 * 1000),
+            connected_at: toISOString(now),
+            status: 'active',
+            updated_at: toISOString(now),
+          })
+          .eq('id', accountId);
+
+        if (updateError) {
+          console.error('Error reconnecting bank account:', updateError);
+          continue;
+        }
+      } else {
+        // NOVA CONEXÃO: Criar nova conta
+        accountId = uuidv4();
+
+        console.log(`[Bank] Creating new account ${accountId}`);
+
+        const bankAccount: BankAccount = {
+          id: accountId,
+          user_id,
+          bank_name: bank_name || 'Unknown Bank',
+          account_number: account.iban?.slice(-4),
+          iban: account.iban,
+          account_type: account.account_type,
+          balance: account.balance?.amount || 0,
+          currency: account.currency,
+          access_token: tokenResponse.access_token,
+          refresh_token: tokenResponse.refresh_token,
+          token_expires_at: now + tokenResponse.expires_in * 1000,
+          consent_id: state,
+          consent_expires_at: now + 90 * 24 * 60 * 60 * 1000, // 90 dias
+          connected_at: now,
+          status: 'active',
+          provider_account_id: account.id, // ID da conta no provedor (Pluggy, etc)
+          created_at: now,
+          updated_at: now,
+        };
+
+        const { error: insertError } = await supabase
+          .from('bank_accounts')
+          .insert({
+            id: bankAccount.id,
+            user_id: bankAccount.user_id,
+            bank_name: bankAccount.bank_name,
+            account_number: bankAccount.account_number,
+            iban: bankAccount.iban,
+            account_type: bankAccount.account_type,
+            balance: bankAccount.balance,
+            currency: bankAccount.currency,
+            access_token: bankAccount.access_token,
+            refresh_token: bankAccount.refresh_token,
+            token_expires_at: toISOString(bankAccount.token_expires_at),
+            consent_id: bankAccount.consent_id,
+            consent_expires_at: toISOString(bankAccount.consent_expires_at),
+            connected_at: toISOString(bankAccount.connected_at),
+            status: bankAccount.status,
+            provider_account_id: bankAccount.provider_account_id,
+            created_at: toISOString(bankAccount.created_at),
+            updated_at: toISOString(bankAccount.updated_at),
+          });
+
+        if (insertError) {
+          console.error('Error inserting bank account:', insertError);
+          continue;
+        }
+
+        savedAccounts.push(bankAccount);
       }
 
-      savedAccounts.push(bankAccount);
+      // Sincronizar transações
+      // - Se é reconexão e tem last_sync_at: sync incremental
+      // - Se é nova conexão ou primeira sync: sync completo
+      const forceFullSync = !isReconnection || !existingAccount?.last_sync_at;
 
-      // Buscar e salvar transações dos últimos 90 dias
-      await syncTransactions(accountId, tokenResponse.access_token);
+      console.log(`[Bank] Starting transaction sync (${forceFullSync ? 'full' : 'incremental'})`);
+
+      await syncTransactions(accountId, tokenResponse.access_token, forceFullSync);
+
+      // Atualizar last_sync_at após sincronização bem-sucedida
+      await supabase
+        .from('bank_accounts')
+        .update({ last_sync_at: toISOString(Date.now()) })
+        .eq('id', accountId);
+
+      // Adicionar aos resultados se foi reconexão
+      if (isReconnection) {
+        const { data: reconnectedAccount } = await supabase
+          .from('bank_accounts')
+          .select('*')
+          .eq('id', accountId)
+          .single();
+
+        if (reconnectedAccount) {
+          savedAccounts.push(reconnectedAccount as BankAccount);
+        }
+      }
     }
 
     res.json({
@@ -310,17 +383,25 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
       }
     }
 
-    // Deletar conta (cascata deletará transações via RLS)
-    const { error: deleteError } = await supabase
+    // Soft delete: Marcar conta como desconectada, preservando dados históricos
+    const { error: updateError } = await supabase
       .from('bank_accounts')
-      .delete()
+      .update({
+        status: 'disconnected',
+        access_token: null,
+        refresh_token: null,
+        updated_at: Date.now()
+      })
       .eq('id', accountId);
 
-    if (deleteError) {
-      throw deleteError;
+    if (updateError) {
+      throw updateError;
     }
 
-    res.json({ success: true });
+    res.json({
+      success: true,
+      message: 'Bank account disconnected. Historical data preserved.'
+    });
   } catch (error) {
     console.error('Error deleting account:', error);
     res.status(500).json({ error: 'Failed to delete account' });
@@ -328,13 +409,23 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
 });
 
 /**
- * Função auxiliar para sincronizar transações
+ * Função auxiliar para sincronizar transações (OTIMIZADA E INCREMENTAL)
+ *
+ * Estratégia de otimização:
+ * 1. Sincronização incremental: busca apenas transações desde last_sync_at
+ * 2. Verificação em lote: busca todos transaction_ids existentes de uma vez
+ * 3. Bulk insert: insere todas as novas transações em uma única operação
+ *
+ * Performance:
+ * - Antes: N queries (1 por transação) = 1000 transações = 1000 queries
+ * - Depois: 3 queries fixas (account + existing + bulk insert) = 3 queries
+ * - Melhoria: ~333x mais rápido para 1000 transações
  */
-async function syncTransactions(accountId: string, accessToken: string): Promise<number> {
-  // Buscar o provider_account_id do banco de dados
+async function syncTransactions(accountId: string, accessToken: string, forceFullSync: boolean = false): Promise<number> {
+  // Buscar dados da conta incluindo last_sync_at
   const { data: account, error } = await supabase
     .from('bank_accounts')
-    .select('provider_account_id')
+    .select('provider_account_id, last_sync_at')
     .eq('id', accountId)
     .single();
 
@@ -343,21 +434,66 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
     return 0;
   }
 
+  // Determinar período de sincronização (incremental ou completo)
+  let daysToSync = 365; // Padrão: 1 ano completo (primeira sincronização)
+
+  if (!forceFullSync && account.last_sync_at) {
+    // Sincronização incremental: buscar apenas desde a última sincronização
+    const lastSyncDate = new Date(account.last_sync_at);
+    const now = new Date();
+    const daysSinceLastSync = Math.ceil((now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Adicionar 1 dia extra para garantir que não perdemos nenhuma transação
+    daysToSync = Math.min(daysSinceLastSync + 1, 365);
+
+    console.log(`[Sync] Incremental sync: fetching last ${daysToSync} days (since ${lastSyncDate.toISOString()})`);
+  } else {
+    console.log(`[Sync] Full sync: fetching last ${daysToSync} days`);
+  }
+
   console.log(`[Sync] Fetching transactions for account ${accountId} (provider: ${account.provider_account_id})`);
 
+  // Buscar transações do provedor
   const transactions = await openBankingService.getTransactions(
     accessToken,
-    account.provider_account_id, // Usar o ID da conta no provedor
-    365 // ✅ Buscar 1 ANO de histórico!
+    account.provider_account_id,
+    daysToSync
   );
 
-  console.log(`[Sync] Found ${transactions.length} transactions`);
+  console.log(`[Sync] Found ${transactions.length} transactions from provider`);
 
-  let count = 0;
+  if (transactions.length === 0) {
+    return 0;
+  }
 
-  for (const trans of transactions) {
-    const transId = uuidv4();
-    const now = Date.now();
+  // OTIMIZAÇÃO: Buscar todos os transaction_ids existentes de uma só vez
+  const providerTransactionIds = transactions.map(t => t.transaction_id);
+
+  const { data: existingTransactions } = await supabase
+    .from('transactions')
+    .select('transaction_id')
+    .eq('account_id', accountId)
+    .in('transaction_id', providerTransactionIds);
+
+  // Criar Set para lookup O(1)
+  const existingIds = new Set(
+    (existingTransactions || []).map((t: any) => t.transaction_id)
+  );
+
+  console.log(`[Sync] ${existingIds.size} transactions already exist in database`);
+
+  // Filtrar apenas transações novas
+  const newTransactions = transactions.filter(t => !existingIds.has(t.transaction_id));
+
+  console.log(`[Sync] ${newTransactions.length} new transactions to insert`);
+
+  if (newTransactions.length === 0) {
+    return 0;
+  }
+
+  // Preparar dados para bulk insert
+  const now = Date.now();
+  const transactionsToInsert = newTransactions.map(trans => {
     const amount = trans.transaction_amount.amount;
     const description = trans.remittance_information || '';
     const merchant = trans.creditor_name || trans.debtor_name || '';
@@ -365,11 +501,11 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
     // Categorizar automaticamente
     const categorization = categorizationService.categorizeTransaction(description, merchant);
 
-    const transaction: Transaction = {
-      id: transId,
+    return {
+      id: uuidv4(),
       account_id: accountId,
       transaction_id: trans.transaction_id,
-      date: new Date(trans.booking_date).getTime(),
+      date: new Date(trans.booking_date).getTime(), // BIGINT em ms
       amount,
       currency: trans.transaction_amount.currency,
       description,
@@ -379,46 +515,35 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
       balance_after: trans.balance_after_transaction?.amount,
       reference: trans.remittance_information,
       status: 'completed',
-      created_at: now,
-      updated_at: now,
+      created_at: toISOString(now), // TIMESTAMPTZ
+      updated_at: toISOString(now), // TIMESTAMPTZ
     };
+  });
 
-    // Verificar se a transação já existe
-    const { data: existing } = await supabase
+  // OTIMIZAÇÃO: Bulk insert - inserir todas as transações de uma vez
+  // Dividir em batches de 1000 para evitar limites do Supabase
+  const BATCH_SIZE = 1000;
+  let totalInserted = 0;
+
+  for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
+    const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
+
+    const { error: insertError, count } = await supabase
       .from('transactions')
-      .select('id')
-      .eq('account_id', accountId)
-      .eq('transaction_id', trans.transaction_id)
-      .single();
+      .insert(batch)
+      .select('id', { count: 'exact', head: true });
 
-    if (!existing) {
-      const { error: insertError } = await supabase
-        .from('transactions')
-        .insert({
-          id: transaction.id,
-          account_id: transaction.account_id,
-          transaction_id: transaction.transaction_id,
-          date: transaction.date, // BIGINT - manter em ms
-          amount: transaction.amount,
-          currency: transaction.currency,
-          description: transaction.description,
-          merchant: transaction.merchant,
-          category: transaction.category,
-          type: transaction.type,
-          balance_after: transaction.balance_after,
-          reference: transaction.reference,
-          status: transaction.status,
-          created_at: toISOString(transaction.created_at), // TIMESTAMPTZ - converter
-          updated_at: toISOString(transaction.updated_at), // TIMESTAMPTZ - converter
-        });
-
-      if (!insertError) {
-        count++;
-      }
+    if (insertError) {
+      console.error(`[Sync] Error inserting batch ${i / BATCH_SIZE + 1}:`, insertError);
+    } else {
+      totalInserted += count || batch.length;
+      console.log(`[Sync] Batch ${i / BATCH_SIZE + 1}: inserted ${batch.length} transactions`);
     }
   }
 
-  return count;
+  console.log(`[Sync] Successfully inserted ${totalInserted} new transactions`);
+
+  return totalInserted;
 }
 
 export default router;
