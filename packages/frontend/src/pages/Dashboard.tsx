@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, X, MousePointerClick } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import {
