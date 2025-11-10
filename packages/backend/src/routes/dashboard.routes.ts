@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { startOfDay, subDays, format } from 'date-fns';
-import db from '../db/database';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { DashboardStats, CategoryStats, DailyStats } from '../types';
+import { startOfDay, subDays, format, startOfWeek, endOfWeek, getWeek, getYear } from 'date-fns';
+import { supabase } from '../config/supabase';
+import { authMiddleware } from '../middleware/auth.supabase.middleware';
+import { DashboardStats, CategoryStats, DailyStats, WeeklyStats } from '../types';
 
 const router = Router();
 
@@ -10,7 +10,7 @@ const router = Router();
  * GET /api/dashboard/stats
  * Retorna estatísticas gerais do dashboard
  */
-router.get('/stats', authMiddleware, (req: Request, res: Response) => {
+router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '90' } = req.query;
@@ -20,45 +20,45 @@ router.get('/stats', authMiddleware, (req: Request, res: Response) => {
     const endDate = Date.now();
 
     // Total de saldo de todas as contas
-    const balanceResult = db
-      .prepare(
-        `SELECT SUM(balance) as total_balance FROM bank_accounts
-         WHERE user_id = ? AND status = 'active'`
-      )
-      .get(user_id) as { total_balance: number };
+    const { data: accounts, error: accountsError } = await supabase
+      .from('bank_accounts')
+      .select('balance')
+      .eq('user_id', user_id)
+      .eq('status', 'active');
 
-    // Total de receitas
-    const incomeResult = db
-      .prepare(
-        `SELECT SUM(amount) as total_income FROM transactions t
-         INNER JOIN bank_accounts ba ON t.account_id = ba.id
-         WHERE ba.user_id = ? AND t.type = 'credit' AND t.date >= ? AND t.date <= ?`
-      )
-      .get(user_id, startDate, endDate) as { total_income: number };
+    if (accountsError) throw accountsError;
 
-    // Total de despesas (valor absoluto)
-    const expensesResult = db
-      .prepare(
-        `SELECT SUM(ABS(amount)) as total_expenses FROM transactions t
-         INNER JOIN bank_accounts ba ON t.account_id = ba.id
-         WHERE ba.user_id = ? AND t.type = 'debit' AND t.date >= ? AND t.date <= ?`
-      )
-      .get(user_id, startDate, endDate) as { total_expenses: number };
+    const total_balance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
 
-    // Contagem de transações
-    const countResult = db
-      .prepare(
-        `SELECT COUNT(*) as transaction_count FROM transactions t
-         INNER JOIN bank_accounts ba ON t.account_id = ba.id
-         WHERE ba.user_id = ? AND t.date >= ? AND t.date <= ?`
-      )
-      .get(user_id, startDate, endDate) as { transaction_count: number };
+    // Buscar todas as transações no período
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('transactions')
+      .select('amount, type, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .limit(10000); // Limite alto para garantir todos os dados
+
+    if (transactionsError) throw transactionsError;
+
+    // Calcular agregações
+    let total_income = 0;
+    let total_expenses = 0;
+    const transaction_count = transactions?.length || 0;
+
+    transactions?.forEach((tx) => {
+      if (tx.type === 'credit') {
+        total_income += tx.amount;
+      } else if (tx.type === 'debit') {
+        total_expenses += Math.abs(tx.amount);
+      }
+    });
 
     const stats: DashboardStats = {
-      total_balance: balanceResult.total_balance || 0,
-      total_income: incomeResult.total_income || 0,
-      total_expenses: expensesResult.total_expenses || 0,
-      transaction_count: countResult.transaction_count || 0,
+      total_balance,
+      total_income,
+      total_expenses,
+      transaction_count,
       period_start: new Date(startDate).toISOString(),
       period_end: new Date(endDate).toISOString(),
     };
@@ -74,7 +74,7 @@ router.get('/stats', authMiddleware, (req: Request, res: Response) => {
  * GET /api/dashboard/expenses-by-category
  * Retorna despesas agrupadas por categoria
  */
-router.get('/expenses-by-category', authMiddleware, (req: Request, res: Response) => {
+router.get('/expenses-by-category', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '90' } = req.query;
@@ -83,23 +83,37 @@ router.get('/expenses-by-category', authMiddleware, (req: Request, res: Response
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
     const endDate = Date.now();
 
-    const categoryStats = db
-      .prepare(
-        `SELECT
-           category,
-           SUM(ABS(amount)) as total,
-           COUNT(*) as count
-         FROM transactions t
-         INNER JOIN bank_accounts ba ON t.account_id = ba.id
-         WHERE ba.user_id = ? AND t.type = 'debit' AND t.date >= ? AND t.date <= ?
-         GROUP BY category
-         ORDER BY total DESC`
-      )
-      .all(user_id, startDate, endDate) as Array<{
-      category: string;
-      total: number;
-      count: number;
-    }>;
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('category, amount, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .eq('type', 'debit')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .limit(10000); // Limite alto para garantir todos os dados
+
+    if (error) throw error;
+
+    // Agrupar por categoria
+    const categoryMap = new Map<string, { total: number; count: number }>();
+
+    transactions?.forEach((tx) => {
+      const category = tx.category || 'Sem Categoria';
+      const existing = categoryMap.get(category) || { total: 0, count: 0 };
+      existing.total += Math.abs(tx.amount);
+      existing.count += 1;
+      categoryMap.set(category, existing);
+    });
+
+    // Converter para array e calcular percentagens
+    const categoryStats = Array.from(categoryMap.entries()).map(([category, data]) => ({
+      category,
+      total: data.total,
+      count: data.count,
+    }));
+
+    // Ordenar por total decrescente
+    categoryStats.sort((a, b) => b.total - a.total);
 
     // Calcular total para percentagens
     const totalExpenses = categoryStats.reduce((sum, cat) => sum + cat.total, 0);
@@ -122,7 +136,7 @@ router.get('/expenses-by-category', authMiddleware, (req: Request, res: Response
  * GET /api/dashboard/daily-stats
  * Retorna estatísticas diárias
  */
-router.get('/daily-stats', authMiddleware, (req: Request, res: Response) => {
+router.get('/daily-stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '30' } = req.query;
@@ -131,18 +145,15 @@ router.get('/daily-stats', authMiddleware, (req: Request, res: Response) => {
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
 
     // Buscar todas as transações no período
-    const transactions = db
-      .prepare(
-        `SELECT date, amount, type FROM transactions t
-         INNER JOIN bank_accounts ba ON t.account_id = ba.id
-         WHERE ba.user_id = ? AND t.date >= ?
-         ORDER BY date ASC`
-      )
-      .all(user_id, startDate) as Array<{
-      date: number;
-      amount: number;
-      type: string;
-    }>;
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('date, amount, type, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .gte('date', startDate)
+      .order('date', { ascending: true })
+      .limit(10000); // Limite alto para garantir todos os dados
+
+    if (error) throw error;
 
     // Agrupar por dia
     const dailyMap = new Map<string, { income: number; expenses: number }>();
@@ -154,7 +165,7 @@ router.get('/daily-stats', authMiddleware, (req: Request, res: Response) => {
     }
 
     // Preencher com dados reais
-    transactions.forEach((trans) => {
+    transactions?.forEach((trans) => {
       const date = format(new Date(trans.date), 'yyyy-MM-dd');
       const day = dailyMap.get(date) || { income: 0, expenses: 0 };
 
@@ -190,7 +201,7 @@ router.get('/daily-stats', authMiddleware, (req: Request, res: Response) => {
  * GET /api/dashboard/top-merchants
  * Retorna os comerciantes com mais gastos
  */
-router.get('/top-merchants', authMiddleware, (req: Request, res: Response) => {
+router.get('/top-merchants', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '90', limit = '10' } = req.query;
@@ -199,27 +210,43 @@ router.get('/top-merchants', authMiddleware, (req: Request, res: Response) => {
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
     const endDate = Date.now();
 
-    const topMerchants = db
-      .prepare(
-        `SELECT
-           merchant,
-           category,
-           SUM(ABS(amount)) as total,
-           COUNT(*) as count
-         FROM transactions t
-         INNER JOIN bank_accounts ba ON t.account_id = ba.id
-         WHERE ba.user_id = ? AND t.type = 'debit' AND t.merchant IS NOT NULL
-           AND t.merchant != '' AND t.date >= ? AND t.date <= ?
-         GROUP BY merchant, category
-         ORDER BY total DESC
-         LIMIT ?`
-      )
-      .all(user_id, startDate, endDate, Number(limit)) as Array<{
-      merchant: string;
-      category: string;
-      total: number;
-      count: number;
-    }>;
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('merchant, category, amount, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .eq('type', 'debit')
+      .not('merchant', 'is', null)
+      .neq('merchant', '')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .limit(10000); // Limite alto para garantir todos os dados
+
+    if (error) throw error;
+
+    // Agrupar por merchant e category
+    const merchantMap = new Map<string, { category: string; total: number; count: number }>();
+
+    transactions?.forEach((tx) => {
+      const key = `${tx.merchant}|${tx.category}`;
+      const existing = merchantMap.get(key) || { category: tx.category || '', total: 0, count: 0 };
+      existing.total += Math.abs(tx.amount);
+      existing.count += 1;
+      merchantMap.set(key, existing);
+    });
+
+    // Converter para array e ordenar
+    const topMerchants = Array.from(merchantMap.entries())
+      .map(([key, data]) => {
+        const [merchant] = key.split('|');
+        return {
+          merchant,
+          category: data.category,
+          total: data.total,
+          count: data.count,
+        };
+      })
+      .sort((a, b) => b.total - a.total)
+      .slice(0, Number(limit));
 
     res.json(topMerchants);
   } catch (error) {
@@ -232,7 +259,7 @@ router.get('/top-merchants', authMiddleware, (req: Request, res: Response) => {
  * GET /api/dashboard/monthly-comparison
  * Compara gastos mensais
  */
-router.get('/monthly-comparison', authMiddleware, (req: Request, res: Response) => {
+router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { months = '6' } = req.query;
@@ -254,25 +281,32 @@ router.get('/monthly-comparison', authMiddleware, (req: Request, res: Response) 
       const startDate = new Date(year, month - 1, 1).getTime();
       const endDate = new Date(year, month, 0, 23, 59, 59).getTime();
 
-      const stats = db
-        .prepare(
-          `SELECT
-             SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE 0 END) as income,
-             SUM(CASE WHEN t.type = 'debit' THEN ABS(t.amount) ELSE 0 END) as expenses
-           FROM transactions t
-           INNER JOIN bank_accounts ba ON t.account_id = ba.id
-           WHERE ba.user_id = ? AND t.date >= ? AND t.date <= ?`
-        )
-        .get(user_id, startDate, endDate) as {
-        income: number;
-        expenses: number;
-      };
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('type, amount, bank_accounts!inner(user_id)')
+        .eq('bank_accounts.user_id', user_id)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .limit(10000); // Limite alto para garantir todos os dados
+
+      if (error) throw error;
+
+      let income = 0;
+      let expenses = 0;
+
+      transactions?.forEach((tx) => {
+        if (tx.type === 'credit') {
+          income += tx.amount;
+        } else if (tx.type === 'debit') {
+          expenses += Math.abs(tx.amount);
+        }
+      });
 
       results.push({
         month: format(date, 'yyyy-MM'),
-        income: stats.income || 0,
-        expenses: stats.expenses || 0,
-        net: (stats.income || 0) - (stats.expenses || 0),
+        income,
+        expenses,
+        net: income - expenses,
       });
     }
 
@@ -280,6 +314,120 @@ router.get('/monthly-comparison', authMiddleware, (req: Request, res: Response) 
   } catch (error) {
     console.error('Error fetching monthly comparison:', error);
     res.status(500).json({ error: 'Failed to fetch monthly comparison' });
+  }
+});
+
+/**
+ * GET /api/dashboard/weekly-stats
+ * Retorna estatísticas semanais com categorias
+ */
+router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { weeks = '12' } = req.query; // Padrão: 12 semanas (~ 3 meses)
+
+    const weeksNum = Number(weeks);
+    const endDate = new Date();
+    const startDate = subDays(endDate, weeksNum * 7);
+
+    console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., weeks=${weeksNum}, date range=${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`);
+    console.log(`🔍 Start timestamp: ${startDate.getTime()}, End timestamp: ${endDate.getTime()}`);
+
+    // Primeiro, verificar TOTAL de transações do usuário (sem filtro de data)
+    const { count: totalCount } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('bank_accounts.user_id', user_id);
+
+    console.log(`📈 Total transactions in database for user: ${totalCount}`);
+
+    // Buscar todas as transações no período
+    // IMPORTANTE: Sem limit() para buscar TODAS as transações do período
+    const { data: transactions, error, count } = await supabase
+      .from('transactions')
+      .select('date, amount, type, category, bank_accounts!inner(user_id)', { count: 'exact' })
+      .eq('bank_accounts.user_id', user_id)
+      .gte('date', startDate.getTime())
+      .lte('date', endDate.getTime())
+      .order('date', { ascending: true })
+      .limit(10000); // Limite alto para garantir que pegue todos os dados
+
+    console.log(`📊 Query returned ${transactions?.length || 0} transactions (count: ${count})`);
+
+    if (error) {
+      console.error('❌ Error fetching transactions:', error);
+      throw error;
+    }
+
+    if (transactions && transactions.length > 0) {
+      console.log(`📅 First transaction date: ${format(new Date(transactions[0].date), 'yyyy-MM-dd')}`);
+      console.log(`📅 Last transaction date: ${format(new Date(transactions[transactions.length - 1].date), 'yyyy-MM-dd')}`);
+    }
+
+    // Agrupar por semana
+    const weeklyMap = new Map<string, WeeklyStats>();
+
+    transactions?.forEach((trans) => {
+      const transDate = new Date(trans.date);
+      const weekStart = startOfWeek(transDate, { weekStartsOn: 0 }); // Domingo
+      const weekEnd = endOfWeek(transDate, { weekStartsOn: 0 });
+      const weekNumber = getWeek(transDate, { weekStartsOn: 0 });
+      const year = getYear(transDate);
+      const weekKey = `${year}-W${weekNumber}`;
+
+      if (!weeklyMap.has(weekKey)) {
+        weeklyMap.set(weekKey, {
+          weekNumber,
+          year,
+          startDate: format(weekStart, 'yyyy-MM-dd'),
+          endDate: format(weekEnd, 'yyyy-MM-dd'),
+          expenses: { total: 0, byCategory: [] },
+          income: { total: 0, byCategory: [] },
+        });
+      }
+
+      const week = weeklyMap.get(weekKey)!;
+      const category = trans.category || 'Outros';
+      const amount = Math.abs(trans.amount);
+
+      if (trans.type === 'debit') {
+        week.expenses.total += amount;
+        const catIndex = week.expenses.byCategory.findIndex(c => c.category === category);
+        if (catIndex >= 0) {
+          week.expenses.byCategory[catIndex].amount += amount;
+        } else {
+          week.expenses.byCategory.push({ category, amount });
+        }
+      } else {
+        week.income.total += amount;
+        const catIndex = week.income.byCategory.findIndex(c => c.category === category);
+        if (catIndex >= 0) {
+          week.income.byCategory[catIndex].amount += amount;
+        } else {
+          week.income.byCategory.push({ category, amount });
+        }
+      }
+    });
+
+    // Converter para array e ordenar por data
+    const result: WeeklyStats[] = Array.from(weeklyMap.values())
+      .sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.weekNumber - b.weekNumber;
+      });
+
+    console.log(`✅ Returning ${result.length} weeks (found ${transactions?.length || 0} transactions in period)`);
+    console.log(`📊 Weeks: ${result.map(w => `${w.year}-W${w.weekNumber}`).join(', ')}`);
+
+    if (result.length < weeksNum) {
+      console.warn(`⚠️ WARNING: Expected ${weeksNum} weeks but only got ${result.length} weeks!`);
+      console.warn(`⚠️ This means there are NO transactions for ${weeksNum - result.length} weeks in the period`);
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching weekly stats:', error);
+    res.status(500).json({ error: 'Failed to fetch weekly stats' });
   }
 });
 

@@ -278,7 +278,7 @@ export class PluggyService {
   }
 
   /**
-   * Busca transações de uma conta
+   * Busca transações de uma conta (com paginação automática)
    */
   async getTransactions(
     itemId: string,
@@ -293,20 +293,50 @@ export class PluggyService {
       const dateFrom = new Date();
       dateFrom.setDate(dateFrom.getDate() - days);
 
-      const response = await this.client.get('/transactions', {
-        headers: {
-          'X-API-KEY': apiKey,
-        },
-        params: {
-          accountId,
-          from: dateFrom.toISOString().split('T')[0],
-          to: dateTo.toISOString().split('T')[0],
-        },
-      });
+      console.log(`[Pluggy] Fetching transactions for account ${accountId} from ${dateFrom.toISOString().split('T')[0]} to ${dateTo.toISOString().split('T')[0]}`);
 
-      const transactions = response.data.results || [];
+      // Buscar TODAS as transações com paginação automática
+      let allTransactions: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      const pageSize = 500; // Máximo por página no Pluggy
 
-      return transactions
+      while (hasMore) {
+        console.log(`[Pluggy] Fetching page ${page}...`);
+
+        const response = await this.client.get('/transactions', {
+          headers: {
+            'X-API-KEY': apiKey,
+          },
+          params: {
+            accountId,
+            from: dateFrom.toISOString().split('T')[0],
+            to: dateTo.toISOString().split('T')[0],
+            pageSize,
+            page,
+          },
+        });
+
+        const transactions = response.data.results || [];
+        allTransactions = allTransactions.concat(transactions);
+
+        console.log(`[Pluggy] Page ${page}: ${transactions.length} transactions (total so far: ${allTransactions.length})`);
+
+        // Verificar se há mais páginas
+        const total = response.data.total || 0;
+        hasMore = allTransactions.length < total;
+        page++;
+
+        // Segurança: limitar a 100 páginas (50.000 transações)
+        if (page > 100) {
+          console.warn(`[Pluggy] ⚠️ Reached page limit of 100, stopping pagination`);
+          break;
+        }
+      }
+
+      console.log(`[Pluggy] ✅ Fetched total of ${allTransactions.length} transactions`);
+
+      return allTransactions
         .map((transaction: any) => this.mapTransaction(transaction))
         .sort((a: OpenBankingTransaction, b: OpenBankingTransaction) =>
           new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime()

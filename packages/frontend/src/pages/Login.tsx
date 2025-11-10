@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
-import { authApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,12 +17,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await authApi.login(email, password);
-
-      // Salvar token e dados do usuário
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-
+      await login(email, password);
       // Redirecionar para dashboard
       navigate('/dashboard');
     } catch (err: any) {

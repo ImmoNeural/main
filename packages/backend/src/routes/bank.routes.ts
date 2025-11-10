@@ -1,13 +1,21 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../db/database';
+import { supabase } from '../config/supabase';
 import openBankingService from '../services/openBanking.service';
 import categorizationService from '../services/categorization.service';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware } from '../middleware/auth.supabase.middleware';
 import { createMockBankAccount } from '../services/providers/mock.service';
 import { BankAccount, Transaction } from '../types';
 
 const router = Router();
+
+/**
+ * Converte timestamp em milissegundos para formato ISO string (para TIMESTAMPTZ do PostgreSQL)
+ */
+function toISOString(timestamp: number | undefined): string | null {
+  if (!timestamp) return null;
+  return new Date(timestamp).toISOString();
+}
 
 /**
  * GET /api/bank/available
@@ -83,6 +91,10 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
     // Verificar se é modo demo
     if (state.startsWith('DEMO_')) {
       console.log('[Bank] 🎭 Processing DEMO MODE callback');
+      console.log('[Bank] user_id:', user_id);
+      console.log('[Bank] code:', code);
+      console.log('[Bank] state:', state);
+      console.log('[Bank] bank_name:', bank_name);
 
       // Extrair bank_id do state: DEMO_341_1234567890
       const parts = state.split('_');
@@ -90,22 +102,30 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
 
       console.log('[Bank] Creating mock account for bank_id:', bank_id, 'bank_name:', bank_name);
 
-      // Criar conta fictícia com transações
-      const { account, transactions } = await createMockBankAccount(user_id, bank_id, bank_name);
+      try {
+        // Criar conta fictícia com transações
+        const { account, transactions } = await createMockBankAccount(user_id, bank_id, bank_name);
 
-      console.log(`[Bank] ✅ Demo account created with ${transactions.length} transactions`);
+        console.log(`[Bank] ✅ Demo account created with ${transactions.length} transactions`);
 
-      return res.json({
-        success: true,
-        demo_mode: true,
-        accounts: [{
-          id: account.id,
-          bank_name: account.bank_name,
-          account_number: account.account_number,
-          balance: account.balance,
-          currency: account.currency,
-        }],
-      });
+        return res.json({
+          success: true,
+          demo_mode: true,
+          accounts: [{
+            id: account.id,
+            bank_name: account.bank_name,
+            account_number: account.account_number,
+            balance: account.balance,
+            currency: account.currency,
+          }],
+        });
+      } catch (mockError) {
+        console.error('[Bank] ❌ Error creating mock account:', mockError);
+        return res.status(500).json({
+          error: 'Erro ao criar conta demonstração',
+          details: mockError instanceof Error ? mockError.message : String(mockError)
+        });
+      }
     }
 
     // Modo real com Pluggy
@@ -145,35 +165,33 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
         updated_at: now,
       };
 
-      const stmt = db.prepare(`
-        INSERT INTO bank_accounts (
-          id, user_id, bank_name, account_number, iban, account_type,
-          balance, currency, access_token, refresh_token, token_expires_at,
-          consent_id, consent_expires_at, connected_at, status, provider_account_id,
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+      const { error: insertError } = await supabase
+        .from('bank_accounts')
+        .insert({
+          id: bankAccount.id,
+          user_id: bankAccount.user_id,
+          bank_name: bankAccount.bank_name,
+          account_number: bankAccount.account_number,
+          iban: bankAccount.iban,
+          account_type: bankAccount.account_type,
+          balance: bankAccount.balance,
+          currency: bankAccount.currency,
+          access_token: bankAccount.access_token,
+          refresh_token: bankAccount.refresh_token,
+          token_expires_at: toISOString(bankAccount.token_expires_at),
+          consent_id: bankAccount.consent_id,
+          consent_expires_at: toISOString(bankAccount.consent_expires_at),
+          connected_at: toISOString(bankAccount.connected_at),
+          status: bankAccount.status,
+          provider_account_id: bankAccount.provider_account_id,
+          created_at: toISOString(bankAccount.created_at),
+          updated_at: toISOString(bankAccount.updated_at),
+        });
 
-      stmt.run(
-        bankAccount.id,
-        bankAccount.user_id,
-        bankAccount.bank_name,
-        bankAccount.account_number,
-        bankAccount.iban,
-        bankAccount.account_type,
-        bankAccount.balance,
-        bankAccount.currency,
-        bankAccount.access_token,
-        bankAccount.refresh_token,
-        bankAccount.token_expires_at,
-        bankAccount.consent_id,
-        bankAccount.consent_expires_at,
-        bankAccount.connected_at,
-        bankAccount.status,
-        bankAccount.provider_account_id,
-        bankAccount.created_at,
-        bankAccount.updated_at
-      );
+      if (insertError) {
+        console.error('Error inserting bank account:', insertError);
+        continue;
+      }
 
       savedAccounts.push(bankAccount);
 
@@ -201,19 +219,21 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
  * GET /api/bank/accounts
  * Lista todas as contas conectadas
  */
-router.get('/accounts', authMiddleware, (req: Request, res: Response) => {
+router.get('/accounts', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
 
-    const accounts = db
-      .prepare(
-        `SELECT id, user_id, bank_name, account_number, iban, account_type,
-         balance, currency, connected_at, last_sync_at, status, created_at, updated_at
-         FROM bank_accounts WHERE user_id = ? ORDER BY created_at DESC`
-      )
-      .all(user_id) as BankAccount[];
+    const { data: accounts, error } = await supabase
+      .from('bank_accounts')
+      .select('id, user_id, bank_name, account_number, iban, account_type, balance, currency, connected_at, last_sync_at, status, created_at, updated_at')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false });
 
-    res.json(accounts);
+    if (error) {
+      throw error;
+    }
+
+    res.json(accounts || []);
   } catch (error) {
     console.error('Error fetching accounts:', error);
     res.status(500).json({ error: 'Failed to fetch accounts' });
@@ -228,11 +248,13 @@ router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, re
   try {
     const { accountId } = req.params;
 
-    const account = db
-      .prepare('SELECT * FROM bank_accounts WHERE id = ?')
-      .get(accountId) as BankAccount | undefined;
+    const { data: account, error } = await supabase
+      .from('bank_accounts')
+      .select('*')
+      .eq('id', accountId)
+      .single();
 
-    if (!account) {
+    if (error || !account) {
       return res.status(404).json({ error: 'Account not found' });
     }
 
@@ -243,8 +265,13 @@ router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, re
     const transactionCount = await syncTransactions(accountId, account.access_token);
 
     // Atualizar last_sync_at
-    db.prepare('UPDATE bank_accounts SET last_sync_at = ?, updated_at = ? WHERE id = ?')
-      .run(Date.now(), Date.now(), accountId);
+    await supabase
+      .from('bank_accounts')
+      .update({
+        last_sync_at: toISOString(Date.now()),
+        updated_at: toISOString(Date.now())
+      })
+      .eq('id', accountId);
 
     res.json({
       success: true,
@@ -264,11 +291,13 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
   try {
     const { accountId } = req.params;
 
-    const account = db
-      .prepare('SELECT * FROM bank_accounts WHERE id = ?')
-      .get(accountId) as BankAccount | undefined;
+    const { data: account, error: fetchError } = await supabase
+      .from('bank_accounts')
+      .select('*')
+      .eq('id', accountId)
+      .single();
 
-    if (!account) {
+    if (fetchError || !account) {
       return res.status(404).json({ error: 'Account not found' });
     }
 
@@ -281,8 +310,15 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
       }
     }
 
-    // Deletar conta (cascata deletará transações)
-    db.prepare('DELETE FROM bank_accounts WHERE id = ?').run(accountId);
+    // Deletar conta (cascata deletará transações via RLS)
+    const { error: deleteError } = await supabase
+      .from('bank_accounts')
+      .delete()
+      .eq('id', accountId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
 
     res.json({ success: true });
   } catch (error) {
@@ -296,11 +332,13 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
  */
 async function syncTransactions(accountId: string, accessToken: string): Promise<number> {
   // Buscar o provider_account_id do banco de dados
-  const account = db
-    .prepare('SELECT provider_account_id FROM bank_accounts WHERE id = ?')
-    .get(accountId) as { provider_account_id?: string } | undefined;
+  const { data: account, error } = await supabase
+    .from('bank_accounts')
+    .select('provider_account_id')
+    .eq('id', accountId)
+    .single();
 
-  if (!account || !account.provider_account_id) {
+  if (error || !account || !account.provider_account_id) {
     console.warn(`[Sync] Account ${accountId} has no provider_account_id, skipping transactions sync`);
     return 0;
   }
@@ -310,7 +348,7 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
   const transactions = await openBankingService.getTransactions(
     accessToken,
     account.provider_account_id, // Usar o ID da conta no provedor
-    90
+    365 // ✅ Buscar 1 ANO de histórico!
   );
 
   console.log(`[Sync] Found ${transactions.length} transactions`);
@@ -346,37 +384,37 @@ async function syncTransactions(accountId: string, accessToken: string): Promise
     };
 
     // Verificar se a transação já existe
-    const existing = db
-      .prepare('SELECT id FROM transactions WHERE account_id = ? AND transaction_id = ?')
-      .get(accountId, trans.transaction_id);
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('account_id', accountId)
+      .eq('transaction_id', trans.transaction_id)
+      .single();
 
     if (!existing) {
-      const stmt = db.prepare(`
-        INSERT INTO transactions (
-          id, account_id, transaction_id, date, amount, currency, description,
-          merchant, category, type, balance_after, reference, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+      const { error: insertError } = await supabase
+        .from('transactions')
+        .insert({
+          id: transaction.id,
+          account_id: transaction.account_id,
+          transaction_id: transaction.transaction_id,
+          date: transaction.date, // BIGINT - manter em ms
+          amount: transaction.amount,
+          currency: transaction.currency,
+          description: transaction.description,
+          merchant: transaction.merchant,
+          category: transaction.category,
+          type: transaction.type,
+          balance_after: transaction.balance_after,
+          reference: transaction.reference,
+          status: transaction.status,
+          created_at: toISOString(transaction.created_at), // TIMESTAMPTZ - converter
+          updated_at: toISOString(transaction.updated_at), // TIMESTAMPTZ - converter
+        });
 
-      stmt.run(
-        transaction.id,
-        transaction.account_id,
-        transaction.transaction_id,
-        transaction.date,
-        transaction.amount,
-        transaction.currency,
-        transaction.description,
-        transaction.merchant,
-        transaction.category,
-        transaction.type,
-        transaction.balance_after,
-        transaction.reference,
-        transaction.status,
-        transaction.created_at,
-        transaction.updated_at
-      );
-
-      count++;
+      if (!insertError) {
+        count++;
+      }
     }
   }
 

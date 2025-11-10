@@ -62,6 +62,21 @@ export interface DailyStats {
   balance: number;
 }
 
+export interface WeeklyStats {
+  weekNumber: number;
+  year: number;
+  startDate: string;
+  endDate: string;
+  expenses: {
+    total: number;
+    byCategory: { category: string; amount: number }[];
+  };
+  income: {
+    total: number;
+    byCategory: { category: string; amount: number }[];
+  };
+}
+
 export interface MonthlyStats {
   month: string;
   income: number;
