@@ -32,6 +32,13 @@ const Dashboard = () => {
     loadDashboardData();
   }, [period]);
 
+  // Inicializar categoria selecionada com a de maior gasto
+  useEffect(() => {
+    if (!selectedCategory && categoryStats.length > 0) {
+      setSelectedCategory(categoryStats[0].category);
+    }
+  }, [categoryStats]);
+
   const loadDashboardData = async () => {
     setLoading(true);
     try {
@@ -436,7 +443,7 @@ const Dashboard = () => {
       </div>
 
       {/* Top Categories e Evolução Mensal lado a lado */}
-      <div className={selectedCategory ? "grid grid-cols-1 xl:grid-cols-2 gap-6" : ""}>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Top Categories */}
         <div className="card">
           <h2 className="text-lg font-bold text-gray-900 mb-2">
@@ -496,10 +503,11 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Category Monthly Detail */}
-        {selectedCategory && (
-          <div id="category-detail" className="card border-2 border-primary-500 shadow-xl">
-          <div className="flex justify-between items-start mb-4">
+        {/* Category Monthly Detail - Sempre visível */}
+        <div id="category-detail" className="card border-2 border-primary-500 shadow-xl">
+          {selectedCategory ? (
+            <>
+              <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <span
@@ -588,8 +596,16 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full p-8">
+              <div className="text-center text-gray-500">
+                <p className="text-lg">Clique em uma barra do gráfico ao lado</p>
+                <p className="text-sm">para ver a evolução mensal da categoria</p>
+              </div>
+            </div>
+          )}
         </div>
-        )}
       </div>
 
       {/* Recent Transactions */}
