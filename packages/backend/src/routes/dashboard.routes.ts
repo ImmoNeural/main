@@ -431,4 +431,89 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
   }
 });
 
+/**
+ * GET /api/dashboard/monthly-stats-by-category
+ * Retorna estatísticas mensais com categorias (transação por transação)
+ */
+router.get('/monthly-stats-by-category', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { months = '12', category } = req.query;
+
+    const monthsNum = Number(months);
+    const results: Array<{
+      month: string;
+      monthLabel: string;
+      expenses: { total: number; byCategory: Array<{ category: string; amount: number }> };
+      income: { total: number; byCategory: Array<{ category: string; amount: number }> };
+    }> = [];
+
+    console.log(`📊 Monthly stats by category request: months=${monthsNum}, category=${category || 'all'}`);
+
+    for (let i = monthsNum - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+
+      const startDate = new Date(year, month - 1, 1).getTime();
+      const endDate = new Date(year, month, 0, 23, 59, 59).getTime();
+
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('type, amount, category, date, bank_accounts!inner(user_id)')
+        .eq('bank_accounts.user_id', user_id)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .limit(10000);
+
+      if (error) throw error;
+
+      // Agrupar por categoria
+      const expensesByCategory = new Map<string, number>();
+      const incomeByCategory = new Map<string, number>();
+      let totalExpenses = 0;
+      let totalIncome = 0;
+
+      transactions?.forEach((tx) => {
+        const cat = tx.category || 'Outros';
+        const amount = Math.abs(tx.amount);
+
+        if (tx.type === 'debit') {
+          totalExpenses += amount;
+          expensesByCategory.set(cat, (expensesByCategory.get(cat) || 0) + amount);
+        } else if (tx.type === 'credit') {
+          totalIncome += amount;
+          incomeByCategory.set(cat, (incomeByCategory.get(cat) || 0) + amount);
+        }
+      });
+
+      results.push({
+        month: format(date, 'yyyy-MM'),
+        monthLabel: format(date, 'MMM/yyyy'),
+        expenses: {
+          total: totalExpenses,
+          byCategory: Array.from(expensesByCategory.entries()).map(([category, amount]) => ({
+            category,
+            amount,
+          })),
+        },
+        income: {
+          total: totalIncome,
+          byCategory: Array.from(incomeByCategory.entries()).map(([category, amount]) => ({
+            category,
+            amount,
+          })),
+        },
+      });
+    }
+
+    console.log(`✅ Returning ${results.length} months with transaction-level aggregation`);
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching monthly stats by category:', error);
+    res.status(500).json({ error: 'Failed to fetch monthly stats by category' });
+  }
+});
+
 export default router;

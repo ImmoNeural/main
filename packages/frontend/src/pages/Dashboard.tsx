@@ -23,6 +23,12 @@ const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats[]>([]);
+  const [monthlyStats, setMonthlyStats] = useState<Array<{
+    month: string;
+    monthLabel: string;
+    expenses: { total: number; byCategory: Array<{ category: string; amount: number }> };
+    income: { total: number; byCategory: Array<{ category: string; amount: number }> };
+  }>>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(90);
@@ -42,22 +48,26 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Calcular número de semanas baseado no período
+      // Calcular número de semanas e meses baseado no período
       const weeks = Math.ceil(period / 7);
-      console.log(`📊 Loading dashboard data: period=${period} days, weeks=${weeks}`);
+      const months = Math.ceil(period / 30);
+      console.log(`📊 Loading dashboard data: period=${period} days, weeks=${weeks}, months=${months}`);
 
-      const [statsRes, categoryRes, weeklyRes, transactionsRes] = await Promise.all([
+      const [statsRes, categoryRes, weeklyRes, monthlyRes, transactionsRes] = await Promise.all([
         dashboardApi.getStats(period),
         dashboardApi.getExpensesByCategory(period),
         dashboardApi.getWeeklyStats(weeks),
+        dashboardApi.getMonthlyStatsByCategory(months),
         transactionApi.getTransactions({ limit: 10 }),
       ]);
 
       console.log(`📈 Received weekly stats: ${weeklyRes.data.length} weeks`);
+      console.log(`📅 Received monthly stats: ${monthlyRes.data.length} months`);
 
       setStats(statsRes.data);
       setCategoryStats(categoryRes.data);
       setWeeklyStats(weeklyRes.data);
+      setMonthlyStats(monthlyRes.data);
       setRecentTransactions(transactionsRes.data.transactions);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -127,40 +137,20 @@ const Dashboard = () => {
 
   // Preparar dados mensais para o detalhamento da categoria selecionada
   const getCategoryMonthlyData = (category: string) => {
-    // Agrupar dados semanais em mensais
-    const monthlyMap = new Map<string, { amount: number; monthLabel: string }>();
-
     console.log(`📅 Processando dados mensais para categoria: ${category}`);
 
-    weeklyStats.forEach((week, index) => {
-      const categoryExpense = week.expenses.byCategory.find((c) => c.category === category);
+    const result = monthlyStats.map((monthData) => {
+      const categoryExpense = monthData.expenses.byCategory.find((c) => c.category === category);
       const amount = categoryExpense?.amount || 0;
 
-      // week.startDate vem como string ISO do backend (yyyy-MM-dd)
-      console.log(`Week ${index}: startDate="${week.startDate}", amount=${amount}`);
+      console.log(`Month ${monthData.month} (${monthData.monthLabel}): amount=${amount}`);
 
-      const weekDate = new Date(week.startDate + 'T12:00:00'); // Adicionar horário do meio-dia para evitar problemas de timezone
-      const monthKey = format(weekDate, 'yyyy-MM');
-      const monthLabel = format(weekDate, 'MMM/yy', { locale: ptBR })
-        .replace(/^\w/, (c) => c.toUpperCase());
-
-      console.log(`  → Convertido para: ${weekDate.toISOString()} → ${monthKey} (${monthLabel})`);
-
-      if (monthlyMap.has(monthKey)) {
-        monthlyMap.get(monthKey)!.amount += amount;
-      } else {
-        monthlyMap.set(monthKey, { amount, monthLabel });
-      }
-    });
-
-    // Converter para array e ordenar por data
-    const result = Array.from(monthlyMap.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([monthKey, data]) => ({
-        month: data.monthLabel,
-        monthKey,
-        amount: data.amount,
-      }));
+      return {
+        month: monthData.monthLabel.split('/')[0], // Ex: "Jan" de "Jan/2024"
+        monthKey: monthData.month,
+        amount: amount,
+      };
+    }).filter((m) => m.amount > 0); // Remover meses sem dados
 
     console.log(`📊 Resultado final:`, result);
     return result;

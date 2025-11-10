@@ -152,6 +152,16 @@ export const dashboardApi = {
     api.get<import('../types').WeeklyStats[]>('/dashboard/weekly-stats', {
       params: { weeks },
     }),
+
+  getMonthlyStatsByCategory: (months?: number) =>
+    api.get<Array<{
+      month: string;
+      monthLabel: string;
+      expenses: { total: number; byCategory: Array<{ category: string; amount: number }> };
+      income: { total: number; byCategory: Array<{ category: string; amount: number }> };
+    }>>('/dashboard/monthly-stats-by-category', {
+      params: { months },
+    }),
 };
 
 export default api;
