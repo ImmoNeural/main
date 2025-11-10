@@ -230,7 +230,7 @@ const Transactions = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTransactions.map((transaction) => {
-                const isUncategorized = !transaction.category || transaction.category === 'Outros';
+                const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros';
                 return (
                   <tr
                     key={transaction.id}

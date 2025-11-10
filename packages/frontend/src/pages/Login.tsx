@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { bankApi } from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,7 +19,21 @@ const Login = () => {
 
     try {
       await login(email, password);
-      // Redirecionar para dashboard
+
+      // Verificar se é primeiro acesso (sem contas bancárias)
+      try {
+        const accountsResponse = await bankApi.getAccounts();
+
+        if (!accountsResponse.data || accountsResponse.data.length === 0) {
+          // Primeiro acesso: redirecionar para conectar banco
+          navigate('/connect-bank');
+          return;
+        }
+      } catch (accountsError) {
+        console.warn('Could not check accounts, redirecting to dashboard');
+      }
+
+      // Usuário já tem contas: ir para dashboard
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);

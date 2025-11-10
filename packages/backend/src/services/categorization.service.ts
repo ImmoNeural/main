@@ -550,12 +550,12 @@ class CategorizationService {
       };
     }
 
-    // Categoria padrão
+    // Categoria padrão para transações não identificadas
     return {
-      category: 'Outros',
-      subcategory: 'Não Categorizado',
-      icon: '📊',
-      color: '#9E9E9E',
+      category: 'Definir Categoria',
+      subcategory: 'Aguardando Classificação',
+      icon: '❓',
+      color: '#FFC1E3', // Rosa claro
       confidence: 0,
       matchedBy: 'nenhum match encontrado',
     };
@@ -642,6 +642,15 @@ class CategorizationService {
         });
       }
     }
+
+    // Adicionar "Definir Categoria" (categoria especial para não categorizadas)
+    // NÃO incluir na lista para o usuário escolher, apenas para identificar transações pendentes
+    // categories.set('Definir Categoria', {
+    //   category: 'Definir Categoria',
+    //   subcategory: 'Aguardando Classificação',
+    //   icon: '❓',
+    //   color: '#FFC1E3',
+    // });
 
     // Ordenar alfabeticamente
     return Array.from(categories.values()).sort((a, b) =>
