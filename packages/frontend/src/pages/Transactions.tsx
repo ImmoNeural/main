@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { format, subMonths, parseISO } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Search, Download, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { transactionApi } from '../services/api';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Wallet, RefreshCw, Trash2, Plus, AlertCircle } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { BankAccount } from '../types';

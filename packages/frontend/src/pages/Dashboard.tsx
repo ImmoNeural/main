@@ -15,7 +15,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getAllCategoryColors } from '../utils/colors';
 
@@ -134,10 +134,8 @@ const Dashboard = () => {
       const categoryExpense = week.expenses.byCategory.find((c) => c.category === category);
       const amount = categoryExpense?.amount || 0;
 
-      // week.startDate pode ser string ISO ou timestamp
-      const weekDate = typeof week.startDate === 'string'
-        ? parseISO(week.startDate)
-        : new Date(week.startDate);
+      // week.startDate vem como string ISO do backend
+      const weekDate = new Date(week.startDate);
       const monthKey = format(weekDate, 'yyyy-MM');
       // Capitalizar primeira letra: Jan, Fev, Mar, etc.
       const monthLabel = format(weekDate, 'MMM/yy', { locale: ptBR })
