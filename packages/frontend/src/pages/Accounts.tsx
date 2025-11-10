@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Wallet, RefreshCw, Trash2, Plus, AlertCircle } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { BankAccount } from '../types';
@@ -152,7 +152,7 @@ const Accounts = () => {
                 <p className="text-sm text-gray-500">Última sincronização</p>
                 <p className="text-sm text-gray-900">
                   {account.last_sync_at
-                    ? format(new Date(account.last_sync_at), 'dd/MM/yyyy HH:mm')
+                    ? format(parseISO(account.last_sync_at.toString()), 'dd/MM/yyyy HH:mm')
                     : 'Nunca'}
                 </p>
               </div>
@@ -161,7 +161,7 @@ const Accounts = () => {
               <div>
                 <p className="text-sm text-gray-500">Conectada em</p>
                 <p className="text-sm text-gray-900">
-                  {format(new Date(account.connected_at), 'dd/MM/yyyy')}
+                  {format(parseISO(account.connected_at.toString()), 'dd/MM/yyyy')}
                 </p>
               </div>
             </div>
