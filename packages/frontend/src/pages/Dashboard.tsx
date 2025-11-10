@@ -101,7 +101,7 @@ const Dashboard = () => {
     const data: any = {
       week: `S${week.weekNumber}`,
       weekLabel: `Semana ${week.weekNumber}/${week.year}`,
-      dateRange: `${format(parseISO(week.startDate), 'dd/MM')} - ${format(parseISO(week.endDate), 'dd/MM')}`,
+      dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
     };
 
     // Adicionar despesas
@@ -134,8 +134,10 @@ const Dashboard = () => {
       const categoryExpense = week.expenses.byCategory.find((c) => c.category === category);
       const amount = categoryExpense?.amount || 0;
 
-      // Usar parseISO para garantir interpretação correta da data
-      const weekDate = parseISO(week.startDate);
+      // week.startDate pode ser string ISO ou timestamp
+      const weekDate = typeof week.startDate === 'string'
+        ? parseISO(week.startDate)
+        : new Date(week.startDate);
       const monthKey = format(weekDate, 'yyyy-MM');
       // Capitalizar primeira letra: Jan, Fev, Mar, etc.
       const monthLabel = format(weekDate, 'MMM/yy', { locale: ptBR })
@@ -626,7 +628,7 @@ const Dashboard = () => {
                     {transaction.merchant || transaction.description}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {format(parseISO(transaction.date.toString()), 'dd/MM/yyyy')} • {transaction.category}
+                    {format(new Date(transaction.date), 'dd/MM/yyyy')} • {transaction.category}
                   </p>
                 </div>
               </div>
