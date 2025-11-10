@@ -435,68 +435,70 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Top Categories */}
-      <div className="card">
-        <h2 className="text-lg font-bold text-gray-900 mb-2">
-          🏆 Top Categorias de Gastos
-        </h2>
-        <p className="text-sm text-gray-600 mb-2">
-          Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
-        </p>
-        <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <MousePointerClick className="w-5 h-5 text-blue-600 flex-shrink-0" />
-          <p className="text-sm text-blue-800">
-            <span className="font-bold">Dica:</span> Clique em qualquer barra para ver o detalhamento semanal da categoria!
+      {/* Top Categories e Evolução Mensal lado a lado */}
+      <div className={selectedCategory ? "grid grid-cols-1 xl:grid-cols-2 gap-6" : ""}>
+        {/* Top Categories */}
+        <div className="card">
+          <h2 className="text-lg font-bold text-gray-900 mb-2">
+            🏆 Top Categorias de Gastos
+          </h2>
+          <p className="text-sm text-gray-600 mb-2">
+            Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
           </p>
+          <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <MousePointerClick className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <p className="text-sm text-blue-800">
+              <span className="font-bold">Dica:</span> Clique em qualquer barra para ver o detalhamento mensal da categoria!
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={categoryStats.slice(0, 8)}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="category"
+                tick={{ fontSize: 11 }}
+                angle={-45}
+                textAnchor="end"
+                height={100}
+              />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value / getMonthsCount())}
+                labelFormatter={(label) => `${label} (média mensal)`}
+              />
+              <Bar
+                dataKey="total"
+                fill="#3b82f6"
+                isAnimationActive={true}
+                animationDuration={800}
+                animationBegin={0}
+                radius={[8, 8, 0, 0]}
+                cursor="pointer"
+                onClick={(data) => {
+                  setSelectedCategory(data.category);
+                  // Scroll suave até a seção de detalhamento
+                  setTimeout(() => {
+                    document.getElementById('category-detail')?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  }, 100);
+                }}
+              >
+                {categoryStats.slice(0, 8).map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={categoryColorMap.get(entry.category) || '#3b82f6'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={categoryStats.slice(0, 8)}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis
-              dataKey="category"
-              tick={{ fontSize: 11 }}
-              angle={-45}
-              textAnchor="end"
-              height={100}
-            />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip
-              formatter={(value: number) => formatCurrency(value / getMonthsCount())}
-              labelFormatter={(label) => `${label} (média mensal)`}
-            />
-            <Bar
-              dataKey="total"
-              fill="#3b82f6"
-              isAnimationActive={true}
-              animationDuration={800}
-              animationBegin={0}
-              radius={[8, 8, 0, 0]}
-              cursor="pointer"
-              onClick={(data) => {
-                setSelectedCategory(data.category);
-                // Scroll suave até a seção de detalhamento
-                setTimeout(() => {
-                  document.getElementById('category-detail')?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                  });
-                }, 100);
-              }}
-            >
-              {categoryStats.slice(0, 8).map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={categoryColorMap.get(entry.category) || '#3b82f6'}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
 
-      {/* Category Weekly Detail */}
-      {selectedCategory && (
-        <div id="category-detail" className="card border-2 border-primary-500 shadow-xl">
+        {/* Category Monthly Detail */}
+        {selectedCategory && (
+          <div id="category-detail" className="card border-2 border-primary-500 shadow-xl">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -575,7 +577,8 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
+        )}
+      </div>
 
       {/* Recent Transactions */}
       <div className="card">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
+import { format, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Search, Download, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
@@ -12,6 +13,20 @@ const Transactions = () => {
   const [selectedType, setSelectedType] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [isRecategorizing, setIsRecategorizing] = useState(false);
+
+  // Gerar últimos 12 meses dinamicamente
+  const getLast12Months = () => {
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+      const date = subMonths(new Date(), i);
+      const monthKey = format(date, 'yyyy-MM');
+      // Capitalizar primeira letra: Janeiro, Fevereiro, etc.
+      const monthLabel = format(date, 'MMMM yyyy', { locale: ptBR })
+        .replace(/^\w/, (c) => c.toUpperCase());
+      months.push({ key: monthKey, label: monthLabel });
+    }
+    return months;
+  };
 
   useEffect(() => {
     loadData();
@@ -156,19 +171,11 @@ const Transactions = () => {
             className="input"
           >
             <option value="">Todos os meses</option>
-            <option value="2025-01">Janeiro 2025</option>
-            <option value="2024-12">Dezembro 2024</option>
-            <option value="2024-11">Novembro 2024</option>
-            <option value="2024-10">Outubro 2024</option>
-            <option value="2024-09">Setembro 2024</option>
-            <option value="2024-08">Agosto 2024</option>
-            <option value="2024-07">Julho 2024</option>
-            <option value="2024-06">Junho 2024</option>
-            <option value="2024-05">Maio 2024</option>
-            <option value="2024-04">Abril 2024</option>
-            <option value="2024-03">Março 2024</option>
-            <option value="2024-02">Fevereiro 2024</option>
-            <option value="2024-01">Janeiro 2024</option>
+            {getLast12Months().map((month) => (
+              <option key={month.key} value={month.key}>
+                {month.label}
+              </option>
+            ))}
           </select>
 
           {/* Category Filter */}
