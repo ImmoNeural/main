@@ -36,67 +36,121 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'Reembolso': '#86efac', // Verde muito claro
 };
 
-// Paleta expandida com 120+ cores únicas
-// Organizada por famílias de cores com tons muito claros → muito escuros
+// Paleta com MÁXIMA VARIEDADE de cores
+// Cores organizadas para ter diferenças visuais GRANDES entre as primeiras
 const FALLBACK_COLORS = [
-  // Pretos e Cinzas escuros
-  '#000000', '#111827', '#1f2937', '#374151', '#4b5563',
-  // Cinzas médios e claros
-  '#6b7280', '#9ca3af', '#d1d5db', '#e5e7eb', '#f3f4f6',
+  // Primeira rodada: Cores MUITO diferentes (espectro completo)
+  '#ef4444', // Vermelho vibrante
+  '#3b82f6', // Azul vibrante
+  '#22c55e', // Verde vibrante
+  '#f59e0b', // Laranja vibrante
+  '#a855f7', // Roxo vibrante
+  '#14b8a6', // Teal vibrante
+  '#ec4899', // Rosa vibrante
+  '#eab308', // Amarelo vibrante
+  '#6366f1', // Índigo vibrante
+  '#84cc16', // Lima vibrante
+  '#06b6d4', // Ciano vibrante
+  '#f97316', // Laranja escuro
+  '#8b5cf6', // Violeta vibrante
+  '#10b981', // Esmeralda vibrante
+  '#d946ef', // Fuchsia vibrante
 
-  // Vermelhos (muito claro → muito escuro)
-  '#fee2e2', '#fecaca', '#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d', '#450a0a',
+  // Segunda rodada: Tons médios variados
+  '#dc2626', // Vermelho médio
+  '#2563eb', // Azul médio
+  '#16a34a', // Verde médio
+  '#ea580c', // Laranja queimado
+  '#9333ea', // Roxo médio
+  '#0d9488', // Teal escuro
+  '#db2777', // Rosa escuro
+  '#ca8a04', // Amarelo escuro
+  '#4f46e5', // Índigo escuro
+  '#65a30d', // Lima escuro
+  '#0891b2', // Ciano escuro
+  '#c2410c', // Laranja muito escuro
+  '#7c3aed', // Violeta médio
+  '#059669', // Esmeralda escuro
+  '#c026d3', // Fuchsia escuro
 
-  // Rosas (muito claro → muito escuro)
-  '#fce7f3', '#fbcfe8', '#f9a8d4', '#f472b6', '#ec4899', '#db2777', '#be185d', '#9f1239', '#831843', '#500724',
+  // Terceira rodada: Tons claros variados
+  '#fca5a5', // Vermelho claro
+  '#93c5fd', // Azul claro
+  '#86efac', // Verde claro
+  '#fdba74', // Laranja claro
+  '#d8b4fe', // Roxo claro
+  '#5eead4', // Teal claro
+  '#f9a8d4', // Rosa claro
+  '#fde047', // Amarelo claro
+  '#a5b4fc', // Índigo claro
+  '#bef264', // Lima claro
+  '#67e8f9', // Ciano claro
+  '#fed7aa', // Laranja muito claro
+  '#c4b5fd', // Violeta claro
+  '#6ee7b7', // Esmeralda claro
+  '#f0abfc', // Fuchsia claro
 
-  // Magentas/Fuchsias (muito claro → muito escuro)
-  '#fae8ff', '#f5d0fe', '#f0abfc', '#e879f9', '#d946ef', '#c026d3', '#a21caf', '#86198f', '#701a75', '#4a044e',
+  // Quarta rodada: Tons escuros variados
+  '#991b1b', // Vermelho escuro
+  '#1e40af', // Azul escuro
+  '#15803d', // Verde escuro
+  '#9a3412', // Laranja marrom
+  '#6b21a8', // Roxo escuro
+  '#115e59', // Teal muito escuro
+  '#9f1239', // Rosa escuro
+  '#854d0e', // Amarelo marrom
+  '#3730a3', // Índigo muito escuro
+  '#4d7c0f', // Lima marrom
+  '#155e75', // Ciano escuro
+  '#7c2d12', // Laranja marrom escuro
+  '#5b21b6', // Violeta escuro
+  '#065f46', // Esmeralda muito escuro
+  '#86198f', // Fuchsia escuro
 
-  // Laranjas (muito claro → muito escuro)
-  '#ffedd5', '#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c', '#c2410c', '#9a3412', '#7c2d12', '#431407',
+  // Marrons e terrosos (variedade)
+  '#b08968', // Marrom claro
+  '#8b5a3c', // Marrom médio
+  '#6d4530', // Marrom escuro
+  '#d6c6b8', // Bege
+  '#c4a793', // Areia
 
-  // Âmbares (muito claro → muito escuro)
-  '#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f', '#451a03',
+  // Cinzas (apenas no final, se necessário)
+  '#6b7280', // Cinza médio
+  '#9ca3af', // Cinza claro
+  '#4b5563', // Cinza escuro
+  '#374151', // Cinza muito escuro
+  '#d1d5db', // Cinza muito claro
 
-  // Amarelos (muito claro → muito escuro)
-  '#fef9c3', '#fef08a', '#fde047', '#facc15', '#eab308', '#ca8a04', '#a16207', '#854d0e', '#713f12', '#422006',
+  // Tons pastéis (variedade adicional)
+  '#fee2e2', // Rosa bebê
+  '#dbeafe', // Azul bebê
+  '#dcfce7', // Verde bebê
+  '#ffedd5', // Pêssego
+  '#f3e8ff', // Lavanda
+  '#ccfbf1', // Menta
+  '#fce7f3', // Rosa pastel
+  '#fef9c3', // Amarelo pastel
+  '#e0e7ff', // Índigo pastel
+  '#ecfccb', // Lima pastel
 
-  // Limas (muito claro → muito escuro)
-  '#ecfccb', '#d9f99d', '#bef264', '#a3e635', '#84cc16', '#65a30d', '#4d7c0f', '#3f6212', '#365314', '#1a2e05',
+  // Tons muito escuros (apenas se esgotar tudo)
+  '#7f1d1d', // Vermelho muito escuro
+  '#1e3a8a', // Azul muito escuro
+  '#14532d', // Verde muito escuro
+  '#431407', // Laranja muito escuro
+  '#581c87', // Roxo muito escuro
+  '#042f2e', // Teal muito escuro
+  '#831843', // Rosa muito escuro
+  '#713f12', // Amarelo muito escuro
+  '#312e81', // Índigo muito escuro
+  '#365314', // Lima muito escuro
 
-  // Verdes (muito claro → muito escuro)
-  '#dcfce7', '#bbf7d0', '#86efac', '#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534', '#14532d', '#052e16',
-
-  // Esmeraldas (muito claro → muito escuro)
-  '#d1fae5', '#a7f3d0', '#6ee7b7', '#34d399', '#10b981', '#059669', '#047857', '#065f46', '#064e3b', '#022c22',
-
-  // Teals (muito claro → muito escuro)
-  '#ccfbf1', '#99f6e4', '#5eead4', '#2dd4bf', '#14b8a6', '#0d9488', '#0f766e', '#115e59', '#134e4a', '#042f2e',
-
-  // Cyans (muito claro → muito escuro)
-  '#cffafe', '#a5f3fc', '#67e8f9', '#22d3ee', '#06b6d4', '#0891b2', '#0e7490', '#155e75', '#164e63', '#083344',
-
-  // Azuis céu (muito claro → muito escuro)
-  '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0284c7', '#0369a1', '#075985', '#0c4a6e', '#082f49',
-
-  // Azuis (muito claro → muito escuro)
-  '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a', '#172554',
-
-  // Azuis escuros / Navy
-  '#1e3a8a', '#1e40af', '#1d4ed8', '#1a3c8a', '#172554', '#0f172a', '#0c1229', '#020617', '#000814', '#00040a',
-
-  // Índigos (muito claro → muito escuro)
-  '#e0e7ff', '#c7d2fe', '#a5b4fc', '#818cf8', '#6366f1', '#4f46e5', '#4338ca', '#3730a3', '#312e81', '#1e1b4b',
-
-  // Violetas (muito claro → muito escuro)
-  '#ede9fe', '#ddd6fe', '#c4b5fd', '#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95', '#2e1065',
-
-  // Roxos (muito claro → muito escuro)
-  '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc', '#a855f7', '#9333ea', '#7e22ce', '#6b21a8', '#581c87', '#3b0764',
-
-  // Marrons (muito claro → muito escuro)
-  '#e7ddd7', '#d6c6b8', '#c4a793', '#b08968', '#9c6e4f', '#8b5a3c', '#7a4e2f', '#6d4530', '#5c3d2e', '#4a3228',
+  // Preto/branco (apenas último recurso)
+  '#000000', // Preto
+  '#111827', // Quase preto
+  '#1f2937', // Cinza muito escuro
+  '#e5e7eb', // Quase branco
+  '#f3f4f6', // Cinza muito claro
 ];
 
 export function getCategoryColor(category: string, index: number = 0): string {
