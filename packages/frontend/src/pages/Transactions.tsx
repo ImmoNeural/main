@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import { Search, Download, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
+import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -13,6 +14,12 @@ const Transactions = () => {
   const [selectedType, setSelectedType] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [isRecategorizing, setIsRecategorizing] = useState(false);
+
+  // Estados para o modal de recategorização em lote
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [similarTransactions, setSimilarTransactions] = useState<Array<Transaction & { matchScore: number; matchedWords: string[] }>>([]);
+  const [bulkCategory, setBulkCategory] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   // Gerar últimos 12 meses dinamicamente
   const getLast12Months = () => {
@@ -73,14 +80,41 @@ const Transactions = () => {
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
     try {
+      // Encontrar a transação sendo atualizada
+      const transaction = transactions.find(t => t.id === transactionId);
+      if (!transaction) return;
+
+      const wasUncategorized = !transaction.category ||
+                              transaction.category === 'Definir Categoria' ||
+                              transaction.category === 'Outros';
+
+      // Atualizar a transação atual
       await transactionApi.updateCategory(transactionId, newCategory);
       setTransactions((prev) =>
         prev.map((t) =>
           t.id === transactionId ? { ...t, category: newCategory } : t
         )
       );
+
+      // Se era uma transação não categorizada e agora tem categoria válida,
+      // buscar transações similares e mostrar modal
+      if (wasUncategorized && newCategory && newCategory !== 'Definir Categoria' && newCategory !== 'Outros') {
+        const description = transaction.description || '';
+        const merchant = transaction.merchant || '';
+
+        // Buscar transações similares
+        const response = await transactionApi.findSimilar(description, merchant, transactionId);
+
+        // Se encontrou transações similares, mostrar modal
+        if (response.data.similar.length > 0) {
+          setSimilarTransactions(response.data.similar);
+          setBulkCategory(newCategory);
+          setShowBulkModal(true);
+        }
+      }
     } catch (error) {
       console.error('Error updating category:', error);
+      alert('Erro ao atualizar categoria. Tente novamente.');
     }
   };
 
@@ -100,6 +134,40 @@ const Transactions = () => {
     } finally {
       setIsRecategorizing(false);
     }
+  };
+
+  const handleBulkConfirm = async () => {
+    setBulkLoading(true);
+    try {
+      const transactionIds = similarTransactions.map(t => t.id);
+      const response = await transactionApi.bulkUpdateCategory(transactionIds, bulkCategory);
+
+      // Atualizar as transações localmente
+      setTransactions((prev) =>
+        prev.map((t) =>
+          transactionIds.includes(t.id) ? { ...t, category: bulkCategory } : t
+        )
+      );
+
+      // Fechar modal
+      setShowBulkModal(false);
+      setSimilarTransactions([]);
+      setBulkCategory('');
+
+      // Mostrar mensagem de sucesso
+      alert(`✅ ${response.data.message}`);
+    } catch (error) {
+      console.error('Error bulk updating:', error);
+      alert('Erro ao recategorizar em lote. Tente novamente.');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkClose = () => {
+    setShowBulkModal(false);
+    setSimilarTransactions([]);
+    setBulkCategory('');
   };
 
   const exportToCSV = () => {
@@ -302,6 +370,16 @@ const Transactions = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal de Recategorização em Lote */}
+      <BulkRecategorizeModal
+        isOpen={showBulkModal}
+        onClose={handleBulkClose}
+        onConfirm={handleBulkConfirm}
+        similarTransactions={similarTransactions}
+        newCategory={bulkCategory}
+        loading={bulkLoading}
+      />
     </div>
   );
 };
