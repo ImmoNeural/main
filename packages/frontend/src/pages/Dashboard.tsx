@@ -326,7 +326,7 @@ const Dashboard = () => {
               <Legend
                 verticalAlign="bottom"
                 height={36}
-                formatter={(value, entry: any) => {
+                formatter={(value) => {
                   const data = categoryStats.find((c) => c.category === value);
                   return `${value} (${data?.percentage.toFixed(1)}%)`;
                 }}
