@@ -14,8 +14,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from 'recharts';
 import { format } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
