@@ -152,7 +152,7 @@ const Accounts = () => {
                 <p className="text-sm text-gray-500">Última sincronização</p>
                 <p className="text-sm text-gray-900">
                   {account.last_sync_at
-                    ? format(parseISO(account.last_sync_at.toString()), 'dd/MM/yyyy HH:mm')
+                    ? format(new Date(account.last_sync_at), 'dd/MM/yyyy HH:mm')
                     : 'Nunca'}
                 </p>
               </div>
@@ -161,7 +161,7 @@ const Accounts = () => {
               <div>
                 <p className="text-sm text-gray-500">Conectada em</p>
                 <p className="text-sm text-gray-900">
-                  {format(parseISO(account.connected_at.toString()), 'dd/MM/yyyy')}
+                  {format(new Date(account.connected_at), 'dd/MM/yyyy')}
                 </p>
               </div>
             </div>
