@@ -15,7 +15,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getAllCategoryColors } from '../utils/colors';
 
@@ -101,7 +101,7 @@ const Dashboard = () => {
     const data: any = {
       week: `S${week.weekNumber}`,
       weekLabel: `Semana ${week.weekNumber}/${week.year}`,
-      dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
+      dateRange: `${format(parseISO(week.startDate), 'dd/MM')} - ${format(parseISO(week.endDate), 'dd/MM')}`,
     };
 
     // Adicionar despesas
@@ -134,8 +134,8 @@ const Dashboard = () => {
       const categoryExpense = week.expenses.byCategory.find((c) => c.category === category);
       const amount = categoryExpense?.amount || 0;
 
-      // Usar a data de início da semana para determinar o mês
-      const weekDate = new Date(week.startDate);
+      // Usar parseISO para garantir interpretação correta da data
+      const weekDate = parseISO(week.startDate);
       const monthKey = format(weekDate, 'yyyy-MM');
       // Capitalizar primeira letra: Jan, Fev, Mar, etc.
       const monthLabel = format(weekDate, 'MMM/yy', { locale: ptBR })
@@ -504,7 +504,7 @@ const Dashboard = () => {
         </div>
 
         {/* Category Monthly Detail - Sempre visível */}
-        <div id="category-detail" className="card border-2 border-primary-500 shadow-xl">
+        <div id="category-detail" className="card shadow-xl">
           {selectedCategory ? (
             <>
               <div className="flex justify-between items-start mb-4">
@@ -532,13 +532,6 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              title="Fechar"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
