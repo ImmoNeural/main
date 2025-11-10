@@ -11,12 +11,16 @@ router.post('/register', async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
 
+    console.log('📝 Registration attempt for:', email);
+
     // Validação
     if (!name || !email || !password) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
     }
 
     if (password.length < 6) {
+      console.log('❌ Password too short');
       return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres' });
     }
 
@@ -28,17 +32,41 @@ router.post('/register', async (req: Request, res: Response) => {
         data: {
           name,
         },
+        // Desabilitar confirmação de email para permitir login imediato
+        emailRedirectTo: undefined,
       },
     });
 
     if (error) {
-      console.error('Supabase signup error:', error);
+      console.error('❌ Supabase signup error:', error);
+
+      // Mensagens de erro mais claras
+      if (error.message.includes('already registered')) {
+        return res.status(400).json({ error: 'Este email já está cadastrado. Tente fazer login.' });
+      }
+
       return res.status(400).json({ error: error.message });
     }
 
     if (!data.user) {
+      console.error('❌ No user returned from Supabase');
       return res.status(400).json({ error: 'Erro ao criar usuário' });
     }
+
+    // Verificar se precisa confirmar email
+    if (data.user && !data.session) {
+      console.log('⚠️ Email confirmation required for:', email);
+      return res.status(200).json({
+        message: 'Conta criada com sucesso! Verifique seu email para confirmar o cadastro.',
+        requiresEmailConfirmation: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
+      });
+    }
+
+    console.log('✅ Registration successful for:', email);
 
     // O profile é criado automaticamente via trigger no Supabase
 
@@ -52,8 +80,8 @@ router.post('/register', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(500).json({ error: 'Erro ao criar usuário' });
+    console.error('❌ Error registering user:', error);
+    res.status(500).json({ error: 'Erro ao criar usuário. Tente novamente mais tarde.' });
   }
 });
 
