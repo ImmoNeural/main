@@ -528,15 +528,14 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
   for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
     const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
 
-    const { error: insertError, count } = await supabase
+    const { error: insertError } = await supabase
       .from('transactions')
-      .insert(batch)
-      .select('id', { count: 'exact', head: true });
+      .insert(batch);
 
     if (insertError) {
       console.error(`[Sync] Error inserting batch ${i / BATCH_SIZE + 1}:`, insertError);
     } else {
-      totalInserted += count || batch.length;
+      totalInserted += batch.length;
       console.log(`[Sync] Batch ${i / BATCH_SIZE + 1}: inserted ${batch.length} transactions`);
     }
   }
