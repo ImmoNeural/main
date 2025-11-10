@@ -626,7 +626,7 @@ const Dashboard = () => {
                     {transaction.merchant || transaction.description}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {format(new Date(transaction.date), 'dd/MM/yyyy')} • {transaction.category}
+                    {format(parseISO(transaction.date.toString()), 'dd/MM/yyyy')} • {transaction.category}
                   </p>
                 </div>
               </div>
