@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Search, Download, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { transactionApi } from '../services/api';
@@ -65,7 +65,7 @@ const Transactions = () => {
       transaction.category?.toLowerCase().includes(searchLower);
 
     const matchesMonth = selectedMonth
-      ? format(new Date(transaction.date), 'yyyy-MM') === selectedMonth
+      ? format(parseISO(transaction.date.toString()), 'yyyy-MM') === selectedMonth
       : true;
 
     return matchesSearch && matchesMonth;
@@ -105,7 +105,7 @@ const Transactions = () => {
   const exportToCSV = () => {
     const headers = ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor'];
     const rows = filteredTransactions.map((t) => [
-      format(new Date(t.date), 'dd/MM/yyyy'),
+      format(parseISO(t.date.toString()), 'dd/MM/yyyy'),
       t.merchant || t.description || '',
       t.category || '',
       t.type === 'credit' ? 'Receita' : 'Despesa',
@@ -237,7 +237,7 @@ const Transactions = () => {
                     className={`hover:bg-gray-50 ${isUncategorized ? 'bg-pink-50' : ''}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                      {format(parseISO(transaction.date.toString()), 'dd/MM/yyyy')}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div>
