@@ -95,13 +95,21 @@ const Transactions = () => {
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
     try {
+      console.log('🔄 Atualizando categoria da transação:', transactionId, 'para:', newCategory);
+
       // Encontrar a transação sendo atualizada
       const transaction = transactions.find(t => t.id === transactionId);
-      if (!transaction) return;
+      if (!transaction) {
+        console.log('⚠️ Transação não encontrada:', transactionId);
+        return;
+      }
 
       const wasUncategorized = !transaction.category ||
                               transaction.category === 'Definir Categoria' ||
                               transaction.category === 'Outros';
+
+      console.log('📋 Categoria anterior:', transaction.category);
+      console.log('🏷️ Era não categorizada?', wasUncategorized);
 
       // Atualizar a transação atual
       await transactionApi.updateCategory(transactionId, newCategory);
@@ -117,18 +125,32 @@ const Transactions = () => {
         const description = transaction.description || '';
         const merchant = transaction.merchant || '';
 
+        console.log('🔍 Buscando transações similares a:', { description, merchant });
+
         // Buscar transações similares
         const response = await transactionApi.findSimilar(description, merchant, transactionId);
 
+        console.log('✅ Transações similares encontradas:', response.data.similar.length);
+        console.log('📊 Detalhes:', response.data);
+
         // Se encontrou transações similares, mostrar modal
         if (response.data.similar.length > 0) {
+          console.log('🎯 Abrindo modal de recategorização em lote');
           setSimilarTransactions(response.data.similar);
           setBulkCategory(newCategory);
           setShowBulkModal(true);
+        } else {
+          console.log('ℹ️ Nenhuma transação similar encontrada');
         }
+      } else {
+        console.log('⏭️ Pulando busca de similares:', {
+          wasUncategorized,
+          newCategory,
+          isValidCategory: newCategory !== 'Definir Categoria' && newCategory !== 'Outros'
+        });
       }
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('❌ Erro ao atualizar categoria:', error);
       alert('Erro ao atualizar categoria. Tente novamente.');
     }
   };
@@ -291,12 +313,12 @@ const Transactions = () => {
           </div>
 
           {/* Saldo Líquido */}
-          <div className="text-center p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-md">
-            <p className="text-sm font-medium text-white uppercase tracking-wide mb-2">
+          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
               Saldo Líquido
             </p>
             <p className={`text-3xl md:text-4xl font-bold ${
-              balance >= 0 ? 'text-green-100' : 'text-red-100'
+              balance >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
               {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
             </p>
