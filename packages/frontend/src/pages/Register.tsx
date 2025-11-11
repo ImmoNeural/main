@@ -59,7 +59,7 @@ const Register = () => {
       <div className="relative w-full max-w-md">
         {/* Logo e título */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-full shadow-lg mb-4 p-4">
+          <div className="inline-flex items-center justify-center w-40 h-40 sm:w-44 sm:h-44 bg-white rounded-full shadow-lg mb-4 p-5">
             <img
               src="/logo.png"
               alt="Guru do Dindin"
