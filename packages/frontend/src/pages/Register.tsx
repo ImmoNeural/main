@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
-import { authApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,12 +32,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await authApi.register(name, email, password);
-
-      // Salvar token e dados do usuário
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-
+      await register(name, email, password);
       setSuccess(true);
 
       // Redirecionar após 1 segundo
