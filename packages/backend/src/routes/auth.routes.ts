@@ -1,22 +1,7 @@
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
-import db from '../db/database';
+import { supabaseAuth } from '../config/supabase';
 
 const router = Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '7d'; // Token válido por 7 dias
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  password_hash: string;
-  created_at: number;
-  updated_at: number;
-}
 
 interface RegisterRequest {
   name: string;
@@ -31,11 +16,13 @@ interface LoginRequest {
 
 /**
  * POST /api/auth/register
- * Registra um novo usuário
+ * Registra um novo usuário usando Supabase Auth
  */
 router.post('/register', async (req: Request, res: Response) => {
   try {
     const { name, email, password }: RegisterRequest = req.body;
+
+    console.log('📝 Register attempt for:', email);
 
     // Validação
     if (!name || !email || !password) {
@@ -52,93 +39,91 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email inválido' });
     }
 
-    // Verificar se o email já existe
-    const existingUser = db
-      .prepare('SELECT id FROM users WHERE email = ?')
-      .get(email.toLowerCase()) as User | undefined;
+    // Criar usuário no Supabase Auth
+    const { data, error } = await supabaseAuth.auth.signUp({
+      email: email.toLowerCase(),
+      password,
+      options: {
+        data: {
+          name,
+        },
+      },
+    });
 
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email já cadastrado' });
+    if (error) {
+      console.error('❌ Supabase signup error:', error);
+      if (error.message.includes('already registered')) {
+        return res.status(400).json({ error: 'Email já cadastrado' });
+      }
+      return res.status(400).json({ error: error.message });
     }
 
-    // Hash da senha
-    const saltRounds = 10;
-    const password_hash = await bcrypt.hash(password, saltRounds);
+    if (!data.user) {
+      return res.status(500).json({ error: 'Erro ao criar usuário' });
+    }
 
-    // Criar usuário
-    const userId = uuidv4();
-    const now = Date.now();
-
-    db.prepare(
-      `INSERT INTO users (id, name, email, password_hash, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(userId, name, email.toLowerCase(), password_hash, now, now);
-
-    // Gerar token JWT
-    const token = jwt.sign({ userId, email: email.toLowerCase() }, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
-    });
+    console.log('✅ User created:', data.user.id);
 
     res.status(201).json({
       message: 'Usuário criado com sucesso',
-      token,
+      token: data.session?.access_token,
       user: {
-        id: userId,
+        id: data.user.id,
         name,
-        email: email.toLowerCase(),
+        email: data.user.email,
       },
     });
   } catch (error) {
-    console.error('Error registering user:', error);
+    console.error('❌ Error registering user:', error);
     res.status(500).json({ error: 'Erro ao criar usuário' });
   }
 });
 
 /**
  * POST /api/auth/login
- * Autentica um usuário
+ * Autentica um usuário usando Supabase Auth
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password }: LoginRequest = req.body;
 
+    console.log('🔐 Login attempt for:', email);
+
     // Validação
     if (!email || !password) {
+      console.log('❌ Missing email or password');
       return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
-    // Buscar usuário
-    const user = db
-      .prepare('SELECT * FROM users WHERE email = ?')
-      .get(email.toLowerCase()) as User | undefined;
-
-    if (!user) {
-      return res.status(401).json({ error: 'Email ou senha incorretos' });
-    }
-
-    // Verificar senha
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Email ou senha incorretos' });
-    }
-
-    // Gerar token JWT
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
+    // Autenticar com Supabase
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password,
     });
+
+    if (error) {
+      console.error('❌ Supabase login error:', error);
+      return res.status(401).json({ error: 'Email ou senha incorretos' });
+    }
+
+    if (!data.user || !data.session) {
+      console.log('❌ No user or session returned');
+      return res.status(401).json({ error: 'Email ou senha incorretos' });
+    }
+
+    console.log('✅ User authenticated:', data.user.id);
 
     res.json({
       message: 'Login realizado com sucesso',
-      token,
+      token: data.session.access_token,
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+        id: data.user.id,
+        name: data.user.user_metadata?.name || data.user.email?.split('@')[0],
+        email: data.user.email,
       },
     });
   } catch (error) {
-    console.error('Error logging in:', error);
+    console.error('❌ Error logging in:', error);
     res.status(500).json({ error: 'Erro ao fazer login' });
   }
 });
@@ -155,9 +140,9 @@ router.post('/logout', (req: Request, res: Response) => {
 
 /**
  * GET /api/auth/me
- * Retorna o usuário autenticado
+ * Retorna o usuário autenticado usando Supabase Auth
  */
-router.get('/me', (req: Request, res: Response) => {
+router.get('/me', async (req: Request, res: Response) => {
   try {
     // Extrair token do header Authorization
     const authHeader = req.headers.authorization;
@@ -167,27 +152,24 @@ router.get('/me', (req: Request, res: Response) => {
 
     const token = authHeader.substring(7);
 
-    // Verificar e decodificar token
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+    // Verificar token com Supabase
+    const { data, error } = await supabaseAuth.auth.getUser(token);
 
-    // Buscar usuário
-    const user = db
-      .prepare('SELECT id, name, email, created_at FROM users WHERE id = ?')
-      .get(decoded.userId) as Omit<User, 'password_hash' | 'updated_at'> | undefined;
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuário não encontrado' });
+    if (error || !data.user) {
+      console.error('❌ Token verification failed:', error);
+      return res.status(401).json({ error: 'Token inválido ou expirado' });
     }
 
-    res.json({ user });
+    res.json({
+      user: {
+        id: data.user.id,
+        name: data.user.user_metadata?.name || data.user.email?.split('@')[0],
+        email: data.user.email,
+        created_at: data.user.created_at,
+      },
+    });
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ error: 'Token inválido' });
-    }
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ error: 'Token expirado' });
-    }
-    console.error('Error fetching user:', error);
+    console.error('❌ Error fetching user:', error);
     res.status(500).json({ error: 'Erro ao buscar usuário' });
   }
 });
