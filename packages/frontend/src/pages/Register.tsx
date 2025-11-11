@@ -59,8 +59,12 @@ const Register = () => {
       <div className="relative w-full max-w-md">
         {/* Logo e título */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-            <span className="text-4xl">💰</span>
+          <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-full shadow-lg mb-4 p-4">
+            <img
+              src="/logo.png"
+              alt="Guru do Dindin"
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Guru do Dindin</h1>
           <p className="text-white/80 text-lg">Comece sua jornada financeira</p>
