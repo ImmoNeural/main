@@ -19,8 +19,8 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://mycleverbot.com.br',
-      'http://mycleverbot.com.br',
+      'https://gurudodindin.com.br',
+      'http://gurudodindin.com.br',
       process.env.FRONTEND_URL,
     ];
 
@@ -29,7 +29,7 @@ app.use(cors({
         allowedOrigins.includes(origin) ||
         origin.endsWith('.netlify.app') ||
         origin.endsWith('.render.com') ||
-        origin.endsWith('.mycleverbot.com.br')) {
+        origin.endsWith('.gurudodindin.com.br')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

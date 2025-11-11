@@ -27,9 +27,9 @@ services:
       - key: SESSION_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://mycleverbot.com.br
+        value: https://gurudodindin.com.br
       - key: OPEN_BANKING_REDIRECT_URI
-        value: https://mycleverbot.com.br/bank/callback
+        value: https://gurudodindin.com.br/bank/callback
       - key: SUPABASE_URL
         value: https://bhkvenyaxkkqzcsfyjvb.supabase.co
       - key: SUPABASE_ANON_KEY
