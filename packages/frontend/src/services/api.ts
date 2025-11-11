@@ -114,20 +114,6 @@ export const transactionApi = {
   updateCategory: (id: string, category: string) =>
     api.patch(`/transactions/${id}/category`, { category }),
 
-  findSimilar: (id: string) =>
-    api.post<{
-      transaction: Transaction;
-      similar: Transaction[];
-      count: number;
-    }>(`/transactions/${id}/find-similar`),
-
-  bulkUpdateCategory: (transaction_ids: string[], category: string) =>
-    api.patch<{
-      success: boolean;
-      updated: number;
-      total: number;
-    }>('/transactions/bulk-update-category', { transaction_ids, category }),
-
   getCategories: () =>
     api.get<Category[]>('/transactions/categories/list'),
 

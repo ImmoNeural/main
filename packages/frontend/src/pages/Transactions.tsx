@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Search, Download, AlertCircle, RefreshCw } from 'lucide-react';
-import { transactionApi, bankApi } from '../services/api';
+import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
 
@@ -13,7 +13,7 @@ const Transactions = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
-  const [isRecategorizing, setIsRecategorizing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Estados para o modal de recategorização em lote
   const [showBulkModal, setShowBulkModal] = useState(false);
@@ -40,6 +40,7 @@ const Transactions = () => {
   }, [selectedCategory, selectedType]);
 
   const loadData = async () => {
+    setIsLoading(true);
     try {
       const [transactionsRes, categoriesRes] = await Promise.all([
         transactionApi.getTransactions({
@@ -54,6 +55,8 @@ const Transactions = () => {
       setCategories(categoriesRes.data);
     } catch (error) {
       console.error('Error loading transactions:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -185,9 +188,9 @@ const Transactions = () => {
           <button
             onClick={loadData}
             className="btn-secondary flex items-center space-x-2"
-            disabled={isRecategorizing}
+            disabled={isLoading}
           >
-            <RefreshCw className={`w-5 h-5 ${isRecategorizing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Atualizar</span>
           </button>
           <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
