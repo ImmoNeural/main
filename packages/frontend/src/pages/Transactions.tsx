@@ -82,6 +82,17 @@ const Transactions = () => {
     return matchesSearch && matchesMonth;
   });
 
+  // Calcular totais das transações filtradas
+  const totalIncome = filteredTransactions
+    .filter(t => t.type === 'credit')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const totalExpense = filteredTransactions
+    .filter(t => t.type === 'debit')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const balance = totalIncome - totalExpense;
+
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
     try {
       // Encontrar a transação sendo atualizada
@@ -253,6 +264,43 @@ const Transactions = () => {
             <option value="credit">Receitas</option>
             <option value="debit">Despesas</option>
           </select>
+        </div>
+      </div>
+
+      {/* Resumo Financeiro das Transações Filtradas */}
+      <div className="card bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-2 border-indigo-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Total de Receitas */}
+          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
+              Total de Receitas
+            </p>
+            <p className="text-3xl md:text-4xl font-bold text-green-600">
+              {formatCurrency(totalIncome)}
+            </p>
+          </div>
+
+          {/* Total de Despesas */}
+          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
+              Total de Despesas
+            </p>
+            <p className="text-3xl md:text-4xl font-bold text-red-600">
+              {formatCurrency(totalExpense)}
+            </p>
+          </div>
+
+          {/* Saldo Líquido */}
+          <div className="text-center p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-md">
+            <p className="text-sm font-medium text-white uppercase tracking-wide mb-2">
+              Saldo Líquido
+            </p>
+            <p className={`text-3xl md:text-4xl font-bold ${
+              balance >= 0 ? 'text-green-100' : 'text-red-100'
+            }`}>
+              {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
+            </p>
+          </div>
         </div>
       </div>
 
