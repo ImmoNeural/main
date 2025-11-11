@@ -112,21 +112,20 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
  * POST /api/transactions/:id/find-similar
  * Busca transações similares baseadas no merchant/descrição
  */
-router.post('/:id/find-similar', authMiddleware, (req: Request, res: Response) => {
+router.post('/:id/find-similar', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { id } = req.params;
 
     // Buscar a transação original
-    const transaction = db
-      .prepare(`
-        SELECT t.* FROM transactions t
-        INNER JOIN bank_accounts ba ON t.account_id = ba.id
-        WHERE t.id = ? AND ba.user_id = ?
-      `)
-      .get(id, user_id) as Transaction | undefined;
+    const { data: transaction, error: fetchError } = await supabase
+      .from('transactions')
+      .select('*, bank_accounts!inner(user_id)')
+      .eq('id', id)
+      .eq('bank_accounts.user_id', user_id)
+      .single();
 
-    if (!transaction) {
+    if (fetchError || !transaction) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
@@ -135,35 +134,37 @@ router.post('/:id/find-similar', authMiddleware, (req: Request, res: Response) =
     let similarTransactions: Transaction[] = [];
 
     if (transaction.merchant) {
-      similarTransactions = db
-        .prepare(`
-          SELECT t.* FROM transactions t
-          INNER JOIN bank_accounts ba ON t.account_id = ba.id
-          WHERE ba.user_id = ?
-            AND t.id != ?
-            AND t.merchant = ?
-          ORDER BY t.date DESC
-          LIMIT 50
-        `)
-        .all(user_id, id, transaction.merchant) as Transaction[];
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*, bank_accounts!inner(user_id)')
+        .eq('bank_accounts.user_id', user_id)
+        .neq('id', id)
+        .eq('merchant', transaction.merchant)
+        .order('date', { ascending: false })
+        .limit(50);
+
+      if (!error && data) {
+        similarTransactions = data as Transaction[];
+      }
     }
 
     // Se não encontrou por merchant, buscar por descrição similar
     if (similarTransactions.length === 0 && transaction.description) {
-      const descWords = transaction.description.toLowerCase().split(' ').filter(w => w.length > 3);
+      const descWords = transaction.description.toLowerCase().split(' ').filter((w: string) => w.length > 3);
       if (descWords.length > 0) {
         const searchPattern = `%${descWords[0]}%`;
-        similarTransactions = db
-          .prepare(`
-            SELECT t.* FROM transactions t
-            INNER JOIN bank_accounts ba ON t.account_id = ba.id
-            WHERE ba.user_id = ?
-              AND t.id != ?
-              AND (LOWER(t.description) LIKE ? OR LOWER(t.merchant) LIKE ?)
-            ORDER BY t.date DESC
-            LIMIT 50
-          `)
-          .all(user_id, id, searchPattern, searchPattern) as Transaction[];
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*, bank_accounts!inner(user_id)')
+          .eq('bank_accounts.user_id', user_id)
+          .neq('id', id)
+          .or(`description.ilike.${searchPattern},merchant.ilike.${searchPattern}`)
+          .order('date', { ascending: false })
+          .limit(50);
+
+        if (!error && data) {
+          similarTransactions = data as Transaction[];
+        }
       }
     }
 
@@ -225,7 +226,7 @@ router.patch('/:id/category', authMiddleware, async (req: Request, res: Response
  * PATCH /api/transactions/bulk-update-category
  * Atualiza a categoria de múltiplas transações
  */
-router.patch('/bulk-update-category', authMiddleware, (req: Request, res: Response) => {
+router.patch('/bulk-update-category', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { transaction_ids, category } = req.body;
@@ -239,32 +240,34 @@ router.patch('/bulk-update-category', authMiddleware, (req: Request, res: Respon
     }
 
     // Verificar se todas as transações pertencem ao usuário
-    const placeholders = transaction_ids.map(() => '?').join(',');
-    const userTransactions = db
-      .prepare(`
-        SELECT t.id FROM transactions t
-        INNER JOIN bank_accounts ba ON t.account_id = ba.id
-        WHERE t.id IN (${placeholders}) AND ba.user_id = ?
-      `)
-      .all(...transaction_ids, user_id) as Array<{ id: string }>;
+    const { data: userTransactions, error: fetchError } = await supabase
+      .from('transactions')
+      .select('id, bank_accounts!inner(user_id)')
+      .in('id', transaction_ids)
+      .eq('bank_accounts.user_id', user_id);
 
-    if (userTransactions.length !== transaction_ids.length) {
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (!userTransactions || userTransactions.length !== transaction_ids.length) {
       return res.status(403).json({ error: 'Some transactions do not belong to this user' });
     }
 
     // Atualizar todas as transações
-    const updateStmt = db.prepare('UPDATE transactions SET category = ?, updated_at = ? WHERE id = ?');
-    const now = Date.now();
+    const { data: updated, error: updateError } = await supabase
+      .from('transactions')
+      .update({ category, updated_at: toISOString(Date.now()) })
+      .in('id', transaction_ids)
+      .select();
 
-    let updatedCount = 0;
-    for (const id of transaction_ids) {
-      const result = updateStmt.run(category, now, id);
-      if (result.changes > 0) updatedCount++;
+    if (updateError) {
+      throw updateError;
     }
 
     res.json({
       success: true,
-      updated: updatedCount,
+      updated: updated?.length || 0,
       total: transaction_ids.length,
     });
   } catch (error) {
