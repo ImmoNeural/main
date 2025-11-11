@@ -138,7 +138,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center text-white/60 text-sm">
-          <p>© 2024 Guru do Dindin. Todos os direitos reservados.</p>
+          <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
         </div>
       </div>
 

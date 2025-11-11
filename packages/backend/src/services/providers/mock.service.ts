@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../../db/database';
+import { supabase } from '../../config/supabase';
 import categorizationService from '../categorization.service';
 import { BankAccount, Transaction } from '../../types';
 
@@ -8,6 +8,14 @@ import { BankAccount, Transaction } from '../../types';
  * Serviço Mock para demonstração sem credenciais reais do Pluggy
  * Simula conexão bancária e gera dados fictícios realistas
  */
+
+/**
+ * Converte timestamp em milissegundos para formato ISO string (para TIMESTAMPTZ do PostgreSQL)
+ */
+function toISOString(timestamp: number | undefined): string | null {
+  if (!timestamp) return null;
+  return new Date(timestamp).toISOString();
+}
 
 interface MockBankData {
   name: string;
@@ -166,65 +174,78 @@ export async function createMockBankAccount(
   };
 
   // Salvar conta no banco de dados
-  const stmt = db.prepare(`
-    INSERT INTO bank_accounts (
-      id, user_id, bank_name, account_number, iban, account_type,
-      balance, currency, access_token, refresh_token, token_expires_at,
-      consent_id, consent_expires_at, connected_at, status, provider_account_id,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  console.log('[Mock] 📝 Attempting to insert bank account...');
+  console.log('[Mock] Account data:', {
+    id: bankAccount.id,
+    user_id: bankAccount.user_id,
+    bank_name: bankAccount.bank_name,
+  });
 
-  stmt.run(
-    bankAccount.id,
-    bankAccount.user_id,
-    bankAccount.bank_name,
-    bankAccount.account_number,
-    bankAccount.iban,
-    bankAccount.account_type,
-    bankAccount.balance,
-    bankAccount.currency,
-    bankAccount.access_token,
-    bankAccount.refresh_token,
-    bankAccount.token_expires_at,
-    bankAccount.consent_id,
-    bankAccount.consent_expires_at,
-    bankAccount.connected_at,
-    bankAccount.status,
-    bankAccount.provider_account_id,
-    bankAccount.created_at,
-    bankAccount.updated_at
-  );
+  const { error: accountError } = await supabase
+    .from('bank_accounts')
+    .insert({
+      id: bankAccount.id,
+      user_id: bankAccount.user_id,
+      bank_name: bankAccount.bank_name,
+      account_number: bankAccount.account_number,
+      iban: bankAccount.iban,
+      account_type: bankAccount.account_type,
+      balance: bankAccount.balance,
+      currency: bankAccount.currency,
+      access_token: bankAccount.access_token,
+      refresh_token: bankAccount.refresh_token,
+      token_expires_at: toISOString(bankAccount.token_expires_at),
+      consent_id: bankAccount.consent_id,
+      consent_expires_at: toISOString(bankAccount.consent_expires_at),
+      connected_at: toISOString(bankAccount.connected_at),
+      status: bankAccount.status,
+      provider_account_id: bankAccount.provider_account_id,
+      created_at: toISOString(bankAccount.created_at),
+      updated_at: toISOString(bankAccount.updated_at),
+    });
+
+  if (accountError) {
+    console.error('[Mock] ❌ Error inserting account:', accountError);
+    console.error('[Mock] Error details:', JSON.stringify(accountError, null, 2));
+    throw new Error(`Failed to insert bank account: ${accountError.message}`);
+  }
+
+  console.log('[Mock] ✅ Bank account inserted successfully');
 
   // Gerar e salvar transações
   const transactions = generateMockTransactions(accountId, bankName);
+  console.log(`[Mock] 📝 Generated ${transactions.length} mock transactions`);
 
-  const transactionStmt = db.prepare(`
-    INSERT INTO transactions (
-      id, account_id, transaction_id, date, amount, currency, description,
-      merchant, category, type, balance_after, reference, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  // Inserir todas as transações de uma vez
+  const transactionsData = transactions.map((tx) => ({
+    id: tx.id,
+    account_id: tx.account_id,
+    transaction_id: tx.transaction_id,
+    date: tx.date, // BIGINT - manter em ms
+    amount: tx.amount,
+    currency: tx.currency,
+    description: tx.description,
+    merchant: tx.merchant,
+    category: tx.category,
+    type: tx.type,
+    balance_after: tx.balance_after,
+    reference: tx.reference,
+    status: tx.status,
+    created_at: toISOString(tx.created_at), // TIMESTAMPTZ - converter para ISO
+    updated_at: toISOString(tx.updated_at), // TIMESTAMPTZ - converter para ISO
+  }));
 
-  transactions.forEach((tx) => {
-    transactionStmt.run(
-      tx.id,
-      tx.account_id,
-      tx.transaction_id,
-      tx.date,
-      tx.amount,
-      tx.currency,
-      tx.description,
-      tx.merchant,
-      tx.category,
-      tx.type,
-      tx.balance_after,
-      tx.reference,
-      tx.status,
-      tx.created_at,
-      tx.updated_at
-    );
-  });
+  console.log('[Mock] 📝 Attempting to insert transactions...');
+
+  const { error: transactionsError } = await supabase
+    .from('transactions')
+    .insert(transactionsData);
+
+  if (transactionsError) {
+    console.error('[Mock] ❌ Error inserting transactions:', transactionsError);
+    console.error('[Mock] Error details:', JSON.stringify(transactionsError, null, 2));
+    throw new Error(`Failed to insert transactions: ${transactionsError.message}`);
+  }
 
   console.log(`[Mock] ✅ Created mock account for ${mockData.name} with ${transactions.length} transactions`);
 

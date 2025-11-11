@@ -41,14 +41,14 @@ const Accounts = () => {
   };
 
   const handleDelete = async (accountId: string) => {
-    if (!confirm('Tem certeza que deseja desconectar esta conta?')) {
+    if (!confirm('Tem certeza que deseja desconectar esta conta?\n\nNão se preocupe: Seus dados históricos serão preservados e você poderá reconectar esta conta a qualquer momento.')) {
       return;
     }
 
     try {
       await bankApi.deleteAccount(accountId);
       await loadAccounts();
-      alert('Conta desconectada com sucesso!');
+      alert('Conta desconectada com sucesso!\n\nSeus dados históricos foram preservados.');
     } catch (error) {
       console.error('Error deleting account:', error);
       alert('Erro ao desconectar conta');
@@ -56,9 +56,9 @@ const Accounts = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -166,12 +166,25 @@ const Accounts = () => {
               </div>
             </div>
 
+            {/* Status message for disconnected accounts */}
+            {account.status === 'disconnected' && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Conta desconectada.</strong> Seus dados históricos estão preservados.
+                  Clique em "Conectar Banco" acima para reconectar.
+                </p>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex space-x-2 mt-6">
               <button
                 onClick={() => handleSync(account.id)}
-                disabled={syncing === account.id}
-                className="flex-1 btn-secondary flex items-center justify-center space-x-2"
+                disabled={syncing === account.id || account.status !== 'active'}
+                className={`flex-1 btn-secondary flex items-center justify-center space-x-2 ${
+                  account.status !== 'active' ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title={account.status !== 'active' ? 'Reconecte a conta para sincronizar' : 'Sincronizar transações'}
               >
                 <RefreshCw
                   className={`w-4 h-4 ${syncing === account.id ? 'animate-spin' : ''}`}
@@ -180,7 +193,11 @@ const Accounts = () => {
               </button>
               <button
                 onClick={() => handleDelete(account.id)}
-                className="btn-danger flex items-center justify-center"
+                disabled={account.status === 'disconnected'}
+                className={`btn-danger flex items-center justify-center ${
+                  account.status === 'disconnected' ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title={account.status === 'disconnected' ? 'Conta já está desconectada' : 'Desconectar conta'}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -196,12 +213,15 @@ const Accounts = () => {
             <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
               <h3 className="font-semibold text-blue-900 mb-1">
-                Sobre a sincronização
+                Sobre a sincronização e dados históricos
               </h3>
               <p className="text-sm text-blue-800">
-                As contas são sincronizadas automaticamente através do Open Banking (PSD2).
-                Você pode sincronizar manualmente a qualquer momento clicando no botão "Sincronizar".
-                O acesso é válido por 90 dias, após esse período será necessário reconectar a conta.
+                <strong>Sincronização inteligente:</strong> O sistema busca apenas transações novas desde a última sincronização, economizando tempo e recursos.
+                <br />
+                <strong>Dados preservados:</strong> Ao desconectar uma conta, todos os seus dados históricos são mantidos em segurança.
+                Quando você reconectar, apenas as transações novas serão adicionadas ao seu histórico existente.
+                <br />
+                <strong>Validade:</strong> O acesso é válido por 90 dias. Após esse período, basta reconectar a conta.
               </p>
             </div>
           </div>

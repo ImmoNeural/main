@@ -4,23 +4,43 @@ import './config/env';
 
 import express from 'express';
 import cors from 'cors';
-import { initDatabase } from './db/database';
-import authRoutes from './routes/auth.routes';
+// import { initDatabase } from './db/database'; // SQLite - desabilitado
+// import authRoutes from './routes/auth.routes'; // SQLite auth - desabilitado
+import authRoutes from './routes/auth.supabase.routes'; // ✅ Supabase Auth
 import bankRoutes from './routes/bank.routes';
 import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 
 const app = express();
 
-// Middleware
+// Middleware - CORS configurado para aceitar Netlify e localhost
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://mycleverbot.com.br',
+      'http://mycleverbot.com.br',
+      process.env.FRONTEND_URL,
+    ];
+
+    // Permitir qualquer domínio *.netlify.app
+    if (!origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.netlify.app') ||
+        origin.endsWith('.render.com') ||
+        origin.endsWith('.mycleverbot.com.br')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
 
-// Inicializar banco de dados
-initDatabase();
+// SQLite desabilitado - usando Supabase agora
+// initDatabase();
 
 // Rotas
 app.use('/api/auth', authRoutes);

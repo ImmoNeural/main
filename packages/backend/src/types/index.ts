@@ -119,3 +119,18 @@ export interface DailyStats {
   expenses: number;
   balance: number;
 }
+
+export interface WeeklyStats {
+  weekNumber: number;
+  year: number;
+  startDate: string; // ISO string
+  endDate: string; // ISO string
+  expenses: {
+    total: number;
+    byCategory: { category: string; amount: number }[];
+  };
+  income: {
+    total: number;
+    byCategory: { category: string; amount: number }[];
+  };
+}

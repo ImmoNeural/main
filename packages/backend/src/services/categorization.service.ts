@@ -128,19 +128,20 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
-  // 📺 STREAMING E ASSINATURAS
+  // 📺 STREAMING E ASSINATURAS (PRIORIDADE MÁXIMA para não confundir com "débito")
   {
     category: 'Entretenimento',
     subcategory: 'Streaming e Assinaturas',
     keywords: ['streaming', 'assinatura', 'subscription'],
     brands: [
-      'netflix', 'spotify', 'amazon prime', 'prime video', 'disney', 'disney+',
+      'netflix', 'netflix.com', 'spotify', 'amazon prime', 'prime video', 'disney', 'disney+',
       'globoplay', 'hbo max', 'paramount', 'apple tv', 'youtube premium',
       'deezer', 'tidal', 'crunchyroll',
     ],
+    patterns: [/netflix/i, /spotify/i, /disney\+?/i], // Patterns para garantir match
     icon: '📺',
     color: '#E91E63',
-    priority: 9,
+    priority: 10, // PRIORIDADE MÁXIMA
   },
 
   // 🚗 TRANSPORTE - APPS
@@ -204,15 +205,18 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Compras',
     subcategory: 'Moda e Vestuário',
-    keywords: ['roupa', 'calcado', 'moda', 'vestuario', 'tenis'],
+    keywords: ['roupa', 'calcado', 'moda', 'vestuario', 'tenis', 'bolsa', 'acessorio'],
     brands: [
       'renner', 'c&a', 'cea', 'riachuelo', 'marisa', 'pernambucanas',
       'zara', 'h&m', 'forever 21', 'centauro', 'netshoes', 'dafiti',
       'havaianas', 'melissa', 'arezzo', 'schutz',
+      // Lojas de shopping/bolsas
+      'le postiche', 'postiche', 'santa lolla', 'capodarte', 'via mia',
+      'carmen steffens', 'luz da lua', 'animale', 'farm',
     ],
     icon: '👕',
     color: '#FF4081',
-    priority: 7,
+    priority: 8, // Aumenta prioridade
   },
 
   // 📱 TECNOLOGIA E ELETRÔNICOS
@@ -394,16 +398,51 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 9,
   },
 
-  // 📄 PAGAMENTOS - BOLETO
+  // 📄 PAGAMENTOS - BOLETO (prioridade mais baixa para não conflitar com marcas específicas)
   {
     category: 'Contas',
     subcategory: 'Boletos e Débitos',
-    keywords: ['boleto', 'debito automatico', 'pagamento', 'cobranca'],
+    keywords: ['boleto', 'cobranca'],
     brands: [],
-    patterns: [/boleto/i, /deb.*auto/i, /pagto/i],
+    patterns: [/^boleto/i, /pagto\s+boleto/i], // Apenas se começar com boleto
     icon: '📄',
     color: '#607D8B',
-    priority: 8,
+    priority: 5, // Baixa prioridade
+  },
+
+  // 💰 INVESTIMENTOS
+  {
+    category: 'Investimentos',
+    subcategory: 'Poupança e Capitalização',
+    keywords: ['capitalizacao', 'titulo capitalizacao', 'poupanca', 'cdb', 'lca', 'lci', 'tesouro'],
+    brands: ['icatu', 'bradesco capitalizacao', 'caixa capitalizacao', 'sulamerica capitalizacao'],
+    patterns: [/tit.*capital/i, /cap.*acao/i],
+    icon: '💰',
+    color: '#4CAF50',
+    priority: 9,
+  },
+
+  // 📈 INVESTIMENTOS - CORRETORAS
+  {
+    category: 'Investimentos',
+    subcategory: 'Corretoras e Fundos',
+    keywords: ['corretora', 'btg', 'xp investimentos', 'rico', 'clear', 'ações', 'fundos'],
+    brands: ['xp', 'btg', 'rico', 'clear', 'inter invest', 'nuinvest', 'warren'],
+    icon: '📈',
+    color: '#2196F3',
+    priority: 9,
+  },
+
+  // 🏦 IMPOSTOS E TAXAS
+  {
+    category: 'Impostos e Taxas',
+    subcategory: 'IOF e Impostos',
+    keywords: ['iof', 'imposto', 'taxa', 'tributo', 'contribuicao'],
+    brands: [],
+    patterns: [/\biof\b/i, /iof\s+(ad|adic)/i, /imposto/i],
+    icon: '🏦',
+    color: '#F44336',
+    priority: 10, // Alta prioridade
   },
 ];
 
@@ -581,7 +620,8 @@ class CategorizationService {
   }
 
   /**
-   * Retorna todas as categorias disponíveis
+   * Retorna todas as categorias disponíveis (SEM DUPLICATAS)
+   * Agrupa apenas por categoria principal, ignorando subcategorias
    */
   getAllCategories(): Array<{
     category: string;
@@ -592,9 +632,9 @@ class CategorizationService {
     const categories = new Map<string, any>();
 
     for (const rule of this.rules) {
-      const key = `${rule.category}-${rule.subcategory}`;
-      if (!categories.has(key)) {
-        categories.set(key, {
+      // Usar apenas a categoria principal como chave para evitar duplicatas
+      if (!categories.has(rule.category)) {
+        categories.set(rule.category, {
           category: rule.category,
           subcategory: rule.subcategory || 'Geral',
           icon: rule.icon,
@@ -603,7 +643,10 @@ class CategorizationService {
       }
     }
 
-    return Array.from(categories.values());
+    // Ordenar alfabeticamente
+    return Array.from(categories.values()).sort((a, b) =>
+      a.category.localeCompare(b.category)
+    );
   }
 
   /**

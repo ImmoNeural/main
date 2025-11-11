@@ -13,6 +13,14 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     autoRefreshToken: false,
     persistSession: false,
   },
+  db: {
+    schema: 'public',
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js-node',
+    },
+  },
 });
 
 // Cliente Supabase para operações de auth (usa anon key)
