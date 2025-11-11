@@ -45,7 +45,7 @@ Configure limites adequados para evitar spam:
 ### 3. Redirect URLs
 Adicione suas URLs permitidas:
 - `http://localhost:3000/*` (desenvolvimento)
-- `https://mycleverbot.com.br/*` (produção)
+- `https://gurudodindin.com.br/*` (produção)
 
 ### 4. External OAuth Providers (Opcional)
 Se quiser adicionar login social:
