@@ -59,6 +59,8 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       // Fast Food
       'mcdonalds', 'mc donalds', 'bobs', 'girafas', 'habbibs', 'subway', 'burger king',
       'burguer king', 'kfc', 'pizza hut', 'dominos', 'spoleto', 'china in box',
+      // Hamburguerias Premium
+      'madero', 'madero container', 'outback', 'fogo de chao', 'barbecue', 'grill',
       // Cafeterias
       'starbucks', 'coffee', 'cafe', 'rei do mate', 'ofner', 'kopenhagen',
       // Padarias
@@ -66,7 +68,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     ],
     icon: '🍕',
     color: '#FF5722',
-    priority: 7,
+    priority: 8, // Aumentar prioridade para evitar conflitos
   },
 
   // 🏥 SAÚDE - ODONTOLOGIA
@@ -128,26 +130,27 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
-  // 📺 STREAMING E ASSINATURAS
+  // 📺 STREAMING E ASSINATURAS (PRIORIDADE MÁXIMA para não confundir com "débito")
   {
     category: 'Entretenimento',
     subcategory: 'Streaming e Assinaturas',
     keywords: ['streaming', 'assinatura', 'subscription'],
     brands: [
-      'netflix', 'spotify', 'amazon prime', 'prime video', 'disney', 'disney+',
+      'netflix', 'netflix.com', 'spotify', 'amazon prime', 'prime video', 'disney', 'disney+',
       'globoplay', 'hbo max', 'paramount', 'apple tv', 'youtube premium',
       'deezer', 'tidal', 'crunchyroll',
     ],
+    patterns: [/netflix/i, /spotify/i, /disney\+?/i], // Patterns para garantir match
     icon: '📺',
     color: '#E91E63',
-    priority: 9,
+    priority: 10, // PRIORIDADE MÁXIMA
   },
 
   // 🚗 TRANSPORTE - APPS
   {
     category: 'Transporte',
     subcategory: 'Apps de Transporte',
-    keywords: ['corrida', 'viagem', 'transporte'],
+    keywords: ['corrida', 'trip', 'ride'],
     brands: [
       'uber', '99', '99 pop', '99pop', 'cabify', 'indriver', 'lady driver',
       'vem de van', 'blablacar',
@@ -175,10 +178,10 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Transporte',
     subcategory: 'Transporte Público',
-    keywords: ['metro', 'trem', 'onibus', 'bilhete', 'recarga', 'cartao'],
+    keywords: ['metro', 'metrô', 'trem', 'onibus', 'ônibus'],
     brands: [
       'metro', 'metrô', 'cptm', 'sptrans', 'bilhete unico', 'bom',
-      'riocard', 'transporte', 'circular', 'move', 'tem',
+      'riocard', 'circular', 'move', 'tem', 'estaçao', 'estacao',
     ],
     icon: '🚌',
     color: '#3F51B5',
@@ -204,15 +207,18 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Compras',
     subcategory: 'Moda e Vestuário',
-    keywords: ['roupa', 'calcado', 'moda', 'vestuario', 'tenis'],
+    keywords: ['roupa', 'calcado', 'moda', 'vestuario', 'tenis', 'bolsa', 'acessorio'],
     brands: [
       'renner', 'c&a', 'cea', 'riachuelo', 'marisa', 'pernambucanas',
       'zara', 'h&m', 'forever 21', 'centauro', 'netshoes', 'dafiti',
       'havaianas', 'melissa', 'arezzo', 'schutz',
+      // Lojas de shopping/bolsas
+      'le postiche', 'postiche', 'santa lolla', 'capodarte', 'via mia',
+      'carmen steffens', 'luz da lua', 'animale', 'farm',
     ],
     icon: '👕',
     color: '#FF4081',
-    priority: 7,
+    priority: 8, // Aumenta prioridade
   },
 
   // 📱 TECNOLOGIA E ELETRÔNICOS
@@ -300,11 +306,26 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
+  // 📚 LIVRARIAS E PAPELARIAS
+  {
+    category: 'Educação',
+    subcategory: 'Livrarias e Papelarias',
+    keywords: ['livraria', 'livros', 'papelaria', 'leitura', 'editora', 'livreiro'],
+    brands: [
+      'livraria', 'saraiva', 'cultura', 'fnac', 'travessa', 'curitiba',
+      'leitura', 'nobel', 'payot', 'argumento', 'megastore', 'da vila',
+      'kalunga', 'papelaria', 'loja do livro', 'amazon livros', 'estante virtual',
+    ],
+    icon: '📚',
+    color: '#5C6BC0',
+    priority: 9, // Alta prioridade para evitar conflitos
+  },
+
   // 🏫 EDUCAÇÃO
   {
     category: 'Educação',
     subcategory: 'Cursos e Ensino',
-    keywords: ['escola', 'faculdade', 'universidade', 'curso', 'aula', 'ensino'],
+    keywords: ['escola', 'faculdade', 'universidade', 'curso', 'aula', 'ensino', 'matricula'],
     brands: [
       'estacio', 'unip', 'anhanguera', 'unopar', 'usp', 'unicamp',
       'kumon', 'ccaa', 'wizard', 'fisk', 'cultura inglesa', 'udemy',
@@ -347,7 +368,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
   {
     category: 'Viagens',
     subcategory: 'Aéreo e Turismo',
-    keywords: ['viagem', 'passagem', 'hotel', 'hospedagem', 'turismo', 'aereo'],
+    keywords: ['viagem', 'passagem', 'hotel', 'hospedagem', 'turismo', 'aereo', 'voo', 'cia aerea'],
     brands: [
       'decolar', 'booking', 'airbnb', 'latam', 'gol', 'azul', 'voepass',
       '123 milhas', '123milhas', 'max milhas', 'maxmilhas', 'hurb',
@@ -355,7 +376,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     ],
     icon: '✈️',
     color: '#2196F3',
-    priority: 8,
+    priority: 9, // Aumentar prioridade para evitar conflito com Transporte
   },
 
   // 💰 RECEITAS - SALÁRIO
@@ -394,16 +415,51 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 9,
   },
 
-  // 📄 PAGAMENTOS - BOLETO
+  // 📄 PAGAMENTOS - BOLETO (prioridade mais baixa para não conflitar com marcas específicas)
   {
     category: 'Contas',
     subcategory: 'Boletos e Débitos',
-    keywords: ['boleto', 'debito automatico', 'pagamento', 'cobranca'],
+    keywords: ['boleto', 'cobranca'],
     brands: [],
-    patterns: [/boleto/i, /deb.*auto/i, /pagto/i],
+    patterns: [/^boleto/i, /pagto\s+boleto/i], // Apenas se começar com boleto
     icon: '📄',
     color: '#607D8B',
-    priority: 8,
+    priority: 5, // Baixa prioridade
+  },
+
+  // 💰 INVESTIMENTOS
+  {
+    category: 'Investimentos',
+    subcategory: 'Poupança e Capitalização',
+    keywords: ['capitalizacao', 'titulo capitalizacao', 'poupanca', 'cdb', 'lca', 'lci', 'tesouro'],
+    brands: ['icatu', 'bradesco capitalizacao', 'caixa capitalizacao', 'sulamerica capitalizacao'],
+    patterns: [/tit.*capital/i, /cap.*acao/i],
+    icon: '💰',
+    color: '#4CAF50',
+    priority: 9,
+  },
+
+  // 📈 INVESTIMENTOS - CORRETORAS
+  {
+    category: 'Investimentos',
+    subcategory: 'Corretoras e Fundos',
+    keywords: ['corretora', 'btg', 'xp investimentos', 'rico', 'clear', 'ações', 'fundos'],
+    brands: ['xp', 'btg', 'rico', 'clear', 'inter invest', 'nuinvest', 'warren'],
+    icon: '📈',
+    color: '#2196F3',
+    priority: 9,
+  },
+
+  // 🏦 IMPOSTOS E TAXAS
+  {
+    category: 'Impostos e Taxas',
+    subcategory: 'IOF e Impostos',
+    keywords: ['iof', 'imposto', 'taxa', 'tributo', 'contribuicao'],
+    brands: [],
+    patterns: [/\biof\b/i, /iof\s+(ad|adic)/i, /imposto/i],
+    icon: '🏦',
+    color: '#F44336',
+    priority: 10, // Alta prioridade
   },
 ];
 
@@ -511,12 +567,12 @@ class CategorizationService {
       };
     }
 
-    // Categoria padrão
+    // Categoria padrão para transações não identificadas
     return {
-      category: 'Outros',
-      subcategory: 'Não Categorizado',
-      icon: '📊',
-      color: '#9E9E9E',
+      category: 'Definir Categoria',
+      subcategory: 'Aguardando Classificação',
+      icon: '❓',
+      color: '#E9D5FF', // Roxo clarinho
       confidence: 0,
       matchedBy: 'nenhum match encontrado',
     };
@@ -581,7 +637,8 @@ class CategorizationService {
   }
 
   /**
-   * Retorna todas as categorias disponíveis
+   * Retorna todas as categorias disponíveis (SEM DUPLICATAS)
+   * Agrupa apenas por categoria principal, ignorando subcategorias
    */
   getAllCategories(): Array<{
     category: string;
@@ -592,9 +649,9 @@ class CategorizationService {
     const categories = new Map<string, any>();
 
     for (const rule of this.rules) {
-      const key = `${rule.category}-${rule.subcategory}`;
-      if (!categories.has(key)) {
-        categories.set(key, {
+      // Usar apenas a categoria principal como chave para evitar duplicatas
+      if (!categories.has(rule.category)) {
+        categories.set(rule.category, {
           category: rule.category,
           subcategory: rule.subcategory || 'Geral',
           icon: rule.icon,
@@ -603,7 +660,19 @@ class CategorizationService {
       }
     }
 
-    return Array.from(categories.values());
+    // Adicionar "Definir Categoria" (categoria especial para não categorizadas)
+    // NÃO incluir na lista para o usuário escolher, apenas para identificar transações pendentes
+    // categories.set('Definir Categoria', {
+    //   category: 'Definir Categoria',
+    //   subcategory: 'Aguardando Classificação',
+    //   icon: '❓',
+    //   color: '#FFC1E3',
+    // });
+
+    // Ordenar alfabeticamente
+    return Array.from(categories.values()).sort((a, b) =>
+      a.category.localeCompare(b.category)
+    );
   }
 
   /**

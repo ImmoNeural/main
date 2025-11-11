@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
-import { authApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,17 +32,12 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await authApi.register(name, email, password);
-
-      // Salvar token e dados do usuário
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-
+      await register(name, email, password);
       setSuccess(true);
 
-      // Redirecionar após 1 segundo
+      // Redirecionar novo usuário para conectar banco
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/connect-bank');
       }, 1000);
     } catch (err: any) {
       console.error('Register error:', err);
@@ -218,7 +214,7 @@ const Register = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center text-white/60 text-sm">
-          <p>© 2024 Guru do Dindin. Todos os direitos reservados.</p>
+          <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
         </div>
       </div>
 

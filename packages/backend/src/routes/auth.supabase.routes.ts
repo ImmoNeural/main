@@ -1,18 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { supabaseAuth } from '../config/supabase';
+import { supabaseAuth, supabase } from '../config/supabase';
 
 const router = Router();
-
-interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
-}
-
-interface LoginRequest {
-  email: string;
-  password: string;
-}
 
 /**
  * POST /api/auth/register
@@ -20,23 +9,19 @@ interface LoginRequest {
  */
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { name, email, password }: RegisterRequest = req.body;
+    const { name, email, password } = req.body;
 
-    console.log('📝 Register attempt for:', email);
+    console.log('📝 Registration attempt for:', email);
 
     // Validação
     if (!name || !email || !password) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
     }
 
     if (password.length < 6) {
+      console.log('❌ Password too short');
       return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres' });
-    }
-
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Email inválido' });
     }
 
     // Criar usuário no Supabase Auth
@@ -47,22 +32,43 @@ router.post('/register', async (req: Request, res: Response) => {
         data: {
           name,
         },
+        // Desabilitar confirmação de email para permitir login imediato
+        emailRedirectTo: undefined,
       },
     });
 
     if (error) {
       console.error('❌ Supabase signup error:', error);
+
+      // Mensagens de erro mais claras
       if (error.message.includes('already registered')) {
-        return res.status(400).json({ error: 'Email já cadastrado' });
+        return res.status(400).json({ error: 'Este email já está cadastrado. Tente fazer login.' });
       }
+
       return res.status(400).json({ error: error.message });
     }
 
     if (!data.user) {
-      return res.status(500).json({ error: 'Erro ao criar usuário' });
+      console.error('❌ No user returned from Supabase');
+      return res.status(400).json({ error: 'Erro ao criar usuário' });
     }
 
-    console.log('✅ User created:', data.user.id);
+    // Verificar se precisa confirmar email
+    if (data.user && !data.session) {
+      console.log('⚠️ Email confirmation required for:', email);
+      return res.status(200).json({
+        message: 'Conta criada com sucesso! Verifique seu email para confirmar o cadastro.',
+        requiresEmailConfirmation: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
+      });
+    }
+
+    console.log('✅ Registration successful for:', email);
+
+    // O profile é criado automaticamente via trigger no Supabase
 
     res.status(201).json({
       message: 'Usuário criado com sucesso',
@@ -75,7 +81,7 @@ router.post('/register', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('❌ Error registering user:', error);
-    res.status(500).json({ error: 'Erro ao criar usuário' });
+    res.status(500).json({ error: 'Erro ao criar usuário. Tente novamente mais tarde.' });
   }
 });
 
@@ -85,7 +91,7 @@ router.post('/register', async (req: Request, res: Response) => {
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password }: LoginRequest = req.body;
+    const { email, password } = req.body;
 
     console.log('🔐 Login attempt for:', email);
 
@@ -95,30 +101,36 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email e senha são obrigatórios' });
     }
 
-    // Autenticar com Supabase
+    // Login com Supabase Auth
     const { data, error } = await supabaseAuth.auth.signInWithPassword({
       email: email.toLowerCase(),
       password,
     });
 
     if (error) {
-      console.error('❌ Supabase login error:', error);
+      console.log('❌ Login error:', error.message);
       return res.status(401).json({ error: 'Email ou senha incorretos' });
     }
 
     if (!data.user || !data.session) {
-      console.log('❌ No user or session returned');
       return res.status(401).json({ error: 'Email ou senha incorretos' });
     }
 
-    console.log('✅ User authenticated:', data.user.id);
+    // Buscar profile do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', data.user.id)
+      .single();
+
+    console.log('🎉 Login successful for:', email);
 
     res.json({
       message: 'Login realizado com sucesso',
       token: data.session.access_token,
       user: {
         id: data.user.id,
-        name: data.user.user_metadata?.name || data.user.email?.split('@')[0],
+        name: profile?.name || 'Usuário',
         email: data.user.email,
       },
     });
@@ -130,17 +142,27 @@ router.post('/login', async (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/logout
- * Logout do usuário (cliente deve descartar o token)
+ * Logout do usuário
  */
-router.post('/logout', (req: Request, res: Response) => {
-  // O logout é feito no cliente removendo o token
-  // Aqui apenas confirmamos o logout
-  res.json({ message: 'Logout realizado com sucesso' });
+router.post('/logout', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      await supabaseAuth.auth.signOut();
+    }
+
+    res.json({ message: 'Logout realizado com sucesso' });
+  } catch (error) {
+    console.error('Error logging out:', error);
+    res.json({ message: 'Logout realizado com sucesso' });
+  }
 });
 
 /**
  * GET /api/auth/me
- * Retorna o usuário autenticado usando Supabase Auth
+ * Retorna o usuário autenticado
  */
 router.get('/me', async (req: Request, res: Response) => {
   try {
@@ -153,23 +175,32 @@ router.get('/me', async (req: Request, res: Response) => {
     const token = authHeader.substring(7);
 
     // Verificar token com Supabase
-    const { data, error } = await supabaseAuth.auth.getUser(token);
+    const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
 
-    if (error || !data.user) {
-      console.error('❌ Token verification failed:', error);
+    if (error || !user) {
       return res.status(401).json({ error: 'Token inválido ou expirado' });
+    }
+
+    // Buscar profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, email')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
     res.json({
       user: {
-        id: data.user.id,
-        name: data.user.user_metadata?.name || data.user.email?.split('@')[0],
-        email: data.user.email,
-        created_at: data.user.created_at,
+        id: user.id,
+        name: profile.name,
+        email: profile.email,
       },
     });
   } catch (error) {
-    console.error('❌ Error fetching user:', error);
+    console.error('Error fetching user:', error);
     res.status(500).json({ error: 'Erro ao buscar usuário' });
   }
 });

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { Search, Download } from 'lucide-react';
+import { format, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Search, Download, AlertCircle, RefreshCw } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
+import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -10,18 +12,41 @@ const Transactions = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Estados para o modal de recategorização em lote
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [similarTransactions, setSimilarTransactions] = useState<Array<Transaction & { matchScore: number; matchedWords: string[] }>>([]);
+  const [bulkCategory, setBulkCategory] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  // Gerar últimos 12 meses dinamicamente
+  const getLast12Months = () => {
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+      const date = subMonths(new Date(), i);
+      const monthKey = format(date, 'yyyy-MM');
+      // Capitalizar primeira letra: Janeiro, Fevereiro, etc.
+      const monthLabel = format(date, 'MMMM yyyy', { locale: ptBR })
+        .replace(/^\w/, (c) => c.toUpperCase());
+      months.push({ key: monthKey, label: monthLabel });
+    }
+    return months;
+  };
 
   useEffect(() => {
     loadData();
   }, [selectedCategory, selectedType]);
 
   const loadData = async () => {
+    setIsLoading(true);
     try {
       const [transactionsRes, categoriesRes] = await Promise.all([
         transactionApi.getTransactions({
           category: selectedCategory || undefined,
           type: selectedType || undefined,
-          limit: 100,
+          limit: 10000, // Buscar todas as transações
         }),
         transactionApi.getCategories(),
       ]);
@@ -30,36 +55,105 @@ const Transactions = () => {
       setCategories(categoriesRes.data);
     } catch (error) {
       console.error('Error loading transactions:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BRL',
     }).format(value);
   };
 
   const filteredTransactions = transactions.filter((transaction) => {
     const searchLower = search.toLowerCase();
-    return (
+    const matchesSearch =
       transaction.merchant?.toLowerCase().includes(searchLower) ||
       transaction.description?.toLowerCase().includes(searchLower) ||
-      transaction.category?.toLowerCase().includes(searchLower)
-    );
+      transaction.category?.toLowerCase().includes(searchLower);
+
+    // Filtro por mês
+    const matchesMonth = selectedMonth
+      ? format(new Date(transaction.date), 'yyyy-MM') === selectedMonth
+      : true;
+
+    return matchesSearch && matchesMonth;
   });
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
     try {
+      // Encontrar a transação sendo atualizada
+      const transaction = transactions.find(t => t.id === transactionId);
+      if (!transaction) return;
+
+      const wasUncategorized = !transaction.category ||
+                              transaction.category === 'Definir Categoria' ||
+                              transaction.category === 'Outros';
+
+      // Atualizar a transação atual
       await transactionApi.updateCategory(transactionId, newCategory);
       setTransactions((prev) =>
         prev.map((t) =>
           t.id === transactionId ? { ...t, category: newCategory } : t
         )
       );
+
+      // Se era uma transação não categorizada e agora tem categoria válida,
+      // buscar transações similares e mostrar modal
+      if (wasUncategorized && newCategory && newCategory !== 'Definir Categoria' && newCategory !== 'Outros') {
+        const description = transaction.description || '';
+        const merchant = transaction.merchant || '';
+
+        // Buscar transações similares
+        const response = await transactionApi.findSimilar(description, merchant, transactionId);
+
+        // Se encontrou transações similares, mostrar modal
+        if (response.data.similar.length > 0) {
+          setSimilarTransactions(response.data.similar);
+          setBulkCategory(newCategory);
+          setShowBulkModal(true);
+        }
+      }
     } catch (error) {
       console.error('Error updating category:', error);
+      alert('Erro ao atualizar categoria. Tente novamente.');
     }
+  };
+
+  const handleBulkConfirm = async () => {
+    setBulkLoading(true);
+    try {
+      const transactionIds = similarTransactions.map(t => t.id);
+      const response = await transactionApi.bulkUpdateCategory(transactionIds, bulkCategory);
+
+      // Atualizar as transações localmente
+      setTransactions((prev) =>
+        prev.map((t) =>
+          transactionIds.includes(t.id) ? { ...t, category: bulkCategory } : t
+        )
+      );
+
+      // Fechar modal
+      setShowBulkModal(false);
+      setSimilarTransactions([]);
+      setBulkCategory('');
+
+      // Mostrar mensagem de sucesso
+      alert(`✅ ${response.data.message}`);
+    } catch (error) {
+      console.error('Error bulk updating:', error);
+      alert('Erro ao recategorizar em lote. Tente novamente.');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkClose = () => {
+    setShowBulkModal(false);
+    setSimilarTransactions([]);
+    setBulkCategory('');
   };
 
   const exportToCSV = () => {
@@ -90,15 +184,25 @@ const Transactions = () => {
           <h1 className="text-3xl font-bold text-gray-900">Transações</h1>
           <p className="text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
         </div>
-        <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
-          <Download className="w-5 h-5" />
-          <span>Exportar CSV</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={loadData}
+            className="btn-secondary flex items-center space-x-2"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Atualizar</span>
+          </button>
+          <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
+            <Download className="w-5 h-5" />
+            <span>Exportar CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -110,6 +214,20 @@ const Transactions = () => {
               className="input pl-10"
             />
           </div>
+
+          {/* Month Filter */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="input"
+          >
+            <option value="">Todos os meses</option>
+            {getLast12Months().map((month) => (
+              <option key={month.key} value={month.key}>
+                {month.label}
+              </option>
+            ))}
+          </select>
 
           {/* Category Filter */}
           <select
@@ -162,34 +280,51 @@ const Transactions = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {format(new Date(transaction.date), 'dd/MM/yyyy')}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {transaction.merchant || transaction.description}
-                      </p>
-                      {transaction.reference && (
-                        <p className="text-xs text-gray-500">{transaction.reference}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <select
-                      value={transaction.category || ''}
-                      onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                      className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat.category} value={cat.category}>
-                          {cat.icon} {cat.category}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+              {filteredTransactions.map((transaction) => {
+                const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros';
+                return (
+                  <tr
+                    key={transaction.id}
+                    className={`hover:bg-gray-50 ${isUncategorized ? 'bg-purple-50' : ''}`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {transaction.merchant || transaction.description}
+                        </p>
+                        {transaction.reference && (
+                          <p className="text-xs text-gray-500">{transaction.reference}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center space-x-2">
+                        {isUncategorized && (
+                          <div className="group relative">
+                            <AlertCircle className="w-4 h-4 text-orange-500" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                              ⚠️ Categoria não encontrada. Favor categorizar manualmente.
+                            </div>
+                          </div>
+                        )}
+                        <select
+                          value={transaction.category || ''}
+                          onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
+                          className={`text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                            isUncategorized ? 'border-orange-400 bg-orange-50' : 'border-gray-300'
+                          }`}
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat.category} value={cat.category}>
+                              {cat.icon} {cat.category}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -212,11 +347,22 @@ const Transactions = () => {
                     </span>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Modal de Recategorização em Lote */}
+      <BulkRecategorizeModal
+        isOpen={showBulkModal}
+        onClose={handleBulkClose}
+        onConfirm={handleBulkConfirm}
+        similarTransactions={similarTransactions}
+        newCategory={bulkCategory}
+        loading={bulkLoading}
+      />
     </div>
   );
 };

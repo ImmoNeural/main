@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+import { supabaseAuth } from '../config/supabase';
 
 // Estender o tipo Request do Express para incluir userId
 declare global {
@@ -14,10 +12,10 @@ declare global {
 }
 
 /**
- * Middleware de autenticação JWT
+ * Middleware de autenticação usando Supabase Auth
  * Verifica se o token é válido e adiciona userId ao request
  */
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Extrair token do header Authorization
     const authHeader = req.headers.authorization;
@@ -28,22 +26,20 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     const token = authHeader.substring(7);
 
-    // Verificar e decodificar token
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+    // Verificar token com Supabase
+    const { data, error } = await supabaseAuth.auth.getUser(token);
+
+    if (error || !data.user) {
+      return res.status(401).json({ error: 'Token inválido ou expirado' });
+    }
 
     // Adicionar userId e email ao request
-    req.userId = decoded.userId;
-    req.userEmail = decoded.email;
+    req.userId = data.user.id;
+    req.userEmail = data.user.email;
 
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ error: 'Token inválido' });
-    }
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ error: 'Token expirado' });
-    }
-    console.error('Auth middleware error:', error);
+    console.error('❌ Auth middleware error:', error);
     return res.status(500).json({ error: 'Erro na autenticação' });
   }
 };
@@ -53,7 +49,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
  * Se o token existir e for válido, adiciona userId ao request
  * Se não existir ou for inválido, continua sem adicionar userId
  */
-export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const optionalAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -62,10 +58,14 @@ export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFu
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
 
-    req.userId = decoded.userId;
-    req.userEmail = decoded.email;
+    // Verificar token com Supabase
+    const { data, error } = await supabaseAuth.auth.getUser(token);
+
+    if (!error && data.user) {
+      req.userId = data.user.id;
+      req.userEmail = data.user.email;
+    }
   } catch (error) {
     // Ignorar erros e continuar sem autenticação
   }

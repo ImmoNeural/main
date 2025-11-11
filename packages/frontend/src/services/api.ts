@@ -21,11 +21,15 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
+      console.log(`🔑 API request with token: ${config.url} (token: ${token.substring(0, 20)}...)`);
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.log(`⚠️ API request without token: ${config.url}`);
     }
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -35,6 +39,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      console.log('❌ 401 Unauthorized:', error.response?.data?.error || 'Token inválido');
+      console.log('🔄 Clearing local storage and redirecting to login...');
+
       // Token expirado ou inválido
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -109,6 +116,22 @@ export const transactionApi = {
 
   getCategories: () =>
     api.get<Category[]>('/transactions/categories/list'),
+
+  recategorizeAll: () =>
+    api.post<{ success: boolean; total: number; updated: number; unchanged: number; message: string }>('/transactions/recategorize'),
+
+  findSimilar: (description: string, merchant?: string, excludeId?: string) =>
+    api.post<{
+      similar: Array<Transaction & { matchScore: number; matchedWords: string[] }>;
+      keywords: string[];
+      totalMatches: number;
+    }>('/transactions/find-similar', { description, merchant, excludeId }),
+
+  bulkUpdateCategory: (transactionIds: string[], newCategory: string) =>
+    api.post<{ success: boolean; updated: number; category: string; message: string }>(
+      '/transactions/bulk-update-category',
+      { transactionIds, newCategory }
+    ),
 };
 
 // Dashboard APIs
@@ -135,6 +158,21 @@ export const dashboardApi = {
 
   getMonthlyComparison: (months?: number) =>
     api.get<MonthlyStats[]>('/dashboard/monthly-comparison', {
+      params: { months },
+    }),
+
+  getWeeklyStats: (weeks?: number) =>
+    api.get<import('../types').WeeklyStats[]>('/dashboard/weekly-stats', {
+      params: { weeks },
+    }),
+
+  getMonthlyStatsByCategory: (months?: number) =>
+    api.get<Array<{
+      month: string;
+      monthLabel: string;
+      expenses: { total: number; byCategory: Array<{ category: string; amount: number }> };
+      income: { total: number; byCategory: Array<{ category: string; amount: number }> };
+    }>>('/dashboard/monthly-stats-by-category', {
       params: { months },
     }),
 };

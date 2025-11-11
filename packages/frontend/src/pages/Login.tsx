@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
-import { authApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { bankApi } from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,13 +18,22 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await authApi.login(email, password);
+      await login(email, password);
 
-      // Salvar token e dados do usuário
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Verificar se é primeiro acesso (sem contas bancárias)
+      try {
+        const accountsResponse = await bankApi.getAccounts();
 
-      // Redirecionar para dashboard
+        if (!accountsResponse.data || accountsResponse.data.length === 0) {
+          // Primeiro acesso: redirecionar para conectar banco
+          navigate('/connect-bank');
+          return;
+        }
+      } catch (accountsError) {
+        console.warn('Could not check accounts, redirecting to dashboard');
+      }
+
+      // Usuário já tem contas: ir para dashboard
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
@@ -142,7 +153,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center text-white/60 text-sm">
-          <p>© 2024 Guru do Dindin. Todos os direitos reservados.</p>
+          <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
         </div>
       </div>
 
