@@ -310,7 +310,7 @@ const Transactions = () => {
             <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
               Total de Receitas
             </p>
-            <p className="text-3xl md:text-4xl font-bold text-green-600">
+            <p className="text-2xl md:text-3xl font-bold text-green-600">
               {formatCurrency(totalIncome)}
             </p>
           </div>
@@ -320,7 +320,7 @@ const Transactions = () => {
             <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
               Total de Despesas
             </p>
-            <p className="text-3xl md:text-4xl font-bold text-red-600">
+            <p className="text-2xl md:text-3xl font-bold text-red-600">
               {formatCurrency(totalExpense)}
             </p>
           </div>
@@ -330,7 +330,7 @@ const Transactions = () => {
             <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
               Saldo Líquido
             </p>
-            <p className={`text-3xl md:text-4xl font-bold ${
+            <p className={`text-2xl md:text-3xl font-bold ${
               balance >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
               {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
@@ -397,7 +397,7 @@ const Transactions = () => {
                           value={transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
                           className={`text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                            isUncategorized ? 'border-orange-400 bg-orange-50' : 'border-gray-300'
+                            isUncategorized ? 'border-orange-400 bg-orange-50 text-gray-900' : 'border-gray-300 bg-white text-gray-900'
                           }`}
                         >
                           {categories.map((cat) => (
