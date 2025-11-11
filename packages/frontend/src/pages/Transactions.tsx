@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, PlusCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
 
 const Transactions = () => {
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
@@ -212,12 +214,27 @@ const Transactions = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Transações</h1>
           <p className="text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center flex-wrap gap-3">
+          <button
+            onClick={() => navigate('/connect-bank')}
+            className="btn-primary flex items-center space-x-2"
+          >
+            <PlusCircle className="w-5 h-5" />
+            <span>Conectar Banco</span>
+          </button>
+          <button
+            onClick={exportToCSV}
+            className="btn-secondary flex items-center space-x-2 px-3"
+            title="Exportar para CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span className="text-sm font-medium">CSV</span>
+          </button>
           <button
             onClick={loadData}
             className="btn-secondary flex items-center space-x-2"
@@ -225,10 +242,6 @@ const Transactions = () => {
           >
             <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Atualizar</span>
-          </button>
-          <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
-            <Download className="w-5 h-5" />
-            <span>Exportar CSV</span>
           </button>
         </div>
       </div>
