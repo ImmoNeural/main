@@ -45,7 +45,7 @@ const Transactions = () => {
         transactionApi.getTransactions({
           category: selectedCategory || undefined,
           type: selectedType || undefined,
-          limit: 100,
+          limit: 10000, // Buscar todas as transações
         }),
         transactionApi.getCategories(),
       ]);
@@ -58,19 +58,25 @@ const Transactions = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'BRL',
     }).format(value);
   };
 
   const filteredTransactions = transactions.filter((transaction) => {
     const searchLower = search.toLowerCase();
-    return (
+    const matchesSearch =
       transaction.merchant?.toLowerCase().includes(searchLower) ||
       transaction.description?.toLowerCase().includes(searchLower) ||
-      transaction.category?.toLowerCase().includes(searchLower)
-    );
+      transaction.category?.toLowerCase().includes(searchLower);
+
+    // Filtro por mês
+    const matchesMonth = selectedMonth
+      ? format(new Date(transaction.date), 'yyyy-MM') === selectedMonth
+      : true;
+
+    return matchesSearch && matchesMonth;
   });
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
@@ -175,15 +181,25 @@ const Transactions = () => {
           <h1 className="text-3xl font-bold text-gray-900">Transações</h1>
           <p className="text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
         </div>
-        <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
-          <Download className="w-5 h-5" />
-          <span>Exportar CSV</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={loadData}
+            className="btn-secondary flex items-center space-x-2"
+            disabled={isRecategorizing}
+          >
+            <RefreshCw className={`w-5 h-5 ${isRecategorizing ? 'animate-spin' : ''}`} />
+            <span>Atualizar</span>
+          </button>
+          <button onClick={exportToCSV} className="btn-primary flex items-center space-x-2">
+            <Download className="w-5 h-5" />
+            <span>Exportar CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -195,6 +211,20 @@ const Transactions = () => {
               className="input pl-10"
             />
           </div>
+
+          {/* Month Filter */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="input"
+          >
+            <option value="">Todos os meses</option>
+            {getLast12Months().map((month) => (
+              <option key={month.key} value={month.key}>
+                {month.label}
+              </option>
+            ))}
+          </select>
 
           {/* Category Filter */}
           <select
