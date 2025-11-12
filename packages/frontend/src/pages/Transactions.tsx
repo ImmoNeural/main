@@ -303,56 +303,56 @@ const Transactions = () => {
       </div>
 
       {/* Resumo Financeiro das Transações Filtradas */}
-      <div className="card bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-2 border-indigo-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Total de Receitas */}
-          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-3">
-              Total de Receitas
-            </p>
-            <div className="flex items-center justify-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
-                <ArrowUp className="w-5 h-5 text-green-600" />
-              </div>
-              <p className="text-2xl md:text-3xl font-bold text-gray-900">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        {/* Total de Receitas */}
+        <div className="card hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total de Receitas</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
                 {formatCurrency(totalIncome)}
               </p>
             </div>
+            <div className="p-3 bg-green-100 rounded-full">
+              <ArrowUp className="w-6 h-6 text-green-600" />
+            </div>
           </div>
+        </div>
 
-          {/* Total de Despesas */}
-          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-3">
-              Total de Despesas
-            </p>
-            <div className="flex items-center justify-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full">
-                <ArrowDown className="w-5 h-5 text-red-600" />
-              </div>
-              <p className="text-2xl md:text-3xl font-bold text-gray-900">
+        {/* Total de Despesas */}
+        <div className="card hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total de Despesas</p>
+              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
                 {formatCurrency(totalExpense)}
               </p>
             </div>
+            <div className="p-3 bg-red-100 rounded-full">
+              <ArrowDown className="w-6 h-6 text-red-600" />
+            </div>
           </div>
+        </div>
 
-          {/* Saldo Líquido */}
-          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-3">
-              Saldo Líquido
-            </p>
-            <div className="flex items-center justify-center space-x-3">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                balance >= 0 ? 'bg-green-100' : 'bg-red-100'
+        {/* Saldo Líquido */}
+        <div className="card hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Saldo Líquido</p>
+              <p className={`text-xl sm:text-2xl font-bold mt-1 ${
+                balance >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                {balance >= 0 ? (
-                  <ArrowUp className="w-5 h-5 text-green-600" />
-                ) : (
-                  <ArrowDown className="w-5 h-5 text-red-600" />
-                )}
-              </div>
-              <p className="text-2xl md:text-3xl font-bold text-gray-900">
-                {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
+                {formatCurrency(balance)}
               </p>
+            </div>
+            <div className={`p-3 rounded-full ${
+              balance >= 0 ? 'bg-green-100' : 'bg-red-100'
+            }`}>
+              {balance >= 0 ? (
+                <ArrowUp className="w-6 h-6 text-green-600" />
+              ) : (
+                <ArrowDown className="w-6 h-6 text-red-600" />
+              )}
             </div>
           </div>
         </div>
