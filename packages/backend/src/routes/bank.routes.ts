@@ -526,6 +526,9 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
       merchant,
       category: categorization.category,
       type: amount < 0 ? 'debit' : 'credit',
+      // NOTA: balance_after geralmente é null porque o Pluggy não retorna balance_after_transaction
+      // Isso impede o cálculo preciso do saldo acumulado real (que deveria ser: saldo inicial + deltas)
+      // Por enquanto, o saldo acumulado é calculado apenas a partir dos deltas de transações
       balance_after: trans.balance_after_transaction?.amount,
       reference: trans.remittance_information,
       status: 'completed',

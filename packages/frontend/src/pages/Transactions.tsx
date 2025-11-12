@@ -431,6 +431,16 @@ const Transactions = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Detalhamento dos Últimos 12 Meses
             </h3>
+            <div className="flex items-start space-x-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-1">ℹ️ Sobre o Saldo Acumulado</p>
+                <p>
+                  O <strong>Saldo Acumulado</strong> é calculado a partir das receitas e despesas mensais (iniciando do zero).
+                  Este valor representa a variação acumulada no período, e não o saldo real da conta bancária.
+                </p>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
