@@ -148,16 +148,21 @@ const Transactions = () => {
     }
   };
 
-  const handleBulkConfirm = async () => {
+  const handleBulkConfirm = async (selectedIds: string[]) => {
+    // Se nenhuma transação foi selecionada, apenas fechar o modal
+    if (selectedIds.length === 0) {
+      handleBulkClose();
+      return;
+    }
+
     setBulkLoading(true);
     try {
-      const transactionIds = similarTransactions.map(t => t.id);
-      const response = await transactionApi.bulkUpdateCategory(transactionIds, bulkCategory);
+      const response = await transactionApi.bulkUpdateCategory(selectedIds, bulkCategory);
 
-      // Atualizar as transações localmente
+      // Atualizar as transações localmente (apenas as selecionadas)
       setTransactions((prev) =>
         prev.map((t) =>
-          transactionIds.includes(t.id) ? { ...t, category: bulkCategory } : t
+          selectedIds.includes(t.id) ? { ...t, category: bulkCategory } : t
         )
       );
 

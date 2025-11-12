@@ -1,11 +1,12 @@
-import { AlertTriangle, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { AlertTriangle, Check, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Transaction } from '../types';
 
 interface BulkRecategorizeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (selectedIds: string[]) => void;
   similarTransactions: Array<Transaction & { matchScore: number; matchedWords: string[] }>;
   newCategory: string;
   loading: boolean;
@@ -19,6 +20,16 @@ const BulkRecategorizeModal = ({
   newCategory,
   loading,
 }: BulkRecategorizeModalProps) => {
+  // Estado para rastrear transações selecionadas (inicialmente todas marcadas)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Resetar seleções quando similarTransactions mudar
+  useEffect(() => {
+    if (isOpen && similarTransactions.length > 0) {
+      setSelectedIds(new Set(similarTransactions.map(t => t.id)));
+    }
+  }, [isOpen, similarTransactions]);
+
   if (!isOpen) return null;
 
   const formatCurrency = (value: number) => {
@@ -26,6 +37,32 @@ const BulkRecategorizeModal = ({
       style: 'currency',
       currency: 'BRL',
     }).format(value);
+  };
+
+  const toggleTransaction = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === similarTransactions.length) {
+      // Desmarcar todos
+      setSelectedIds(new Set());
+    } else {
+      // Marcar todos
+      setSelectedIds(new Set(similarTransactions.map(t => t.id)));
+    }
+  };
+
+  const handleConfirm = () => {
+    onConfirm(Array.from(selectedIds));
   };
 
   return (
@@ -65,63 +102,97 @@ const BulkRecategorizeModal = ({
 
             {similarTransactions.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  Transações que serão recategorizadas:
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Transações similares encontradas:
+                  </h3>
+                  <button
+                    onClick={toggleAll}
+                    className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center space-x-1"
+                  >
+                    {selectedIds.size === similarTransactions.length ? (
+                      <>
+                        <CheckSquare className="w-4 h-4" />
+                        <span>Desmarcar Todas</span>
+                      </>
+                    ) : (
+                      <>
+                        <Square className="w-4 h-4" />
+                        <span>Marcar Todas</span>
+                      </>
+                    )}
+                  </button>
+                </div>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {similarTransactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2">
-                            <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
-                            <p className="font-medium text-gray-900 truncate">
-                              {transaction.merchant || transaction.description}
-                            </p>
-                          </div>
-                          <div className="mt-1 flex items-center space-x-4 text-xs text-gray-500">
-                            <span>{format(new Date(transaction.date), 'dd/MM/yyyy')}</span>
-                            <span>•</span>
-                            <span className="font-mono bg-gray-200 px-2 py-0.5 rounded">
-                              {Math.round(transaction.matchScore * 100)}% similar
-                            </span>
-                            {transaction.matchedWords && transaction.matchedWords.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="text-blue-600">
-                                  Palavras: {transaction.matchedWords.slice(0, 3).join(', ')}
-                                  {transaction.matchedWords.length > 3 && ` +${transaction.matchedWords.length - 3}`}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                          {transaction.category && transaction.category !== 'Definir Categoria' && (
-                            <div className="mt-1">
-                              <span className="inline-flex items-center text-xs">
-                                <span className="text-gray-500">Atual:</span>
-                                <span className="ml-1 font-medium text-gray-700">{transaction.category}</span>
-                                <span className="mx-2 text-gray-400">→</span>
-                                <span className="font-semibold text-green-600">{newCategory}</span>
-                              </span>
+                  {similarTransactions.map((transaction) => {
+                    const isSelected = selectedIds.has(transaction.id);
+                    return (
+                      <div
+                        key={transaction.id}
+                        onClick={() => toggleTransaction(transaction.id)}
+                        className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-blue-50 border-blue-300 hover:bg-blue-100'
+                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1 min-w-0">
+                            {/* Checkbox */}
+                            <div className="flex-shrink-0 mt-0.5">
+                              {isSelected ? (
+                                <CheckSquare className="w-5 h-5 text-primary-600" />
+                              ) : (
+                                <Square className="w-5 h-5 text-gray-400" />
+                              )}
                             </div>
-                          )}
-                        </div>
-                        <div className="ml-4 flex-shrink-0 text-right">
-                          <span
-                            className={`text-sm font-semibold ${
-                              transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                            }`}
-                          >
-                            {transaction.type === 'credit' ? '+' : '-'}
-                            {formatCurrency(Math.abs(transaction.amount))}
-                          </span>
+
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 truncate">
+                                {transaction.merchant || transaction.description}
+                              </p>
+                              <div className="mt-1 flex items-center space-x-4 text-xs text-gray-500">
+                                <span>{format(new Date(transaction.date), 'dd/MM/yyyy')}</span>
+                                <span>•</span>
+                                <span className="font-mono bg-gray-200 px-2 py-0.5 rounded">
+                                  {Math.round(transaction.matchScore * 100)}% similar
+                                </span>
+                                {transaction.matchedWords && transaction.matchedWords.length > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-blue-600">
+                                      Palavras: {transaction.matchedWords.slice(0, 3).join(', ')}
+                                      {transaction.matchedWords.length > 3 && ` +${transaction.matchedWords.length - 3}`}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              {transaction.category && transaction.category !== 'Definir Categoria' && (
+                                <div className="mt-1">
+                                  <span className="inline-flex items-center text-xs">
+                                    <span className="text-gray-500">Atual:</span>
+                                    <span className="ml-1 font-medium text-gray-700">{transaction.category}</span>
+                                    <span className="mx-2 text-gray-400">→</span>
+                                    <span className="font-semibold text-green-600">{newCategory}</span>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="ml-4 flex-shrink-0 text-right">
+                            <span
+                              className={`text-sm font-semibold ${
+                                transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                              }`}
+                            >
+                              {transaction.type === 'credit' ? '+' : '-'}
+                              {formatCurrency(Math.abs(transaction.amount))}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -132,7 +203,7 @@ const BulkRecategorizeModal = ({
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              <strong>{similarTransactions.length}</strong> transação(ões) será(ão) atualizada(s)
+              <strong>{selectedIds.size}</strong> de <strong>{similarTransactions.length}</strong> transação(ões) selecionada(s)
             </p>
             <div className="flex space-x-3">
               <button
@@ -143,11 +214,11 @@ const BulkRecategorizeModal = ({
                 Cancelar
               </button>
               <button
-                onClick={onConfirm}
-                disabled={loading}
+                onClick={handleConfirm}
+                disabled={loading || selectedIds.size === 0}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Atualizando...' : `Sim, Recategorizar ${similarTransactions.length} Transação(ões)`}
+                {loading ? 'Atualizando...' : `Sim, Recategorizar ${selectedIds.size} Transação(ões)`}
               </button>
             </div>
           </div>
