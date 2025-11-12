@@ -276,7 +276,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
         <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
@@ -315,6 +315,20 @@ const Dashboard = () => {
             </div>
             <div className="p-3 bg-red-100 rounded-full">
               <TrendingDown className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-600 font-semibold">💰 Investimentos</p>
+              <p className="text-xl sm:text-2xl font-bold text-blue-700 mt-1">
+                {formatCurrency(stats?.investment_balance || 0)}
+              </p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-full">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>

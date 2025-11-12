@@ -101,6 +101,7 @@ export interface DashboardStats {
   total_balance: number;
   total_income: number;
   total_expenses: number;
+  investment_balance: number;
   transaction_count: number;
   period_start: string;
   period_end: string;

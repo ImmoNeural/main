@@ -19,16 +19,21 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
     const endDate = Date.now();
 
-    // Total de saldo de todas as contas
+    // Total de saldo de todas as contas (incluindo investimentos)
     const { data: accounts, error: accountsError } = await supabase
       .from('bank_accounts')
-      .select('balance')
+      .select('balance, account_type')
       .eq('user_id', user_id)
       .eq('status', 'active');
 
     if (accountsError) throw accountsError;
 
     const total_balance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+
+    // Saldo separado de investimentos
+    const investment_balance = accounts
+      ?.filter(acc => acc.account_type === 'investment')
+      .reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
 
     // Buscar todas as transações no período
     const { data: transactions, error: transactionsError } = await supabase
@@ -58,6 +63,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       total_balance,
       total_income,
       total_expenses,
+      investment_balance,
       transaction_count,
       period_start: new Date(startDate).toISOString(),
       period_end: new Date(endDate).toISOString(),
