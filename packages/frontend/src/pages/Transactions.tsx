@@ -85,12 +85,20 @@ const Transactions = () => {
     return matchesSearch && matchesMonth;
   });
 
-  // Calcular totais das transações filtradas
-  const totalIncome = filteredTransactions
+  // Calcular transações dos últimos 12 meses (para cards de resumo e breakdown)
+  const getLast12MonthsTransactions = () => {
+    const twelveMonthsAgo = subMonths(new Date(), 12);
+    return transactions.filter(t => new Date(t.date) >= twelveMonthsAgo);
+  };
+
+  const last12MonthsTransactions = getLast12MonthsTransactions();
+
+  // Calcular totais dos últimos 12 meses (não afetados por filtros)
+  const totalIncome = last12MonthsTransactions
     .filter(t => t.type === 'credit')
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  const totalExpense = filteredTransactions
+  const totalExpense = last12MonthsTransactions
     .filter(t => t.type === 'debit')
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
@@ -107,8 +115,8 @@ const Transactions = () => {
       const monthLabel = format(date, 'MMMM yyyy', { locale: ptBR })
         .replace(/^\w/, (c) => c.toUpperCase());
 
-      // Filtrar transações deste mês
-      const monthTransactions = transactions.filter(t => {
+      // Filtrar transações deste mês (dos últimos 12 meses)
+      const monthTransactions = last12MonthsTransactions.filter(t => {
         const transactionMonth = format(new Date(t.date), 'yyyy-MM');
         return transactionMonth === monthKey;
       });
@@ -352,7 +360,7 @@ const Transactions = () => {
           <div className="card hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total de Receitas</p>
+                <p className="text-sm text-gray-500">Total de Receitas (12 meses)</p>
                 <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
                   {formatCurrency(totalIncome)}
                 </p>
@@ -367,7 +375,7 @@ const Transactions = () => {
           <div className="card hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total de Despesas</p>
+                <p className="text-sm text-gray-500">Total de Despesas (12 meses)</p>
                 <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
                   {formatCurrency(totalExpense)}
                 </p>
@@ -382,7 +390,7 @@ const Transactions = () => {
           <div className="card hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Saldo Líquido</p>
+                <p className="text-sm text-gray-500">Saldo Líquido (12 meses)</p>
                 <p className={`text-xl sm:text-2xl font-bold mt-1 ${
                   balance >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
