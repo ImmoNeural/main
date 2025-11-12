@@ -25,12 +25,12 @@ const Layout = () => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside
-        className={`bg-gradient-to-b from-primary-700 to-primary-900 text-white transition-all duration-300 flex flex-col ${
+        className={`bg-gradient-to-b from-primary-700 to-primary-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0 z-40 flex flex-col ${
           sidebarCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        {/* Logo/Header */}
-        <div className="p-4 flex items-center justify-between border-b border-primary-600">
+        {/* Logo/Header - Fixed at top */}
+        <div className="p-4 flex items-center justify-between border-b border-primary-600 flex-shrink-0">
           {!sidebarCollapsed && (
             <div className="flex items-center space-x-3">
               <img
@@ -38,7 +38,7 @@ const Layout = () => {
                 alt="Guru do Dindin"
                 className="h-12 w-auto"
               />
-              <span className="text-2xl font-bold text-white">Guru</span>
+              <span className="text-2xl font-bold text-white">Guru do Dindin</span>
             </div>
           )}
           {sidebarCollapsed && (
@@ -50,8 +50,8 @@ const Layout = () => {
           )}
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-6">
+        {/* Navigation - Scrollable middle section */}
+        <nav className="flex-1 py-6 overflow-y-auto">
           <ul className="space-y-2 px-3">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -84,8 +84,8 @@ const Layout = () => {
           </ul>
         </nav>
 
-        {/* User Section */}
-        <div className="border-t border-primary-600 p-4">
+        {/* User Section - Fixed at bottom */}
+        <div className="border-t border-primary-600 p-4 flex-shrink-0">
           {!sidebarCollapsed ? (
             <div className="space-y-3">
               <div className="flex items-center space-x-3 px-3 py-2 bg-primary-600 rounded-lg">
@@ -116,8 +116,8 @@ const Layout = () => {
           )}
         </div>
 
-        {/* Toggle Button */}
-        <div className="border-t border-primary-600 p-3">
+        {/* Toggle Button - Fixed at bottom */}
+        <div className="border-t border-primary-600 p-3 flex-shrink-0">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="w-full flex items-center justify-center p-3 text-white bg-primary-600 hover:bg-primary-500 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -132,26 +132,11 @@ const Layout = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
-        {/* Top Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-primary-700">
-                Guru do Dindin
-              </h1>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Page Content */}
+      {/* Main Content - Adjusted for fixed sidebar */}
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+        sidebarCollapsed ? 'ml-20' : 'ml-64'
+      }`}>
+        {/* Page Content - No header */}
         <main className="flex-1 px-6 py-8 overflow-auto">
           <Outlet />
         </main>

@@ -149,38 +149,11 @@ const Home = () => {
             {/* Right side - Visual/Illustration */}
             <div className="hidden lg:flex items-center justify-center">
               <div className="relative">
-                <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl">
-                  <div className="bg-white rounded-2xl p-6 shadow-xl">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-500">Saldo Total</p>
-                          <p className="text-3xl font-bold text-gray-900">R$ 12.847,50</p>
-                        </div>
-                        <div className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-sm font-semibold">
-                          +12%
-                        </div>
-                      </div>
-                      <div className="h-40 flex items-end space-x-2">
-                        <div className="bg-primary-200 h-20 w-full rounded-t"></div>
-                        <div className="bg-primary-300 h-32 w-full rounded-t"></div>
-                        <div className="bg-primary-400 h-24 w-full rounded-t"></div>
-                        <div className="bg-primary-500 h-36 w-full rounded-t"></div>
-                        <div className="bg-primary-600 h-full w-full rounded-t"></div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 pt-4">
-                        <div className="bg-green-50 p-3 rounded-lg">
-                          <p className="text-xs text-gray-600">Receitas</p>
-                          <p className="text-lg font-bold text-green-600">R$ 8.500</p>
-                        </div>
-                        <div className="bg-red-50 p-3 rounded-lg">
-                          <p className="text-xs text-gray-600">Despesas</p>
-                          <p className="text-lg font-bold text-red-600">R$ 3.200</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <img
+                  src="/marketing.png"
+                  alt="Guru do Dindin Dashboard"
+                  className="w-full h-auto rounded-3xl shadow-2xl"
+                />
               </div>
             </div>
           </div>
@@ -276,7 +249,7 @@ const Home = () => {
             {/* Logo and description */}
             <div className="col-span-2">
               <div className="flex items-center space-x-3 mb-4">
-                <img src="/logo.png" alt="Guru do Dindin" className="h-10 w-auto" />
+                <img src="/logobranco.png" alt="Guru do Dindin" className="h-10 w-auto" />
                 <span className="text-xl font-bold text-white">Guru do Dindin</span>
               </div>
               <p className="text-gray-400 mb-4">
