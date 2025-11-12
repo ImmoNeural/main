@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Check, CheckSquare, Square } from 'lucide-react';
+import { AlertTriangle, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Transaction } from '../types';
 
