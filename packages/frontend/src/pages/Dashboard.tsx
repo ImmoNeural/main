@@ -603,7 +603,7 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-gray-900">💳 Transações Recentes</h2>
           <Link
-            to="/transactions"
+            to="/app/transactions"
             className="text-primary-600 hover:text-primary-700 flex items-center text-sm font-semibold"
           >
             Ver todas

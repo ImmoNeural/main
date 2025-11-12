@@ -221,7 +221,7 @@ const Transactions = () => {
         </div>
         <div className="flex items-center flex-wrap gap-3">
           <button
-            onClick={() => navigate('/connect-bank')}
+            onClick={() => navigate('/app/connect-bank')}
             className="btn-primary flex items-center space-x-2"
           >
             <PlusCircle className="w-5 h-5" />

@@ -26,7 +26,7 @@ const Login = () => {
 
         if (!accountsResponse.data || accountsResponse.data.length === 0) {
           // Primeiro acesso: redirecionar para conectar banco
-          navigate('/connect-bank');
+          navigate('/app/connect-bank');
           return;
         }
       } catch (accountsError) {
@@ -34,7 +34,7 @@ const Login = () => {
       }
 
       // Usuário já tem contas: ir para dashboard
-      navigate('/dashboard');
+      navigate('/app/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.response?.data?.error || 'Erro ao fazer login. Tente novamente.');

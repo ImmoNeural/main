@@ -13,10 +13,10 @@ const Layout = () => {
   };
 
   const navigation = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Transações', path: '/transactions', icon: Receipt },
-    { name: 'Contas', path: '/accounts', icon: Wallet },
-    { name: 'Conectar Banco', path: '/connect-bank', icon: PlusCircle },
+    { name: 'Dashboard', path: '/app/dashboard', icon: LayoutDashboard },
+    { name: 'Transações', path: '/app/transactions', icon: Receipt },
+    { name: 'Contas', path: '/app/accounts', icon: Wallet },
+    { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
   ];
 
   return (

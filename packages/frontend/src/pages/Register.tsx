@@ -37,7 +37,7 @@ const Register = () => {
 
       // Redirecionar novo usuário para conectar banco
       setTimeout(() => {
-        navigate('/connect-bank');
+        navigate('/app/connect-bank');
       }, 1000);
     } catch (err: any) {
       console.error('Register error:', err);

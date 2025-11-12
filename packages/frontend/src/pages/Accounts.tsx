@@ -78,7 +78,7 @@ const Accounts = () => {
           <h1 className="text-3xl font-bold text-gray-900">Contas Bancárias</h1>
           <p className="text-gray-500 mt-1">Gerencie suas contas conectadas</p>
         </div>
-        <Link to="/connect-bank" className="btn-primary flex items-center space-x-2">
+        <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2">
           <Plus className="w-5 h-5" />
           <span>Conectar Banco</span>
         </Link>
@@ -94,7 +94,7 @@ const Accounts = () => {
           <p className="text-gray-500 mb-6">
             Conecte sua conta bancária para começar a rastrear seus gastos
           </p>
-          <Link to="/connect-bank" className="btn-primary inline-flex items-center space-x-2">
+          <Link to="/app/connect-bank" className="btn-primary inline-flex items-center space-x-2">
             <Plus className="w-5 h-5" />
             <span>Conectar primeira conta</span>
           </Link>
