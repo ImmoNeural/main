@@ -69,6 +69,15 @@ const Accounts = () => {
 
     try {
       await bankApi.deleteAccount(accountId);
+
+      // Se estamos deletando o banco ativo, limpar do localStorage e state
+      if (activeAccountId === accountId) {
+        localStorage.removeItem('activeAccountId');
+        setActiveAccountId(null);
+        // Disparar evento para atualizar dashboard
+        window.dispatchEvent(new CustomEvent('activeAccountChanged', { detail: { accountId: null } }));
+      }
+
       // Remover da lista local imediatamente
       setAccounts(prevAccounts => prevAccounts.filter(acc => acc.id !== accountId));
       alert('Conta desconectada com sucesso!\n\nSeus dados históricos foram preservados.');
@@ -165,12 +174,12 @@ const Accounts = () => {
               </div>
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  account.status === 'active'
+                  isActive
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
                 }`}
               >
-                {account.status === 'active' ? 'Conectada' : 'Desconectada'}
+                {isActive ? 'Ativo' : 'Não Ativo'}
               </span>
             </div>
 
@@ -252,11 +261,8 @@ const Accounts = () => {
               </button>
               <button
                 onClick={() => handleDelete(account.id)}
-                disabled={account.status === 'disconnected'}
-                className={`btn-danger flex items-center justify-center ${
-                  account.status === 'disconnected' ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                title={account.status === 'disconnected' ? 'Conta já está desconectada' : 'Desconectar conta'}
+                className="btn-danger flex items-center justify-center"
+                title="Desconectar e remover conta"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
