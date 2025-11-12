@@ -147,12 +147,12 @@ const Home = () => {
             </div>
 
             {/* Right side - Visual/Illustration */}
-            <div className="hidden lg:flex items-center justify-center">
-              <div className="relative">
+            <div className="flex items-center justify-center mt-8 lg:mt-0">
+              <div className="relative w-full max-w-md lg:max-w-none">
                 <img
                   src="/marketing.png"
                   alt="Guru do Dindin Dashboard"
-                  className="w-full h-auto rounded-3xl shadow-2xl"
+                  className="w-full h-auto rounded-2xl lg:rounded-3xl shadow-2xl"
                 />
               </div>
             </div>
