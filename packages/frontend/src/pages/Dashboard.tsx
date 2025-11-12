@@ -577,7 +577,7 @@ const Dashboard = () => {
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={getCategoryMonthlyData(selectedCategory)} barSize={50}>
+            <BarChart data={getCategoryMonthlyData(selectedCategory)} barSize={35}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
                 dataKey="month"
