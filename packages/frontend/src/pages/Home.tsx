@@ -70,8 +70,8 @@ const Home = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <img src="/logo.png" alt="Guru do Dindin" className="h-17 w-auto" />
-              <span className="text-3xl font-bold text-primary-600">Guru do Dindin</span>
+              <img src="/logo.png" alt="Guru do Dindin" className="h-11 w-auto" />
+              <span className="text-2xl font-bold text-primary-600">Guru do Dindin</span>
             </div>
 
             {/* Nav Links */}
