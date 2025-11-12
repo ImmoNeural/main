@@ -364,6 +364,7 @@ router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, re
 router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
+    console.log('🗑️ Deletando conta:', accountId);
 
     const { data: account, error: fetchError } = await supabase
       .from('bank_accounts')
@@ -372,15 +373,24 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
       .single();
 
     if (fetchError || !account) {
+      console.log('❌ Conta não encontrada:', accountId);
       return res.status(404).json({ error: 'Account not found' });
     }
+
+    console.log('📋 Conta encontrada:', account.bank_name);
 
     // Revogar consentimento no banco
     if (account.access_token) {
       try {
         await openBankingService.revokeConsent(account.access_token);
-      } catch (error) {
-        console.warn('Failed to revoke consent:', error);
+        console.log('✅ Consentimento revogado com sucesso');
+      } catch (error: any) {
+        // 404 significa que o item já foi deletado - isso é OK
+        if (error.status === 404 || error.response?.status === 404) {
+          console.log('ℹ️ Item já foi deletado no banco (404) - continuando...');
+        } else {
+          console.warn('⚠️ Falha ao revogar consentimento (não crítico):', error.message);
+        }
       }
     }
 
@@ -391,20 +401,23 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
         status: 'disconnected',
         access_token: null,
         refresh_token: null,
-        updated_at: Date.now()
+        updated_at: toISOString(Date.now())
       })
       .eq('id', accountId);
 
     if (updateError) {
+      console.error('❌ Erro ao atualizar conta no Supabase:', updateError);
       throw updateError;
     }
+
+    console.log('✅ Conta desconectada com sucesso:', account.bank_name);
 
     res.json({
       success: true,
       message: 'Bank account disconnected. Historical data preserved.'
     });
   } catch (error) {
-    console.error('Error deleting account:', error);
+    console.error('❌ Erro ao deletar conta:', error);
     res.status(500).json({ error: 'Failed to delete account' });
   }
 });
