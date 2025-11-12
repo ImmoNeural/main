@@ -19,10 +19,10 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
     const endDate = Date.now();
 
-    // Total de saldo de todas as contas (incluindo investimentos)
+    // Total de saldo de todas as contas
     const { data: accounts, error: accountsError } = await supabase
       .from('bank_accounts')
-      .select('balance, account_type')
+      .select('balance')
       .eq('user_id', user_id)
       .eq('status', 'active');
 
@@ -30,15 +30,10 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 
     const total_balance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
 
-    // Saldo separado de investimentos
-    const investment_balance = accounts
-      ?.filter(acc => acc.account_type === 'investment')
-      .reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
-
     // Buscar todas as transações no período
     const { data: transactions, error: transactionsError } = await supabase
       .from('transactions')
-      .select('amount, type, bank_accounts!inner(user_id)')
+      .select('amount, type, category, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate)
       .lte('date', endDate)
@@ -49,9 +44,16 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     // Calcular agregações
     let total_income = 0;
     let total_expenses = 0;
+    let investment_balance = 0;
     const transaction_count = transactions?.length || 0;
 
     transactions?.forEach((tx) => {
+      // Calcular investimentos: soma TODAS transações categorizadas como Investimentos
+      if (tx.category === 'Investimentos') {
+        investment_balance += Math.abs(tx.amount);
+      }
+
+      // Calcular totais gerais
       if (tx.type === 'credit') {
         total_income += tx.amount;
       } else if (tx.type === 'debit') {
