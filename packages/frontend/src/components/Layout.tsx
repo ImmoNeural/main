@@ -38,7 +38,7 @@ const Layout = () => {
                 alt="Guru do Dindin"
                 className="h-12 w-auto"
               />
-              <span className="text-2xl font-bold text-white">Guru do Dindin</span>
+              <span className="text-xl font-bold text-white whitespace-nowrap">Guru do Dindin</span>
             </div>
           )}
           {sidebarCollapsed && (

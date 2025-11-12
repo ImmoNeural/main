@@ -33,10 +33,30 @@ const Dashboard = () => {
   const [period, setPeriod] = useState(365);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [disabledCategories, setDisabledCategories] = useState<Set<string>>(new Set());
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Carregar banco ativo do localStorage
+    const savedActiveAccount = localStorage.getItem('activeAccountId');
+    if (savedActiveAccount) {
+      setActiveAccountId(savedActiveAccount);
+    }
+
+    // Listener para mudanças no banco ativo
+    const handleActiveAccountChange = (event: any) => {
+      const { accountId } = event.detail;
+      setActiveAccountId(accountId);
+    };
+
+    window.addEventListener('activeAccountChanged', handleActiveAccountChange);
+    return () => {
+      window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
+    };
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
-  }, [period]);
+  }, [period, activeAccountId]);
 
   // Inicializar categoria selecionada com a de maior gasto
   useEffect(() => {
@@ -51,14 +71,19 @@ const Dashboard = () => {
       // Calcular número de semanas e meses baseado no período
       const weeks = Math.ceil(period / 7);
       const months = Math.ceil(period / 30);
-      console.log(`📊 Loading dashboard data: period=${period} days, weeks=${weeks}, months=${months}`);
+
+      const accountFilter = activeAccountId ? activeAccountId : undefined;
+      console.log(`📊 Loading dashboard data: period=${period} days, weeks=${weeks}, months=${months}, account=${accountFilter || 'ALL'}`);
 
       const [statsRes, categoryRes, weeklyRes, monthlyRes, transactionsRes] = await Promise.all([
         dashboardApi.getStats(period),
         dashboardApi.getExpensesByCategory(period),
         dashboardApi.getWeeklyStats(weeks),
         dashboardApi.getMonthlyStatsByCategory(months),
-        transactionApi.getTransactions({ limit: 10 }),
+        transactionApi.getTransactions({
+          limit: 10,
+          account_id: accountFilter
+        }),
       ]);
 
       console.log(`📈 Received weekly stats: ${weeklyRes.data.length} weeks`);

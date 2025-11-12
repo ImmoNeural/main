@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Wallet, RefreshCw, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { Wallet, RefreshCw, Trash2, Plus, AlertCircle, CheckCircle } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { BankAccount } from '../types';
 
@@ -9,9 +9,15 @@ const Accounts = () => {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAccounts();
+    // Carregar banco ativo do localStorage
+    const savedActiveAccount = localStorage.getItem('activeAccountId');
+    if (savedActiveAccount) {
+      setActiveAccountId(savedActiveAccount);
+    }
   }, []);
 
   const loadAccounts = async () => {
@@ -19,11 +25,27 @@ const Accounts = () => {
     try {
       const response = await bankApi.getAccounts();
       setAccounts(response.data);
+
+      // Se não houver banco ativo e houver contas, definir a primeira como ativa
+      const savedActiveAccount = localStorage.getItem('activeAccountId');
+      if (!savedActiveAccount && response.data.length > 0) {
+        const firstActiveAccount = response.data.find(acc => acc.status === 'active');
+        if (firstActiveAccount) {
+          setActiveAccount(firstActiveAccount.id);
+        }
+      }
     } catch (error) {
       console.error('Error loading accounts:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const setActiveAccount = (accountId: string) => {
+    setActiveAccountId(accountId);
+    localStorage.setItem('activeAccountId', accountId);
+    // Disparar evento customizado para atualizar dashboard
+    window.dispatchEvent(new CustomEvent('activeAccountChanged', { detail: { accountId } }));
   };
 
   const handleSync = async (accountId: string) => {
@@ -47,11 +69,14 @@ const Accounts = () => {
 
     try {
       await bankApi.deleteAccount(accountId);
-      await loadAccounts();
+      // Remover da lista local imediatamente
+      setAccounts(prevAccounts => prevAccounts.filter(acc => acc.id !== accountId));
       alert('Conta desconectada com sucesso!\n\nSeus dados históricos foram preservados.');
     } catch (error) {
       console.error('Error deleting account:', error);
       alert('Erro ao desconectar conta');
+      // Se der erro, recarregar do servidor
+      await loadAccounts();
     }
   };
 
@@ -103,18 +128,39 @@ const Accounts = () => {
 
       {/* Accounts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map((account) => (
-          <div key={account.id} className="card">
+        {accounts.map((account) => {
+          const isActive = activeAccountId === account.id;
+          return (
+          <div
+            key={account.id}
+            className={`card transition-all ${
+              isActive ? 'ring-2 ring-primary-500 shadow-lg' : ''
+            }`}
+          >
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-primary-100 rounded-full">
-                  <Wallet className="w-6 h-6 text-primary-600" />
+                <div className={`p-3 rounded-full ${
+                  isActive ? 'bg-primary-600' : 'bg-primary-100'
+                }`}>
+                  <Wallet className={`w-6 h-6 ${
+                    isActive ? 'text-white' : 'text-primary-600'
+                  }`} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{account.bank_name}</h3>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="font-semibold text-gray-900">{account.bank_name}</h3>
+                    {isActive && (
+                      <CheckCircle className="w-4 h-4 text-primary-600" />
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500">
                     {account.account_type || 'Conta Corrente'}
                   </p>
+                  {isActive && (
+                    <p className="text-xs text-primary-600 font-semibold mt-1">
+                      Banco Ativo no Dashboard
+                    </p>
+                  )}
                 </div>
               </div>
               <span
@@ -124,7 +170,7 @@ const Accounts = () => {
                     : 'bg-red-100 text-red-800'
                 }`}
               >
-                {account.status === 'active' ? 'Ativa' : 'Inativa'}
+                {account.status === 'active' ? 'Conectada' : 'Desconectada'}
               </span>
             </div>
 
@@ -176,6 +222,19 @@ const Accounts = () => {
               </div>
             )}
 
+            {/* Activate Bank Button */}
+            {!isActive && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setActiveAccount(account.id)}
+                  className="w-full btn-primary flex items-center justify-center space-x-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Usar este Banco no Dashboard</span>
+                </button>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex space-x-2 mt-6">
               <button
@@ -203,7 +262,8 @@ const Accounts = () => {
               </button>
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Info box */}
