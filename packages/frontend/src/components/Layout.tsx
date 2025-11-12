@@ -33,12 +33,20 @@ const Layout = () => {
         <div className="p-4 flex items-center justify-between border-b border-primary-600">
           {!sidebarCollapsed && (
             <div className="flex items-center space-x-3">
-              <img src="/logo.png" alt="Guru do Dindin" className="h-10 w-auto" />
-              <span className="text-xl font-bold text-white">Guru</span>
+              <img
+                src="/logobranco.png"
+                alt="Guru do Dindin"
+                className="h-12 w-auto"
+              />
+              <span className="text-2xl font-bold text-white">Guru</span>
             </div>
           )}
           {sidebarCollapsed && (
-            <img src="/logo.png" alt="Guru do Dindin" className="h-10 w-auto mx-auto" />
+            <img
+              src="/logobranco.png"
+              alt="Guru do Dindin"
+              className="h-12 w-auto mx-auto"
+            />
           )}
         </div>
 
@@ -63,9 +71,9 @@ const Layout = () => {
                     `}
                     title={sidebarCollapsed ? item.name : ''}
                   >
-                    <Icon className={`${isActive ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
+                    <Icon className={`${isActive ? 'w-7 h-7' : 'w-6 h-6'} flex-shrink-0`} />
                     {!sidebarCollapsed && (
-                      <span className={`font-medium ${isActive ? 'font-semibold' : ''}`}>
+                      <span className={`text-base font-medium ${isActive ? 'font-semibold' : ''}`}>
                         {item.name}
                       </span>
                     )}
@@ -109,16 +117,16 @@ const Layout = () => {
         </div>
 
         {/* Toggle Button */}
-        <div className="border-t border-primary-600 p-2">
+        <div className="border-t border-primary-600 p-3">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center p-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+            className="w-full flex items-center justify-center p-3 text-white bg-primary-600 hover:bg-primary-500 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
             title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
           >
             {sidebarCollapsed ? (
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-6 h-6" />
             ) : (
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-6 h-6" />
             )}
           </button>
         </div>
