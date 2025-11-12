@@ -70,8 +70,8 @@ const Home = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <img src="/logo.png" alt="Guru do Dindin" className="h-10 w-auto" />
-              <span className="text-xl font-bold text-primary-600">Guru do Dindin</span>
+              <img src="/logo.png" alt="Guru do Dindin" className="h-17 w-auto" />
+              <span className="text-3xl font-bold text-primary-600">Guru do Dindin</span>
             </div>
 
             {/* Nav Links */}
@@ -279,6 +279,7 @@ const Home = () => {
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-500">
             <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
+            <p className="mt-2">CNPJ: 62.050.286/0001-77</p>
           </div>
         </div>
       </footer>
