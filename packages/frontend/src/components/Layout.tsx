@@ -1,11 +1,13 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Wallet, PlusCircle, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Receipt, Wallet, PlusCircle, LogOut, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useState } from 'react';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -20,76 +22,132 @@ const Layout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex items-center space-x-3">
-                <img
-                  src="/logo.png"
-                  alt="Guru do Dindin"
-                  className="h-11 sm:h-14 w-auto"
-                />
-                <h1 className="text-2xl sm:text-3xl font-bold text-primary-600">
-                  Guru do Dindin
-                </h1>
-              </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside
+        className={`bg-gradient-to-b from-primary-700 to-primary-900 text-white transition-all duration-300 flex flex-col ${
+          sidebarCollapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        {/* Logo/Header */}
+        <div className="p-4 flex items-center justify-between border-b border-primary-600">
+          {!sidebarCollapsed && (
+            <div className="flex items-center space-x-3">
+              <img src="/logo.png" alt="Guru do Dindin" className="h-10 w-auto" />
+              <span className="text-xl font-bold text-white">Guru</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 text-gray-700">
-                  <User className="w-5 h-5" />
-                  <span className="text-sm font-medium">{user?.name}</span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Sair"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sair</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          )}
+          {sidebarCollapsed && (
+            <img src="/logo.png" alt="Guru do Dindin" className="h-10 w-auto mx-auto" />
+          )}
         </div>
-      </header>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+        {/* Navigation */}
+        <nav className="flex-1 py-6">
+          <ul className="space-y-2 px-3">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`
-                    flex items-center space-x-2 py-4 border-b-2 transition-colors
-                    ${
-                      isActive
-                        ? 'border-primary-600 text-primary-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }
-                  `}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.name}</span>
-                </Link>
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    className={`
+                      flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                      ${
+                        isActive
+                          ? 'bg-white text-primary-700 shadow-lg transform scale-105'
+                          : 'text-white/80 hover:bg-primary-600 hover:text-white'
+                      }
+                      ${sidebarCollapsed ? 'justify-center' : ''}
+                    `}
+                    title={sidebarCollapsed ? item.name : ''}
+                  >
+                    <Icon className={`${isActive ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
+                    {!sidebarCollapsed && (
+                      <span className={`font-medium ${isActive ? 'font-semibold' : ''}`}>
+                        {item.name}
+                      </span>
+                    )}
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
+        </nav>
+
+        {/* User Section */}
+        <div className="border-t border-primary-600 p-4">
+          {!sidebarCollapsed ? (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3 px-3 py-2 bg-primary-600 rounded-lg">
+                <User className="w-5 h-5 text-white/80" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                  <p className="text-xs text-white/60 truncate">{user?.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 px-3 py-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-sm font-medium">Sair</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                title="Sair"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          )}
         </div>
-      </nav>
+
+        {/* Toggle Button */}
+        <div className="border-t border-primary-600 p-2">
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-full flex items-center justify-center p-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="w-5 h-5" />
+            ) : (
+              <ChevronLeft className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Top Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-primary-700">
+                Guru do Dindin
+              </h1>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 px-6 py-8 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

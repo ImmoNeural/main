@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, PlusCircle } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
@@ -307,34 +307,53 @@ const Transactions = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Total de Receitas */}
           <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
+            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-3">
               Total de Receitas
             </p>
-            <p className="text-2xl md:text-3xl font-bold text-green-600">
-              {formatCurrency(totalIncome)}
-            </p>
+            <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
+                <ArrowUp className="w-5 h-5 text-green-600" />
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                {formatCurrency(totalIncome)}
+              </p>
+            </div>
           </div>
 
           {/* Total de Despesas */}
           <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
+            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-3">
               Total de Despesas
             </p>
-            <p className="text-2xl md:text-3xl font-bold text-red-600">
-              {formatCurrency(totalExpense)}
-            </p>
+            <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full">
+                <ArrowDown className="w-5 h-5 text-red-600" />
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                {formatCurrency(totalExpense)}
+              </p>
+            </div>
           </div>
 
           {/* Saldo Líquido */}
           <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">
+            <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-3">
               Saldo Líquido
             </p>
-            <p className={`text-2xl md:text-3xl font-bold ${
-              balance >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
-            </p>
+            <div className="flex items-center justify-center space-x-3">
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                balance >= 0 ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {balance >= 0 ? (
+                  <ArrowUp className="w-5 h-5 text-green-600" />
+                ) : (
+                  <ArrowDown className="w-5 h-5 text-red-600" />
+                )}
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
