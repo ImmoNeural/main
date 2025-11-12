@@ -122,10 +122,10 @@ const Transactions = () => {
         const description = transaction.description || '';
         const merchant = transaction.merchant || '';
 
-        console.log('🔍 Buscando transações similares a:', { description, merchant });
+        console.log('🔍 Buscando transações similares a:', { description, merchant, newCategory });
 
-        // Buscar transações similares
-        const response = await transactionApi.findSimilar(description, merchant, transactionId);
+        // Buscar transações similares (excluindo as que já estão na nova categoria)
+        const response = await transactionApi.findSimilar(description, merchant, transactionId, newCategory);
 
         console.log('✅ Transações similares encontradas:', response.data.similar.length);
         console.log('📊 Detalhes:', response.data);

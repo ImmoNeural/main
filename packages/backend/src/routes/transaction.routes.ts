@@ -360,7 +360,7 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
 router.post('/find-similar', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
-    const { description, merchant, excludeId } = req.body;
+    const { description, merchant, excludeId, newCategory } = req.body;
 
     if (!description && !merchant) {
       return res.status(400).json({ error: 'Descrição ou merchant obrigatório' });
@@ -390,6 +390,8 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
     // Filtrar transações similares
     const similar = (transactions || [])
       .filter(t => t.id !== excludeId)
+      // IMPORTANTE: Excluir transações que já estão na categoria de destino
+      .filter(t => !newCategory || t.category !== newCategory)
       .map(t => {
         const tText = `${t.description || ''} ${t.merchant || ''}`.toLowerCase();
         const matchedWords = words.filter(word => tText.includes(word));
@@ -405,7 +407,7 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 20); // Máximo 20 resultados
 
-    console.log(`🔍 Encontradas ${similar.length} transações similares a: "${description || merchant}"`);
+    console.log(`🔍 Encontradas ${similar.length} transações similares a: "${description || merchant}" (excluindo categoria: ${newCategory || 'nenhuma'})`);
 
     res.json({
       similar,
