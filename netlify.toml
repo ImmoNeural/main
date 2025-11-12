@@ -1,12 +1,17 @@
 [build]
-  # Comando para instalar dependências
-  command = "npm install --include=dev && npm run build:vercel"
+  # Comando otimizado: instala apenas dependências do frontend
+  command = "cd packages/frontend && npm ci && npm run build && cd ../.. && mkdir -p dist && cp -r packages/frontend/dist/* dist/"
 
   # Diretório onde está o build final
   publish = "dist"
 
   # Diretório base (raiz do projeto)
   base = "/"
+
+# Cache de node_modules para builds mais rápidos
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 # Redirect da API para o backend no Render
 [[redirects]]
