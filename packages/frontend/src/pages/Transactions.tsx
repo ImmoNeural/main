@@ -102,7 +102,22 @@ const Transactions = () => {
     .filter(t => t.type === 'debit')
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
+  const totalInvestments = last12MonthsTransactions
+    .filter(t => t.category === 'Investimentos')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const totalInvestmentsDebitOnly = last12MonthsTransactions
+    .filter(t => t.category === 'Investimentos' && t.type === 'debit')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
   const balance = totalIncome - totalExpense;
+
+  console.log('\n📊 DEBUG TRANSAÇÕES (Últimos 12 meses):');
+  console.log(`   Total transações: ${last12MonthsTransactions.length}`);
+  console.log(`   Total Income: R$ ${totalIncome.toFixed(2)}`);
+  console.log(`   Total Expenses (todos débitos): R$ ${totalExpense.toFixed(2)}`);
+  console.log(`   Investimentos (débito+crédito): R$ ${totalInvestments.toFixed(2)}`);
+  console.log(`   Investimentos (só débito): R$ ${totalInvestmentsDebitOnly.toFixed(2)}`);
 
   // Calcular breakdown mensal dos últimos 12 meses
   const getMonthlyBreakdown = () => {

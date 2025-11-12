@@ -45,12 +45,19 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     let total_income = 0;
     let total_expenses = 0;
     let investment_balance = 0;
+    let investment_debit_only = 0;
     const transaction_count = transactions?.length || 0;
+
+    console.log(`\n📊 DEBUG: Calculando stats para ${transaction_count} transações`);
 
     transactions?.forEach((tx) => {
       // Calcular investimentos: soma TODAS transações categorizadas como Investimentos
       if (tx.category === 'Investimentos') {
         investment_balance += Math.abs(tx.amount);
+        if (tx.type === 'debit') {
+          investment_debit_only += Math.abs(tx.amount);
+        }
+        console.log(`💰 Investimento: ${tx.type} ${tx.amount} | Total: ${investment_balance} | Somente débito: ${investment_debit_only}`);
       }
 
       // Calcular totais gerais
@@ -60,6 +67,12 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
         total_expenses += Math.abs(tx.amount);
       }
     });
+
+    console.log(`\n✅ RESULTADO:`);
+    console.log(`   Total Income: R$ ${total_income.toFixed(2)}`);
+    console.log(`   Total Expenses (todos débitos): R$ ${total_expenses.toFixed(2)}`);
+    console.log(`   Investment Balance (débito+crédito): R$ ${investment_balance.toFixed(2)}`);
+    console.log(`   Investment (somente débitos): R$ ${investment_debit_only.toFixed(2)}\n`);
 
     const stats: DashboardStats = {
       total_balance,
