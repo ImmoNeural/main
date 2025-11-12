@@ -526,7 +526,7 @@ class CategorizationService {
         }
       }
 
-      // 3. Match por keywords (peso médio)
+      // 3. Match por keywords (peso médio) - MATCH EXATO APENAS
       if (score === 0) {
         for (const keyword of rule.keywords) {
           if (text.includes(this.normalizeText(keyword))) {
@@ -537,17 +537,8 @@ class CategorizationService {
         }
       }
 
-      // 4. Fuzzy matching (peso baixo)
-      if (score === 0) {
-        for (const keyword of rule.keywords) {
-          const similarity = this.fuzzyMatch(text, this.normalizeText(keyword));
-          if (similarity > 0.7) {
-            score = 50 + rule.priority + (similarity * 10);
-            matchedBy = `similaridade: ${keyword} (${(similarity * 100).toFixed(0)}%)`;
-            break;
-          }
-        }
-      }
+      // FUZZY MATCHING REMOVIDO
+      // Não categorizar por "adivinhação" - apenas matches exatos são permitidos
 
       // Atualizar melhor match
       if (score > 0 && (!bestMatch || score > bestMatch.score)) {

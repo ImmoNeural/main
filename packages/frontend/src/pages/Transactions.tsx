@@ -106,12 +106,8 @@ const Transactions = () => {
         return;
       }
 
-      const wasUncategorized = !transaction.category ||
-                              transaction.category === 'Definir Categoria' ||
-                              transaction.category === 'Outros';
-
       console.log('📋 Categoria anterior:', transaction.category);
-      console.log('🏷️ Era não categorizada?', wasUncategorized);
+      console.log('🏷️ Nova categoria:', newCategory);
 
       // Atualizar a transação atual
       await transactionApi.updateCategory(transactionId, newCategory);
@@ -121,9 +117,8 @@ const Transactions = () => {
         )
       );
 
-      // Se era uma transação não categorizada e agora tem categoria válida,
-      // buscar transações similares e mostrar modal
-      if (wasUncategorized && newCategory && newCategory !== 'Definir Categoria' && newCategory !== 'Outros') {
+      // SEMPRE buscar transações similares ao mudar categoria (não importa se era categorizada antes)
+      if (newCategory && newCategory !== 'Definir Categoria' && newCategory !== 'Outros' && newCategory !== 'Sem Categoria') {
         const description = transaction.description || '';
         const merchant = transaction.merchant || '';
 
@@ -145,11 +140,7 @@ const Transactions = () => {
           console.log('ℹ️ Nenhuma transação similar encontrada');
         }
       } else {
-        console.log('⏭️ Pulando busca de similares:', {
-          wasUncategorized,
-          newCategory,
-          isValidCategory: newCategory !== 'Definir Categoria' && newCategory !== 'Outros'
-        });
+        console.log('⏭️ Pulando busca de similares (categoria inválida)');
       }
     } catch (error) {
       console.error('❌ Erro ao atualizar categoria:', error);
@@ -383,11 +374,11 @@ const Transactions = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTransactions.map((transaction) => {
-                const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros';
+                const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
                 return (
                   <tr
                     key={transaction.id}
-                    className={`hover:bg-gray-50 ${isUncategorized ? 'bg-purple-50' : ''}`}
+                    className={`hover:bg-gray-50 ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : ''}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {format(new Date(transaction.date), 'dd/MM/yyyy')}
@@ -406,17 +397,17 @@ const Transactions = () => {
                       <div className="flex items-center space-x-2">
                         {isUncategorized && (
                           <div className="group relative">
-                            <AlertCircle className="w-4 h-4 text-orange-500" />
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                              ⚠️ Categoria não encontrada. Favor categorizar manualmente.
+                            <AlertCircle className="w-5 h-5 text-rose-600 animate-pulse" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                              ⚠️ Sem categoria definida - Favor categorizar manualmente
                             </div>
                           </div>
                         )}
                         <select
                           value={transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                          className={`text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                            isUncategorized ? 'border-orange-400 bg-orange-50 text-gray-900' : 'border-gray-300 bg-white text-gray-900'
+                          className={`text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 ${
+                            isUncategorized ? 'border-rose-400 bg-rose-100 text-gray-900 font-semibold focus:ring-rose-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
                           }`}
                         >
                           {categories.map((cat) => (
