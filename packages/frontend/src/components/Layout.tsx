@@ -34,18 +34,18 @@ const Layout = () => {
           {!sidebarCollapsed && (
             <div className="flex items-center space-x-3">
               <img
-                src="/logo.png"
+                src="/logobranco.png"
                 alt="Guru do Dindin"
-                className="h-12 w-auto brightness-0 invert"
+                className="h-12 w-auto"
               />
               <span className="text-2xl font-bold text-white">Guru</span>
             </div>
           )}
           {sidebarCollapsed && (
             <img
-              src="/logo.png"
+              src="/logobranco.png"
               alt="Guru do Dindin"
-              className="h-12 w-auto mx-auto brightness-0 invert"
+              className="h-12 w-auto mx-auto"
             />
           )}
         </div>
