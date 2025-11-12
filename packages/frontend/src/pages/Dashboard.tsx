@@ -32,6 +32,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(365);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [disabledCategories, setDisabledCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadDashboardData();
@@ -86,6 +87,19 @@ const Dashboard = () => {
     return Math.round(period / 30);
   };
 
+  // Toggle de categoria na legenda
+  const toggleCategory = (category: string) => {
+    setDisabledCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -126,13 +140,13 @@ const Dashboard = () => {
     return data;
   });
 
-  // Categorias de despesas e receitas
+  // Categorias de despesas e receitas (filtrar desabilitadas)
   const expenseCategories = Array.from(
     new Set(weeklyStats.flatMap((w) => w.expenses.byCategory.map((c) => c.category)))
-  );
+  ).filter(cat => !disabledCategories.has(cat));
   const incomeCategories = Array.from(
     new Set(weeklyStats.flatMap((w) => w.income.byCategory.map((c) => c.category)))
-  );
+  ).filter(cat => !disabledCategories.has(cat));
 
   // Preparar dados mensais para o detalhamento da categoria selecionada
   const getCategoryMonthlyData = (category: string) => {
@@ -354,18 +368,35 @@ const Dashboard = () => {
         <div className="xl:col-span-1">
           <div className="card h-full">
             <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Legenda dos Gráficos</h3>
+            <p className="text-xs text-gray-500 mb-3">Clique para habilitar/desabilitar</p>
             <div className="space-y-2">
-              {Array.from(allCategories).map((category) => (
-                <div key={category} className="flex items-center gap-3 py-1.5">
-                  <span
-                    className="w-5 h-5 rounded flex-shrink-0"
-                    style={{ backgroundColor: categoryColorMap.get(category) }}
-                  />
-                  <span className="text-sm font-medium text-gray-700 truncate">
-                    {category}
-                  </span>
-                </div>
-              ))}
+              {Array.from(allCategories).map((category) => {
+                const isDisabled = disabledCategories.has(category);
+                return (
+                  <div
+                    key={category}
+                    onClick={() => toggleCategory(category)}
+                    className={`flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 group ${
+                      isDisabled
+                        ? 'opacity-40 hover:opacity-60 bg-gray-100'
+                        : 'hover:bg-gray-50 hover:shadow-md hover:-translate-y-0.5'
+                    }`}
+                    title={isDisabled ? 'Clique para habilitar' : 'Clique para desabilitar'}
+                  >
+                    <span
+                      className={`w-5 h-5 rounded flex-shrink-0 transition-all ${
+                        isDisabled ? 'bg-gray-300' : ''
+                      }`}
+                      style={{ backgroundColor: isDisabled ? undefined : categoryColorMap.get(category) }}
+                    />
+                    <span className={`text-sm font-medium truncate transition-colors ${
+                      isDisabled ? 'text-gray-400 line-through' : 'text-gray-700'
+                    }`}>
+                      {category}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -428,7 +459,7 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
-                  data={categoryStats}
+                  data={categoryStats.filter(cat => !disabledCategories.has(cat.category))}
                   dataKey="total"
                   nameKey="category"
                   cx="50%"
@@ -439,7 +470,7 @@ const Dashboard = () => {
                   animationDuration={800}
                   animationBegin={0}
                 >
-                  {categoryStats.map((entry, index) => (
+                  {categoryStats.filter(cat => !disabledCategories.has(cat.category)).map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={categoryColorMap.get(entry.category) || '#94a3b8'}
@@ -470,7 +501,7 @@ const Dashboard = () => {
             </p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={categoryStats.slice(0, 8)}>
+            <BarChart data={categoryStats.filter(cat => !disabledCategories.has(cat.category)).slice(0, 8)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
                 dataKey="category"
@@ -503,7 +534,7 @@ const Dashboard = () => {
                   }, 100);
                 }}
               >
-                {categoryStats.slice(0, 8).map((entry, index) => (
+                {categoryStats.filter(cat => !disabledCategories.has(cat.category)).slice(0, 8).map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={categoryColorMap.get(entry.category) || '#3b82f6'}
