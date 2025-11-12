@@ -1,5 +1,5 @@
 services:
-  # Backend API
+  # Backend API - Otimizado para deploy rápido
   - type: web
     name: gurudodindin-api
     runtime: node
