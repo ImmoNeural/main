@@ -5,11 +5,8 @@ import {
   Smartphone,
   PieChart,
   Zap,
-  Users,
   CheckCircle,
   ArrowRight,
-  BarChart3,
-  Wallet,
   Target
 } from 'lucide-react';
 
