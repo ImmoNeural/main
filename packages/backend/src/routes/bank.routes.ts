@@ -300,6 +300,7 @@ router.get('/accounts', authMiddleware, async (req: Request, res: Response) => {
       .from('bank_accounts')
       .select('id, user_id, bank_name, account_number, iban, account_type, balance, currency, connected_at, last_sync_at, status, created_at, updated_at')
       .eq('user_id', user_id)
+      .neq('status', 'disconnected')  // Excluir contas desconectadas
       .order('created_at', { ascending: false });
 
     if (error) {

@@ -68,10 +68,13 @@ const Accounts = () => {
     }
 
     try {
-      await bankApi.deleteAccount(accountId);
+      console.log('🗑️ Deletando conta:', accountId);
+      const response = await bankApi.deleteAccount(accountId);
+      console.log('✅ Resposta do servidor:', response.data);
 
       // Se estamos deletando o banco ativo, limpar do localStorage e state
       if (activeAccountId === accountId) {
+        console.log('🔄 Limpando banco ativo do localStorage');
         localStorage.removeItem('activeAccountId');
         setActiveAccountId(null);
         // Disparar evento para atualizar dashboard
@@ -79,11 +82,14 @@ const Accounts = () => {
       }
 
       // Remover da lista local imediatamente
+      console.log('🎯 Removendo conta da lista local');
       setAccounts(prevAccounts => prevAccounts.filter(acc => acc.id !== accountId));
-      alert('Conta desconectada com sucesso!\n\nSeus dados históricos foram preservados.');
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      alert('Erro ao desconectar conta');
+
+      alert('✅ Conta desconectada com sucesso!\n\nSeus dados históricos foram preservados.');
+    } catch (error: any) {
+      console.error('❌ Erro ao deletar conta:', error);
+      console.error('Detalhes do erro:', error.response?.data || error.message);
+      alert(`Erro ao desconectar conta: ${error.response?.data?.error || error.message || 'Erro desconhecido'}`);
       // Se der erro, recarregar do servidor
       await loadAccounts();
     }
@@ -221,16 +227,6 @@ const Accounts = () => {
               </div>
             </div>
 
-            {/* Status message for disconnected accounts */}
-            {account.status === 'disconnected' && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  <strong>Conta desconectada.</strong> Seus dados históricos estão preservados.
-                  Clique em "Conectar Banco" acima para reconectar.
-                </p>
-              </div>
-            )}
-
             {/* Activate Bank Button */}
             {!isActive && (
               <div className="mt-4">
@@ -248,11 +244,9 @@ const Accounts = () => {
             <div className="flex space-x-2 mt-6">
               <button
                 onClick={() => handleSync(account.id)}
-                disabled={syncing === account.id || account.status !== 'active'}
-                className={`flex-1 btn-secondary flex items-center justify-center space-x-2 ${
-                  account.status !== 'active' ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                title={account.status !== 'active' ? 'Reconecte a conta para sincronizar' : 'Sincronizar transações'}
+                disabled={syncing === account.id}
+                className="flex-1 btn-secondary flex items-center justify-center space-x-2"
+                title="Sincronizar transações"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${syncing === account.id ? 'animate-spin' : ''}`}
