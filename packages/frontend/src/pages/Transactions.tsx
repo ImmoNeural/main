@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
@@ -16,6 +16,7 @@ const Transactions = () => {
   const [selectedType, setSelectedType] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showMonthlyBreakdown, setShowMonthlyBreakdown] = useState(false);
 
   // Estados para o modal de recategorização em lote
   const [showBulkModal, setShowBulkModal] = useState(false);
@@ -94,6 +95,49 @@ const Transactions = () => {
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   const balance = totalIncome - totalExpense;
+
+  // Calcular breakdown mensal dos últimos 12 meses
+  const getMonthlyBreakdown = () => {
+    const months = [];
+    let accumulatedBalance = 0;
+
+    for (let i = 11; i >= 0; i--) {
+      const date = subMonths(new Date(), i);
+      const monthKey = format(date, 'yyyy-MM');
+      const monthLabel = format(date, 'MMMM yyyy', { locale: ptBR })
+        .replace(/^\w/, (c) => c.toUpperCase());
+
+      // Filtrar transações deste mês
+      const monthTransactions = transactions.filter(t => {
+        const transactionMonth = format(new Date(t.date), 'yyyy-MM');
+        return transactionMonth === monthKey;
+      });
+
+      const monthIncome = monthTransactions
+        .filter(t => t.type === 'credit')
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+      const monthExpense = monthTransactions
+        .filter(t => t.type === 'debit')
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+      const monthBalance = monthIncome - monthExpense;
+      accumulatedBalance += monthBalance;
+
+      months.push({
+        monthKey,
+        monthLabel,
+        income: monthIncome,
+        expense: monthExpense,
+        balance: monthBalance,
+        accumulatedBalance
+      });
+    }
+
+    return months;
+  };
+
+  const monthlyBreakdown = getMonthlyBreakdown();
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
     try {
@@ -299,59 +343,136 @@ const Transactions = () => {
       </div>
 
       {/* Resumo Financeiro das Transações Filtradas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        {/* Total de Receitas */}
-        <div className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total de Receitas</p>
-              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
-                {formatCurrency(totalIncome)}
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <ArrowUp className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Total de Despesas */}
-        <div className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total de Despesas</p>
-              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
-                {formatCurrency(totalExpense)}
-              </p>
-            </div>
-            <div className="p-3 bg-red-100 rounded-full">
-              <ArrowDown className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Saldo Líquido */}
-        <div className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Saldo Líquido</p>
-              <p className={`text-xl sm:text-2xl font-bold mt-1 ${
-                balance >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {formatCurrency(balance)}
-              </p>
-            </div>
-            <div className={`p-3 rounded-full ${
-              balance >= 0 ? 'bg-green-100' : 'bg-red-100'
-            }`}>
-              {balance >= 0 ? (
+      <div>
+        <div
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 cursor-pointer"
+          onClick={() => setShowMonthlyBreakdown(!showMonthlyBreakdown)}
+        >
+          {/* Total de Receitas */}
+          <div className="card hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total de Receitas</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
+                  {formatCurrency(totalIncome)}
+                </p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-full">
                 <ArrowUp className="w-6 h-6 text-green-600" />
-              ) : (
+              </div>
+            </div>
+          </div>
+
+          {/* Total de Despesas */}
+          <div className="card hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total de Despesas</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
+                  {formatCurrency(totalExpense)}
+                </p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-full">
                 <ArrowDown className="w-6 h-6 text-red-600" />
-              )}
+              </div>
+            </div>
+          </div>
+
+          {/* Saldo Líquido */}
+          <div className="card hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Saldo Líquido</p>
+                <p className={`text-xl sm:text-2xl font-bold mt-1 ${
+                  balance >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {formatCurrency(balance)}
+                </p>
+              </div>
+              <div className={`p-3 rounded-full ${
+                balance >= 0 ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {balance >= 0 ? (
+                  <ArrowUp className="w-6 h-6 text-green-600" />
+                ) : (
+                  <ArrowDown className="w-6 h-6 text-red-600" />
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Indicador de expandir/colapsar */}
+        <div className="flex justify-center mt-2">
+          <button
+            onClick={() => setShowMonthlyBreakdown(!showMonthlyBreakdown)}
+            className="flex items-center space-x-2 text-sm text-gray-600 hover:text-primary-600 transition-colors py-2 px-4 rounded-lg hover:bg-gray-50"
+          >
+            <span>{showMonthlyBreakdown ? 'Ocultar' : 'Ver'} detalhamento mensal</span>
+            {showMonthlyBreakdown ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+
+        {/* Breakdown Mensal Expansível */}
+        {showMonthlyBreakdown && (
+          <div className="card mt-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Detalhamento dos Últimos 12 Meses
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Mês
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Receitas
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Despesas
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Saldo do Mês
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Saldo Acumulado
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {monthlyBreakdown.map((month) => (
+                    <tr key={month.monthKey} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {month.monthLabel}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-green-600 font-semibold">
+                        {formatCurrency(month.income)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-red-600 font-semibold">
+                        {formatCurrency(month.expense)}
+                      </td>
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-semibold ${
+                        month.balance >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {month.balance >= 0 ? '+' : ''}{formatCurrency(month.balance)}
+                      </td>
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-bold ${
+                        month.accumulatedBalance >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatCurrency(month.accumulatedBalance)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Transactions Table */}
