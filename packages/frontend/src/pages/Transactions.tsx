@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
+import { CategoryIcon, CategoryIconSmall } from '../components/CategoryIcons';
 
 const Transactions = () => {
   const navigate = useNavigate();
@@ -583,25 +584,30 @@ const Transactions = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white">
               {filteredTransactions.map((transaction) => {
                 const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
                 return (
                   <tr
                     key={transaction.id}
-                    className={`hover:bg-gray-50 ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : ''}`}
+                    className={`hover:bg-gray-50 transition ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : ''}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {format(new Date(transaction.date), 'dd/MM/yyyy')}
                     </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {transaction.merchant || transaction.description}
-                        </p>
-                        {transaction.reference && (
-                          <p className="text-xs text-gray-500">{transaction.reference}</p>
-                        )}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white shadow-inner flex-shrink-0">
+                          <CategoryIconSmall category={transaction.category || 'Outros'} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
+                            {transaction.merchant || transaction.description}
+                          </p>
+                          {transaction.reference && (
+                            <p className="text-xs text-gray-500 truncate">{transaction.reference}</p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -617,13 +623,13 @@ const Transactions = () => {
                         <select
                           value={transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                          className={`text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 ${
+                          className={`text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 ${
                             isUncategorized ? 'border-rose-400 bg-rose-100 text-gray-900 font-semibold focus:ring-rose-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
                           }`}
                         >
                           {categories.map((cat) => (
                             <option key={cat.category} value={cat.category}>
-                              {cat.icon} {cat.category}
+                              {cat.category}
                             </option>
                           ))}
                         </select>

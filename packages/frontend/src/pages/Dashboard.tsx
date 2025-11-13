@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
+import { CategoryIcon } from '../components/CategoryIcons';
 import {
   BarChart,
   Bar,
@@ -998,31 +999,29 @@ const Dashboard = () => {
             <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {recentTransactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all hover:shadow gap-2"
+              className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition bg-white shadow-sm"
             >
-              <div className="flex items-center space-x-3">
-                <div className="text-2xl flex-shrink-0">{getCategoryIcon(transaction.category)}</div>
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
+              <CategoryIcon category={transaction.category || 'Outros'} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-gray-800 truncate">
                     {transaction.merchant || transaction.description}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(transaction.date), 'dd/MM/yyyy')} • {transaction.category}
-                  </p>
+                  </span>
+                  <span
+                    className={`text-sm font-bold ${
+                      transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {transaction.type === 'credit' ? '+' : '-'}
+                    {formatCurrency(Math.abs(transaction.amount))}
+                  </span>
                 </div>
-              </div>
-              <div className="text-right sm:ml-4">
-                <p
-                  className={`font-bold text-lg ${
-                    transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {transaction.type === 'credit' ? '+' : '-'}
-                  {formatCurrency(Math.abs(transaction.amount))}
+                <p className="text-xs text-gray-500 mt-1">
+                  {format(new Date(transaction.date), 'dd/MM/yyyy')} • {transaction.category}
                 </p>
               </div>
             </div>
