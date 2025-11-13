@@ -526,7 +526,7 @@ const Transactions = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {monthlyBreakdown.map((month, index) => (
+                  {monthlyBreakdown.map((month) => (
                     <tr
                       key={month.monthKey}
                       className="hover:bg-gray-50 transition-colors"
