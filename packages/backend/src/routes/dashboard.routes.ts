@@ -71,25 +71,41 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 
     if (transactionsError) throw transactionsError;
 
+    // Buscar saldo inicial (balance_after da primeira transação do período)
+    const startDateObj = new Date(startDate);
+    const startDayStart = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 0, 0, 0).getTime();
+    const startDayEnd = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 23, 59, 59).getTime();
+
+    console.log(`🔍 Buscando saldo inicial para ${format(startDate, 'dd/MM/yyyy')} (${startDayStart} - ${startDayEnd})`);
+
+    const { data: firstDayTransactions, error: firstDayError } = await supabase
+      .from('transactions')
+      .select('balance_after, date, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .gte('date', startDayStart)
+      .lte('date', startDayEnd)
+      .not('balance_after', 'is', null)
+      .order('date', { ascending: true })
+      .limit(1);
+
+    const initial_balance = firstDayTransactions && firstDayTransactions.length > 0
+      ? firstDayTransactions[0].balance_after
+      : null;
+
+    if (initial_balance !== null) {
+      console.log(`💰 Saldo inicial encontrado: R$ ${initial_balance.toFixed(2)} (data: ${format(firstDayTransactions![0].date, 'dd/MM/yyyy HH:mm')})`);
+    } else {
+      console.log(`⚠️ Saldo inicial não encontrado para ${format(startDate, 'dd/MM/yyyy')} (balance_after não disponível)`);
+    }
+
     // Calcular agregações
     let total_income = 0;
     let total_expenses = 0;
-    let investment_balance = 0;
-    let investment_debit_only = 0;
     const transaction_count = transactions?.length || 0;
 
     console.log(`\n📊 DEBUG: Calculando stats para ${transaction_count} transações`);
 
     transactions?.forEach((tx) => {
-      // Calcular investimentos: soma TODAS transações categorizadas como Investimentos
-      if (tx.category === 'Investimentos') {
-        investment_balance += Math.abs(tx.amount);
-        if (tx.type === 'debit') {
-          investment_debit_only += Math.abs(tx.amount);
-        }
-        console.log(`💰 Investimento: ${tx.type} ${tx.amount} | Total: ${investment_balance} | Somente débito: ${investment_debit_only}`);
-      }
-
       // Calcular totais gerais
       if (tx.type === 'credit') {
         total_income += tx.amount;
@@ -99,16 +115,15 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     });
 
     console.log(`\n✅ RESULTADO:`);
+    console.log(`   Saldo Inicial: ${initial_balance !== null ? `R$ ${initial_balance.toFixed(2)}` : 'Não definido'}`);
     console.log(`   Total Income: R$ ${total_income.toFixed(2)}`);
-    console.log(`   Total Expenses (todos débitos): R$ ${total_expenses.toFixed(2)}`);
-    console.log(`   Investment Balance (débito+crédito): R$ ${investment_balance.toFixed(2)}`);
-    console.log(`   Investment (somente débitos): R$ ${investment_debit_only.toFixed(2)}\n`);
+    console.log(`   Total Expenses (todos débitos): R$ ${total_expenses.toFixed(2)}\n`);
 
     const stats: DashboardStats = {
       total_balance,
       total_income,
       total_expenses,
-      investment_balance,
+      initial_balance,
       transaction_count,
       period_start: new Date(startDate).toISOString(),
       period_end: new Date(endDate).toISOString(),

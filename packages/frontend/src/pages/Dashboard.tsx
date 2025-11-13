@@ -451,9 +451,11 @@ const Dashboard = () => {
         <div className="card hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-600 font-semibold">💰 Investimentos</p>
+              <p className="text-sm text-blue-600 font-semibold">💰 Saldo Inicial</p>
               <p className="text-xl sm:text-2xl font-bold text-blue-700 mt-1">
-                {formatCurrency(stats?.investment_balance || 0)}
+                {stats?.initial_balance !== null && stats?.initial_balance !== undefined
+                  ? formatCurrency(stats.initial_balance)
+                  : 'Não definido'}
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">

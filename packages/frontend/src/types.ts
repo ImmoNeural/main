@@ -43,7 +43,7 @@ export interface DashboardStats {
   total_balance: number;
   total_income: number;
   total_expenses: number;
-  investment_balance: number;
+  initial_balance: number | null; // Saldo no início do período (pode ser null se não houver dados)
   transaction_count: number;
   period_start: string;
   period_end: string;
