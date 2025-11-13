@@ -192,13 +192,22 @@ const Dashboard = () => {
   const handleChartClick = (data: any) => {
     console.log('🖱️ Chart clicked, full data:', data);
 
-    // Recharts passa o objeto diretamente, não dentro de activePayload
     if (!data) {
       console.log('⚠️ No data');
       return;
     }
 
-    const clickedData = data;
+    // Recharts pode passar dados de duas formas:
+    // 1. Diretamente quando clica na barra (tem week/monthKey)
+    // 2. Via activePayload quando clica no container (precisa extrair)
+    let clickedData = data;
+
+    // Se tiver activePayload, usar o primeiro item
+    if (data.activePayload && data.activePayload.length > 0) {
+      clickedData = data.activePayload[0].payload;
+      console.log('📦 Using activePayload:', clickedData);
+    }
+
     console.log('📊 Clicked data:', clickedData);
     console.log('🔍 Available keys:', Object.keys(clickedData));
 
@@ -206,6 +215,12 @@ const Dashboard = () => {
       // Visualização semanal
       // Extrair número da semana do formato 'S37' -> 37
       const weekString = clickedData.week; // ex: 'S37'
+
+      if (!weekString) {
+        console.log('❌ No week property found');
+        return;
+      }
+
       const weekNumber = parseInt(weekString.replace('S', '')); // 37
       const year = clickedData.year;
 
@@ -235,8 +250,15 @@ const Dashboard = () => {
       }
     } else {
       // Visualização mensal
-      const monthKey = clickedData.month; // ex: '2025-10'
-      console.log('📅 Monthly view - searching for month:', monthKey);
+      // Usar monthKey ao invés de month (monthKey = '2025-09', month = 'Sep')
+      const monthKey = clickedData.monthKey; // ex: '2025-09'
+
+      if (!monthKey) {
+        console.log('❌ No monthKey property found');
+        return;
+      }
+
+      console.log('📅 Monthly view - searching for monthKey:', monthKey);
       console.log('📅 Searching in monthlyStats:', monthlyStats.length, 'items');
 
       const monthData = monthlyStats.find(m => {
