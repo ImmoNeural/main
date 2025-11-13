@@ -131,7 +131,7 @@ const Layout = () => {
 
       {/* Main Content */}
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300
-        lg:${sidebarCollapsed ? 'ml-20' : 'ml-64'}
+        ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
       `}>
         {/* Page Content */}
         <main className="flex-1 px-2 sm:px-3 lg:px-6 py-3 sm:py-4 lg:py-8 overflow-x-hidden pb-20 lg:pb-8">
