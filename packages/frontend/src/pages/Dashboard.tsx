@@ -1032,25 +1032,4 @@ const Dashboard = () => {
   );
 };
 
-const getCategoryIcon = (category?: string) => {
-  const icons: Record<string, string> = {
-    'Supermercado': '🛒',
-    'Alimentação': '🍽️',
-    'Restaurantes': '🍽️',
-    'Transporte': '🚗',
-    'Compras': '🛍️',
-    'Saúde': '⚕️',
-    'Entretenimento': '🎬',
-    'Contas': '📄',
-    'Salário': '💰',
-    'Transferências': '💸',
-    'Transferência': '💸',
-    'Educação': '📚',
-    'Casa': '🏠',
-    'Investimentos': '📈',
-    'Outros': '📊',
-  };
-  return icons[category || 'Outros'] || '📊';
-};
-
 export default Dashboard;

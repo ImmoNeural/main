@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
-import { CategoryIcon, CategoryIconSmall } from '../components/CategoryIcons';
+import { CategoryIconSmall } from '../components/CategoryIcons';
 
 const Transactions = () => {
   const navigate = useNavigate();
