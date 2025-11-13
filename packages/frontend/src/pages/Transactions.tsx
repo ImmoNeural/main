@@ -96,6 +96,29 @@ const Transactions = () => {
 
   const last12MonthsTransactions = getLast12MonthsTransactions();
 
+  // Calcular saldo inicial (balance_after da primeira transação de 12 meses atrás)
+  const getInitialBalance = () => {
+    const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
+    const startDayTransactions = last12MonthsTransactions
+      .filter(t => {
+        const txDate = new Date(t.date);
+        return txDate >= twelveMonthsAgo &&
+               txDate < new Date(twelveMonthsAgo.getTime() + 24 * 60 * 60 * 1000);
+      })
+      .filter(t => t.balance_after !== undefined && t.balance_after !== null)
+      .sort((a, b) => a.date - b.date);
+
+    return startDayTransactions.length > 0 ? startDayTransactions[0].balance_after : null;
+  };
+
+  const initialBalance = getInitialBalance();
+
+  // Formatar data de início dos 12 meses para o label
+  const getStartDateLabel = () => {
+    const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
+    return format(twelveMonthsAgo, 'dd.MM.yyyy');
+  };
+
   // Calcular totais dos últimos 12 meses (não afetados por filtros)
   const totalIncome = last12MonthsTransactions
     .filter(t => t.type === 'credit')
@@ -373,7 +396,7 @@ const Transactions = () => {
       {/* Resumo Financeiro das Transações Filtradas */}
       <div>
         <div
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 cursor-pointer"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 cursor-pointer"
           onClick={() => setShowMonthlyBreakdown(!showMonthlyBreakdown)}
         >
           {/* Total de Receitas */}
@@ -425,6 +448,25 @@ const Transactions = () => {
                 ) : (
                   <ArrowDown className="w-6 h-6 text-red-600" />
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Saldo Inicial */}
+          <div className="card hover:shadow-lg transition-all bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-semibold">
+                  💰 Saldo inicial <span className="text-xs text-gray-400">em {getStartDateLabel()}</span>
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-700 mt-1">
+                  {initialBalance !== null && initialBalance !== undefined
+                    ? formatCurrency(initialBalance)
+                    : 'Não definido'}
+                </p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-full">
+                <ArrowUp className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>

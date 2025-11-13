@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [disabledCategories, setDisabledCategories] = useState<Set<string>>(new Set());
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [chartView, setChartView] = useState<'weekly' | 'monthly'>('weekly'); // Novo: controlar visualização
+  const transactionsRef = useRef<HTMLDivElement>(null); // Ref para seção de transações
 
   useEffect(() => {
     // Carregar banco ativo do localStorage
@@ -134,6 +135,14 @@ const Dashboard = () => {
 
   const getMonthsCount = () => {
     return Math.round(period / 30);
+  };
+
+  // Função para rolar até as transações recentes
+  const scrollToTransactions = () => {
+    transactionsRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
   };
 
   // Toggle de categoria na legenda
@@ -426,7 +435,7 @@ const Dashboard = () => {
         <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Saldo Total</p>
+              <p className="text-sm text-gray-500">Saldo total hoje</p>
               <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
                 {formatCurrency(stats?.total_balance || 0)}
               </p>
@@ -567,7 +576,12 @@ const Dashboard = () => {
               </div>
             </div>
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartView === 'weekly' ? weeklyChartData : monthlyChartData} margin={{ bottom: 40 }}>
+              <BarChart
+                data={chartView === 'weekly' ? weeklyChartData : monthlyChartData}
+                margin={{ bottom: 40 }}
+                onClick={scrollToTransactions}
+                style={{ cursor: 'pointer' }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey={chartView === 'weekly' ? 'week' : 'month'}
@@ -813,7 +827,7 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Transactions */}
-      <div className="card">
+      <div ref={transactionsRef} className="card">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-gray-900">💳 Transações Recentes</h2>
           <Link
