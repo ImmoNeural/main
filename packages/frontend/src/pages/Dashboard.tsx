@@ -707,7 +707,7 @@ const Dashboard = () => {
           <div className="card overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
               <h2 className="text-base sm:text-lg font-bold text-gray-900">
-                📊 Receitas vs Despesas {chartView === 'weekly' ? 'Semanal' : 'Mensal'}
+                📊 Receitas vs Despesas {chartView === 'weekly' ? 'Semanal' : 'Mensal'} (em Reais R$)
               </h2>
               <div className="flex gap-2">
                 <button
@@ -734,7 +734,7 @@ const Dashboard = () => {
             </div>
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="min-w-[600px] px-4 sm:px-0">
-                <ResponsiveContainer width="100%" height={300} className="sm:h-[400px]">
+                <ResponsiveContainer width="100%" height={450}>
                   <BarChart
                     data={chartView === 'weekly' ? weeklyChartData : monthlyChartData}
                     margin={{ bottom: 40 }}
@@ -837,7 +837,7 @@ const Dashboard = () => {
         {/* Top Categories */}
         <div className="card overflow-hidden">
           <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-            🏆 Top Categorias de Gastos
+            🏆 Top Categorias de Gastos (em Reais R$)
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 mb-2">
             Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
@@ -908,7 +908,7 @@ const Dashboard = () => {
                   className="w-5 h-5 sm:w-6 sm:h-6 rounded flex-shrink-0"
                   style={{ backgroundColor: categoryColorMap.get(selectedCategory) }}
                 />
-                <span className="truncate">📈 {selectedCategory}</span>
+                <span className="truncate">📈 {selectedCategory} (em Reais R$)</span>
               </h2>
               <p className="text-xs sm:text-sm text-gray-600 mt-1 mb-3">
                 Últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
