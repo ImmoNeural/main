@@ -155,46 +155,67 @@ const Dashboard = () => {
 
   // Função para rolar até as transações recentes
   const scrollToTransactions = () => {
-    transactionsRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
+    console.log('📜 Scrolling to transactions, ref:', transactionsRef.current);
+    if (transactionsRef.current) {
+      transactionsRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+      console.log('✅ Scroll executed');
+    } else {
+      console.log('❌ transactionsRef.current is null');
+    }
   };
 
   // Carregar transações filtradas quando um período é selecionado
   const loadFilteredTransactions = async (startDate: string, endDate: string) => {
+    console.log(`💾 Loading filtered transactions: ${startDate} to ${endDate}`);
     try {
       const accountFilter = activeAccountId ? activeAccountId : undefined;
+      console.log('🏦 Account filter:', accountFilter);
+
       const transactionsRes = await transactionApi.getTransactions({
         start_date: startDate,
         end_date: endDate,
         account_id: accountFilter,
         limit: 1000
       });
+
+      console.log(`✅ Loaded ${transactionsRes.data.transactions.length} transactions`);
       setRecentTransactions(transactionsRes.data.transactions);
     } catch (error) {
-      console.error('Error loading filtered transactions:', error);
+      console.error('❌ Error loading filtered transactions:', error);
     }
   };
 
   // Handler para clique no gráfico
   const handleChartClick = (data: any) => {
-    console.log('🖱️ Chart clicked, data:', data);
+    console.log('🖱️ Chart clicked, full data:', data);
 
-    if (!data || !data.activePayload || data.activePayload.length === 0) {
-      console.log('⚠️ No activePayload found');
+    // Recharts passa o objeto diretamente, não dentro de activePayload
+    if (!data) {
+      console.log('⚠️ No data');
       return;
     }
 
-    const clickedData = data.activePayload[0].payload;
+    const clickedData = data;
     console.log('📊 Clicked data:', clickedData);
+    console.log('🔍 Available keys:', Object.keys(clickedData));
 
     if (chartView === 'weekly') {
       // Visualização semanal
-      console.log('📅 Weekly view - searching for week', clickedData.weekNumber, 'year', clickedData.year);
-      const weekData = weeklyStats.find(w =>
-        w.weekNumber === clickedData.weekNumber && w.year === clickedData.year
-      );
+      // Extrair número da semana do formato 'S37' -> 37
+      const weekString = clickedData.week; // ex: 'S37'
+      const weekNumber = parseInt(weekString.replace('S', '')); // 37
+      const year = clickedData.year;
+
+      console.log('📅 Weekly view - extracted week number:', weekNumber, 'year:', year);
+      console.log('📅 Searching in weeklyStats:', weeklyStats.length, 'items');
+
+      const weekData = weeklyStats.find(w => {
+        console.log(`  Comparing: w.weekNumber=${w.weekNumber}, w.year=${w.year} vs target=${weekNumber}, ${year}`);
+        return w.weekNumber === weekNumber && w.year === year;
+      });
 
       console.log('🔍 Found week data:', weekData);
 
@@ -210,12 +231,18 @@ const Dashboard = () => {
         loadFilteredTransactions(weekData.startDate, weekData.endDate);
         scrollToTransactions();
       } else {
-        console.log('❌ Week data not found');
+        console.log('❌ Week data not found in weeklyStats');
       }
     } else {
       // Visualização mensal
-      console.log('📅 Monthly view - searching for month', clickedData.month);
-      const monthData = monthlyStats.find(m => m.month === clickedData.month);
+      const monthKey = clickedData.month; // ex: '2025-10'
+      console.log('📅 Monthly view - searching for month:', monthKey);
+      console.log('📅 Searching in monthlyStats:', monthlyStats.length, 'items');
+
+      const monthData = monthlyStats.find(m => {
+        console.log(`  Comparing: m.month=${m.month} vs target=${monthKey}`);
+        return m.month === monthKey;
+      });
 
       console.log('🔍 Found month data:', monthData);
 
@@ -237,7 +264,7 @@ const Dashboard = () => {
         loadFilteredTransactions(startDate.toISOString(), endDate.toISOString());
         scrollToTransactions();
       } else {
-        console.log('❌ Month data not found');
+        console.log('❌ Month data not found in monthlyStats');
       }
     }
   };
