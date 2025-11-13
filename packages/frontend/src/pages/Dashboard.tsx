@@ -69,8 +69,15 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Calcular número de meses baseado no período
-      const months = Math.ceil(period / 30);
+      // Calcular número de meses baseado no período (mapeamento exato)
+      const monthsMap: Record<number, number> = {
+        30: 1,    // 1 mês
+        60: 2,    // 2 meses
+        90: 3,    // 3 meses
+        180: 6,   // 6 meses
+        365: 12,  // 12 meses
+      };
+      const months = monthsMap[period] || Math.ceil(period / 30);
 
       const accountFilter = activeAccountId ? activeAccountId : undefined;
       console.log(`📊 Loading dashboard data: period=${period} days, months=${months}, account=${accountFilter || 'ALL'}`);
