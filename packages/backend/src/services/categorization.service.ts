@@ -381,14 +381,79 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
 
   // 💰 RECEITAS - SALÁRIO
   {
-    category: 'Receitas',
+    category: 'Salário',
     subcategory: 'Salário e Rendimentos',
-    keywords: ['salario', 'vencimento', 'pagamento', 'remuneracao', 'prolabore', 'pro labore'],
+    keywords: [
+      'salario', 'holerite', 'vencimento', 'pagamento', 'remuneracao',
+      'prolabore', 'pro labore', 'credito salarial', 'cred salario',
+      'cred. salario', 'credito folha', 'deposito salarial', 'ltda'
+    ],
     brands: [],
-    patterns: [/salario/i, /vencimento/i, /rendimento/i],
+    patterns: [
+      /salario/i,
+      /holerite/i,
+      /cred.*salari/i,
+      /credito\s+folha/i,
+      /deposito\s+salari/i,
+      /\bltda\b/i
+    ],
     icon: '💰',
     color: '#4CAF50',
-    priority: 9,
+    priority: 10, // Alta prioridade
+  },
+
+  // 💵 SAQUES
+  {
+    category: 'Saques',
+    subcategory: 'Saques em Dinheiro',
+    keywords: ['saque', 'retirada', 'cash', 'atm', 'caixa eletronico', 'caixa 24h'],
+    brands: [],
+    patterns: [/saque/i, /retirada/i, /atm/i],
+    icon: '💵',
+    color: '#9E9E9E',
+    priority: 10,
+  },
+
+  // 📈 INVESTIMENTOS - APLICAÇÃO (DÉBITO)
+  {
+    category: 'Investimentos',
+    subcategory: 'Aplicações e Investimentos',
+    keywords: ['investimento', 'aplicacao', 'cdb', 'lca', 'lci', 'tesouro', 'tesouro direto', 'fundo'],
+    brands: [],
+    patterns: [
+      /\bcdb\b/i,
+      /\blca\b/i,
+      /\blci\b/i,
+      /tesouro\s+direto/i,
+      /aplicacao/i,
+      /investimento/i
+    ],
+    icon: '📈',
+    color: '#2196F3',
+    priority: 11, // Prioridade muito alta
+  },
+
+  // 💹 RECEITAS DE INVESTIMENTOS (CRÉDITO)
+  {
+    category: 'Receitas',
+    subcategory: 'Rendimentos de Investimentos',
+    keywords: [
+      'rendimento', 'remuneracao', 'juros', 'dividendo', 'resgate',
+      'cdb rendimento', 'tesouro rendimento', 'rendimento cdb', 'rendimento tesouro',
+      'credito rendimento', 'pagamento rendimento'
+    ],
+    brands: [],
+    patterns: [
+      /rendimento/i,
+      /remuneracao.*investimento/i,
+      /juros.*cdb/i,
+      /dividendo/i,
+      /resgate.*cdb/i,
+      /resgate.*tesouro/i
+    ],
+    icon: '💹',
+    color: '#4CAF50',
+    priority: 10,
   },
 
   // 💸 TRANSFERÊNCIAS - PIX

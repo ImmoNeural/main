@@ -121,12 +121,14 @@ const Transactions = () => {
   console.log(`   Investimentos (débito+crédito): R$ ${totalInvestments.toFixed(2)}`);
   console.log(`   Investimentos (só débito): R$ ${totalInvestmentsDebitOnly.toFixed(2)}`);
 
-  // Calcular breakdown mensal dos últimos 12 meses
+  // Calcular breakdown mensal dos últimos 12 meses COMPLETOS
   const getMonthlyBreakdown = () => {
     const months = [];
     let accumulatedBalance = 0;
 
-    for (let i = 11; i >= 0; i--) {
+    // Loop de 12 até 0 para incluir o mês de 12 meses atrás
+    // Ex: Se estamos em nov/2025, mostra de nov/2024 até nov/2025 (13 meses, mas mostramos 12)
+    for (let i = 12; i >= 1; i--) {
       const date = subMonths(new Date(), i);
       const monthKey = format(date, 'yyyy-MM');
       const monthLabel = format(date, 'MMMM yyyy', { locale: ptBR })
@@ -459,45 +461,50 @@ const Transactions = () => {
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full">
+                <thead className="bg-blue-50 border-b-2 border-blue-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Mês
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Receitas
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Despesas
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Saldo do Mês
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
                       Saldo Acumulado
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {monthlyBreakdown.map((month) => (
-                    <tr key={month.monthKey} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tbody className="bg-white">
+                  {monthlyBreakdown.map((month, index) => (
+                    <tr
+                      key={month.monthKey}
+                      className={`border-b border-gray-100 hover:bg-blue-50 transition-colors ${
+                        index % 2 === 0 ? 'bg-blue-50/30' : 'bg-white'
+                      }`}
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700">
                         {month.monthLabel}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-green-600 font-semibold">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-green-700 font-medium">
                         {formatCurrency(month.income)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-red-600 font-semibold">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-red-700 font-medium">
                         {formatCurrency(month.expense)}
                       </td>
-                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-semibold ${
-                        month.balance >= 0 ? 'text-green-600' : 'text-red-600'
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
+                        month.balance >= 0 ? 'text-green-700' : 'text-red-700'
                       }`}>
                         {month.balance >= 0 ? '+' : ''}{formatCurrency(month.balance)}
                       </td>
                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-bold ${
-                        month.accumulatedBalance >= 0 ? 'text-green-600' : 'text-red-600'
+                        month.accumulatedBalance >= 0 ? 'text-green-800' : 'text-red-800'
                       }`}>
                         {formatCurrency(month.accumulatedBalance)}
                       </td>
