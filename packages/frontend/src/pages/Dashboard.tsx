@@ -69,17 +69,16 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Calcular número de semanas e meses baseado no período
-      const weeks = Math.ceil(period / 7);
+      // Calcular número de meses baseado no período
       const months = Math.ceil(period / 30);
 
       const accountFilter = activeAccountId ? activeAccountId : undefined;
-      console.log(`📊 Loading dashboard data: period=${period} days, weeks=${weeks}, months=${months}, account=${accountFilter || 'ALL'}`);
+      console.log(`📊 Loading dashboard data: period=${period} days, months=${months}, account=${accountFilter || 'ALL'}`);
 
       const [statsRes, categoryRes, weeklyRes, monthlyRes, transactionsRes] = await Promise.all([
         dashboardApi.getStats(period),
         dashboardApi.getExpensesByCategory(period),
-        dashboardApi.getWeeklyStats(weeks),
+        dashboardApi.getWeeklyStats(period), // Passa period em dias, não weeks
         dashboardApi.getMonthlyStatsByCategory(months),
         transactionApi.getTransactions({
           limit: 10,

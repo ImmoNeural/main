@@ -9,22 +9,27 @@ const router = Router();
 /**
  * Converte período em dias para início de mês completo
  * Ex: Se hoje é 13/11/2025 e period=365 (12 meses), retorna 01/12/2024
+ *
+ * Lógica: "Últimos N meses" = mês atual + (N-1) meses anteriores
+ * - Últimos 12 meses = novembro/2025 + 11 meses anteriores = dezembro/2024 até novembro/2025
  */
 function getStartDateFromPeriod(days: number): number {
   const monthsMap: Record<number, number> = {
-    30: 1,    // 1 mês
-    60: 2,    // 2 meses
-    90: 3,    // 3 meses
-    180: 6,   // 6 meses
-    365: 12,  // 12 meses
+    30: 1,    // 1 mês (atual)
+    60: 2,    // 2 meses (atual + 1 anterior)
+    90: 3,    // 3 meses (atual + 2 anteriores)
+    180: 6,   // 6 meses (atual + 5 anteriores)
+    365: 12,  // 12 meses (atual + 11 anteriores)
   };
 
-  const months = monthsMap[days] || Math.ceil(days / 30);
+  const totalMonths = monthsMap[days] || Math.ceil(days / 30);
 
-  // Pega o início do mês há N meses atrás
-  const startDate = startOfMonth(subMonths(new Date(), months));
+  // Subtrair (totalMonths - 1) para incluir o mês atual
+  // Ex: 12 meses → subtrair 11 → vai para dezembro/2024 (se hoje é nov/2025)
+  const monthsToSubtract = totalMonths - 1;
+  const startDate = startOfMonth(subMonths(new Date(), monthsToSubtract));
 
-  console.log(`📅 Período: ${days} dias = ${months} meses completos`);
+  console.log(`📅 Período: ${days} dias = ${totalMonths} meses (mês atual + ${monthsToSubtract} anteriores)`);
   console.log(`📅 Data início: ${format(startDate, 'dd/MM/yyyy')} (${startDate.getTime()})`);
   console.log(`📅 Data fim: ${format(new Date(), 'dd/MM/yyyy')}`);
 
@@ -366,18 +371,22 @@ router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Resp
 /**
  * GET /api/dashboard/weekly-stats
  * Retorna estatísticas semanais com categorias
+ * IMPORTANTE: Filtra transações por DATA (não por semana completa)
+ * Ex: Se período é "últimos 3 meses" (set/out/nov), só conta transações >= 01/09,
+ * mesmo que a semana 36 comece em 31/08
  */
 router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
-    const { weeks = '12' } = req.query; // Padrão: 12 semanas (~ 3 meses)
+    const { days = '365' } = req.query; // Padrão: 365 dias (12 meses)
 
-    const weeksNum = Number(weeks);
-    const endDate = new Date();
-    const startDate = subDays(endDate, weeksNum * 7);
+    const daysNum = Number(days);
+    const endDate = Date.now();
+    const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
 
-    console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., weeks=${weeksNum}, date range=${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`);
-    console.log(`🔍 Start timestamp: ${startDate.getTime()}, End timestamp: ${endDate.getTime()}`);
+    console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., days=${daysNum}`);
+    console.log(`📅 Date range: ${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`);
+    console.log(`🔍 Start timestamp: ${startDate}, End timestamp: ${endDate}`);
 
     // Primeiro, verificar TOTAL de transações do usuário (sem filtro de data)
     const { count: totalCount } = await supabase
@@ -388,13 +397,13 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
     console.log(`📈 Total transactions in database for user: ${totalCount}`);
 
     // Buscar todas as transações no período
-    // IMPORTANTE: Sem limit() para buscar TODAS as transações do período
+    // IMPORTANTE: Filtra por DATA desde início do mês
     const { data: transactions, error, count } = await supabase
       .from('transactions')
       .select('date, amount, type, category, bank_accounts!inner(user_id)', { count: 'exact' })
       .eq('bank_accounts.user_id', user_id)
-      .gte('date', startDate.getTime())
-      .lte('date', endDate.getTime())
+      .gte('date', startDate)
+      .lte('date', endDate)
       .order('date', { ascending: true })
       .limit(10000); // Limite alto para garantir que pegue todos os dados
 

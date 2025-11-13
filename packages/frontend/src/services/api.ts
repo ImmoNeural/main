@@ -161,9 +161,9 @@ export const dashboardApi = {
       params: { months },
     }),
 
-  getWeeklyStats: (weeks?: number) =>
+  getWeeklyStats: (days?: number) =>
     api.get<import('../types').WeeklyStats[]>('/dashboard/weekly-stats', {
-      params: { weeks },
+      params: { days },
     }),
 
   getMonthlyStatsByCategory: (months?: number) =>

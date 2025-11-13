@@ -86,10 +86,11 @@ const Transactions = () => {
   });
 
   // Calcular transações dos últimos 12 meses COMPLETOS (para cards de resumo e breakdown)
-  // Ex: Se estamos em 13/11/2025, pega desde 01/12/2024 até agora
+  // Lógica: 12 meses = mês atual + 11 meses anteriores
+  // Ex: Se estamos em 13/11/2025, pega desde 01/12/2024 até agora (dez/2024 a nov/2025 = 12 meses)
   const getLast12MonthsTransactions = () => {
-    const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 12)); // Início do mês há 12 meses
-    console.log(`📅 Transações: Filtrando desde ${format(twelveMonthsAgo, 'dd/MM/yyyy')}`);
+    const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11)); // Início do mês 11 meses atrás
+    console.log(`📅 Transações: Filtrando desde ${format(twelveMonthsAgo, 'dd/MM/yyyy')} (12 meses)`);
     return transactions.filter(t => new Date(t.date) >= twelveMonthsAgo);
   };
 
@@ -126,9 +127,9 @@ const Transactions = () => {
     const months = [];
     let accumulatedBalance = 0;
 
-    // Loop de 12 até 0 para incluir o mês de 12 meses atrás
-    // Ex: Se estamos em nov/2025, mostra de nov/2024 até nov/2025 (13 meses, mas mostramos 12)
-    for (let i = 12; i >= 1; i--) {
+    // Loop de 11 até 0 para mostrar 12 meses: mês atual + 11 anteriores
+    // Ex: Se estamos em nov/2025, mostra de dez/2024 (i=11) até nov/2025 (i=0) = 12 meses
+    for (let i = 11; i >= 0; i--) {
       const date = subMonths(new Date(), i);
       const monthKey = format(date, 'yyyy-MM');
       const monthLabel = format(date, 'MMMM yyyy', { locale: ptBR })
