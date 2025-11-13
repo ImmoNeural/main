@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3 } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import { CategoryIcon } from '../components/CategoryIcons';
@@ -18,6 +18,27 @@ import {
 } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
+
+// Componente para estado vazio dos gráficos
+const EmptyChartState = ({ message = "Você ainda não tem dados" }: { message?: string }) => (
+  <div className="flex flex-col items-center justify-center py-12 px-4">
+    <div className="relative mb-4">
+      <BarChart3 className="w-20 h-20 text-gray-300" strokeWidth={1.5} />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gray-200 rounded-full"></div>
+      </div>
+    </div>
+    <p className="text-gray-500 text-sm text-center max-w-xs">
+      {message}
+    </p>
+    <Link
+      to="/app/connect-bank"
+      className="mt-4 text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
+    >
+      Conectar banco <ArrowRight className="w-4 h-4" />
+    </Link>
+  </div>
+);
 
 const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -732,6 +753,9 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
+            {(chartView === 'weekly' ? weeklyChartData : monthlyChartData).length === 0 ? (
+              <EmptyChartState />
+            ) : (
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="min-w-[600px] px-4 sm:px-0">
                 <ResponsiveContainer width="100%" height={450}>
@@ -797,6 +821,7 @@ const Dashboard = () => {
             </ResponsiveContainer>
               </div>
             </div>
+            )}
           </div>
 
           {/* Pie Chart */}
@@ -804,6 +829,9 @@ const Dashboard = () => {
             <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">
               🍰 Despesas por Categoria em %
             </h2>
+            {categoryStats.length === 0 ? (
+              <EmptyChartState />
+            ) : (
             <ResponsiveContainer width="100%" height={300} className="sm:h-[350px]">
               <PieChart>
                 <Pie
@@ -828,6 +856,7 @@ const Dashboard = () => {
                 <Tooltip content={<CustomPieTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
@@ -848,6 +877,9 @@ const Dashboard = () => {
               <span className="font-bold">Dica:</span> Clique para ver o detalhamento!
             </p>
           </div>
+          {categoryStats.length === 0 ? (
+            <EmptyChartState />
+          ) : (
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <div className="min-w-[400px] px-4 sm:px-0">
               <ResponsiveContainer width="100%" height={300}>
@@ -895,6 +927,7 @@ const Dashboard = () => {
           </ResponsiveContainer>
               </div>
             </div>
+          )}
         </div>
 
         {/* Category Monthly Detail - Sempre visível */}
@@ -987,6 +1020,13 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
+            </>
+          ) : categoryStats.length === 0 ? (
+            <>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">
+                📈 Detalhamento da categoria por mês
+              </h2>
+              <EmptyChartState />
             </>
           ) : (
             <div className="flex items-center justify-center h-full p-8">
