@@ -34,6 +34,7 @@ const Dashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [disabledCategories, setDisabledCategories] = useState<Set<string>>(new Set());
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  const [chartView, setChartView] = useState<'weekly' | 'monthly'>('weekly'); // Novo: controlar visualização
 
   useEffect(() => {
     // Carregar banco ativo do localStorage
@@ -145,11 +146,13 @@ const Dashboard = () => {
   const categoryColorMap = getAllCategoryColors(Array.from(allCategories));
 
   // Preparar dados para o gráfico semanal
-  const weeklyChartData = weeklyStats.map((week) => {
+  const weeklyChartData = weeklyStats.map((week, index) => {
     const data: any = {
       week: `S${week.weekNumber}`,
       weekLabel: `Semana ${week.weekNumber}/${week.year}`,
       dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
+      year: week.year,
+      index: index, // Para calcular posição do ano
     };
 
     // Adicionar despesas
@@ -165,6 +168,28 @@ const Dashboard = () => {
     return data;
   });
 
+  // Preparar dados para o gráfico mensal
+  const monthlyChartData = monthlyStats.map((month) => {
+    const data: any = {
+      month: month.monthLabel.split('/')[0], // Ex: "Nov" de "Nov/2024"
+      monthFull: month.monthLabel, // Ex: "Nov/2024"
+      monthKey: month.month, // Ex: "2024-11"
+      year: month.month.split('-')[0], // Ex: "2024"
+    };
+
+    // Adicionar despesas
+    month.expenses.byCategory.forEach((cat) => {
+      data[`expense_${cat.category}`] = cat.amount;
+    });
+
+    // Adicionar receitas
+    month.income.byCategory.forEach((cat) => {
+      data[`income_${cat.category}`] = cat.amount;
+    });
+
+    return data;
+  });
+
   // Categorias de despesas e receitas (filtrar desabilitadas)
   const expenseCategories = Array.from(
     new Set(weeklyStats.flatMap((w) => w.expenses.byCategory.map((c) => c.category)))
@@ -172,6 +197,44 @@ const Dashboard = () => {
   const incomeCategories = Array.from(
     new Set(weeklyStats.flatMap((w) => w.income.byCategory.map((c) => c.category)))
   ).filter(cat => !disabledCategories.has(cat));
+
+  // Função para mostrar anos centralizados no eixo X
+  const renderYearTick = (props: any) => {
+    const { x, y, payload } = props;
+    const currentData = chartView === 'weekly' ? weeklyChartData : monthlyChartData;
+    const currentIndex = currentData.findIndex((d: any) =>
+      chartView === 'weekly' ? d.week === payload.value : d.month === payload.value
+    );
+
+    if (currentIndex === -1) return null;
+
+    const currentYear = currentData[currentIndex].year;
+
+    // Mostrar ano apenas no meio do grupo de dados do mesmo ano
+    const yearGroup = currentData.filter((d: any) => d.year === currentYear);
+    const firstIndexOfYear = currentData.findIndex((d: any) => d.year === currentYear);
+    const middleIndexOfYear = firstIndexOfYear + Math.floor(yearGroup.length / 2);
+
+    if (currentIndex === middleIndexOfYear) {
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <text
+            x={0}
+            y={0}
+            dy={16}
+            textAnchor="middle"
+            fill="#666"
+            fontSize={14}
+            fontWeight="bold"
+          >
+            {currentYear}
+          </text>
+        </g>
+      );
+    }
+
+    return null;
+  };
 
   // Preparar dados mensais para o detalhamento da categoria selecionada
   const getCategoryMonthlyData = (category: string) => {
@@ -194,58 +257,79 @@ const Dashboard = () => {
     return result;
   };
 
-  // Tooltip customizado para o gráfico semanal
+  // Tooltip customizado para o gráfico semanal/mensal
   const CustomWeeklyTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const weekData = weeklyChartData.find((d) => d.week === label);
+      // Procurar dados dependendo da visualização
+      const data = chartView === 'weekly'
+        ? weeklyChartData.find((d) => d.week === label)
+        : monthlyChartData.find((d) => d.month === label);
+
+      // Calcular subtotais
+      const expenseItems = payload.filter((p: any) => p.dataKey.startsWith('expense_'));
+      const incomeItems = payload.filter((p: any) => p.dataKey.startsWith('income_'));
+
+      const totalExpenses = expenseItems.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
+      const totalIncome = incomeItems.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
+
       return (
         <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl">
-          <p className="font-bold text-gray-900 text-base">{weekData?.weekLabel}</p>
-          <p className="text-sm text-gray-600 mb-3">{weekData?.dateRange}</p>
+          {chartView === 'weekly' ? (
+            <>
+              <p className="font-bold text-gray-900 text-base">{data?.weekLabel}</p>
+              <p className="text-sm text-gray-600 mb-3">{data?.dateRange}</p>
+            </>
+          ) : (
+            <p className="font-bold text-gray-900 text-base">{data?.monthFull}</p>
+          )}
 
-          {payload.filter((p: any) => p.dataKey.startsWith('expense_')).length > 0 && (
+          {expenseItems.length > 0 && (
             <>
               <p className="font-bold text-red-600 mt-2 mb-1">💸 Despesas:</p>
-              {payload
-                .filter((p: any) => p.dataKey.startsWith('expense_'))
-                .map((entry: any, index: number) => {
-                  const category = entry.dataKey.replace('expense_', '');
-                  return (
-                    <div key={index} className="flex justify-between items-center gap-6 py-1">
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="w-4 h-4 rounded"
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="text-sm">{category}</span>
-                      </span>
-                      <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
-                    </div>
-                  );
-                })}
+              {expenseItems.map((entry: any, index: number) => {
+                const category = entry.dataKey.replace('expense_', '');
+                return (
+                  <div key={index} className="flex justify-between items-center gap-6 py-1">
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: entry.color }}
+                      />
+                      <span className="text-sm">{category}</span>
+                    </span>
+                    <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
+                  </div>
+                );
+              })}
+              <div className="flex justify-between items-center gap-6 py-1 mt-2 pt-2 border-t border-gray-200">
+                <span className="text-sm font-bold text-red-600">Subtotal Despesas:</span>
+                <span className="font-bold text-sm text-red-600">{formatCurrency(totalExpenses)}</span>
+              </div>
             </>
           )}
 
-          {payload.filter((p: any) => p.dataKey.startsWith('income_')).length > 0 && (
+          {incomeItems.length > 0 && (
             <>
               <p className="font-bold text-green-600 mt-3 mb-1">💰 Receitas:</p>
-              {payload
-                .filter((p: any) => p.dataKey.startsWith('income_'))
-                .map((entry: any, index: number) => {
-                  const category = entry.dataKey.replace('income_', '');
-                  return (
-                    <div key={index} className="flex justify-between items-center gap-6 py-1">
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="w-4 h-4 rounded"
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="text-sm">{category}</span>
-                      </span>
-                      <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
-                    </div>
-                  );
-                })}
+              {incomeItems.map((entry: any, index: number) => {
+                const category = entry.dataKey.replace('income_', '');
+                return (
+                  <div key={index} className="flex justify-between items-center gap-6 py-1">
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="w-4 h-4 rounded"
+                        style={{ backgroundColor: entry.color }}
+                      />
+                      <span className="text-sm">{category}</span>
+                    </span>
+                    <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
+                  </div>
+                );
+              })}
+              <div className="flex justify-between items-center gap-6 py-1 mt-2 pt-2 border-t border-gray-200">
+                <span className="text-sm font-bold text-green-600">Subtotal Receitas:</span>
+                <span className="font-bold text-sm text-green-600">{formatCurrency(totalIncome)}</span>
+              </div>
             </>
           )}
         </div>
@@ -428,18 +512,53 @@ const Dashboard = () => {
 
         {/* Charts */}
         <div className="xl:col-span-3 space-y-6">
-          {/* Weekly Bar Chart */}
+          {/* Weekly/Monthly Bar Chart */}
           <div className="card">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              📊 Receitas vs Despesas Semanal (em Reais R$)
-            </h2>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={weeklyChartData}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-900">
+                📊 Receitas vs Despesas {chartView === 'weekly' ? 'Semanal' : 'Mensal'} (em Reais R$)
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setChartView('weekly')}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    chartView === 'weekly'
+                      ? 'bg-primary-600 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Semanal
+                </button>
+                <button
+                  onClick={() => setChartView('monthly')}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    chartView === 'monthly'
+                      ? 'bg-primary-600 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Mensal
+                </button>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={chartView === 'weekly' ? weeklyChartData : monthlyChartData} margin={{ bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
-                  dataKey="week"
+                  dataKey={chartView === 'weekly' ? 'week' : 'month'}
                   tick={{ fontSize: 12 }}
                   stroke="#888"
+                  height={60}
+                />
+                <XAxis
+                  dataKey={chartView === 'weekly' ? 'week' : 'month'}
+                  xAxisId="year"
+                  orientation="bottom"
+                  tick={renderYearTick}
+                  stroke="transparent"
+                  tickLine={false}
+                  axisLine={false}
+                  height={30}
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
