@@ -494,10 +494,10 @@ const Transactions = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Detalhamento dos Últimos 12 Meses
             </h3>
-            <div className="flex items-start space-x-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
-                <p className="font-semibold mb-1">ℹ️ Sobre o Saldo Acumulado</p>
+            <div className="flex items-start space-x-3 mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+              <AlertCircle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-gray-700">
+                <p className="font-semibold mb-1 text-gray-800">ℹ️ Sobre o Saldo Acumulado</p>
                 <p>
                   O <strong>Saldo Acumulado</strong> é calculado a partir das receitas e despesas mensais (iniciando do zero).
                   Este valor representa a variação acumulada no período, e não o saldo real da conta bancária.
@@ -506,50 +506,46 @@ const Transactions = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full">
-                <thead className="bg-blue-50 border-b-2 border-blue-200">
+                <thead className="bg-white border-b-2 border-gray-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Mês
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Receitas
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Despesas
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Saldo do Mês
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Saldo Acumulado
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {monthlyBreakdown.map((month, index) => (
                     <tr
                       key={month.monthKey}
-                      className={`border-b border-gray-100 hover:bg-blue-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-blue-50/30' : 'bg-white'
-                      }`}
+                      className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">
                         {month.monthLabel}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-green-700 font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
                         {formatCurrency(month.income)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-red-700 font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
                         {formatCurrency(month.expense)}
                       </td>
                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
-                        month.balance >= 0 ? 'text-green-700' : 'text-red-700'
+                        month.balance >= 0 ? 'text-gray-800' : 'text-gray-600'
                       }`}>
                         {month.balance >= 0 ? '+' : ''}{formatCurrency(month.balance)}
                       </td>
-                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-bold ${
-                        month.accumulatedBalance >= 0 ? 'text-green-800' : 'text-red-800'
-                      }`}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-gray-900">
                         {formatCurrency(month.accumulatedBalance)}
                       </td>
                     </tr>
