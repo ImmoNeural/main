@@ -1,10 +1,35 @@
 import { Router, Request, Response } from 'express';
-import { startOfDay, subDays, format, startOfWeek, endOfWeek, getWeek, getYear } from 'date-fns';
+import { startOfDay, subDays, format, startOfWeek, endOfWeek, getWeek, getYear, startOfMonth, subMonths } from 'date-fns';
 import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth.supabase.middleware';
 import { DashboardStats, CategoryStats, DailyStats, WeeklyStats } from '../types';
 
 const router = Router();
+
+/**
+ * Converte período em dias para início de mês completo
+ * Ex: Se hoje é 13/11/2025 e period=365 (12 meses), retorna 01/12/2024
+ */
+function getStartDateFromPeriod(days: number): number {
+  const monthsMap: Record<number, number> = {
+    30: 1,    // 1 mês
+    60: 2,    // 2 meses
+    90: 3,    // 3 meses
+    180: 6,   // 6 meses
+    365: 12,  // 12 meses
+  };
+
+  const months = monthsMap[days] || Math.ceil(days / 30);
+
+  // Pega o início do mês há N meses atrás
+  const startDate = startOfMonth(subMonths(new Date(), months));
+
+  console.log(`📅 Período: ${days} dias = ${months} meses completos`);
+  console.log(`📅 Data início: ${format(startDate, 'dd/MM/yyyy')} (${startDate.getTime()})`);
+  console.log(`📅 Data fim: ${format(new Date(), 'dd/MM/yyyy')}`);
+
+  return startDate.getTime();
+}
 
 /**
  * GET /api/dashboard/stats
@@ -13,10 +38,10 @@ const router = Router();
 router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
-    const { days = '90' } = req.query;
+    const { days = '365' } = req.query; // Padrão: 12 meses
 
     const daysNum = Number(days);
-    const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
+    const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
     const endDate = Date.now();
 
     // Total de saldo de todas as contas
@@ -98,10 +123,10 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 router.get('/expenses-by-category', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
-    const { days = '90' } = req.query;
+    const { days = '365' } = req.query; // Padrão: 12 meses
 
     const daysNum = Number(days);
-    const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
+    const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
     const endDate = Date.now();
 
     const { data: transactions, error } = await supabase

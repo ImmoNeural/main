@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -85,9 +85,11 @@ const Transactions = () => {
     return matchesSearch && matchesMonth;
   });
 
-  // Calcular transações dos últimos 12 meses (para cards de resumo e breakdown)
+  // Calcular transações dos últimos 12 meses COMPLETOS (para cards de resumo e breakdown)
+  // Ex: Se estamos em 13/11/2025, pega desde 01/12/2024 até agora
   const getLast12MonthsTransactions = () => {
-    const twelveMonthsAgo = subMonths(new Date(), 12);
+    const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 12)); // Início do mês há 12 meses
+    console.log(`📅 Transações: Filtrando desde ${format(twelveMonthsAgo, 'dd/MM/yyyy')}`);
     return transactions.filter(t => new Date(t.date) >= twelveMonthsAgo);
   };
 

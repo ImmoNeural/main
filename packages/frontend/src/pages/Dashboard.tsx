@@ -30,7 +30,7 @@ const Dashboard = () => {
   }>>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const period = 365; // Sempre 12 meses (365 dias) - período fixo
+  const [period, setPeriod] = useState(365); // Padrão: 12 meses
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [disabledCategories, setDisabledCategories] = useState<Set<string>>(new Set());
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
@@ -56,7 +56,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
-  }, [activeAccountId]); // Removido period - sempre usa 365 dias
+  }, [activeAccountId, period]);
 
   // Inicializar categoria selecionada com a de maior gasto
   useEffect(() => {
@@ -294,12 +294,24 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Visão geral dos seus gastos (Últimos 12 meses)</p>
+          <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
         </div>
-        <button onClick={loadDashboardData} className="btn-primary p-2 sm:p-3 flex items-center gap-2">
-          <RefreshCw className="w-5 h-5" />
-          <span className="hidden sm:inline">Atualizar</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(Number(e.target.value))}
+            className="input text-sm sm:text-base"
+          >
+            <option value={30}>Último mês</option>
+            <option value={60}>Últimos 2 meses</option>
+            <option value={90}>Últimos 3 meses</option>
+            <option value={180}>Últimos 6 meses</option>
+            <option value={365}>Últimos 12 meses</option>
+          </select>
+          <button onClick={loadDashboardData} className="btn-primary p-2 sm:p-3">
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
