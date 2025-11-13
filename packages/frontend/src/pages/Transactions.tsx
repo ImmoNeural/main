@@ -308,32 +308,33 @@ const Transactions = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Transações</h1>
-          <p className="text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Transações</h1>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
         </div>
-        <div className="flex items-center flex-wrap gap-3">
+        <div className="flex items-center flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={() => navigate('/app/connect-bank')}
-            className="btn-primary flex items-center space-x-2"
+            className="btn-primary flex items-center space-x-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center"
           >
-            <PlusCircle className="w-5 h-5" />
-            <span>Conectar Banco</span>
+            <PlusCircle className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="hidden sm:inline">Conectar Banco</span>
+            <span className="sm:hidden">Banco</span>
           </button>
           <button
             onClick={exportToCSV}
-            className="btn-secondary flex items-center space-x-2 px-3"
+            className="btn-secondary flex items-center space-x-2 px-3 text-sm"
             title="Exportar para CSV"
           >
             <Download className="w-4 h-4" />
-            <span className="text-sm font-medium">CSV</span>
+            <span className="hidden sm:inline text-sm font-medium">CSV</span>
           </button>
           <button
             onClick={loadData}
-            className="btn-secondary flex items-center space-x-2"
+            className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
             disabled={isLoading}
           >
-            <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Atualizar</span>
+            <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Atualizar</span>
           </button>
         </div>
       </div>
@@ -490,13 +491,13 @@ const Transactions = () => {
 
         {/* Breakdown Mensal Expansível */}
         {showMonthlyBreakdown && (
-          <div className="card mt-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="card mt-4 overflow-hidden">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
               Detalhamento dos Últimos 12 Meses
             </h3>
-            <div className="flex items-start space-x-3 mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-              <AlertCircle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-gray-700">
+            <div className="flex items-start space-x-2 sm:space-x-3 mb-4 p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-xl">
+              <AlertCircle className="w-4 sm:w-5 h-4 sm:h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+              <div className="text-xs sm:text-sm text-gray-700">
                 <p className="font-semibold mb-1 text-gray-800">ℹ️ Sobre o Saldo Acumulado</p>
                 <p>
                   O <strong>Saldo Acumulado</strong> é calculado a partir das receitas e despesas mensais (iniciando do zero).
@@ -504,8 +505,9 @@ const Transactions = () => {
                 </p>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="min-w-full px-4 sm:px-0">
+                <table className="min-w-full">
                 <thead className="bg-white border-b-2 border-gray-200">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -552,6 +554,7 @@ const Transactions = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
@@ -559,7 +562,8 @@ const Transactions = () => {
 
       {/* Transactions Table */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="min-w-full px-4 sm:px-0">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -657,6 +661,7 @@ const Transactions = () => {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 

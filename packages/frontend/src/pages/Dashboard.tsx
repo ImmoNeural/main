@@ -665,11 +665,11 @@ const Dashboard = () => {
       {/* Charts Section with Unified Legend */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Unified Legend */}
-        <div className="xl:col-span-1">
+        <div className="xl:col-span-1 order-2 xl:order-1">
           <div className="card h-full">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Legenda dos Gráficos</h3>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4">📊 Legenda dos Gráficos</h3>
             <p className="text-xs text-gray-500 mb-3">Clique para habilitar/desabilitar</p>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-96 overflow-y-auto">
               {Array.from(allCategories).map((category) => {
                 const isDisabled = disabledCategories.has(category);
                 return (
@@ -702,12 +702,12 @@ const Dashboard = () => {
         </div>
 
         {/* Charts */}
-        <div className="xl:col-span-3 space-y-6">
+        <div className="xl:col-span-3 space-y-6 order-1 xl:order-2">
           {/* Weekly/Monthly Bar Chart */}
-          <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-gray-900">
-                📊 Receitas vs Despesas {chartView === 'weekly' ? 'Semanal' : 'Mensal'} (em Reais R$)
+          <div className="card overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                📊 Receitas vs Despesas {chartView === 'weekly' ? 'Semanal' : 'Mensal'}
               </h2>
               <div className="flex gap-2">
                 <button
@@ -732,13 +732,15 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart
-                data={chartView === 'weekly' ? weeklyChartData : monthlyChartData}
-                margin={{ bottom: 40 }}
-                onClick={handleChartClick}
-                style={{ cursor: 'pointer' }}
-              >
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="min-w-[600px] px-4 sm:px-0">
+                <ResponsiveContainer width="100%" height={300} className="sm:h-[400px]">
+                  <BarChart
+                    data={chartView === 'weekly' ? weeklyChartData : monthlyChartData}
+                    margin={{ bottom: 40 }}
+                    onClick={handleChartClick}
+                    style={{ cursor: 'pointer' }}
+                  >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey={chartView === 'weekly' ? 'week' : 'month'}
@@ -793,14 +795,16 @@ const Dashboard = () => {
                 ))}
               </BarChart>
             </ResponsiveContainer>
+              </div>
+            </div>
           </div>
 
           {/* Pie Chart */}
-          <div className="card">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
+          <div className="card overflow-hidden">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">
               🍰 Despesas por Categoria em %
             </h2>
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer width="100%" height={300} className="sm:h-[350px]">
               <PieChart>
                 <Pie
                   data={categoryStats.filter(cat => !disabledCategories.has(cat.category))}
@@ -831,20 +835,22 @@ const Dashboard = () => {
       {/* Top Categories e Evolução Mensal lado a lado */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Top Categories */}
-        <div className="card">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">
-            🏆 Top Categorias de Gastos (em Reais R$)
+        <div className="card overflow-hidden">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
+            🏆 Top Categorias de Gastos
           </h2>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-xs sm:text-sm text-gray-600 mb-2">
             Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
           </p>
-          <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <MousePointerClick className="w-5 h-5 text-blue-600 flex-shrink-0" />
-            <p className="text-sm text-blue-800">
-              <span className="font-bold">Dica:</span> Clique em qualquer barra para ver o detalhamento mensal da categoria!
+          <div className="flex items-center gap-2 mb-4 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <MousePointerClick className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-blue-800">
+              <span className="font-bold">Dica:</span> Clique para ver o detalhamento!
             </p>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="min-w-[400px] px-4 sm:px-0">
+              <ResponsiveContainer width="100%" height={300}>
             <BarChart data={categoryStats.filter(cat => !disabledCategories.has(cat.category)).slice(0, 8)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
@@ -887,23 +893,25 @@ const Dashboard = () => {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+              </div>
+            </div>
         </div>
 
         {/* Category Monthly Detail - Sempre visível */}
-        <div id="category-detail" className="card shadow-xl">
+        <div id="category-detail" className="card shadow-xl overflow-hidden">
           {selectedCategory ? (
             <>
               <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
                 <span
-                  className="w-6 h-6 rounded"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded flex-shrink-0"
                   style={{ backgroundColor: categoryColorMap.get(selectedCategory) }}
                 />
-                📈 Evolução Mensal: {selectedCategory} (em Reais R$)
+                <span className="truncate">📈 {selectedCategory}</span>
               </h2>
-              <p className="text-sm text-gray-600 mt-1 mb-3">
-                Análise detalhada dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
+              <p className="text-xs sm:text-sm text-gray-600 mt-1 mb-3">
+                Últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
               </p>
 
               {/* Legenda de cores */}
@@ -920,8 +928,10 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={getCategoryMonthlyData(selectedCategory)} barSize={35}>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="min-w-[400px] px-4 sm:px-0">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={getCategoryMonthlyData(selectedCategory)} barSize={35}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
                 dataKey="month"
@@ -942,6 +952,8 @@ const Dashboard = () => {
               />
             </BarChart>
           </ResponsiveContainer>
+              </div>
+            </div>
 
           {/* Summary Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t">

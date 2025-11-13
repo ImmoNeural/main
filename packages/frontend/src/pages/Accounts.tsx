@@ -113,14 +113,14 @@ const Accounts = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Contas Bancárias</h1>
-          <p className="text-gray-500 mt-1">Gerencie suas contas conectadas</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Contas Bancárias</h1>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">Gerencie suas contas conectadas</p>
         </div>
-        <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2">
-          <Plus className="w-5 h-5" />
-          <span>Conectar Banco</span>
+        <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
+          <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
+          <span className="text-sm sm:text-base">Conectar Banco</span>
         </Link>
       </div>
 
