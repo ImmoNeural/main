@@ -36,6 +36,15 @@ const Dashboard = () => {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [chartView, setChartView] = useState<'weekly' | 'monthly'>('weekly'); // Novo: controlar visualização
   const transactionsRef = useRef<HTMLDivElement>(null); // Ref para seção de transações
+  const [selectedPeriod, setSelectedPeriod] = useState<{
+    type: 'week' | 'month' | null;
+    weekNumber?: number;
+    year?: number;
+    month?: string;
+    monthLabel?: string;
+    startDate?: string;
+    endDate?: string;
+  }>({ type: null });
 
   useEffect(() => {
     // Carregar banco ativo do localStorage
@@ -58,7 +67,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
+    // Resetar período selecionado quando mudar o período ou conta
+    setSelectedPeriod({ type: null });
   }, [activeAccountId, period]);
+
+  // Resetar período selecionado quando mudar visualização
+  useEffect(() => {
+    setSelectedPeriod({ type: null });
+  }, [chartView]);
 
   // Inicializar categoria selecionada com a de maior gasto
   useEffect(() => {
@@ -143,6 +159,78 @@ const Dashboard = () => {
       behavior: 'smooth',
       block: 'start'
     });
+  };
+
+  // Carregar transações filtradas quando um período é selecionado
+  const loadFilteredTransactions = async (startDate: string, endDate: string) => {
+    try {
+      const accountFilter = activeAccountId ? activeAccountId : undefined;
+      const transactionsRes = await transactionApi.getTransactions({
+        start_date: startDate,
+        end_date: endDate,
+        account_id: accountFilter,
+        limit: 1000
+      });
+      setRecentTransactions(transactionsRes.data.transactions);
+    } catch (error) {
+      console.error('Error loading filtered transactions:', error);
+    }
+  };
+
+  // Handler para clique no gráfico
+  const handleChartClick = (data: any) => {
+    if (!data || !data.activePayload || data.activePayload.length === 0) return;
+
+    const clickedData = data.activePayload[0].payload;
+
+    if (chartView === 'weekly') {
+      // Visualização semanal
+      const weekData = weeklyStats.find(w =>
+        w.weekNumber === clickedData.weekNumber && w.year === clickedData.year
+      );
+
+      if (weekData) {
+        setSelectedPeriod({
+          type: 'week',
+          weekNumber: weekData.weekNumber,
+          year: weekData.year,
+          startDate: weekData.startDate,
+          endDate: weekData.endDate
+        });
+        loadFilteredTransactions(weekData.startDate, weekData.endDate);
+        scrollToTransactions();
+      }
+    } else {
+      // Visualização mensal
+      const monthData = monthlyStats.find(m => m.month === clickedData.month);
+
+      if (monthData) {
+        // Calcular startDate e endDate do mês
+        const [year, month] = monthData.month.split('-');
+        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+
+        setSelectedPeriod({
+          type: 'month',
+          month: monthData.month,
+          monthLabel: monthData.monthLabel,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        });
+        loadFilteredTransactions(startDate.toISOString(), endDate.toISOString());
+        scrollToTransactions();
+      }
+    }
+  };
+
+  // Gerar título dinâmico para transações
+  const getTransactionsTitle = () => {
+    if (selectedPeriod.type === 'week') {
+      return `💳 Transações semana ${selectedPeriod.weekNumber}`;
+    } else if (selectedPeriod.type === 'month') {
+      return `💳 Transações ${selectedPeriod.monthLabel}`;
+    }
+    return '💳 Transações Recentes';
   };
 
   // Toggle de categoria na legenda
@@ -579,7 +667,7 @@ const Dashboard = () => {
               <BarChart
                 data={chartView === 'weekly' ? weeklyChartData : monthlyChartData}
                 margin={{ bottom: 40 }}
-                onClick={scrollToTransactions}
+                onClick={handleChartClick}
                 style={{ cursor: 'pointer' }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -829,7 +917,7 @@ const Dashboard = () => {
       {/* Recent Transactions */}
       <div ref={transactionsRef} className="card">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-gray-900">💳 Transações Recentes</h2>
+          <h2 className="text-lg font-bold text-gray-900">{getTransactionsTitle()}</h2>
           <Link
             to="/app/transactions"
             className="text-primary-600 hover:text-primary-700 flex items-center text-sm font-semibold"
