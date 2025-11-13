@@ -8,7 +8,6 @@ const Layout = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -24,55 +23,47 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-primary-600 text-white rounded-lg shadow-lg hover:bg-primary-700 transition-colors"
-      >
-        {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
-
-      {/* Mobile Overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
+      {/* Sidebar - Sempre visível, collapsed no mobile */}
       <aside
         className={`bg-gradient-to-b from-primary-700 to-primary-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0 z-40 flex flex-col
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0
-          ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
-          w-64
+          w-20 lg:${sidebarCollapsed ? 'w-20' : 'w-64'}
         `}
       >
         {/* Logo/Header - Fixed at top */}
-        <div className="p-4 flex items-center justify-between border-b border-primary-600 flex-shrink-0">
-          {!sidebarCollapsed && (
-            <div className="flex items-center space-x-3">
-              <img
-                src="/logobranco.png"
-                alt="Guru do Dindin"
-                className="h-12 w-auto"
-              />
-              <span className="text-xl font-bold text-white whitespace-nowrap">Guru do Dindin</span>
-            </div>
-          )}
-          {sidebarCollapsed && (
+        <div className="p-3 lg:p-4 flex items-center justify-center border-b border-primary-600 flex-shrink-0">
+          {/* Mobile: sempre mostra apenas logo */}
+          <div className="lg:hidden">
             <img
               src="/logobranco.png"
               alt="Guru do Dindin"
-              className="h-12 w-auto mx-auto"
+              className="h-10 w-auto"
             />
-          )}
+          </div>
+
+          {/* Desktop: mostra logo + texto ou apenas logo */}
+          <div className="hidden lg:block w-full">
+            {!sidebarCollapsed ? (
+              <div className="flex items-center space-x-3">
+                <img
+                  src="/logobranco.png"
+                  alt="Guru do Dindin"
+                  className="h-12 w-auto"
+                />
+                <span className="text-xl font-bold text-white whitespace-nowrap">Guru do Dindin</span>
+              </div>
+            ) : (
+              <img
+                src="/logobranco.png"
+                alt="Guru do Dindin"
+                className="h-12 w-auto mx-auto"
+              />
+            )}
+          </div>
         </div>
 
         {/* Navigation - Scrollable middle section */}
-        <nav className="flex-1 py-6 overflow-y-auto">
-          <ul className="space-y-2 px-3">
+        <nav className="flex-1 py-4 lg:py-6 overflow-y-auto">
+          <ul className="space-y-2 px-2 lg:px-3">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -80,21 +71,21 @@ const Layout = () => {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    onClick={() => setMobileMenuOpen(false)}
                     className={`
-                      flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                      flex items-center justify-center lg:justify-start space-x-3 px-3 lg:px-4 py-3 rounded-xl transition-all duration-200
                       ${
                         isActive
-                          ? 'bg-white text-primary-700 shadow-lg transform scale-105'
+                          ? 'bg-white text-primary-700 shadow-lg'
                           : 'text-white/80 hover:bg-primary-600 hover:text-white'
                       }
                       ${sidebarCollapsed ? 'lg:justify-center' : ''}
                     `}
-                    title={sidebarCollapsed ? item.name : ''}
+                    title={item.name}
                   >
-                    <Icon className={`${isActive ? 'w-7 h-7' : 'w-6 h-6'} flex-shrink-0`} />
+                    <Icon className={`${isActive ? 'w-6 h-6 lg:w-7 lg:h-7' : 'w-5 h-5 lg:w-6 lg:h-6'} flex-shrink-0`} />
+                    {/* Texto visível apenas no desktop quando expandido */}
                     {!sidebarCollapsed && (
-                      <span className={`text-base font-medium ${isActive ? 'font-semibold' : ''}`}>
+                      <span className={`hidden lg:inline text-base font-medium ${isActive ? 'font-semibold' : ''}`}>
                         {item.name}
                       </span>
                     )}
@@ -106,35 +97,49 @@ const Layout = () => {
         </nav>
 
         {/* User Section - Fixed at bottom */}
-        <div className="border-t border-primary-600 p-4 flex-shrink-0">
-          {!sidebarCollapsed ? (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 px-3 py-2 bg-primary-600 rounded-lg">
-                <User className="w-5 h-5 text-white/80" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                  <p className="text-xs text-white/60 truncate">{user?.email}</p>
+        <div className="border-t border-primary-600 p-3 lg:p-4 flex-shrink-0">
+          {/* Mobile: apenas botão de logout */}
+          <div className="lg:hidden">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+              title="Sair"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Desktop: info completa quando expandido, apenas ícone quando collapsed */}
+          <div className="hidden lg:block">
+            {!sidebarCollapsed ? (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 px-3 py-2 bg-primary-600 rounded-lg">
+                  <User className="w-5 h-5 text-white/80" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                    <p className="text-xs text-white/60 truncate">{user?.email}</p>
+                  </div>
                 </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center space-x-3 px-3 py-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="text-sm font-medium">Sair</span>
+                </button>
               </div>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center space-x-3 px-3 py-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="text-sm font-medium">Sair</span>
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
-                title="Sair"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                  title="Sair"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Toggle Button - Fixed at bottom - Hidden on mobile */}
@@ -154,11 +159,11 @@ const Layout = () => {
       </aside>
 
       {/* Main Content - Adjusted for fixed sidebar */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full
-        lg:${sidebarCollapsed ? 'ml-20' : 'ml-64'}
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300
+        ml-20 lg:${sidebarCollapsed ? 'ml-20' : 'ml-64'}
       `}>
-        {/* Page Content - No header */}
-        <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 overflow-x-hidden pt-16 lg:pt-8">
+        {/* Page Content */}
+        <main className="flex-1 px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

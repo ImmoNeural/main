@@ -560,10 +560,84 @@ const Transactions = () => {
         )}
       </div>
 
-      {/* Transactions Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <div className="min-w-full px-4 sm:px-0">
+      {/* Transactions - Cards no Mobile, Tabela no Desktop */}
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {filteredTransactions.map((transaction) => {
+          const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
+          return (
+            <div
+              key={transaction.id}
+              className={`card p-4 ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : 'bg-white'}`}
+            >
+              {/* Header do Card */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white shadow-inner flex-shrink-0">
+                    <CategoryIconSmall category={transaction.category || 'Outros'} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-gray-900 truncate text-sm">
+                      {transaction.merchant || transaction.description}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0 ml-2">
+                  <span
+                    className={`text-base font-bold ${
+                      transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {transaction.type === 'credit' ? '+' : '-'}
+                    {formatCurrency(Math.abs(transaction.amount))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Categoria */}
+              <div className="flex items-center gap-2 mb-2">
+                {isUncategorized && (
+                  <AlertCircle className="w-4 h-4 text-rose-600" />
+                )}
+                <select
+                  value={transaction.category || ''}
+                  onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
+                  className={`text-xs border rounded-lg px-2 py-1.5 flex-1 focus:outline-none focus:ring-2 ${
+                    isUncategorized ? 'border-rose-400 bg-rose-100 text-gray-900 font-semibold focus:ring-rose-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
+                  }`}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.category} value={cat.category}>
+                      {cat.category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Badge de Tipo */}
+              <div className="flex justify-end">
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    transaction.type === 'credit'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {transaction.type === 'credit' ? 'Receita' : 'Despesa'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden md:block card overflow-hidden">
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -584,7 +658,7 @@ const Transactions = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white">
+            <tbody className="bg-white divide-y divide-gray-200">
               {filteredTransactions.map((transaction) => {
                 const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
                 return (
@@ -661,7 +735,6 @@ const Transactions = () => {
               })}
             </tbody>
           </table>
-          </div>
         </div>
       </div>
 
