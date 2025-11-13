@@ -179,17 +179,27 @@ const Dashboard = () => {
 
   // Handler para clique no gráfico
   const handleChartClick = (data: any) => {
-    if (!data || !data.activePayload || data.activePayload.length === 0) return;
+    console.log('🖱️ Chart clicked, data:', data);
+
+    if (!data || !data.activePayload || data.activePayload.length === 0) {
+      console.log('⚠️ No activePayload found');
+      return;
+    }
 
     const clickedData = data.activePayload[0].payload;
+    console.log('📊 Clicked data:', clickedData);
 
     if (chartView === 'weekly') {
       // Visualização semanal
+      console.log('📅 Weekly view - searching for week', clickedData.weekNumber, 'year', clickedData.year);
       const weekData = weeklyStats.find(w =>
         w.weekNumber === clickedData.weekNumber && w.year === clickedData.year
       );
 
+      console.log('🔍 Found week data:', weekData);
+
       if (weekData) {
+        console.log(`✅ Loading transactions from ${weekData.startDate} to ${weekData.endDate}`);
         setSelectedPeriod({
           type: 'week',
           weekNumber: weekData.weekNumber,
@@ -199,16 +209,23 @@ const Dashboard = () => {
         });
         loadFilteredTransactions(weekData.startDate, weekData.endDate);
         scrollToTransactions();
+      } else {
+        console.log('❌ Week data not found');
       }
     } else {
       // Visualização mensal
+      console.log('📅 Monthly view - searching for month', clickedData.month);
       const monthData = monthlyStats.find(m => m.month === clickedData.month);
+
+      console.log('🔍 Found month data:', monthData);
 
       if (monthData) {
         // Calcular startDate e endDate do mês
         const [year, month] = monthData.month.split('-');
         const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
         const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+
+        console.log(`✅ Loading transactions from ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
         setSelectedPeriod({
           type: 'month',
@@ -219,6 +236,8 @@ const Dashboard = () => {
         });
         loadFilteredTransactions(startDate.toISOString(), endDate.toISOString());
         scrollToTransactions();
+      } else {
+        console.log('❌ Month data not found');
       }
     }
   };
@@ -703,6 +722,8 @@ const Dashboard = () => {
                     isAnimationActive={true}
                     animationDuration={800}
                     animationBegin={0}
+                    onClick={handleChartClick}
+                    cursor="pointer"
                   />
                 ))}
 
@@ -716,6 +737,8 @@ const Dashboard = () => {
                     isAnimationActive={true}
                     animationDuration={800}
                     animationBegin={0}
+                    onClick={handleChartClick}
+                    cursor="pointer"
                   />
                 ))}
               </BarChart>
