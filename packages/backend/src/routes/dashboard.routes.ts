@@ -471,13 +471,8 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
         return a.weekNumber - b.weekNumber;
       });
 
-    console.log(`✅ Returning ${result.length} weeks (found ${transactions?.length || 0} transactions in period)`);
+    console.log(`✅ Returning ${result.length} weeks (found ${transactions?.length || 0} transactions in period of ${daysNum} days)`);
     console.log(`📊 Weeks: ${result.map(w => `${w.year}-W${w.weekNumber}`).join(', ')}`);
-
-    if (result.length < weeksNum) {
-      console.warn(`⚠️ WARNING: Expected ${weeksNum} weeks but only got ${result.length} weeks!`);
-      console.warn(`⚠️ This means there are NO transactions for ${weeksNum - result.length} weeks in the period`);
-    }
 
     res.json(result);
   } catch (error) {
