@@ -15,7 +15,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, startOfMonth, subMonths } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
 
 const Dashboard = () => {
@@ -113,6 +113,23 @@ const Dashboard = () => {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
+  };
+
+  // Calcular data de início do período para o label
+  const getStartDateLabel = () => {
+    const monthsMap: Record<number, number> = {
+      30: 1,    // 1 mês
+      60: 2,    // 2 meses
+      90: 3,    // 3 meses
+      180: 6,   // 6 meses
+      365: 12,  // 12 meses
+    };
+
+    const totalMonths = monthsMap[period] || Math.ceil(period / 30);
+    const monthsToSubtract = totalMonths - 1;
+    const startDate = startOfMonth(subMonths(new Date(), monthsToSubtract));
+
+    return format(startDate, 'dd.MM.yy');
   };
 
   const getMonthsCount = () => {
@@ -451,7 +468,7 @@ const Dashboard = () => {
         <div className="card hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-600 font-semibold">💰 Saldo Inicial</p>
+              <p className="text-sm text-blue-600 font-semibold">💰 Saldo inicial em {getStartDateLabel()}</p>
               <p className="text-xl sm:text-2xl font-bold text-blue-700 mt-1">
                 {stats?.initial_balance !== null && stats?.initial_balance !== undefined
                   ? formatCurrency(stats.initial_balance)
