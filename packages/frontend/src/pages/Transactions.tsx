@@ -398,77 +398,77 @@ const Transactions = () => {
       {/* Resumo Financeiro das Transações Filtradas */}
       <div>
         <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 cursor-pointer"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-6 cursor-pointer"
           onClick={() => setShowMonthlyBreakdown(!showMonthlyBreakdown)}
         >
           {/* Total de Receitas */}
-          <div className="card hover:shadow-lg transition-all">
+          <div className="card hover:shadow-lg transition-all p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total de Receitas (12 meses)</p>
-                <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Receitas (12m)</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1 truncate">
                   {formatCurrency(totalIncome)}
                 </p>
               </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <ArrowUp className="w-6 h-6 text-green-600" />
+              <div className="p-1.5 sm:p-2 lg:p-3 bg-green-100 rounded-full flex-shrink-0 ml-1">
+                <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-6 lg:h-6 text-green-600" />
               </div>
             </div>
           </div>
 
           {/* Total de Despesas */}
-          <div className="card hover:shadow-lg transition-all">
+          <div className="card hover:shadow-lg transition-all p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total de Despesas (12 meses)</p>
-                <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Despesas (12m)</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold text-red-600 mt-0.5 sm:mt-1 truncate">
                   {formatCurrency(totalExpense)}
                 </p>
               </div>
-              <div className="p-3 bg-red-100 rounded-full">
-                <ArrowDown className="w-6 h-6 text-red-600" />
+              <div className="p-1.5 sm:p-2 lg:p-3 bg-red-100 rounded-full flex-shrink-0 ml-1">
+                <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4 lg:w-6 lg:h-6 text-red-600" />
               </div>
             </div>
           </div>
 
           {/* Saldo Líquido */}
-          <div className="card hover:shadow-lg transition-all">
+          <div className="card hover:shadow-lg transition-all p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Saldo Líquido (12 meses)</p>
-                <p className={`text-xl sm:text-2xl font-bold mt-1 ${
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Saldo (12m)</p>
+                <p className={`text-sm sm:text-lg lg:text-2xl font-bold mt-0.5 sm:mt-1 truncate ${
                   balance >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
                   {formatCurrency(balance)}
                 </p>
               </div>
-              <div className={`p-3 rounded-full ${
+              <div className={`p-1.5 sm:p-2 lg:p-3 rounded-full flex-shrink-0 ml-1 ${
                 balance >= 0 ? 'bg-green-100' : 'bg-red-100'
               }`}>
                 {balance >= 0 ? (
-                  <ArrowUp className="w-6 h-6 text-green-600" />
+                  <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-6 lg:h-6 text-green-600" />
                 ) : (
-                  <ArrowDown className="w-6 h-6 text-red-600" />
+                  <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4 lg:w-6 lg:h-6 text-red-600" />
                 )}
               </div>
             </div>
           </div>
 
           {/* Saldo Inicial */}
-          <div className="card hover:shadow-lg transition-all bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+          <div className="card hover:shadow-lg transition-all bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-semibold">
-                  💰 Saldo inicial <span className="text-xs text-gray-400">em {getStartDateLabel()}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs lg:text-sm text-blue-600 font-semibold truncate">
+                  💰 Inicial <span className="text-[9px] sm:text-xs text-gray-400">{getStartDateLabel()}</span>
                 </p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-700 mt-1">
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold text-blue-700 mt-0.5 sm:mt-1 truncate">
                   {initialBalance !== null && initialBalance !== undefined
                     ? formatCurrency(initialBalance)
-                    : 'Não definido'}
+                    : 'N/D'}
                 </p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <ArrowUp className="w-6 h-6 text-blue-600" />
+              <div className="p-1.5 sm:p-2 lg:p-3 bg-blue-100 rounded-full flex-shrink-0 ml-1">
+                <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-6 lg:h-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -563,32 +563,32 @@ const Transactions = () => {
       {/* Transactions - Cards no Mobile, Tabela no Desktop */}
 
       {/* Mobile Cards */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden space-y-2">
         {filteredTransactions.map((transaction) => {
           const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
           return (
             <div
               key={transaction.id}
-              className={`card p-4 ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : 'bg-white'}`}
+              className={`card p-2.5 ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : 'bg-white'}`}
             >
               {/* Header do Card */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white shadow-inner flex-shrink-0">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white shadow-inner flex-shrink-0">
                     <CategoryIconSmall category={transaction.category || 'Outros'} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-gray-900 truncate text-sm">
+                    <p className="font-medium text-gray-900 truncate text-xs">
                       {transaction.merchant || transaction.description}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-[10px] text-gray-500">
                       {format(new Date(transaction.date), 'dd/MM/yyyy')}
                     </p>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0 ml-2">
+                <div className="text-right flex-shrink-0 ml-1">
                   <span
-                    className={`text-base font-bold ${
+                    className={`text-sm font-bold ${
                       transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
                     }`}
                   >
@@ -599,14 +599,14 @@ const Transactions = () => {
               </div>
 
               {/* Categoria */}
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-1.5 mb-1.5">
                 {isUncategorized && (
-                  <AlertCircle className="w-4 h-4 text-rose-600" />
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
                 )}
                 <select
                   value={transaction.category || ''}
                   onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                  className={`text-xs border rounded-lg px-2 py-1.5 flex-1 focus:outline-none focus:ring-2 ${
+                  className={`text-[10px] border rounded px-1.5 py-1 flex-1 focus:outline-none focus:ring-1 ${
                     isUncategorized ? 'border-rose-400 bg-rose-100 text-gray-900 font-semibold focus:ring-rose-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
                   }`}
                 >
@@ -621,7 +621,7 @@ const Transactions = () => {
               {/* Badge de Tipo */}
               <div className="flex justify-end">
                 <span
-                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  className={`inline-flex px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
                     transaction.type === 'credit'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'

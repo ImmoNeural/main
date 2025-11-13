@@ -26,7 +26,8 @@ const Layout = () => {
       {/* Sidebar - Sempre visível, collapsed no mobile */}
       <aside
         className={`bg-gradient-to-b from-primary-700 to-primary-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0 z-40 flex flex-col
-          w-20 lg:${sidebarCollapsed ? 'w-20' : 'w-64'}
+          w-20
+          ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
         `}
       >
         {/* Logo/Header - Fixed at top */}
@@ -160,7 +161,8 @@ const Layout = () => {
 
       {/* Main Content - Adjusted for fixed sidebar */}
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300
-        ml-20 lg:${sidebarCollapsed ? 'ml-20' : 'ml-64'}
+        ml-20
+        ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
       `}>
         {/* Page Content */}
         <main className="flex-1 px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 overflow-x-hidden">

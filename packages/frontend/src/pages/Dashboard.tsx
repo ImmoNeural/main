@@ -667,9 +667,9 @@ const Dashboard = () => {
         {/* Unified Legend */}
         <div className="xl:col-span-1 order-2 xl:order-1">
           <div className="card h-full">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4">📊 Legenda dos Gráficos</h3>
-            <p className="text-xs text-gray-500 mb-3">Clique para habilitar/desabilitar</p>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">📊 Legenda</h3>
+            <p className="text-xs text-gray-500 mb-2 sm:mb-3">Clique para habilitar/desabilitar</p>
+            <div className="space-y-1 sm:space-y-2">
               {Array.from(allCategories).map((category) => {
                 const isDisabled = disabledCategories.has(category);
                 return (
