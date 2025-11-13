@@ -206,7 +206,7 @@ const Dashboard = () => {
       chartView === 'weekly' ? d.week === payload.value : d.month === payload.value
     );
 
-    if (currentIndex === -1) return null;
+    if (currentIndex === -1) return <></>;
 
     const currentYear = currentData[currentIndex].year;
 
@@ -233,7 +233,7 @@ const Dashboard = () => {
       );
     }
 
-    return null;
+    return <></>;
   };
 
   // Preparar dados mensais para o detalhamento da categoria selecionada
