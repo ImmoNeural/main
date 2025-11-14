@@ -344,7 +344,7 @@ export default function BudgetDetails() {
                 strokeWidth={2}
                 label={{ value: 'Budget', position: 'right', fill: '#666', fontSize: 12 }}
               />
-              <Bar dataKey="spent" fill={categoryInfo.color} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="spent" fill={`${categoryInfo.color}60`} radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
