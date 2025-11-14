@@ -1,43 +1,34 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { bankApi } from '../services/api';
+import { Link } from 'react-router-dom';
+import { Mail, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-const Login = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
+const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess(false);
     setLoading(true);
 
     try {
-      await login(email, password);
+      // Usar Supabase para enviar email de recuperação de senha
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-      // Verificar se é primeiro acesso (sem contas bancárias)
-      try {
-        const accountsResponse = await bankApi.getAccounts();
-
-        if (!accountsResponse.data || accountsResponse.data.length === 0) {
-          // Primeiro acesso: redirecionar para conectar banco
-          navigate('/app/connect-bank');
-          return;
-        }
-      } catch (accountsError) {
-        console.warn('Could not check accounts, redirecting to dashboard');
+      if (resetError) {
+        throw resetError;
       }
 
-      // Usuário já tem contas: ir para dashboard
-      navigate('/app/dashboard');
+      setSuccess(true);
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.error || 'Erro ao fazer login. Tente novamente.');
+      console.error('Forgot password error:', err);
+      setError('Erro ao enviar email de recuperação. Verifique se o email está correto.');
     } finally {
       setLoading(false);
     }
@@ -62,14 +53,16 @@ const Login = () => {
             />
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Guru do Dindin</h1>
-          <p className="text-white/80 text-lg">Seu Guru das Finanças</p>
+          <p className="text-white/80 text-lg">Recuperar senha</p>
         </div>
 
-        {/* Card de login */}
+        {/* Card de recuperação */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 animate-slide-up">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Bem-vindo de volta!</h2>
-            <p className="text-gray-600">Entre com sua conta para continuar</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Esqueceu sua senha?</h2>
+            <p className="text-gray-600">
+              Digite seu email e enviaremos instruções para redefinir sua senha
+            </p>
           </div>
 
           {/* Mensagem de erro */}
@@ -77,6 +70,17 @@ const Login = () => {
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3 animate-shake">
               <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
               <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Mensagem de sucesso */}
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3 animate-slide-down">
+              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-green-800">
+                <p className="font-semibold mb-1">Email enviado com sucesso!</p>
+                <p>Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.</p>
+              </div>
             </div>
           )}
 
@@ -98,68 +102,42 @@ const Login = () => {
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white text-gray-900"
                   placeholder="seu@email.com"
                   required
+                  disabled={success}
                 />
               </div>
             </div>
 
-            {/* Senha */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Senha
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
-                >
-                  Esqueceu a senha?
-                </Link>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white text-gray-900"
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                />
-              </div>
-            </div>
-
-            {/* Botão de login */}
+            {/* Botão de enviar */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || success}
               className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-4 rounded-lg font-medium hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center space-x-2"
             >
               {loading ? (
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : success ? (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Email enviado!</span>
+                </>
               ) : (
                 <>
-                  <LogIn className="w-5 h-5" />
-                  <span>Entrar</span>
+                  <Mail className="w-5 h-5" />
+                  <span>Enviar instruções</span>
                 </>
               )}
             </button>
           </form>
 
-          {/* Link para registro */}
+          {/* Link para voltar */}
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Não tem uma conta?{' '}
-              <Link
-                to="/register"
-                className="text-primary-600 font-medium hover:text-primary-700 transition-colors"
-              >
-                Criar conta
-              </Link>
-            </p>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar para login
+            </Link>
           </div>
         </div>
 
@@ -192,6 +170,17 @@ const Login = () => {
           }
         }
 
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @keyframes shake {
           0%, 100% {
             transform: translateX(0);
@@ -212,6 +201,10 @@ const Login = () => {
           animation: slide-up 0.6s ease-out 0.2s both;
         }
 
+        .animate-slide-down {
+          animation: slide-down 0.4s ease-out;
+        }
+
         .animate-shake {
           animation: shake 0.4s ease-in-out;
         }
@@ -220,4 +213,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;
