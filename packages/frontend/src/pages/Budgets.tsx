@@ -567,6 +567,11 @@ export default function Budgets() {
       monthlyBreakdown: Record<string, number>;
     }> = {};
 
+    // Arrays para log de somas
+    const fixedItems: Array<{cat: string, subcat: string, budget: number, spent: number}> = [];
+    const variableItems: Array<{cat: string, subcat: string, budget: number, spent: number}> = [];
+    const investmentItems: Array<{cat: string, subcat: string, budget: number, spent: number}> = [];
+
     Object.entries(subcategoryMap).forEach(([_key, data]) => {
       const monthlyValues = Object.values(data.monthlyTotals);
       const monthsWithData = monthlyValues.length;
@@ -625,15 +630,64 @@ export default function Budgets() {
       if (data.rule.type === 'Despesas Fixas') {
         fixedBudget += categoryData.suggestedBudget;
         fixedSpent += categoryData.currentSpent;
+        fixedItems.push({
+          cat: data.rule.category,
+          subcat: data.rule.subcategory,
+          budget: categoryData.suggestedBudget,
+          spent: categoryData.currentSpent
+        });
       } else if (data.rule.type === 'Despesas Variáveis') {
         variableBudget += categoryData.suggestedBudget;
         variableSpent += categoryData.currentSpent;
+        variableItems.push({
+          cat: data.rule.category,
+          subcat: data.rule.subcategory,
+          budget: categoryData.suggestedBudget,
+          spent: categoryData.currentSpent
+        });
       } else if (data.rule.type === 'Movimentações' &&
                  (data.rule.category === 'Investimentos' || data.rule.category === 'Transferências' || data.rule.category === 'Saques')) {
         investmentsBudget += categoryData.suggestedBudget;
         investmentsSpent += categoryData.currentSpent;
+        investmentItems.push({
+          cat: data.rule.category,
+          subcat: data.rule.subcategory,
+          budget: categoryData.suggestedBudget,
+          spent: categoryData.currentSpent
+        });
       }
     });
+
+    // Log detalhado das somas para "Visão Geral"
+    console.log(`\n💰 [BUDGETS] ═══════════════════════════════════════════════════`);
+    console.log(`💰 [BUDGETS] CÁLCULO DAS SOMAS PARA "VISÃO GERAL"`);
+    console.log(`💰 [BUDGETS] ═══════════════════════════════════════════════════`);
+
+    console.log(`\n  🔧 DESPESAS FIXAS (${fixedItems.length} itens):`);
+    fixedItems.forEach((item, idx) => {
+      console.log(`     ${idx + 1}. [${item.cat}] ${item.subcat}:`);
+      console.log(`        Budget: R$ ${item.budget.toFixed(2)} | Gasto: R$ ${item.spent.toFixed(2)}`);
+    });
+    console.log(`     ────────────────────────────────────────────────────`);
+    console.log(`     ✅ TOTAL FIXAS: Budget R$ ${fixedBudget.toFixed(2)} | Gasto R$ ${fixedSpent.toFixed(2)}`);
+
+    console.log(`\n  🛒 DESPESAS VARIÁVEIS (${variableItems.length} itens):`);
+    variableItems.forEach((item, idx) => {
+      console.log(`     ${idx + 1}. [${item.cat}] ${item.subcat}:`);
+      console.log(`        Budget: R$ ${item.budget.toFixed(2)} | Gasto: R$ ${item.spent.toFixed(2)}`);
+    });
+    console.log(`     ────────────────────────────────────────────────────`);
+    console.log(`     ✅ TOTAL VARIÁVEIS: Budget R$ ${variableBudget.toFixed(2)} | Gasto R$ ${variableSpent.toFixed(2)}`);
+
+    console.log(`\n  📈 INVESTIMENTOS/MOVIMENTAÇÕES (${investmentItems.length} itens):`);
+    investmentItems.forEach((item, idx) => {
+      console.log(`     ${idx + 1}. [${item.cat}] ${item.subcat}:`);
+      console.log(`        Budget: R$ ${item.budget.toFixed(2)} | Gasto: R$ ${item.spent.toFixed(2)}`);
+    });
+    console.log(`     ────────────────────────────────────────────────────`);
+    console.log(`     ✅ TOTAL INVESTIMENTOS: Budget R$ ${investmentsBudget.toFixed(2)} | Gasto R$ ${investmentsSpent.toFixed(2)}`);
+
+    console.log(`\n💰 [BUDGETS] ═══════════════════════════════════════════════════`);
 
     // Log detalhado de totais por categoria (todos os meses)
     console.log(`\n📊 [BUDGETS] ═══════════════════════════════════════════════════`);
