@@ -16,9 +16,9 @@ const Layout = () => {
 
   const navigation = [
     { name: 'Dashboard', path: '/app/dashboard', icon: LayoutDashboard },
+    { name: 'Budgets', path: '/app/budgets', icon: Target },
     { name: 'Transações', path: '/app/transactions', icon: Receipt },
     { name: 'Contas', path: '/app/accounts', icon: Wallet },
-    { name: 'Budgets', path: '/app/budgets', icon: Target },
     { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
   ];
 

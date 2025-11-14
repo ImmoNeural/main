@@ -52,7 +52,7 @@ const Dashboard = () => {
   }>>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState(365); // Padrão: 12 meses
+  const [period, setPeriod] = useState(90); // Padrão: 3 meses
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [disabledCategories, setDisabledCategories] = useState<Set<string>>(new Set());
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);

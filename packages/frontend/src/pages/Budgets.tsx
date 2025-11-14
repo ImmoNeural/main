@@ -219,21 +219,21 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
   const monthLabel = format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="card p-6 mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-t-4 border-primary-600">
-      <h2 className="text-2xl font-extrabold text-gray-800 mb-4 flex items-center gap-2">
+    <div className="card p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-t-4 border-primary-600">
+      <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
         📊 Resumo Financeiro - {monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}
       </h2>
 
       {/* Salário */}
-      <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border-l-4 border-green-500">
+      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white rounded-xl shadow-sm border-l-4 border-green-500">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-              <span className="text-2xl">💰</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+              <span className="text-xl sm:text-2xl">💰</span>
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">Salário / Receitas</p>
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Salário / Receitas</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
                 R$ {summary.salary.toFixed(2).replace('.', ',')}
               </p>
             </div>
@@ -289,25 +289,25 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       </div>
 
       {/* Saldo Disponível */}
-      <div className={`p-5 rounded-xl shadow-lg ${isNegative ? 'bg-red-100 border-l-4 border-red-500' : 'bg-green-100 border-l-4 border-green-500'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className={`p-3 sm:p-4 lg:p-5 rounded-xl shadow-lg ${isNegative ? 'bg-red-100 border-l-4 border-red-500' : 'bg-green-100 border-l-4 border-green-500'}`}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="flex items-center gap-2 sm:gap-3">
             {isNegative ? (
-              <TrendingDown className="w-10 h-10 text-red-600" />
+              <TrendingDown className="w-8 h-8 sm:w-10 sm:h-10 text-red-600 flex-shrink-0" />
             ) : (
-              <TrendingUp className="w-10 h-10 text-green-600" />
+              <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 flex-shrink-0" />
             )}
             <div>
-              <p className="text-sm font-medium text-gray-700">Saldo Disponível no Mês</p>
-              <p className={`text-4xl font-extrabold ${isNegative ? 'text-red-700' : 'text-green-700'}`}>
+              <p className="text-xs sm:text-sm font-medium text-gray-700">Saldo Disponível no Mês</p>
+              <p className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isNegative ? 'text-red-700' : 'text-green-700'}`}>
                 {isNegative ? '-' : ''}R$ {Math.abs(balance).toFixed(2).replace('.', ',')}
               </p>
             </div>
           </div>
           {!isNegative && (
-            <div className="text-right">
+            <div className="text-left sm:text-right w-full sm:w-auto">
               <p className="text-xs text-gray-600">Percentual do salário</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {summary.salary > 0 ? ((balance / summary.salary) * 100).toFixed(0) : 0}%
               </p>
             </div>
@@ -317,18 +317,18 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
 
       {/* Alertas da Regra 50/30/20 */}
       {alerts.length > 0 && (
-        <div className="mt-4 p-4 bg-amber-50 rounded-xl border-l-4 border-amber-500">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
+        <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-amber-50 rounded-xl border-l-4 border-amber-500">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 flex-shrink-0 mt-1" />
             <div className="flex-1">
-              <h4 className="font-bold text-amber-800 mb-2">⚠️ Atenção: Regra 50/30/20</h4>
-              <p className="text-sm text-amber-700 mb-2">
+              <h4 className="font-bold text-amber-800 mb-2 text-sm sm:text-base">⚠️ Atenção: Regra 50/30/20</h4>
+              <p className="text-xs sm:text-sm text-amber-700 mb-2">
                 A distribuição ideal do salário é: <strong>50% Fixos, 30% Variáveis, 20% Investimentos</strong>
               </p>
               <div className="space-y-1">
                 {alerts.map((alert, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: alert.color }}></span>
+                  <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: alert.color }}></span>
                     <span className="text-amber-800">
                       <strong>{alert.type}</strong>: {alert.current} (limite: {alert.limit})
                     </span>
@@ -835,29 +835,30 @@ export default function Budgets() {
   const isCurrentMonth = format(selectedMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen pb-20 lg:pb-6">
-      <header className="max-w-6xl mx-auto mb-6 sm:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
-              🎯 Budgets por Categoria
-            </h1>
-            <p className="text-sm sm:text-base text-gray-500 mt-2">
-              Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
-            </p>
-          </div>
+    <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 min-h-screen pb-20 lg:pb-6">
+      <header className="max-w-6xl mx-auto mb-4 sm:mb-6 lg:mb-8">
+        {/* Título */}
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
+            🎯 Budgets por Categoria
+          </h1>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-500 mt-1 sm:mt-2">
+            Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
+          </p>
+        </div>
 
-          {/* Seletor de Mês */}
-          <div className="flex items-center gap-2 bg-white rounded-lg shadow-md p-2">
+        {/* Seletor de Mês - Centralizado em mobile */}
+        <div className="flex justify-center sm:justify-end">
+          <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-lg shadow-md p-1.5 sm:p-2">
             <button
               onClick={handlePreviousMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition"
               title="Mês anterior"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </button>
-            <div className="px-4 py-2 text-center min-w-[140px]">
-              <p className="text-sm font-bold text-gray-800">
+            <div className="px-3 sm:px-4 py-1.5 sm:py-2 text-center min-w-[120px] sm:min-w-[140px]">
+              <p className="text-xs sm:text-sm font-bold text-gray-800">
                 {format(selectedMonth, 'MMMM yyyy', { locale: ptBR }).charAt(0).toUpperCase() +
                  format(selectedMonth, 'MMMM yyyy', { locale: ptBR }).slice(1)}
               </p>
@@ -865,12 +866,12 @@ export default function Budgets() {
             <button
               onClick={handleNextMonth}
               disabled={isCurrentMonth}
-              className={`p-2 rounded-lg transition ${
+              className={`p-1.5 sm:p-2 rounded-lg transition ${
                 isCurrentMonth ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100'
               }`}
               title={isCurrentMonth ? 'Mês atual' : 'Próximo mês'}
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </button>
           </div>
         </div>
