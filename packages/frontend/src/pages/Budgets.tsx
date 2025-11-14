@@ -178,6 +178,13 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
     alerts.push({ type: 'Investimentos', limit: '20%', current: `${investmentPercent.toFixed(0)}%`, color: '#2196F3' });
   }
 
+  // Dados para a tabela
+  const tableData = [
+    { label: 'Custos Fixos', budget: summary.fixedBudget, spent: summary.fixedSpent, color: '#3F51B5', icon: '🔧' },
+    { label: 'Custos Variáveis', budget: summary.variableBudget, spent: summary.variableSpent, color: '#FF9800', icon: '🛒' },
+    { label: 'Investimentos', budget: summary.investmentsBudget, spent: summary.investmentsSpent, color: '#2196F3', icon: '📈' },
+  ];
+
   // Dados para o gráfico de barras
   const chartData = [
     {
@@ -196,6 +203,18 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       Gasto: summary.investmentsSpent,
     },
   ];
+
+  // Log de comparação entre tabela e gráfico
+  console.log('\n📊 [FINANCIAL SUMMARY] Comparação Tabela vs Gráfico:');
+  console.log('TABELA:');
+  tableData.forEach(item => {
+    console.log(`  ${item.label}: Budget R$ ${item.budget.toFixed(2)} | Gasto R$ ${item.spent.toFixed(2)}`);
+  });
+  console.log('GRÁFICO:');
+  chartData.forEach(item => {
+    console.log(`  ${item.name}: Budget R$ ${item.Budget.toFixed(2)} | Gasto R$ ${item.Gasto.toFixed(2)}`);
+  });
+  console.log('');
 
   const monthLabel = format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR });
 
@@ -228,11 +247,7 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
         <div className="bg-white rounded-xl shadow-md p-5">
           <h3 className="font-bold text-gray-800 mb-4 text-lg">📋 Visão Geral</h3>
           <div className="space-y-3">
-            {[
-              { label: 'Custos Fixos', budget: summary.fixedBudget, spent: summary.fixedSpent, color: '#3F51B5', icon: '🔧' },
-              { label: 'Custos Variáveis', budget: summary.variableBudget, spent: summary.variableSpent, color: '#FF9800', icon: '🛒' },
-              { label: 'Investimentos', budget: summary.investmentsBudget, spent: summary.investmentsSpent, color: '#2196F3', icon: '📈' },
-            ].map((item) => {
+            {tableData.map((item) => {
               const diff = item.budget - item.spent;
               const isOver = diff < 0;
               return (
@@ -351,12 +366,29 @@ export default function Budgets() {
     try {
       // Buscar transações dos últimos 12 meses para cálculo de médias
       const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
+      const startDate = format(twelveMonthsAgo, 'yyyy-MM-dd');
+
+      console.log(`\n🔄 [BUDGETS] ═══════════════════════════════════════════════════`);
+      console.log(`🔄 [BUDGETS] CARREGANDO TRANSAÇÕES DA API`);
+      console.log(`🔄 [BUDGETS] Data início: ${startDate}`);
+      console.log(`🔄 [BUDGETS] ═══════════════════════════════════════════════════\n`);
+
       const response = await transactionApi.getTransactions({
-        start_date: format(twelveMonthsAgo, 'yyyy-MM-dd'),
+        start_date: startDate,
         limit: 10000,
       });
 
       const txs = response.data.transactions;
+
+      console.log(`✅ [BUDGETS] Transações carregadas da API: ${txs.length}`);
+      console.log(`📅 [BUDGETS] Período: ${startDate} até hoje`);
+
+      if (txs.length > 0) {
+        const firstTx = txs[txs.length - 1];
+        const lastTx = txs[0];
+        console.log(`📊 [BUDGETS] Primeira transação: ${format(new Date(firstTx.date), 'dd/MM/yyyy')} - ${firstTx.description}`);
+        console.log(`📊 [BUDGETS] Última transação: ${format(new Date(lastTx.date), 'dd/MM/yyyy')} - ${lastTx.description}`);
+      }
 
       // Processar transações e calcular médias
       processTransactions(txs);
@@ -698,30 +730,36 @@ export default function Budgets() {
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {Object.entries(categoryData[costType]).map(([categoryName, data]) => (
-                  <Link
-                    key={categoryName}
-                    to={`/app/budgets/${encodeURIComponent(categoryName)}`}
-                    className="bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 flex flex-col transform hover:scale-[1.02] transition duration-300 cursor-pointer"
-                    style={{ borderTopColor: data.color }}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                      <span className="text-2xl sm:text-3xl">{data.icon}</span>
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 uppercase tracking-wider flex-1">
-                        {categoryName}
-                      </h3>
-                      <ArrowRight className="w-4 h-4 text-gray-400" />
-                    </div>
+                {Object.entries(categoryData[costType]).map(([categoryName, data]) => {
+                  const categoryPath = `/app/budgets/${encodeURIComponent(categoryName)}`;
+                  return (
+                    <Link
+                      key={categoryName}
+                      to={categoryPath}
+                      className="block bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 transform hover:scale-[1.02] transition duration-300 cursor-pointer hover:shadow-2xl"
+                      style={{ borderTopColor: data.color }}
+                      onClick={(e) => {
+                        console.log(`🖱️ [BUDGETS] Card clicado: ${categoryName} -> ${categoryPath}`);
+                      }}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <span className="text-2xl sm:text-3xl">{data.icon}</span>
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 uppercase tracking-wider flex-1">
+                          {categoryName}
+                        </h3>
+                        <ArrowRight className="w-4 h-4 text-gray-400" />
+                      </div>
 
-                    <BudgetBar totalBudget={data.totalBudget} totalSpent={data.totalSpent} />
+                      <BudgetBar totalBudget={data.totalBudget} totalSpent={data.totalSpent} />
 
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <p className="text-xs text-gray-500">
-                        {data.subcategories.length} subcategoria{data.subcategories.length !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-500">
+                          {data.subcategories.length} subcategoria{data.subcategories.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           ))}
