@@ -408,11 +408,21 @@ export default function Budgets() {
 
     // Inicializar estrutura com todas as categorias
     ALL_CATEGORY_RULES.forEach((rule) => {
-      if (!grouped[rule.type]) {
-        grouped[rule.type] = {};
+      // Separar Movimentações em Despesas e Receitas
+      let effectiveType = rule.type;
+      if (rule.type === 'Movimentações') {
+        if (rule.category === 'Investimentos' || rule.category === 'Transferências' || rule.category === 'Saques') {
+          effectiveType = 'Movimentações (Despesas)';
+        } else if (rule.category === 'Salário' || rule.category === 'Receitas') {
+          effectiveType = 'Movimentações (Receitas)';
+        }
       }
-      if (!grouped[rule.type][rule.category]) {
-        grouped[rule.type][rule.category] = {
+
+      if (!grouped[effectiveType]) {
+        grouped[effectiveType] = {};
+      }
+      if (!grouped[effectiveType][rule.category]) {
+        grouped[effectiveType][rule.category] = {
           icon: rule.icon,
           color: rule.color,
           totalSpent: 0,
@@ -584,6 +594,7 @@ export default function Budgets() {
       console.log('');
     }
 
+    // Primeiro, processar todas as subcategorias para calcular gastos
     Object.entries(subcategoryMap).forEach(([_key, data]) => {
       const monthlyValues = Object.values(data.monthlyTotals);
       const monthsWithData = monthlyValues.length;
@@ -591,26 +602,32 @@ export default function Budgets() {
         ? monthlyValues.reduce((sum, val) => sum + val, 0) / monthsWithData
         : 0;
 
-      // Verificar se existe budget customizado para esta categoria
-      const customBudget = customBudgets[data.rule.category];
-      const finalBudget = customBudget || Math.round(avgMonthly);
+      // Determinar tipo efetivo (separar Movimentações)
+      let effectiveType = data.rule.type;
+      if (data.rule.type === 'Movimentações') {
+        if (data.rule.category === 'Investimentos' || data.rule.category === 'Transferências' || data.rule.category === 'Saques') {
+          effectiveType = 'Movimentações (Despesas)';
+        } else if (data.rule.category === 'Salário' || data.rule.category === 'Receitas') {
+          effectiveType = 'Movimentações (Receitas)';
+        }
+      }
 
       const categoryData: CategoryData = {
-        type: data.rule.type,
+        type: effectiveType,
         category: data.rule.category,
         subcategory: data.rule.subcategory,
         icon: data.rule.icon,
         color: data.rule.color,
         note: data.rule.note,
         currentSpent: data.currentMonthSpent,
-        suggestedBudget: finalBudget,
+        suggestedBudget: Math.round(avgMonthly), // Budget da subcategoria (média)
         monthsWithData,
       };
 
       // Acumular totais por categoria principal
       if (!categoryTotals[data.rule.category]) {
         categoryTotals[data.rule.category] = {
-          type: data.rule.type,
+          type: effectiveType,
           totalAllMonths: 0,
           currentMonthSpent: 0,
           monthlyBreakdown: {},
@@ -627,52 +644,71 @@ export default function Budgets() {
       });
       categoryTotals[data.rule.category].currentMonthSpent += data.currentMonthSpent;
 
-      // Log apenas categorias com dados
-      if (categoryData.currentSpent > 0 || categoryData.suggestedBudget > 0) {
-        categoriesWithData++;
-        if (categoriesWithData <= 15) { // Mostrar as primeiras 15
-          const budgetSource = customBudget ? '✏️ CUSTOMIZADO' : `média de ${monthsWithData} meses`;
-          console.log(`  📊 [${data.rule.type}] ${data.rule.category}: Gasto atual R$ ${categoryData.currentSpent.toFixed(2)} | Budget R$ ${categoryData.suggestedBudget.toFixed(2)} (${budgetSource})`);
-        }
-      }
-
       // Adicionar à estrutura agrupada
-      if (grouped[data.rule.type] && grouped[data.rule.type][data.rule.category]) {
-        grouped[data.rule.type][data.rule.category].subcategories.push(categoryData);
-        grouped[data.rule.type][data.rule.category].totalSpent += categoryData.currentSpent;
-        grouped[data.rule.type][data.rule.category].totalBudget += categoryData.suggestedBudget;
+      if (grouped[effectiveType] && grouped[effectiveType][data.rule.category]) {
+        grouped[effectiveType][data.rule.category].subcategories.push(categoryData);
+        grouped[effectiveType][data.rule.category].totalSpent += categoryData.currentSpent;
+        // NÃO somar budget aqui - será calculado depois por categoria
       }
+    });
 
-      // Acumular para resumo
-      if (data.rule.type === 'Despesas Fixas') {
-        fixedBudget += categoryData.suggestedBudget;
-        fixedSpent += categoryData.currentSpent;
-        fixedItems.push({
-          cat: data.rule.category,
-          subcat: data.rule.subcategory,
-          budget: categoryData.suggestedBudget,
-          spent: categoryData.currentSpent
-        });
-      } else if (data.rule.type === 'Despesas Variáveis') {
-        variableBudget += categoryData.suggestedBudget;
-        variableSpent += categoryData.currentSpent;
-        variableItems.push({
-          cat: data.rule.category,
-          subcat: data.rule.subcategory,
-          budget: categoryData.suggestedBudget,
-          spent: categoryData.currentSpent
-        });
-      } else if (data.rule.type === 'Movimentações' &&
-                 (data.rule.category === 'Investimentos' || data.rule.category === 'Transferências' || data.rule.category === 'Saques')) {
-        investmentsBudget += categoryData.suggestedBudget;
-        investmentsSpent += categoryData.currentSpent;
-        investmentItems.push({
-          cat: data.rule.category,
-          subcat: data.rule.subcategory,
-          budget: categoryData.suggestedBudget,
-          spent: categoryData.currentSpent
-        });
-      }
+    // Agora calcular budgets POR CATEGORIA PRINCIPAL (não por subcategoria)
+    Object.keys(grouped).forEach((type) => {
+      Object.keys(grouped[type]).forEach((categoryName) => {
+        const category = grouped[type][categoryName];
+
+        // Se existe budget customizado, usar ele. Senão, calcular média da categoria toda
+        const customBudget = customBudgets[categoryName];
+        let categoryBudget: number;
+
+        if (customBudget) {
+          categoryBudget = customBudget;
+        } else {
+          // Calcular média de TODAS as subcategorias juntas
+          const allSubcategoriesBudgets = category.subcategories
+            .map(sub => sub.suggestedBudget)
+            .reduce((sum, val) => sum + val, 0);
+          categoryBudget = allSubcategoriesBudgets;
+        }
+
+        category.totalBudget = categoryBudget;
+
+        // Log
+        const budgetSource = customBudget ? '✏️ CUSTOMIZADO' : 'média calculada';
+        console.log(`  📊 [${type}] ${categoryName}: Gasto R$ ${category.totalSpent.toFixed(2)} | Budget R$ ${categoryBudget.toFixed(2)} (${budgetSource})`);
+
+        // Acumular para resumo da Visão Geral
+        if (type === 'Despesas Fixas') {
+          fixedBudget += categoryBudget;
+          fixedSpent += category.totalSpent;
+          fixedItems.push({
+            cat: categoryName,
+            subcat: `${category.subcategories.length} subcategorias`,
+            budget: categoryBudget,
+            spent: category.totalSpent
+          });
+        } else if (type === 'Despesas Variáveis') {
+          variableBudget += categoryBudget;
+          variableSpent += category.totalSpent;
+          variableItems.push({
+            cat: categoryName,
+            subcat: `${category.subcategories.length} subcategorias`,
+            budget: categoryBudget,
+            spent: category.totalSpent
+          });
+        } else if (type === 'Movimentações (Despesas)') {
+          // Movimentações de despesas (Investimentos, Transferências, Saques)
+          investmentsBudget += categoryBudget;
+          investmentsSpent += category.totalSpent;
+          investmentItems.push({
+            cat: categoryName,
+            subcat: `${category.subcategories.length} subcategorias`,
+            budget: categoryBudget,
+            spent: category.totalSpent
+          });
+        }
+        // Movimentações (Receitas) não entram na Visão Geral pois são entradas de dinheiro
+      });
     });
 
     // Log detalhado das somas para "Visão Geral"
@@ -858,6 +894,8 @@ export default function Budgets() {
                       ? '#3F51B5'
                       : costType === 'Despesas Variáveis'
                       ? '#FF9800'
+                      : costType === 'Movimentações (Despesas)'
+                      ? '#F44336'
                       : '#4CAF50',
                 }}
               >
@@ -865,6 +903,11 @@ export default function Budgets() {
                 <span className="text-xs sm:text-sm font-medium ml-2 sm:ml-3 text-gray-500">
                   ({Object.keys(categoryData[costType]).length} Categorias Principais)
                 </span>
+                {costType === 'Movimentações (Receitas)' && (
+                  <span className="block text-xs font-normal text-gray-500 mt-1">
+                    💡 Receitas não têm budget pois são entradas de dinheiro
+                  </span>
+                )}
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -888,12 +931,40 @@ export default function Budgets() {
                         <ArrowRight className="w-4 h-4 text-gray-400" />
                       </div>
 
-                      <BudgetBar totalBudget={data.totalBudget} totalSpent={data.totalSpent} />
+                      {/* Mostrar BudgetBar apenas para categorias que não são Receitas */}
+                      {costType !== 'Movimentações (Receitas)' ? (
+                        <BudgetBar totalBudget={data.totalBudget} totalSpent={data.totalSpent} />
+                      ) : (
+                        <div className="mt-3 mb-2">
+                          <div className="text-sm font-bold text-green-600">
+                            💰 R$ {data.totalSpent.toFixed(2).replace('.', ',')}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Total de receitas no mês</p>
+                        </div>
+                      )}
 
                       <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className="text-xs text-gray-500">
-                          {data.subcategories.length} subcategoria{data.subcategories.length !== 1 ? 's' : ''}
+                        <p className="text-xs font-semibold text-gray-700 mb-2">
+                          {data.subcategories.length} subcategoria{data.subcategories.length !== 1 ? 's' : ''}:
                         </p>
+                        <ul className="text-[10px] text-gray-500 space-y-1">
+                          {data.subcategories.slice(0, 3).map((sub, idx) => (
+                            <li key={idx} className="flex items-start gap-1">
+                              <span className="text-gray-400">•</span>
+                              <span className="flex-1">
+                                {sub.subcategory}
+                                <span className="text-gray-400 italic ml-1">
+                                  ({sub.note.split('.')[0]})
+                                </span>
+                              </span>
+                            </li>
+                          ))}
+                          {data.subcategories.length > 3 && (
+                            <li className="text-gray-400 italic">
+                              +{data.subcategories.length - 3} mais...
+                            </li>
+                          )}
+                        </ul>
                       </div>
                     </Link>
                   );
