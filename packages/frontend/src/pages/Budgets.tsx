@@ -559,6 +559,14 @@ export default function Budgets() {
 
     let categoriesWithData = 0;
 
+    // Mapa para acumular totais por categoria principal
+    const categoryTotals: Record<string, {
+      type: string;
+      totalAllMonths: number;
+      currentMonthSpent: number;
+      monthlyBreakdown: Record<string, number>;
+    }> = {};
+
     Object.entries(subcategoryMap).forEach(([_key, data]) => {
       const monthlyValues = Object.values(data.monthlyTotals);
       const monthsWithData = monthlyValues.length;
@@ -577,6 +585,26 @@ export default function Budgets() {
         suggestedBudget: Math.round(avgMonthly),
         monthsWithData,
       };
+
+      // Acumular totais por categoria principal
+      if (!categoryTotals[data.rule.category]) {
+        categoryTotals[data.rule.category] = {
+          type: data.rule.type,
+          totalAllMonths: 0,
+          currentMonthSpent: 0,
+          monthlyBreakdown: {},
+        };
+      }
+
+      // Somar todos os valores mensais
+      Object.entries(data.monthlyTotals).forEach(([month, value]) => {
+        categoryTotals[data.rule.category].totalAllMonths += value;
+        if (!categoryTotals[data.rule.category].monthlyBreakdown[month]) {
+          categoryTotals[data.rule.category].monthlyBreakdown[month] = 0;
+        }
+        categoryTotals[data.rule.category].monthlyBreakdown[month] += value;
+      });
+      categoryTotals[data.rule.category].currentMonthSpent += data.currentMonthSpent;
 
       // Log apenas categorias com dados
       if (categoryData.currentSpent > 0 || categoryData.suggestedBudget > 0) {
@@ -606,6 +634,29 @@ export default function Budgets() {
         investmentsSpent += categoryData.currentSpent;
       }
     });
+
+    // Log detalhado de totais por categoria (todos os meses)
+    console.log(`\n📊 [BUDGETS] ═══════════════════════════════════════════════════`);
+    console.log(`📊 [BUDGETS] TOTAIS POR CATEGORIA - TODOS OS MESES`);
+    console.log(`📊 [BUDGETS] ═══════════════════════════════════════════════════`);
+
+    Object.entries(categoryTotals)
+      .sort((a, b) => b[1].totalAllMonths - a[1].totalAllMonths) // Ordenar por total decrescente
+      .forEach(([categoryName, totals]) => {
+        console.log(`\n  📌 ${categoryName} (${totals.type}):`);
+        console.log(`     💰 TOTAL ACUMULADO (todos os meses): R$ ${totals.totalAllMonths.toFixed(2)}`);
+        console.log(`     🗓️  Gasto no mês atual (${format(selectedMonth, 'MMM/yyyy', { locale: ptBR })}): R$ ${totals.currentMonthSpent.toFixed(2)}`);
+        console.log(`     📅 Breakdown mensal:`);
+
+        // Mostrar os valores mensais ordenados por data
+        const sortedMonths = Object.entries(totals.monthlyBreakdown).sort((a, b) => a[0].localeCompare(b[0]));
+        sortedMonths.forEach(([month, value]) => {
+          const monthDate = new Date(month + '-01');
+          const monthLabel = format(monthDate, 'MMM/yyyy', { locale: ptBR });
+          const isCurrent = month === currentMonth ? ' ← MÊS ATUAL' : '';
+          console.log(`        ${monthLabel}: R$ ${value.toFixed(2).padStart(12)}${isCurrent}`);
+        });
+      });
 
     console.log(`\n📈 [BUDGETS] ═══════════════════════════════════════════════════`);
     console.log(`📈 [BUDGETS] RESUMO FINANCEIRO - ${format(selectedMonth, 'MMMM yyyy', { locale: ptBR }).toUpperCase()}`);
@@ -637,6 +688,22 @@ export default function Budgets() {
   };
 
   const costTypes = Object.keys(categoryData);
+
+  // Log dos cards que serão renderizados
+  useEffect(() => {
+    if (!loading && Object.keys(categoryData).length > 0) {
+      console.log('\n🎴 [BUDGETS] Cards que serão renderizados:');
+      Object.entries(categoryData).forEach(([costType, categories]) => {
+        console.log(`\n  📦 ${costType}:`);
+        Object.entries(categories).forEach(([categoryName, data]) => {
+          const categoryPath = `/app/budgets/${encodeURIComponent(categoryName)}`;
+          console.log(`     • ${categoryName} → ${categoryPath}`);
+          console.log(`       Gasto: R$ ${data.totalSpent.toFixed(2)} | Budget: R$ ${data.totalBudget.toFixed(2)}`);
+        });
+      });
+      console.log('\n');
+    }
+  }, [categoryData, loading]);
 
   const handlePreviousMonth = () => {
     setSelectedMonth(prev => subMonths(prev, 1));
