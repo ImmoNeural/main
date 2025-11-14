@@ -567,8 +567,6 @@ export default function Budgets() {
 
     console.log(`\n💡 [BUDGETS] Calculando médias e budgets sugeridos...`);
 
-    let categoriesWithData = 0;
-
     // Mapa para acumular totais por categoria principal
     const categoryTotals: Record<string, {
       type: string;
