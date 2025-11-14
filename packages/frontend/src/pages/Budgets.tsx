@@ -417,20 +417,37 @@ export default function Budgets() {
     txs.forEach((tx) => {
       const month = format(new Date(tx.date), 'yyyy-MM');
 
-      // Detectar receitas (valores positivos)
+      // Detectar receitas (valores positivos) - EXCLUIR transferências recebidas
       if (month === currentMonth && tx.amount > 0) {
-        console.log(`✅ [BUDGETS] Receita encontrada: ${tx.description || tx.merchant || 'Sem descrição'} - R$ ${tx.amount.toFixed(2)} - Categoria: ${tx.category || 'Sem categoria'}`);
-        salary += tx.amount;
-        salaryCount++;
+        // Ignorar transferências recebidas (PIX/TED recebidos não são salário)
+        const isTransferReceived = tx.category === 'Transferências' ||
+                                   tx.category === 'PIX' ||
+                                   tx.category === 'TED/DOC' ||
+                                   (tx.description && (
+                                     tx.description.includes('PIX RECEBIDO') ||
+                                     tx.description.includes('TED RECEBIDA') ||
+                                     tx.description.includes('TRANSFERENCIA RECEBIDA')
+                                   ));
+
+        if (!isTransferReceived) {
+          console.log(`✅ [BUDGETS] Receita/Salário: ${tx.description || tx.merchant || 'Sem descrição'} - R$ ${tx.amount.toFixed(2)} - Categoria: ${tx.category || 'Sem categoria'}`);
+          salary += tx.amount;
+          salaryCount++;
+        } else {
+          console.log(`⚠️ [BUDGETS] Transferência recebida IGNORADA (não conta como salário): ${tx.description || tx.merchant} - R$ ${tx.amount.toFixed(2)}`);
+        }
       }
     });
 
-    console.log(`💵 [BUDGETS] Total de receitas: ${salaryCount} transações = R$ ${salary.toFixed(2)}\n`);
+    console.log(`💵 [BUDGETS] Total de salário/receitas (SEM transferências): ${salaryCount} transações = R$ ${salary.toFixed(2)}\n`);
 
     // Processar despesas
     let processedExpenses = 0;
     let skippedNoCategory = 0;
     let skippedNoRule = 0;
+
+    // Para debug detalhado de transferências
+    const transferencias: { description: string; amount: number }[] = [];
 
     console.log(`💸 [BUDGETS] Processando despesas do mês ${currentMonth}...`);
 
@@ -470,7 +487,12 @@ export default function Budgets() {
             subcategoryMap[key].currentMonthSpent += amount;
             processedExpenses++;
 
-            if (processedExpenses <= 10) { // Mostrar as primeiras 10 despesas
+            // Coletar transferências para log detalhado
+            if (matchingRule.category === 'Transferências' || matchingRule.category === 'PIX' || matchingRule.category === 'TED/DOC') {
+              transferencias.push({ description: tx.description || tx.merchant || 'Sem descrição', amount });
+            }
+
+            if (processedExpenses <= 10) { // Mostrar as primeiras 10 despesas gerais
               console.log(`  📌 [${matchingRule.category}] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
             }
           }
@@ -482,6 +504,18 @@ export default function Budgets() {
     console.log(`  ✅ Despesas processadas: ${processedExpenses}`);
     console.log(`  ⚠️ Sem categoria: ${skippedNoCategory}`);
     console.log(`  ⚠️ Categoria não mapeada: ${skippedNoRule}`);
+
+    // Log detalhado de transferências
+    if (transferencias.length > 0) {
+      console.log(`\n💸 [BUDGETS] DETALHAMENTO DE TRANSFERÊNCIAS (${transferencias.length} transações):`);
+      const totalTransferencias = transferencias.reduce((sum, t) => sum + t.amount, 0);
+      transferencias.forEach((t, idx) => {
+        console.log(`  ${idx + 1}. R$ ${t.amount.toFixed(2).padStart(12)} - ${t.description}`);
+      });
+      console.log(`  ═══════════════════════════════════════════════════`);
+      console.log(`  📊 TOTAL TRANSFERÊNCIAS: R$ ${totalTransferencias.toFixed(2)}`);
+    }
+
     console.log(``);
 
     // Calcular médias e montar estrutura final
@@ -541,12 +575,20 @@ export default function Budgets() {
       }
     });
 
-    console.log(`\n📈 [BUDGETS] RESUMO FINANCEIRO:`);
-    console.log(`  💰 Salário/Receitas: R$ ${salary.toFixed(2)}`);
-    console.log(`  🔧 Despesas Fixas: Budget R$ ${fixedBudget.toFixed(2)} | Gasto R$ ${fixedSpent.toFixed(2)}`);
-    console.log(`  🛒 Despesas Variáveis: Budget R$ ${variableBudget.toFixed(2)} | Gasto R$ ${variableSpent.toFixed(2)}`);
-    console.log(`  📈 Investimentos: Budget R$ ${investmentsBudget.toFixed(2)} | Gasto R$ ${investmentsSpent.toFixed(2)}`);
+    console.log(`\n📈 [BUDGETS] ═══════════════════════════════════════════════════`);
+    console.log(`📈 [BUDGETS] RESUMO FINANCEIRO - ${format(selectedMonth, 'MMMM yyyy', { locale: ptBR }).toUpperCase()}`);
+    console.log(`📈 [BUDGETS] ═══════════════════════════════════════════════════`);
+    console.log(`  💰 Salário/Receitas (SEM transferências): R$ ${salary.toFixed(2)}`);
+    console.log(`  ───────────────────────────────────────────────────────────`);
+    console.log(`  🔧 Despesas Fixas:`);
+    console.log(`     Budget: R$ ${fixedBudget.toFixed(2)} | Gasto: R$ ${fixedSpent.toFixed(2)} | Diferença: R$ ${(fixedBudget - fixedSpent).toFixed(2)}`);
+    console.log(`  🛒 Despesas Variáveis:`);
+    console.log(`     Budget: R$ ${variableBudget.toFixed(2)} | Gasto: R$ ${variableSpent.toFixed(2)} | Diferença: R$ ${(variableBudget - variableSpent).toFixed(2)}`);
+    console.log(`  📈 Investimentos/Movimentações:`);
+    console.log(`     Budget: R$ ${investmentsBudget.toFixed(2)} | Gasto: R$ ${investmentsSpent.toFixed(2)} | Diferença: R$ ${(investmentsBudget - investmentsSpent).toFixed(2)}`);
+    console.log(`  ───────────────────────────────────────────────────────────`);
     console.log(`  💵 Saldo Disponível: R$ ${(salary - fixedSpent - variableSpent - investmentsSpent).toFixed(2)}`);
+    console.log(`📈 [BUDGETS] ═══════════════════════════════════════════════════`);
     console.log(`\n✅ [BUDGETS] Processamento concluído!\n`);
 
     setMonthSummary({
