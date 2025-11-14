@@ -26,11 +26,15 @@ interface CategoryRule {
 
 // 🇧🇷 BASE DE CONHECIMENTO - MERCADO BRASILEIRO
 const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
-  // 🛒 SUPERMERCADOS E ALIMENTAÇÃO
+  // 🛒 SUPERMERCADOS E ALIMENTAÇÃO (Merge: Alimentação/Supermercado)
   {
     category: 'Supermercado',
     subcategory: 'Compras de Mercado',
-    keywords: ['mercado', 'supermercado', 'hipermercado', 'atacado', 'hortifruit', 'sacolao', 'feira'],
+    keywords: [
+      'mercado', 'supermercado', 'hipermercado', 'atacado', 'hortifruit', 'sacolao', 'feira',
+      // Adicionadas do JSON (Alimentação/Supermercado)
+      'supermerc', 'hiper', 'compras'
+    ],
     brands: [
       // Grandes Redes
       'coop', 'cooperativa', 'pao de acucar', 'paodeacucar', 'extra', 'carrefour', 'walmart',
@@ -42,17 +46,23 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       'fort atacadista', 'atacadao', 'assai', 'maxxi atacado', 'makro',
       // Conveniência
       'am pm', 'ampm', 'oxxo', 'br mania', 'select',
+      // Adicionadas do JSON (Alimentação/Supermercado)
+      'zaffari', 'dia %', 'dia supermercado'
     ],
     icon: '🛒',
     color: '#4CAF50',
     priority: 8,
   },
 
-  // 🍕 RESTAURANTES E DELIVERY
+  // 🍕 RESTAURANTES E DELIVERY (Merge: Alimentação/Restaurantes)
   {
     category: 'Alimentação',
     subcategory: 'Restaurantes e Delivery',
-    keywords: ['restaurante', 'lanchonete', 'pizzaria', 'hamburgueria', 'delivery', 'ifood', 'rappi'],
+    keywords: [
+      'restaurante', 'lanchonete', 'pizzaria', 'hamburgueria', 'delivery', 'ifood', 'rappi',
+      // Adicionadas do JSON (Alimentação/Restaurantes)
+      'rest', 'lanch', 'bar', 'comida', 'food', 'takeaway'
+    ],
     brands: [
       // Delivery
       'ifood', 'rappi', 'uber eats', 'ubereats', '99 food', '99food',
@@ -65,6 +75,8 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       'starbucks', 'coffee', 'cafe', 'rei do mate', 'ofner', 'kopenhagen',
       // Padarias
       'padaria', 'panificadora', 'santa massa', 'bella paulista',
+      // Adicionadas do JSON (Alimentação/Restaurantes)
+      'mc', 'mcdonald\'s', 'bk', 'ifd', 'ifd*',
     ],
     icon: '🍕',
     color: '#FF5722',
@@ -86,29 +98,41 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 9,
   },
 
-  // 🏥 SAÚDE - FARMÁCIAS
+  // 🏥 SAÚDE - FARMÁCIAS (Merge: Saúde/Farmácia)
   {
     category: 'Saúde',
     subcategory: 'Farmácias e Drogarias',
-    keywords: ['farmacia', 'drogaria', 'remedio', 'medicamento'],
+    keywords: [
+      'farmacia', 'drogaria', 'remedio', 'medicamento',
+      // Adicionadas do JSON (Saúde/Farmácia)
+      'farm', 'droga', 'medic', 'saúde'
+    ],
     brands: [
       'drogasil', 'droga raia', 'drogaraia', 'pacheco', 'sao paulo', 'saopaulofarma',
       'pague menos', 'paguemenos', 'ultrafarma', 'drogaria sp', 'farmasil',
       'panvel', 'nissei', 'araujo', 'popular', 'venancio',
+      // Adicionadas do JSON (Saúde/Farmácia)
+      'raia', 'dsp'
     ],
     icon: '💊',
     color: '#009688',
     priority: 8,
   },
 
-  // 🏥 SAÚDE - GERAL
+  // 🏥 SAÚDE - GERAL (Merge: Saúde/Plano de Saúde)
   {
     category: 'Saúde',
     subcategory: 'Médicos e Clínicas',
-    keywords: ['hospital', 'clinica', 'medico', 'consulta', 'exame', 'laboratorio'],
+    keywords: [
+      'hospital', 'clinica', 'medico', 'consulta', 'exame', 'laboratorio',
+      // Adicionadas do JSON (Saúde/Plano de Saúde)
+      'seguro', 'plano', 'med'
+    ],
     brands: [
       'hospital', 'einstein', 'sirio', 'sirio libanes', 'fleury', 'dasa', 'lavoisier',
       'hermes pardini', 'sabin', 'alta', 'labi', 'unico', 'unimed', 'amil',
+      // Adicionadas do JSON (Saúde/Plano de Saúde)
+      'sulamerica', 'sul america'
     ],
     icon: '⚕️',
     color: '#009688',
@@ -130,11 +154,15 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
-  // 📺 STREAMING E ASSINATURAS (PRIORIDADE MÁXIMA para não confundir com "débito")
+  // 📺 STREAMING E ASSINATURAS (PRIORIDADE MÁXIMA) (Merge: Entretenimento/Streaming)
   {
     category: 'Entretenimento',
     subcategory: 'Streaming e Assinaturas',
-    keywords: ['streaming', 'assinatura', 'subscription'],
+    keywords: [
+      'streaming', 'assinatura', 'subscription',
+      // Adicionadas do JSON (Entretenimento/Streaming)
+      'stream', 'mensal', 'tv'
+    ],
     brands: [
       'netflix', 'netflix.com', 'spotify', 'amazon prime', 'prime video', 'disney', 'disney+',
       'globoplay', 'hbo max', 'paramount', 'apple tv', 'youtube premium',
@@ -146,11 +174,15 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 10, // PRIORIDADE MÁXIMA
   },
 
-  // 🚗 TRANSPORTE - APPS
+  // 🚗 TRANSPORTE - APPS (Merge: Transporte/Mobilidade)
   {
     category: 'Transporte',
     subcategory: 'Apps de Transporte',
-    keywords: ['corrida', 'trip', 'ride'],
+    keywords: [
+      'corrida', 'trip', 'ride',
+      // Adicionadas do JSON (Transporte/Mobilidade)
+      'taxi', 'transporte'
+    ],
     brands: [
       'uber', '99', '99 pop', '99pop', 'cabify', 'indriver', 'lady driver',
       'vem de van', 'blablacar',
@@ -160,14 +192,20 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 9,
   },
 
-  // ⛽ TRANSPORTE - COMBUSTÍVEL
+  // ⛽ TRANSPORTE - COMBUSTÍVEL (Merge: Transporte/Combustível)
   {
     category: 'Transporte',
     subcategory: 'Combustível e Pedágio',
-    keywords: ['posto', 'combustivel', 'gasolina', 'etanol', 'diesel', 'pedagio', 'gnv'],
+    keywords: [
+      'posto', 'combustivel', 'gasolina', 'etanol', 'diesel', 'pedagio', 'gnv',
+      // Adicionadas do JSON (Transporte/Combustível)
+      'combust'
+    ],
     brands: [
       'shell', 'ipiranga', 'petrobras', 'br', 'ale', 'raizen', 'texaco',
       'sem parar', 'veloe', 'conectcar', 'taggy', 'greenpass',
+      // Adicionadas do JSON (Transporte/Combustível)
+      'br mania' // Já presente em Supermercado/Convenience, mas bom reforçar aqui.
     ],
     icon: '⛽',
     color: '#FF9800',
@@ -278,54 +316,76 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
-  // 📱 TELEFONIA E INTERNET
+  // 📱 TELEFONIA E INTERNET (Merge: Comunicação/Internet e Comunicação/Telefone)
   {
     category: 'Contas',
     subcategory: 'Telefonia e Internet',
-    keywords: ['telefone', 'celular', 'internet', 'banda larga', 'fibra', 'tv', 'cabo'],
+    keywords: [
+      'telefone', 'celular', 'internet', 'banda larga', 'fibra', 'tv', 'cabo',
+      // Adicionadas do JSON (Comunicação)
+      'wifi', 'recarga', 'pre-pago', 'pre'
+    ],
     brands: [
       'vivo', 'tim', 'claro', 'oi', 'nextel', 'algar', 'sky', 'net',
       'virtua', 'unifique', 'copel', 'gvt', 'telefonica',
+      // Adicionadas do JSON (Comunicação)
+      'vivo fibra', 'vfibra', 'claro net', 'net virtua', 'oi fibra', 'tim live'
     ],
     icon: '📱',
     color: '#00BCD4',
     priority: 8,
   },
 
-  // ⚡ CONTAS - UTILIDADES
+  // ⚡ CONTAS - UTILIDADES (Merge: Moradia/Energia Elétrica e Moradia/Água)
   {
     category: 'Contas',
     subcategory: 'Energia e Água',
-    keywords: ['energia', 'luz', 'eletricidade', 'agua', 'saneamento', 'esgoto'],
+    keywords: [
+      'energia', 'luz', 'eletricidade', 'agua', 'saneamento', 'esgoto',
+      // Adicionadas do JSON (Moradia)
+      'eletric', 'sanear'
+    ],
     brands: [
       'cpfl', 'enel', 'cemig', 'light', 'copel', 'celpe', 'coelba',
       'sabesp', 'cedae', 'sanepar', 'caesb', 'embasa', 'compesa',
+      // Adicionadas do JSON (Moradia)
+      'energisa', 'copasa'
     ],
     icon: '⚡',
     color: '#FFC107',
     priority: 8,
   },
 
-  // 📚 LIVRARIAS E PAPELARIAS
+  // 📚 LIVRARIAS E PAPELARIAS (Merge: Educação/Livros)
   {
     category: 'Educação',
     subcategory: 'Livrarias e Papelarias',
-    keywords: ['livraria', 'livros', 'papelaria', 'leitura', 'editora', 'livreiro'],
+    keywords: [
+      'livraria', 'livros', 'papelaria', 'leitura', 'editora', 'livreiro',
+      // Adicionadas do JSON (Educação/Livros)
+      'ebook'
+    ],
     brands: [
       'livraria', 'saraiva', 'cultura', 'fnac', 'travessa', 'curitiba',
       'leitura', 'nobel', 'payot', 'argumento', 'megastore', 'da vila',
       'kalunga', 'papelaria', 'loja do livro', 'amazon livros', 'estante virtual',
+      // Adicionadas do JSON (Educação/Livros)
+      'ebooks'
     ],
     icon: '📚',
     color: '#5C6BC0',
     priority: 9, // Alta prioridade para evitar conflitos
   },
 
-  // 🏫 EDUCAÇÃO
+  // 🏫 EDUCAÇÃO (Merge: Educação/Cursos)
   {
     category: 'Educação',
     subcategory: 'Cursos e Ensino',
-    keywords: ['escola', 'faculdade', 'universidade', 'curso', 'aula', 'ensino', 'matricula'],
+    keywords: [
+      'escola', 'faculdade', 'universidade', 'curso', 'aula', 'ensino', 'matricula',
+      // Adicionadas do JSON (Educação/Cursos)
+      'ead', 'treinamento'
+    ],
     brands: [
       'estacio', 'unip', 'anhanguera', 'unopar', 'usp', 'unicamp',
       'kumon', 'ccaa', 'wizard', 'fisk', 'cultura inglesa', 'udemy',
@@ -715,15 +775,6 @@ class CategorizationService {
         });
       }
     }
-
-    // Adicionar "Definir Categoria" (categoria especial para não categorizadas)
-    // NÃO incluir na lista para o usuário escolher, apenas para identificar transações pendentes
-    // categories.set('Definir Categoria', {
-    //   category: 'Definir Categoria',
-    //   subcategory: 'Aguardando Classificação',
-    //   icon: '❓',
-    //   color: '#FFC1E3',
-    // });
 
     // Ordenar alfabeticamente
     return Array.from(categories.values()).sort((a, b) =>
