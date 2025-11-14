@@ -738,7 +738,7 @@ export default function Budgets() {
                       to={categoryPath}
                       className="block bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 transform hover:scale-[1.02] transition duration-300 cursor-pointer hover:shadow-2xl"
                       style={{ borderTopColor: data.color }}
-                      onClick={(e) => {
+                      onClick={() => {
                         console.log(`🖱️ [BUDGETS] Card clicado: ${categoryName} -> ${categoryPath}`);
                       }}
                     >
