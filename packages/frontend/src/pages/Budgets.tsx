@@ -1,8 +1,11 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { transactionApi } from '../services/api';
+import type { Transaction } from '../types';
+import { startOfMonth, subMonths, format } from 'date-fns';
+import { ArrowRight, TrendingUp } from 'lucide-react';
 
 // --- BASE DE REGRAS COMPLETA EXTRAÍDA DE categorization_service.ts ---
-// Inclui todas as 33 regras de subcategoria
-
 interface CategoryRule {
   type: string;
   category: string;
@@ -41,127 +44,303 @@ const ALL_CATEGORY_RULES: CategoryRule[] = [
   { type: 'Despesas Fixas', category: 'Impostos e Taxas', subcategory: 'IOF e Impostos', icon: '🏦', color: '#F44336', note: 'Cobrança de impostos e taxas específicas (IOF).' },
   { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Odontologia', icon: '🦷', color: '#00BCD4', note: 'Mensalidades ou pagamentos recorrentes a dentistas/clínicas.' },
   { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Médicos e Clínicas', icon: '⚕️', color: '#009688', note: 'Hospitais, exames e consultas médicas (inclui Plano de Saúde recorrente).' },
-
-  // MOVIMENTAÇÕES (Receitas, Transferências, Investimentos e Saques)
-  { type: 'Movimentações', category: 'Salário', subcategory: 'Salário e Rendimentos', icon: '💰', color: '#4CAF50', note: 'Recebimento de salário, pró-labore ou depósitos de folha.' },
-  { type: 'Movimentações', category: 'Receitas', subcategory: 'Rendimentos de Investimentos', icon: '💹', color: '#4CAF50', note: 'Recebimento de juros, dividendos e resgates de títulos.' },
-  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Aplicações e Investimentos', icon: '📈', color: '#2196F3', note: 'Aplicações de débito em CDB, LCA, LCI, Tesouro Direto.' },
-  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Poupança e Capitalização', icon: '💰', color: '#4CAF50', note: 'Movimentações de poupança e títulos de capitalização.' },
-  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Corretoras e Fundos', icon: '📈', color: '#2196F3', note: 'Transações em corretoras (XP, Rico, Clear) e fundos.' },
-  { type: 'Movimentações', category: 'Transferências', subcategory: 'PIX', icon: '💸', color: '#00C853', note: 'Transações instantâneas enviadas ou recebidas.' },
-  { type: 'Movimentações', category: 'Transferências', subcategory: 'TED/DOC', icon: '💸', color: '#FF9800', note: 'Transferências tradicionais entre contas.' },
-  { type: 'Movimentações', category: 'Saques', subcategory: 'Saques em Dinheiro', icon: '💵', color: '#9E9E9E', note: 'Retiradas em caixas eletrônicos (ATM).' },
 ];
+
+interface CategoryData {
+  type: string;
+  category: string;
+  subcategory: string;
+  icon: string;
+  color: string;
+  note: string;
+  currentSpent: number;
+  suggestedBudget: number;
+  monthsWithData: number;
+}
 
 interface GroupedCategory {
   icon: string;
   color: string;
-  subcategories: CategoryRule[];
+  totalSpent: number;
+  totalBudget: number;
+  subcategories: CategoryData[];
 }
 
-interface GroupedByCostType {
-  [costType: string]: {
-    [category: string]: GroupedCategory;
-  };
-}
-
-/**
- * Agrupa as regras pela Categoria Principal dentro de cada Tipo de Despesa (Type)
- * Resultado: { 'Despesas Fixas': { 'Contas': { icon, color, subcategories: [] } }, ... }
- */
-const groupedByCostType: GroupedByCostType = ALL_CATEGORY_RULES.reduce((acc: GroupedByCostType, rule) => {
-  const costType = rule.type;
-  const mainCategory = rule.category;
-
-  if (!acc[costType]) {
-    acc[costType] = {};
+// Componente de Barra de Budget
+const BudgetBar: React.FC<{ totalBudget: number; totalSpent: number; compact?: boolean }> = ({ totalBudget, totalSpent, compact = false }) => {
+  if (totalBudget === 0) {
+    return (
+      <div className="mt-3 mb-2">
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="text-gray-400">Sem budget definido</span>
+          <span className="text-gray-600 font-semibold">
+            Gasto: R$ {totalSpent.toFixed(2).replace('.', ',')}
+          </span>
+        </div>
+        <div className="h-2 rounded-full bg-gray-100"></div>
+      </div>
+    );
   }
 
-  if (!acc[costType][mainCategory]) {
-    acc[costType][mainCategory] = {
-      // Pega o ícone e a cor do primeiro item da categoria como referência para o card
-      icon: rule.icon,
-      color: rule.color,
-      subcategories: [],
-    };
-  }
-  acc[costType][mainCategory].subcategories.push(rule);
-  return acc;
-}, {});
+  const isExceeded = totalSpent > totalBudget;
+  const percentage = Math.min((totalSpent / totalBudget) * 100, 100);
+  const excessAmount = Math.max(0, totalSpent - totalBudget);
+  const remainingAmount = Math.max(0, totalBudget - totalSpent);
 
-// Componente auxiliar para renderizar cada subcategoria
-const SubcategoryItem: React.FC<{ rule: CategoryRule }> = ({ rule }) => (
-  <li className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-100 transition">
-    {/* Ícone da Subcategoria (usando a cor de referência da Regra) */}
-    <div
-      className="w-8 h-8 flex items-center justify-center rounded-full text-lg flex-shrink-0"
-      style={{
-        backgroundColor: rule.color + '20',
-        color: rule.color,
-        // Efeito de sombra interna sutil
-        boxShadow: `inset 0 1px 3px 0 ${rule.color}30`
-      }}
-    >
-      {rule.icon}
-    </div>
-    <div className="flex-1">
-      <span className="text-sm font-semibold text-gray-900 block">{rule.subcategory}</span>
-      <p className="text-xs text-gray-500 mt-0.5">{rule.note}</p>
-    </div>
-  </li>
-);
+  const barColor = isExceeded ? '#FF9800' : '#4CAF50';
+  const statusText = isExceeded
+    ? `Excedido R$ ${excessAmount.toFixed(2).replace('.', ',')}`
+    : `R$ ${remainingAmount.toFixed(2).replace('.', ',')} disponível`;
+  const textColor = isExceeded ? '#FF9800' : '#4CAF50';
+  const fillWidth = isExceeded ? '100%' : `${percentage}%`;
 
-// Componente principal
+  return (
+    <div className={compact ? "mt-2 mb-1" : "mt-3 mb-2"}>
+      <div className={`flex justify-between ${compact ? 'text-[10px]' : 'text-xs'} font-bold mb-1`}>
+        <span style={{ color: textColor }}>{statusText}</span>
+        <span className="text-gray-500">
+          Budget: R$ {totalBudget.toFixed(2).replace('.', ',')}
+        </span>
+      </div>
+
+      <div className="relative h-2 rounded-full bg-gray-200 overflow-hidden">
+        <div
+          className="absolute h-full rounded-full transition-all duration-500"
+          style={{
+            width: fillWidth,
+            backgroundColor: barColor,
+            boxShadow: isExceeded ? '0 0 8px rgba(255, 152, 0, 0.7)' : 'none',
+          }}
+        ></div>
+      </div>
+
+      {!compact && (
+        <div className="text-[10px] text-gray-400 mt-1">
+          Gasto: R$ {totalSpent.toFixed(2).replace('.', ',')} {totalBudget > 0 && `(${percentage.toFixed(0)}%)`}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Budgets() {
-  const costTypes = Object.keys(groupedByCostType);
+  const [loading, setLoading] = useState(true);
+  const [categoryData, setCategoryData] = useState<Record<string, Record<string, GroupedCategory>>>({});
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+    setLoading(true);
+    try {
+      // Buscar transações dos últimos 12 meses
+      const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
+      const response = await transactionApi.getTransactions({
+        start_date: format(twelveMonthsAgo, 'yyyy-MM-dd'),
+        limit: 10000,
+      });
+
+      const txs = response.data.transactions;
+
+      // Processar transações e calcular médias
+      processTransactions(txs);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processTransactions = (txs: Transaction[]) => {
+    const grouped: Record<string, Record<string, GroupedCategory>> = {};
+
+    // Inicializar estrutura com todas as categorias
+    ALL_CATEGORY_RULES.forEach((rule) => {
+      if (!grouped[rule.type]) {
+        grouped[rule.type] = {};
+      }
+      if (!grouped[rule.type][rule.category]) {
+        grouped[rule.type][rule.category] = {
+          icon: rule.icon,
+          color: rule.color,
+          totalSpent: 0,
+          totalBudget: 0,
+          subcategories: [],
+        };
+      }
+    });
+
+    // Agrupar transações por categoria/subcategoria e calcular gastos
+    const subcategoryMap: Record<string, {
+      monthlyTotals: Record<string, number>;
+      rule: CategoryRule;
+      currentMonthSpent: number;
+    }> = {};
+
+    ALL_CATEGORY_RULES.forEach((rule) => {
+      const key = `${rule.category}::${rule.subcategory}`;
+      subcategoryMap[key] = {
+        monthlyTotals: {},
+        rule,
+        currentMonthSpent: 0,
+      };
+    });
+
+    const currentMonth = format(new Date(), 'yyyy-MM');
+
+    txs.forEach((tx) => {
+      // Ignorar receitas (valores positivos) para budgets
+      if (tx.amount >= 0) return;
+      if (!tx.category) return;
+
+      // Buscar a subcategoria correspondente nas regras
+      const matchingRule = ALL_CATEGORY_RULES.find(
+        rule => rule.category === tx.category
+      );
+
+      if (matchingRule) {
+        const key = `${matchingRule.category}::${matchingRule.subcategory}`;
+        if (subcategoryMap[key]) {
+          const month = format(new Date(tx.date), 'yyyy-MM');
+          const amount = Math.abs(tx.amount);
+
+          if (!subcategoryMap[key].monthlyTotals[month]) {
+            subcategoryMap[key].monthlyTotals[month] = 0;
+          }
+          subcategoryMap[key].monthlyTotals[month] += amount;
+
+          // Gasto do mês atual
+          if (month === currentMonth) {
+            subcategoryMap[key].currentMonthSpent += amount;
+          }
+        }
+      }
+    });
+
+    // Calcular médias e montar estrutura final
+    Object.entries(subcategoryMap).forEach(([_key, data]) => {
+      const monthlyValues = Object.values(data.monthlyTotals);
+      const monthsWithData = monthlyValues.length;
+      const avgMonthly = monthsWithData > 0
+        ? monthlyValues.reduce((sum, val) => sum + val, 0) / monthsWithData
+        : 0;
+
+      const categoryData: CategoryData = {
+        type: data.rule.type,
+        category: data.rule.category,
+        subcategory: data.rule.subcategory,
+        icon: data.rule.icon,
+        color: data.rule.color,
+        note: data.rule.note,
+        currentSpent: data.currentMonthSpent,
+        suggestedBudget: Math.round(avgMonthly),
+        monthsWithData,
+      };
+
+      // Adicionar à estrutura agrupada
+      if (grouped[data.rule.type] && grouped[data.rule.type][data.rule.category]) {
+        grouped[data.rule.type][data.rule.category].subcategories.push(categoryData);
+        grouped[data.rule.type][data.rule.category].totalSpent += categoryData.currentSpent;
+        grouped[data.rule.type][data.rule.category].totalBudget += categoryData.suggestedBudget;
+      }
+    });
+
+    setCategoryData(grouped);
+  };
+
+  const costTypes = Object.keys(categoryData).filter(type => type !== 'Movimentações');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando budgets...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 bg-gray-50 min-h-screen pb-20 lg:pb-6">
-      <header className="max-w-6xl mx-auto mb-6 sm:mb-8 text-center">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">🗺️ Mapa Completo de Categorias Financeiras</h1>
-        <p className="text-sm sm:text-md text-gray-500 mt-2">Visão geral das {ALL_CATEGORY_RULES.length} subcategorias agrupadas por Tipo de Custo e Categoria Principal.</p>
+      <header className="max-w-6xl mx-auto mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
+          🎯 Budgets por Categoria
+        </h1>
+        <p className="text-sm sm:text-base text-gray-500 mt-2">
+          Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
+        </p>
       </header>
 
       <main className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
-        {costTypes.map(costType => (
+        {costTypes.map((costType) => (
           <section key={costType}>
             <h2
               className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 pb-2 border-b-2 text-gray-700"
-              style={{ borderColor: costType === 'Despesas Fixas' ? '#3F51B5' : costType === 'Despesas Variáveis' ? '#FF9800' : '#4CAF50' }}
+              style={{
+                borderColor:
+                  costType === 'Despesas Fixas'
+                    ? '#3F51B5'
+                    : costType === 'Despesas Variáveis'
+                    ? '#FF9800'
+                    : '#4CAF50',
+              }}
             >
               {costType}
               <span className="text-xs sm:text-sm font-medium ml-2 sm:ml-3 text-gray-500">
-                ({Object.keys(groupedByCostType[costType]).length} Categorias Principais)
+                ({Object.keys(categoryData[costType]).length} Categorias Principais)
               </span>
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {Object.entries(groupedByCostType[costType]).map(([categoryName, data]) => (
-                // Card de Categoria Principal
-                <div
+              {Object.entries(categoryData[costType]).map(([categoryName, data]) => (
+                <Link
                   key={categoryName}
-                  className="bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 flex flex-col transform hover:scale-[1.02] transition duration-300"
+                  to={`/app/budgets/${encodeURIComponent(categoryName)}`}
+                  className="bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 flex flex-col transform hover:scale-[1.02] transition duration-300 cursor-pointer"
                   style={{ borderTopColor: data.color }}
                 >
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3">
                     <span className="text-2xl sm:text-3xl">{data.icon}</span>
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 uppercase tracking-wider">{categoryName}</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 uppercase tracking-wider flex-1">
+                      {categoryName}
+                    </h3>
+                    <ArrowRight className="w-4 h-4 text-gray-400" />
                   </div>
 
-                  <ul className="space-y-2 sm:space-y-3 flex-grow divide-y divide-gray-100">
-                    {data.subcategories.map((rule) => (
-                      <SubcategoryItem key={rule.subcategory} rule={rule} />
-                    ))}
-                  </ul>
-                </div>
+                  <BudgetBar totalBudget={data.totalBudget} totalSpent={data.totalSpent} />
+
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">
+                      {data.subcategories.length} subcategoria{data.subcategories.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </Link>
               ))}
             </div>
           </section>
         ))}
+
+        {costTypes.length === 0 && (
+          <div className="text-center py-12">
+            <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum dado disponível</h3>
+            <p className="text-gray-500 mb-4">
+              Conecte sua conta bancária para começar a gerenciar seus budgets.
+            </p>
+            <Link
+              to="/app/connect-bank"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+            >
+              Conectar Banco <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </main>
 
       <footer className="max-w-6xl mx-auto mt-8 sm:mt-12 text-center text-xs text-gray-400">
-        <p>Base de Categorias - Guru do Dindin © | Total de {ALL_CATEGORY_RULES.length} Subcategorias Únicas.</p>
+        <p>Budgets calculados automaticamente com base no histórico de transações.</p>
       </footer>
     </div>
   );
