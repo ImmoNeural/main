@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { transactionApi } from '../services/api';
+import { transactionApi, budgetApi } from '../services/api';
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -347,6 +347,7 @@ export default function Budgets() {
   const [loading, setLoading] = useState(true);
   const [categoryData, setCategoryData] = useState<Record<string, Record<string, GroupedCategory>>>({});
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [customBudgets, setCustomBudgets] = useState<Record<string, number>>({});
   const [monthSummary, setMonthSummary] = useState<MonthSummary>({
     salary: 0,
     fixedBudget: 0,
@@ -358,8 +359,23 @@ export default function Budgets() {
   });
 
   useEffect(() => {
+    loadBudgets();
+  }, []);
+
+  useEffect(() => {
     loadTransactions();
-  }, [selectedMonth]);
+  }, [selectedMonth, customBudgets]);
+
+  const loadBudgets = async () => {
+    try {
+      const response = await budgetApi.getAllBudgets();
+      setCustomBudgets(response.data);
+      console.log(`📂 [BUDGETS] Budgets customizados carregados da API:`, response.data);
+    } catch (error) {
+      console.error(`❌ [BUDGETS] Erro ao carregar budgets:`, error);
+      setCustomBudgets({});
+    }
+  };
 
   const loadTransactions = async () => {
     setLoading(true);
@@ -580,8 +596,7 @@ export default function Budgets() {
     const variableItems: Array<{cat: string, subcat: string, budget: number, spent: number}> = [];
     const investmentItems: Array<{cat: string, subcat: string, budget: number, spent: number}> = [];
 
-    // Carregar budgets customizados do localStorage
-    const customBudgets = JSON.parse(localStorage.getItem('customBudgets') || '{}');
+    // Usar budgets customizados carregados do estado (já vem da API)
     const customBudgetCount = Object.keys(customBudgets).length;
 
     if (customBudgetCount > 0) {

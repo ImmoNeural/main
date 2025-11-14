@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.supabase.routes'; // ✅ Supabase Auth
 import bankRoutes from './routes/bank.routes';
 import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import budgetRoutes from './routes/budget.routes';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/budgets', budgetRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

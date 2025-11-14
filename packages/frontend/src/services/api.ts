@@ -177,4 +177,27 @@ export const dashboardApi = {
     }),
 };
 
+// Budget APIs
+export const budgetApi = {
+  // Get all budgets for the current user
+  getAllBudgets: () =>
+    api.get<Record<string, number>>('/budgets'),
+
+  // Get budget for a specific category
+  getBudget: (categoryName: string) =>
+    api.get<{ category_name: string; budget_value: number | null }>(`/budgets/${encodeURIComponent(categoryName)}`),
+
+  // Create or update a budget
+  saveBudget: (categoryName: string, budgetValue: number) =>
+    api.post('/budgets', { category_name: categoryName, budget_value: budgetValue }),
+
+  // Update an existing budget
+  updateBudget: (categoryName: string, budgetValue: number) =>
+    api.put(`/budgets/${encodeURIComponent(categoryName)}`, { budget_value: budgetValue }),
+
+  // Delete a budget (revert to default)
+  deleteBudget: (categoryName: string) =>
+    api.delete(`/budgets/${encodeURIComponent(categoryName)}`),
+};
+
 export default api;
