@@ -368,6 +368,10 @@ export default function Budgets() {
   };
 
   const processTransactions = (txs: Transaction[]) => {
+    console.log('🔍 [BUDGETS] Iniciando processamento de transações');
+    console.log(`📅 [BUDGETS] Mês selecionado: ${format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}`);
+    console.log(`📊 [BUDGETS] Total de transações: ${txs.length}`);
+
     const grouped: Record<string, Record<string, GroupedCategory>> = {};
 
     // Inicializar estrutura com todas as categorias
@@ -406,47 +410,88 @@ export default function Budgets() {
 
     // Calcular salário do mês selecionado
     let salary = 0;
+    let salaryCount = 0;
+
+    console.log(`\n💰 [BUDGETS] Procurando salários/receitas do mês ${currentMonth}...`);
+
     txs.forEach((tx) => {
       const month = format(new Date(tx.date), 'yyyy-MM');
-      if (month === currentMonth && tx.amount > 0 && tx.category === 'Salário') {
+
+      // Detectar receitas (valores positivos)
+      if (month === currentMonth && tx.amount > 0) {
+        console.log(`✅ [BUDGETS] Receita encontrada: ${tx.description || tx.merchant || 'Sem descrição'} - R$ ${tx.amount.toFixed(2)} - Categoria: ${tx.category || 'Sem categoria'}`);
         salary += tx.amount;
+        salaryCount++;
       }
     });
 
+    console.log(`💵 [BUDGETS] Total de receitas: ${salaryCount} transações = R$ ${salary.toFixed(2)}\n`);
+
+    // Processar despesas
+    let processedExpenses = 0;
+    let skippedNoCategory = 0;
+    let skippedNoRule = 0;
+
+    console.log(`💸 [BUDGETS] Processando despesas do mês ${currentMonth}...`);
+
     txs.forEach((tx) => {
-      if (!tx.category) return;
+      if (!tx.category) {
+        skippedNoCategory++;
+        return;
+      }
 
       // Buscar a subcategoria correspondente nas regras
       const matchingRule = ALL_CATEGORY_RULES.find(
         rule => rule.category === tx.category
       );
 
-      if (matchingRule) {
-        const key = `${matchingRule.category}::${matchingRule.subcategory}`;
-        if (subcategoryMap[key]) {
-          const month = format(new Date(tx.date), 'yyyy-MM');
-          const amount = Math.abs(tx.amount);
+      if (!matchingRule) {
+        if (skippedNoRule < 5) { // Mostrar apenas os primeiros 5
+          console.log(`⚠️ [BUDGETS] Categoria não encontrada nas regras: "${tx.category}" - ${tx.description || tx.merchant}`);
+        }
+        skippedNoRule++;
+        return;
+      }
 
-          // Somente despesas (valores negativos) para cálculo de budget
-          if (tx.amount < 0) {
-            if (!subcategoryMap[key].monthlyTotals[month]) {
-              subcategoryMap[key].monthlyTotals[month] = 0;
-            }
-            subcategoryMap[key].monthlyTotals[month] += amount;
+      const key = `${matchingRule.category}::${matchingRule.subcategory}`;
+      if (subcategoryMap[key]) {
+        const month = format(new Date(tx.date), 'yyyy-MM');
+        const amount = Math.abs(tx.amount);
 
-            // Gasto do mês selecionado
-            if (month === currentMonth) {
-              subcategoryMap[key].currentMonthSpent += amount;
+        // Somente despesas (valores negativos) para cálculo de budget
+        if (tx.amount < 0) {
+          if (!subcategoryMap[key].monthlyTotals[month]) {
+            subcategoryMap[key].monthlyTotals[month] = 0;
+          }
+          subcategoryMap[key].monthlyTotals[month] += amount;
+
+          // Gasto do mês selecionado
+          if (month === currentMonth) {
+            subcategoryMap[key].currentMonthSpent += amount;
+            processedExpenses++;
+
+            if (processedExpenses <= 10) { // Mostrar as primeiras 10 despesas
+              console.log(`  📌 [${matchingRule.category}] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
             }
           }
         }
       }
     });
 
+    console.log(`\n📊 [BUDGETS] Resumo do processamento:`);
+    console.log(`  ✅ Despesas processadas: ${processedExpenses}`);
+    console.log(`  ⚠️ Sem categoria: ${skippedNoCategory}`);
+    console.log(`  ⚠️ Categoria não mapeada: ${skippedNoRule}`);
+    console.log(``);
+
     // Calcular médias e montar estrutura final
     let fixedBudget = 0, fixedSpent = 0;
     let variableBudget = 0, variableSpent = 0;
     let investmentsBudget = 0, investmentsSpent = 0;
+
+    console.log(`\n💡 [BUDGETS] Calculando médias e budgets sugeridos...`);
+
+    let categoriesWithData = 0;
 
     Object.entries(subcategoryMap).forEach(([_key, data]) => {
       const monthlyValues = Object.values(data.monthlyTotals);
@@ -466,6 +511,14 @@ export default function Budgets() {
         suggestedBudget: Math.round(avgMonthly),
         monthsWithData,
       };
+
+      // Log apenas categorias com dados
+      if (categoryData.currentSpent > 0 || categoryData.suggestedBudget > 0) {
+        categoriesWithData++;
+        if (categoriesWithData <= 15) { // Mostrar as primeiras 15
+          console.log(`  📊 [${data.rule.type}] ${data.rule.category}: Gasto atual R$ ${categoryData.currentSpent.toFixed(2)} | Budget sugerido R$ ${categoryData.suggestedBudget.toFixed(2)} (média de ${monthsWithData} meses)`);
+        }
+      }
 
       // Adicionar à estrutura agrupada
       if (grouped[data.rule.type] && grouped[data.rule.type][data.rule.category]) {
@@ -487,6 +540,14 @@ export default function Budgets() {
         investmentsSpent += categoryData.currentSpent;
       }
     });
+
+    console.log(`\n📈 [BUDGETS] RESUMO FINANCEIRO:`);
+    console.log(`  💰 Salário/Receitas: R$ ${salary.toFixed(2)}`);
+    console.log(`  🔧 Despesas Fixas: Budget R$ ${fixedBudget.toFixed(2)} | Gasto R$ ${fixedSpent.toFixed(2)}`);
+    console.log(`  🛒 Despesas Variáveis: Budget R$ ${variableBudget.toFixed(2)} | Gasto R$ ${variableSpent.toFixed(2)}`);
+    console.log(`  📈 Investimentos: Budget R$ ${investmentsBudget.toFixed(2)} | Gasto R$ ${investmentsSpent.toFixed(2)}`);
+    console.log(`  💵 Saldo Disponível: R$ ${(salary - fixedSpent - variableSpent - investmentsSpent).toFixed(2)}`);
+    console.log(`\n✅ [BUDGETS] Processamento concluído!\n`);
 
     setMonthSummary({
       salary,
