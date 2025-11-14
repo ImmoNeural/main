@@ -572,12 +572,28 @@ export default function Budgets() {
     const variableItems: Array<{cat: string, subcat: string, budget: number, spent: number}> = [];
     const investmentItems: Array<{cat: string, subcat: string, budget: number, spent: number}> = [];
 
+    // Carregar budgets customizados do localStorage
+    const customBudgets = JSON.parse(localStorage.getItem('customBudgets') || '{}');
+    const customBudgetCount = Object.keys(customBudgets).length;
+
+    if (customBudgetCount > 0) {
+      console.log(`\n📝 [BUDGETS] ${customBudgetCount} budget(s) customizado(s) encontrado(s):`);
+      Object.entries(customBudgets).forEach(([cat, value]) => {
+        console.log(`     • ${cat}: R$ ${(value as number).toFixed(2)}`);
+      });
+      console.log('');
+    }
+
     Object.entries(subcategoryMap).forEach(([_key, data]) => {
       const monthlyValues = Object.values(data.monthlyTotals);
       const monthsWithData = monthlyValues.length;
       const avgMonthly = monthsWithData > 0
         ? monthlyValues.reduce((sum, val) => sum + val, 0) / monthsWithData
         : 0;
+
+      // Verificar se existe budget customizado para esta categoria
+      const customBudget = customBudgets[data.rule.category];
+      const finalBudget = customBudget || Math.round(avgMonthly);
 
       const categoryData: CategoryData = {
         type: data.rule.type,
@@ -587,7 +603,7 @@ export default function Budgets() {
         color: data.rule.color,
         note: data.rule.note,
         currentSpent: data.currentMonthSpent,
-        suggestedBudget: Math.round(avgMonthly),
+        suggestedBudget: finalBudget,
         monthsWithData,
       };
 
@@ -615,7 +631,8 @@ export default function Budgets() {
       if (categoryData.currentSpent > 0 || categoryData.suggestedBudget > 0) {
         categoriesWithData++;
         if (categoriesWithData <= 15) { // Mostrar as primeiras 15
-          console.log(`  📊 [${data.rule.type}] ${data.rule.category}: Gasto atual R$ ${categoryData.currentSpent.toFixed(2)} | Budget sugerido R$ ${categoryData.suggestedBudget.toFixed(2)} (média de ${monthsWithData} meses)`);
+          const budgetSource = customBudget ? '✏️ CUSTOMIZADO' : `média de ${monthsWithData} meses`;
+          console.log(`  📊 [${data.rule.type}] ${data.rule.category}: Gasto atual R$ ${categoryData.currentSpent.toFixed(2)} | Budget R$ ${categoryData.suggestedBudget.toFixed(2)} (${budgetSource})`);
         }
       }
 

@@ -172,11 +172,22 @@ export default function BudgetDetails() {
         ? monthlySpent.reduce((sum, val) => sum + val, 0) / monthlySpent.length
         : 0;
 
-      setSuggestedBudget(Math.round(avgBudget));
+      // Verificar se existe budget customizado salvo
+      const categoryKey = decodeURIComponent(categoryName!);
+      const customBudgets = JSON.parse(localStorage.getItem('customBudgets') || '{}');
+      const finalBudget = customBudgets[categoryKey] || Math.round(avgBudget);
+
+      if (customBudgets[categoryKey]) {
+        console.log(`📂 [BUDGET DETAILS] Budget customizado carregado para ${categoryKey}: R$ ${customBudgets[categoryKey].toFixed(2)} (média calculada: R$ ${Math.round(avgBudget).toFixed(2)})`);
+      } else {
+        console.log(`📊 [BUDGET DETAILS] Usando média calculada para ${categoryKey}: R$ ${Math.round(avgBudget).toFixed(2)}`);
+      }
+
+      setSuggestedBudget(finalBudget);
 
       // Aplicar budget a todos os meses
       Object.keys(monthly).forEach(month => {
-        monthly[month].budget = Math.round(avgBudget);
+        monthly[month].budget = finalBudget;
       });
 
       setMonthlyData(Object.values(monthly).sort((a, b) => a.month.localeCompare(b.month)));
@@ -194,6 +205,14 @@ export default function BudgetDetails() {
 
   const handleBudgetSave = () => {
     if (customBudget !== null && customBudget > 0) {
+      // Salvar no localStorage
+      const categoryKey = decodeURIComponent(categoryName!);
+      const customBudgets = JSON.parse(localStorage.getItem('customBudgets') || '{}');
+      customBudgets[categoryKey] = customBudget;
+      localStorage.setItem('customBudgets', JSON.stringify(customBudgets));
+
+      console.log(`💾 [BUDGET DETAILS] Budget customizado salvo para ${categoryKey}: R$ ${customBudget.toFixed(2)}`);
+
       setSuggestedBudget(customBudget);
       // Atualizar budget em todos os meses
       setMonthlyData(prev => prev.map(m => ({ ...m, budget: customBudget })));
@@ -215,6 +234,9 @@ export default function BudgetDetails() {
   if (!categoryInfo) {
     return null;
   }
+
+  // Carregar budgets customizados do localStorage
+  const customBudgets = JSON.parse(localStorage.getItem('customBudgets') || '{}');
 
   const currentMonthData = monthlyData[monthlyData.length - 1] || { spent: 0, budget: suggestedBudget, month: '', monthLabel: '', subcategories: {} };
   const isExceeded = currentMonthData.spent > currentMonthData.budget;
@@ -293,7 +315,9 @@ export default function BudgetDetails() {
                     R$ {suggestedBudget.toFixed(2).replace('.', ',')}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Sugerido: média dos últimos meses
+                    {customBudgets[decodeURIComponent(categoryName!)]
+                      ? '✏️ Personalizado por você'
+                      : 'Calculado: média dos últimos meses'}
                   </p>
                 </div>
                 <button
