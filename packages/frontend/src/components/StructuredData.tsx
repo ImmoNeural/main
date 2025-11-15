@@ -1,10 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-interface StructuredDataProps {
-  type?: 'Organization' | 'WebApplication' | 'Article';
-}
-
-const StructuredData = ({ type = 'WebApplication' }: StructuredDataProps) => {
+const StructuredData = () => {
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
