@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authMiddleware } from '../middleware/auth.middleware';
 import { stripeService } from '../services/stripe.service';
 import { supabase } from '../config/supabase';
 
@@ -33,9 +33,9 @@ type PlanType = keyof typeof PLAN_CONFIGS;
  * GET /api/subscriptions/current
  * Buscar assinatura atual do usuário
  */
-router.get('/current', authenticateToken, async (req: Request, res: Response) => {
+router.get('/current', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.userId!;
 
     const { data, error } = await supabase
       .from('subscriptions')
@@ -61,9 +61,9 @@ router.get('/current', authenticateToken, async (req: Request, res: Response) =>
  * POST /api/subscriptions/create
  * Criar nova assinatura via Stripe Checkout
  */
-router.post('/create', authenticateToken, async (req: Request, res: Response) => {
+router.post('/create', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.userId!;
     const { planType, paymentCycle } = req.body;
 
     // Validar plano
@@ -155,9 +155,9 @@ router.post('/create', authenticateToken, async (req: Request, res: Response) =>
  * POST /api/subscriptions/cancel
  * Cancelar assinatura
  */
-router.post('/cancel', authenticateToken, async (req: Request, res: Response) => {
+router.post('/cancel', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.userId!;
 
     // Buscar assinatura ativa
     const { data: subscription, error: fetchError } = await supabase
@@ -205,9 +205,9 @@ router.post('/cancel', authenticateToken, async (req: Request, res: Response) =>
  * Criar sessão do Customer Portal do Stripe
  * Permite usuário gerenciar sua assinatura (cancelar, ver faturas, etc)
  */
-router.get('/portal', authenticateToken, async (req: Request, res: Response) => {
+router.get('/portal', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.userId!;
 
     // Buscar assinatura ativa
     const { data: subscription, error: fetchError } = await supabase
