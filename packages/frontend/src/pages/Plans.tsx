@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   CreditCard,
   Check,
@@ -28,7 +28,6 @@ interface Plan {
 }
 
 const Plans = () => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
