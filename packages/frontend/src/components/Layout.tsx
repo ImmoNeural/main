@@ -8,7 +8,7 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { isTrialActive, daysRemaining } = useSubscription();
+  const { isTrialActive, daysRemaining, isExpired, subscription } = useSubscription();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
@@ -163,6 +163,39 @@ const Layout = () => {
       `}>
         {/* Page Content */}
         <main className="flex-1 px-2 sm:px-3 lg:px-6 py-3 sm:py-4 lg:py-8 overflow-x-hidden pb-20 lg:pb-8">
+          {/* Banner de Status da Assinatura - Aparece em todas as páginas */}
+          {isExpired && subscription?.trial_end_date && location.pathname !== '/app/planos' && (
+            <div className="mb-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-lg animate-pulse">
+              <p className="text-center text-red-800 font-bold text-base">
+                ⏰ Seu trial de 7 dias expirou!
+              </p>
+              <p className="text-center text-red-700 text-sm mt-1">
+                <button
+                  onClick={() => navigate('/app/planos')}
+                  className="underline font-semibold hover:text-red-900"
+                >
+                  Clique aqui para escolher um plano
+                </button>
+                {' '}e continuar aproveitando todas as funcionalidades.
+              </p>
+            </div>
+          )}
+          {isTrialActive && daysRemaining <= 2 && location.pathname !== '/app/planos' && (
+            <div className="mb-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-xl p-4 shadow-lg">
+              <p className="text-center text-yellow-900 font-bold text-base">
+                ⚠️ Seu trial expira em {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''}!
+              </p>
+              <p className="text-center text-yellow-800 text-sm mt-1">
+                <button
+                  onClick={() => navigate('/app/planos')}
+                  className="underline font-semibold hover:text-yellow-900"
+                >
+                  Escolha um plano agora
+                </button>
+                {' '}para não perder acesso às suas finanças.
+              </p>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

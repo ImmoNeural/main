@@ -26,10 +26,14 @@ export const useSubscription = () => {
 
   const fetchSubscription = async () => {
     try {
+      console.log('🔄 [useSubscription] Fetching subscription data...');
       const { data: response } = await subscriptionApi.getCurrentSubscription();
+
+      console.log('📦 [useSubscription] Response:', response);
 
       if (!response.subscription) {
         // Sem assinatura
+        console.log('⚠️ [useSubscription] No subscription found');
         setData({
           subscription: null,
           isLoading: false,
@@ -47,6 +51,14 @@ export const useSubscription = () => {
       const trialEndDate = sub.trial_end_date ? new Date(sub.trial_end_date) : null;
       const endDate = sub.end_date ? new Date(sub.end_date) : null;
 
+      console.log('📋 [useSubscription] Subscription found:', {
+        status: sub.status,
+        plan_type: sub.plan_type,
+        trial_end_date: trialEndDate?.toISOString(),
+        end_date: endDate?.toISOString(),
+        now: now.toISOString()
+      });
+
       // Calcular dias restantes
       let daysRemaining = 0;
       if (sub.status === 'trial' && trialEndDate) {
@@ -58,6 +70,13 @@ export const useSubscription = () => {
       // Verificar se expirou
       const isTrialExpired = !!(sub.status === 'trial' && trialEndDate && now > trialEndDate);
       const isSubscriptionExpired = !!(endDate && now > endDate);
+
+      console.log('🎯 [useSubscription] Calculated state:', {
+        isTrialActive: sub.status === 'trial' && !isTrialExpired,
+        isSubscriptionActive: sub.status === 'active' && !isSubscriptionExpired,
+        isExpired: sub.status === 'expired' || sub.status === 'canceled' || isTrialExpired || isSubscriptionExpired,
+        daysRemaining
+      });
 
       setData({
         subscription: sub,

@@ -253,12 +253,17 @@ const Plans = () => {
               </div>
             )}
             {!processingPayment && !isOnTrial && !isActive && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-4 shadow-md">
-                <p className="text-center text-yellow-800 font-semibold">
-                  ⚠️ Você não possui um plano ativo
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
+                <p className="text-center text-red-800 font-bold text-lg">
+                  {trialEndDate ? '⏰ Seu trial de 7 dias expirou!' : '⚠️ Você não possui um plano ativo'}
                 </p>
-                <p className="text-center text-yellow-600 text-sm mt-1">
-                  Escolha um plano abaixo para continuar usando o Guru do Dindin
+                <p className="text-center text-red-700 text-base mt-2">
+                  {trialEndDate
+                    ? 'Para continuar aproveitando todas as funcionalidades, escolha um plano abaixo.'
+                    : 'Escolha um plano abaixo para continuar usando o Guru do Dindin'}
+                </p>
+                <p className="text-center text-red-600 text-sm mt-2 font-semibold">
+                  💡 Todas as suas contas e transações estão salvas e voltarão quando você assinar!
                 </p>
               </div>
             )}
