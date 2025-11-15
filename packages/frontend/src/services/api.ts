@@ -43,10 +43,14 @@ api.interceptors.response.use(
 
       // NÃO fazer logout automático se estiver conectando banco
       // O Pluggy Connect Widget pode causar requisições que falham temporariamente
-      const isConnectingBank = window.location.pathname.includes('/connect-bank');
+      const isConnectingBank = window.location.pathname.includes('/connect-bank') ||
+                               window.location.pathname.includes('/accounts');
 
-      if (isConnectingBank) {
-        console.log('⚠️ 401 durante conexão bancária - ignorando logout automático');
+      // Verificar se há uma flag de conexão bancária em andamento
+      const bankConnectionInProgress = sessionStorage.getItem('bank_connection_in_progress');
+
+      if (isConnectingBank || bankConnectionInProgress) {
+        console.log('⚠️ 401 durante/após conexão bancária - ignorando logout automático');
         return Promise.reject(error);
       }
 

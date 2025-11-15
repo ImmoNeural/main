@@ -56,6 +56,11 @@ const ConnectBank = () => {
     if (!selectedBank) return;
 
     setConnecting(true);
+
+    // Marcar início de conexão bancária para evitar logout automático
+    sessionStorage.setItem('bank_connection_in_progress', 'true');
+    console.log('🔒 Proteção contra logout ativada durante conexão bancária');
+
     try {
       const response = await bankApi.connectBank(selectedBank.id);
 
@@ -87,8 +92,15 @@ const ConnectBank = () => {
             selectedBank.name
           );
           alert(`✅ Conta ${selectedBank.name} conectada com sucesso!\n\nDados de demonstração foram gerados.`);
-          navigate('/accounts');
+
+          // Limpar flag e navegar após pequeno delay
+          setTimeout(() => {
+            sessionStorage.removeItem('bank_connection_in_progress');
+            console.log('🔓 Proteção contra logout removida');
+            navigate('/accounts');
+          }, 1000);
         } else {
+          sessionStorage.removeItem('bank_connection_in_progress');
           setConnecting(false);
         }
       } else {
@@ -117,19 +129,28 @@ const ConnectBank = () => {
                   selectedBank.name
                 );
                 alert('Conta conectada com sucesso!');
-                navigate('/accounts');
+
+                // Limpar flag e navegar após pequeno delay
+                setTimeout(() => {
+                  sessionStorage.removeItem('bank_connection_in_progress');
+                  console.log('🔓 Proteção contra logout removida');
+                  navigate('/accounts');
+                }, 1000);
               } catch (error) {
                 console.error('❌ Error handling callback:', error);
                 alert('Erro ao processar conexão com banco.');
+                sessionStorage.removeItem('bank_connection_in_progress');
               }
             },
             onError: (error: any) => {
               console.error('❌ Pluggy Connect Error:', error);
               alert('Erro ao conectar com banco: ' + (error.message || 'Erro desconhecido'));
+              sessionStorage.removeItem('bank_connection_in_progress');
               setConnecting(false);
             },
             onClose: () => {
               console.log('ℹ️ Pluggy Connect closed by user');
+              sessionStorage.removeItem('bank_connection_in_progress');
               setConnecting(false);
             },
           });
@@ -145,6 +166,7 @@ const ConnectBank = () => {
     } catch (error) {
       console.error('❌ Error connecting bank:', error);
       alert('Erro ao conectar banco. Verifique as credenciais do provedor Open Banking.');
+      sessionStorage.removeItem('bank_connection_in_progress');
       setConnecting(false);
     }
   };
