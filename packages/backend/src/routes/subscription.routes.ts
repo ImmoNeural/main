@@ -77,7 +77,7 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
 
     // Buscar dados do usuário
     const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
-    if (userError) throw userError;
+    if (userError || !user) throw new Error('Usuário não encontrado');
 
     // Criar sessão de checkout do Stripe
     const checkoutSession = await stripeService.createCheckoutSession({
