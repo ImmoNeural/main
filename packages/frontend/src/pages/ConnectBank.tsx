@@ -93,12 +93,9 @@ const ConnectBank = () => {
           );
           alert(`✅ Conta ${selectedBank.name} conectada com sucesso!\n\nDados de demonstração foram gerados.`);
 
-          // Limpar flag e navegar após pequeno delay
-          setTimeout(() => {
-            sessionStorage.removeItem('bank_connection_in_progress');
-            console.log('🔓 Proteção contra logout removida');
-            navigate('/accounts');
-          }, 1000);
+          // Navegar para accounts - a flag será removida no componente Accounts.tsx
+          console.log('➡️ Navegando para /accounts (proteção ainda ativa)');
+          navigate('/accounts');
         } else {
           sessionStorage.removeItem('bank_connection_in_progress');
           setConnecting(false);
@@ -130,12 +127,9 @@ const ConnectBank = () => {
                 );
                 alert('Conta conectada com sucesso!');
 
-                // Limpar flag e navegar após pequeno delay
-                setTimeout(() => {
-                  sessionStorage.removeItem('bank_connection_in_progress');
-                  console.log('🔓 Proteção contra logout removida');
-                  navigate('/accounts');
-                }, 1000);
+                // Navegar para accounts - a flag será removida no componente Accounts.tsx
+                console.log('➡️ Navegando para /accounts (proteção ainda ativa)');
+                navigate('/accounts');
               } catch (error) {
                 console.error('❌ Error handling callback:', error);
                 alert('Erro ao processar conexão com banco.');
