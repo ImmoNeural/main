@@ -56,8 +56,8 @@ export const useSubscription = () => {
       }
 
       // Verificar se expirou
-      const isTrialExpired = sub.status === 'trial' && trialEndDate && now > trialEndDate;
-      const isSubscriptionExpired = endDate && now > endDate;
+      const isTrialExpired = !!(sub.status === 'trial' && trialEndDate && now > trialEndDate);
+      const isSubscriptionExpired = !!(endDate && now > endDate);
 
       setData({
         subscription: sub,

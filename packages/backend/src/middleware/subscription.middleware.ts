@@ -13,6 +13,68 @@ declare global {
 }
 
 /**
+ * Desativa todas as conexões bancárias do usuário
+ * Chamado quando trial/assinatura expira
+ */
+async function deactivateBankConnections(userId: string): Promise<void> {
+  try {
+    console.log(`🔴 Desativando conexões bancárias do usuário: ${userId}`);
+
+    // Atualizar status de todas as contas bancárias para 'disconnected'
+    const { data, error } = await supabase
+      .from('bank_accounts')
+      .update({
+        status: 'disconnected',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao desativar conexões bancárias:', error);
+      throw error;
+    }
+
+    console.log(`✅ ${data?.length || 0} conexão(ões) bancária(s) desativada(s)`);
+  } catch (error) {
+    console.error('❌ Erro crítico ao desativar conexões:', error);
+    // Não propaga erro para não bloquear outras operações
+  }
+}
+
+/**
+ * Reativa todas as conexões bancárias do usuário
+ * Chamado quando usuário assina/paga
+ */
+async function reactivateBankConnections(userId: string): Promise<void> {
+  try {
+    console.log(`🟢 Reativando conexões bancárias do usuário: ${userId}`);
+
+    // Atualizar status de todas as contas desconectadas para 'active'
+    const { data, error } = await supabase
+      .from('bank_accounts')
+      .update({
+        status: 'active',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('status', 'disconnected')
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao reativar conexões bancárias:', error);
+      throw error;
+    }
+
+    console.log(`✅ ${data?.length || 0} conexão(ões) bancária(s) reativada(s)`);
+  } catch (error) {
+    console.error('❌ Erro crítico ao reativar conexões:', error);
+    // Não propaga erro para não bloquear outras operações
+  }
+}
+
+/**
  * Middleware para verificar status de assinatura
  * Adiciona informações de assinatura ao request
  */
@@ -64,6 +126,9 @@ export const checkSubscriptionStatus = async (req: Request, res: Response, next:
 
       subscription.status = 'expired';
       console.log('⚠️ Trial expired for user:', userId);
+
+      // DESATIVAR CONEXÕES BANCÁRIAS
+      await deactivateBankConnections(userId);
     }
 
     if (isSubscriptionExpired && subscription.status === 'active') {
@@ -74,6 +139,9 @@ export const checkSubscriptionStatus = async (req: Request, res: Response, next:
 
       subscription.status = 'expired';
       console.log('⚠️ Subscription expired for user:', userId);
+
+      // DESATIVAR CONEXÕES BANCÁRIAS
+      await deactivateBankConnections(userId);
     }
 
     // Adicionar ao request
@@ -118,4 +186,12 @@ export const requireActiveSubscription = (req: Request, res: Response, next: Nex
   }
 
   next();
+};
+
+/**
+ * Função auxiliar para reativar conexões quando usuário assinar
+ * Deve ser chamada após webhook confirmar pagamento
+ */
+export const handleSubscriptionActivated = async (userId: string): Promise<void> => {
+  await reactivateBankConnections(userId);
 };

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { stripeService } from '../services/stripe.service';
 import { supabase } from '../config/supabase';
+import { handleSubscriptionActivated } from '../middleware/subscription.middleware';
 
 const router = Router();
 
@@ -384,6 +385,10 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
             .eq('subscription_id', pendingSub.id);
 
           console.log('✅ Payment updated to paid');
+
+          // REATIVAR CONEXÕES BANCÁRIAS
+          await handleSubscriptionActivated(userId);
+
           break;
         }
 
@@ -416,6 +421,10 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
           .eq('payment_processor_payment_id', session.id);
 
         console.log('✅ Subscription activated:', subscription.id);
+
+        // REATIVAR CONEXÕES BANCÁRIAS
+        await handleSubscriptionActivated(userId);
+
         break;
       }
 
