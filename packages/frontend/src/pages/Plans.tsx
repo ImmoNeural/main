@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   CreditCard,
   Check,
@@ -7,7 +7,6 @@ import {
   Star,
   Zap,
   Shield,
-  ArrowLeft,
   Loader2
 } from 'lucide-react';
 import SEO from '../components/SEO';
@@ -30,10 +29,12 @@ interface Plan {
 
 const Plans = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   const plans: Plan[] = [
     {
@@ -101,6 +102,45 @@ const Plans = () => {
 
   useEffect(() => {
     fetchCurrentSubscription();
+
+    // Verificar se voltou do Stripe Checkout
+    const success = searchParams.get('success');
+    if (success === 'true') {
+      setProcessingPayment(true);
+      // Limpar URL
+      setSearchParams({});
+
+      // Fazer polling para esperar webhook processar (até 15 segundos)
+      let attempts = 0;
+      const maxAttempts = 10;
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        console.log(`Verificando pagamento... tentativa ${attempts}/${maxAttempts}`);
+
+        try {
+          const { data } = await subscriptionApi.getCurrentSubscription();
+          if (data.subscription && data.subscription.status === 'active') {
+            // Pagamento processado!
+            setCurrentPlan(data.subscription.plan_type);
+            setSubscriptionStatus(data.subscription.status);
+            setTrialEndDate(data.subscription.trial_end_date);
+            setProcessingPayment(false);
+            clearInterval(pollInterval);
+            alert('🎉 Pagamento confirmado! Seu plano foi ativado com sucesso.');
+          } else if (attempts >= maxAttempts) {
+            // Timeout - webhook pode estar demorando
+            setProcessingPayment(false);
+            clearInterval(pollInterval);
+            alert('⏳ Seu pagamento está sendo processado. Atualize a página em alguns instantes.');
+          }
+        } catch (error) {
+          console.error('Erro ao verificar pagamento:', error);
+        }
+      }, 1500); // Verifica a cada 1.5 segundos
+
+      // Cleanup
+      return () => clearInterval(pollInterval);
+    }
   }, []);
 
   const fetchCurrentSubscription = async () => {
@@ -172,20 +212,9 @@ const Plans = () => {
 
       <div className="min-h-screen bg-gray-50">
         {/* Container principal */}
-        <div className="relative min-h-screen px-4 py-8">
-          {/* Header */}
-          <div className="max-w-6xl mx-auto mb-8">
-            <button
-              onClick={() => navigate('/app/dashboard')}
-              className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>Voltar ao Dashboard</span>
-            </button>
-          </div>
-
+        <div className="relative min-h-screen px-4 py-4">
           {/* Título */}
-          <div className="text-center mb-12 animate-fade-in">
+          <div className="text-center mb-8 animate-fade-in">
             <div className="inline-flex items-center justify-center mb-4">
               <img
                 src="/logo.png"
@@ -201,7 +230,20 @@ const Plans = () => {
             </p>
 
             {/* Status da Assinatura */}
-            {isOnTrial && (
+            {processingPayment && (
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 shadow-md">
+                <div className="flex items-center justify-center space-x-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                  <p className="text-center text-purple-800 font-semibold">
+                    Processando seu pagamento...
+                  </p>
+                </div>
+                <p className="text-center text-purple-600 text-sm mt-1">
+                  Aguarde enquanto confirmamos sua assinatura
+                </p>
+              </div>
+            )}
+            {!processingPayment && isOnTrial && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 shadow-md">
                 <p className="text-center text-blue-800 font-semibold">
                   🎉 Período de teste ativo! Restam {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} grátis
@@ -211,7 +253,7 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {!isOnTrial && !isActive && (
+            {!processingPayment && !isOnTrial && !isActive && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-4 shadow-md">
                 <p className="text-center text-yellow-800 font-semibold">
                   ⚠️ Você não possui um plano ativo
@@ -221,7 +263,7 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {isActive && (
+            {!processingPayment && isActive && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-md">
                 <p className="text-center text-green-800 font-semibold">
                   ✅ Plano ativo: {currentPlan === 'manual' ? 'Manual' : currentPlan === 'conectado' ? 'Conectado' : 'Conectado Plus'}
