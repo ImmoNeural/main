@@ -13,11 +13,6 @@ const Accounts = () => {
 
   useEffect(() => {
     loadAccounts();
-    // Carregar banco ativo do localStorage
-    const savedActiveAccount = localStorage.getItem('activeAccountId');
-    if (savedActiveAccount) {
-      setActiveAccountId(savedActiveAccount);
-    }
 
     // Limpar flag de proteção contra logout após conexão bancária
     // Esta flag é setada em ConnectBank.tsx para evitar logout durante o processo
@@ -38,10 +33,15 @@ const Accounts = () => {
       const response = await bankApi.getAccounts();
       setAccounts(response.data);
 
-      // Se não houver banco ativo salvo, definir automaticamente
+      // Verificar se há banco ativo salvo
       const savedActiveAccount = localStorage.getItem('activeAccountId');
-      if (!savedActiveAccount && response.data.length > 0) {
-        // Se houver apenas 1 conta, torná-la ativa automaticamente
+
+      if (savedActiveAccount) {
+        // Se há banco salvo, usar ele
+        console.log('✅ Banco ativo encontrado no localStorage:', savedActiveAccount);
+        setActiveAccountId(savedActiveAccount);
+      } else if (response.data.length > 0) {
+        // Se não há banco salvo, definir automaticamente
         if (response.data.length === 1) {
           console.log('✅ Apenas 1 conta encontrada - tornando ativa automaticamente');
           setActiveAccount(response.data[0].id);

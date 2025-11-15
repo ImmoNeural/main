@@ -30,6 +30,7 @@ interface Plan {
 const Plans = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
@@ -157,6 +158,8 @@ const Plans = () => {
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
+    } finally {
+      setInitializing(false);
     }
   };
 
@@ -214,13 +217,6 @@ const Plans = () => {
         <div className="relative min-h-screen px-4 py-4">
           {/* Título */}
           <div className="text-center mb-8 animate-fade-in">
-            <div className="inline-flex items-center justify-center mb-4">
-              <img
-                src="/logo.png"
-                alt="Guru do Dindin"
-                className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
-              />
-            </div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Escolha o Plano Perfeito
             </h1>
@@ -252,7 +248,7 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {!processingPayment && !isOnTrial && !isActive && (
+            {!processingPayment && !isOnTrial && !isActive && !initializing && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-red-800 font-bold text-lg">
                   {trialEndDate ? '⏰ Seu trial de 7 dias expirou!' : '⚠️ Você não possui um plano ativo'}
