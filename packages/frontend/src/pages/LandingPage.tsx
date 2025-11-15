@@ -182,11 +182,14 @@ const LandingPage = () => {
                   onClick={handleSubscribeClick}
                   className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium"
                 >
-                  Quero ser assinante
+                  Planos
                 </button>
               </nav>
 
-              <div className="md:hidden">
+              <div className="md:hidden flex items-center space-x-2">
+                <a href="#planos" className="text-primary-600 hover:text-primary-700 transition-colors text-sm font-medium">
+                  Planos
+                </a>
                 <button
                   onClick={handleSubscribeClick}
                   className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -205,32 +208,45 @@ const LandingPage = () => {
             <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
           </div>
 
-          <div className="max-w-7xl mx-auto relative text-center">
-            <h1 className="text-5xl md:text-6xl font-extrabold mb-4 leading-tight">
-              <span className="text-white drop-shadow-lg">GURU DO DINDIN:</span><br />
-              <span className="text-white opacity-90 drop-shadow-lg">A Organização Financeira que Você Precisa</span>
-            </h1>
-            <p className="text-xl md:text-2xl font-light mb-8 max-w-3xl mx-auto opacity-90 drop-shadow">
-              Comece 2025 com o mapa definitivo para suas finanças. Assine agora o Plano Anual e garanta condições exclusivas!
-            </p>
+          <div className="max-w-7xl mx-auto relative">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left side - Text */}
+              <div className="text-center lg:text-left">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                  A Organização Financeira<br />
+                  <span className="text-yellow-300">que Você Precisa</span>
+                </h1>
+                <p className="text-xl sm:text-2xl mb-8 text-white/90">
+                  Comece 2025 com o mapa definitivo para suas finanças. Assine agora o Plano Anual e garanta condições exclusivas!
+                </p>
+                <div className="bg-white text-primary-600 text-lg md:text-xl font-bold inline-block px-6 py-3 rounded-xl shadow-lg mb-8">
+                  DESCONTO EXCLUSIVO NA ASSINATURA ANUAL!
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <a
+                    href="#planos"
+                    className="bg-white text-primary-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl inline-flex items-center justify-center space-x-2"
+                  >
+                    <span>Escolher Meu Plano Anual</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </a>
+                </div>
+                <p className="mt-6 text-sm text-white/80">
+                  Condições especiais por tempo limitado. Aproveite!
+                </p>
+              </div>
 
-            <div className="bg-white text-primary-600 text-2xl font-bold inline-block px-8 py-3 rounded-xl shadow-lg mb-10 border-2 border-primary-600">
-              DESCONTO EXCLUSIVO NA ASSINATURA ANUAL!
+              {/* Right side - Visual */}
+              <div className="flex items-center justify-center mt-8 lg:mt-0">
+                <div className="relative">
+                  <img
+                    src="/marketing.png"
+                    alt="Guru do Dindin Dashboard"
+                    className="max-w-full h-auto rounded-2xl lg:rounded-3xl shadow-2xl"
+                  />
+                </div>
+              </div>
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <a
-                href="#planos"
-                className="bg-white text-primary-600 px-10 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-2xl inline-flex items-center justify-center space-x-2"
-              >
-                <span>Escolher Meu Plano Anual</span>
-                <ArrowRight className="w-5 h-5" />
-              </a>
-            </div>
-
-            <p className="text-sm text-white opacity-80 drop-shadow">
-              Condições especiais por tempo limitado. Aproveite!
-            </p>
           </div>
         </section>
 

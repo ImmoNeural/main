@@ -171,20 +171,14 @@ const Plans = () => {
         keywords="planos, assinatura, preços, guru do dindin"
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-primary-600 via-primary-500 to-purple-600">
-        {/* Background decorativo */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"></div>
-        </div>
-
+      <div className="min-h-screen bg-gray-50">
         {/* Container principal */}
         <div className="relative min-h-screen px-4 py-8">
           {/* Header */}
           <div className="max-w-6xl mx-auto mb-8">
             <button
               onClick={() => navigate('/app/dashboard')}
-              className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors"
+              className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Voltar ao Dashboard</span>
@@ -195,15 +189,15 @@ const Plans = () => {
           <div className="text-center mb-12 animate-fade-in">
             <div className="inline-flex items-center justify-center mb-4">
               <img
-                src="/banco.png"
-                alt="Guru do Dindin Planos"
-                className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-2xl shadow-2xl"
+                src="/logo.png"
+                alt="Guru do Dindin"
+                className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
               />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Escolha o Plano Perfeito
             </h1>
-            <p className="text-xl text-white/90 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Comece 2025 com organização financeira de verdade. Descontos especiais na assinatura anual!
             </p>
           </div>
@@ -314,29 +308,29 @@ const Plans = () => {
           </div>
 
           {/* Informações Adicionais */}
-          <div className="max-w-4xl mx-auto bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-white">
-            <h3 className="text-xl font-bold mb-4 text-center">Por que escolher o Guru do Dindin?</h3>
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+            <h3 className="text-xl font-bold mb-4 text-center text-gray-900">Por que escolher o Guru do Dindin?</h3>
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <div>
-                <Shield className="w-8 h-8 mx-auto mb-2" />
-                <p className="font-semibold mb-1">100% Seguro</p>
-                <p className="text-sm text-white/80">Seus dados protegidos com criptografia</p>
+                <Shield className="w-8 h-8 mx-auto mb-2 text-primary-600" />
+                <p className="font-semibold mb-1 text-gray-900">100% Seguro</p>
+                <p className="text-sm text-gray-600">Seus dados protegidos com criptografia</p>
               </div>
               <div>
-                <Star className="w-8 h-8 mx-auto mb-2" />
-                <p className="font-semibold mb-1">Suporte Dedicado</p>
-                <p className="text-sm text-white/80">Equipe pronta para ajudar você</p>
+                <Star className="w-8 h-8 mx-auto mb-2 text-primary-600" />
+                <p className="font-semibold mb-1 text-gray-900">Suporte Dedicado</p>
+                <p className="text-sm text-gray-600">Equipe pronta para ajudar você</p>
               </div>
               <div>
-                <Zap className="w-8 h-8 mx-auto mb-2" />
-                <p className="font-semibold mb-1">Cancele quando quiser</p>
-                <p className="text-sm text-white/80">Sem fidelidade ou multas</p>
+                <Zap className="w-8 h-8 mx-auto mb-2 text-primary-600" />
+                <p className="font-semibold mb-1 text-gray-900">Cancele quando quiser</p>
+                <p className="text-sm text-gray-600">Sem fidelidade ou multas</p>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-8 text-center text-white/60 text-sm">
+          <div className="mt-8 text-center text-gray-500 text-sm">
             <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
           </div>
         </div>
