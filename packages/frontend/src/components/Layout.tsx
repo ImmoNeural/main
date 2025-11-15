@@ -1,12 +1,14 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Receipt, Wallet, PlusCircle, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
 import { useState } from 'react';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isTrialActive, daysRemaining } = useSubscription();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
@@ -51,6 +53,18 @@ const Layout = () => {
           )}
         </div>
 
+        {/* Trial Badge - Topo */}
+        {isTrialActive && !sidebarCollapsed && (
+          <div className="px-3 pb-2">
+            <div className="bg-yellow-400 text-gray-900 px-3 py-2 rounded-lg text-center">
+              <p className="text-xs font-bold">🎉 TRIAL ATIVO</p>
+              <p className="text-xs mt-1">
+                {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} restante{daysRemaining !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 py-6 overflow-y-auto">
           <ul className="space-y-2 px-3">
@@ -62,21 +76,33 @@ const Layout = () => {
                   <Link
                     to={item.path}
                     className={`
-                      flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                      flex items-center px-4 py-3 rounded-xl transition-all duration-200 relative
                       ${
                         isActive
                           ? 'bg-white text-primary-700 shadow-lg'
                           : 'text-white/80 hover:bg-primary-600 hover:text-white'
                       }
-                      ${sidebarCollapsed ? 'justify-center' : ''}
+                      ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}
                     `}
                     title={item.name}
                   >
                     <Icon className={`${isActive ? 'w-7 h-7' : 'w-6 h-6'} flex-shrink-0`} />
                     {!sidebarCollapsed && (
-                      <span className={`text-base font-medium ${isActive ? 'font-semibold' : ''}`}>
-                        {item.name}
-                      </span>
+                      <div className="flex-1 flex items-center justify-between">
+                        <span className={`text-base font-medium ${isActive ? 'font-semibold' : ''}`}>
+                          {item.name}
+                        </span>
+                        {isTrialActive && item.path !== '/app/planos' && (
+                          <span className="bg-yellow-400 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded">
+                            TRIAL
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {isTrialActive && sidebarCollapsed && item.path !== '/app/planos' && (
+                      <div className="absolute -top-1 -right-1 bg-yellow-400 text-gray-900 text-[8px] font-bold px-1 py-0.5 rounded">
+                        T
+                      </div>
                     )}
                   </Link>
                 </li>
@@ -151,7 +177,7 @@ const Layout = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 min-w-0 flex-1
+                className={`flex flex-col items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 min-w-0 flex-1 relative
                   ${
                     isActive
                       ? 'bg-white text-primary-700'
@@ -163,6 +189,11 @@ const Layout = () => {
                 <span className={`text-[9px] font-medium truncate w-full text-center ${isActive ? 'font-semibold' : ''}`}>
                   {item.name}
                 </span>
+                {isTrialActive && item.path !== '/app/planos' && (
+                  <div className="absolute -top-0.5 -right-0.5 bg-yellow-400 text-gray-900 text-[8px] font-bold px-1 py-0.5 rounded">
+                    TRIAL
+                  </div>
+                )}
               </Link>
             );
           })}
