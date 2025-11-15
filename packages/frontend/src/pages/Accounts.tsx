@@ -12,6 +12,13 @@ const Accounts = () => {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Inicializar banco ativo do localStorage ANTES de carregar
+    const savedActiveAccount = localStorage.getItem('activeAccountId');
+    if (savedActiveAccount) {
+      console.log('🔄 Inicializando activeAccountId do localStorage:', savedActiveAccount);
+      setActiveAccountId(savedActiveAccount);
+    }
+
     loadAccounts();
 
     // Limpar flag de proteção contra logout após conexão bancária
