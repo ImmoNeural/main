@@ -5,4 +5,4 @@ Disallow: /app/*
 Disallow: /api/*
 
 # Sitemap
-Sitemap: https://gurudodindin.com/sitemap.xml
+Sitemap: https://gurudodindin.com.br/sitemap.xml
