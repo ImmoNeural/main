@@ -11,6 +11,7 @@ import bankRoutes from './routes/bank.routes';
 import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import budgetRoutes from './routes/budget.routes';
+import subscriptionRoutes from './routes/subscription.routes';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/bank', bankRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/budgets', budgetRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

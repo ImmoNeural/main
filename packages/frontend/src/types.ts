@@ -100,3 +100,48 @@ export interface Category {
   color: string;
   keywords?: string[];
 }
+
+export type SubscriptionPlanType = 'manual' | 'conectado' | 'conectado_plus';
+export type SubscriptionStatus = 'active' | 'pending' | 'canceled' | 'expired' | 'trial';
+export type PaymentType = 'credit_card' | 'boleto' | 'pix';
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_type: SubscriptionPlanType;
+  plan_name: string;
+  plan_price: number;
+  status: SubscriptionStatus;
+  start_date: string;
+  end_date?: string;
+  trial_end_date?: string;
+  payment_method?: PaymentType;
+  payment_processor?: string;
+  payment_processor_subscription_id?: string;
+  payment_processor_customer_id?: string;
+  max_connected_accounts: number;
+  auto_renew: boolean;
+  next_billing_date?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  canceled_at?: string;
+}
+
+export interface SubscriptionPayment {
+  id: string;
+  subscription_id: string;
+  user_id: string;
+  amount: number;
+  payment_method: PaymentType;
+  payment_status: string;
+  payment_processor: string;
+  payment_processor_payment_id?: string;
+  payment_processor_invoice_url?: string;
+  payment_date?: string;
+  due_date?: string;
+  metadata?: Record<string, any>;
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
+}

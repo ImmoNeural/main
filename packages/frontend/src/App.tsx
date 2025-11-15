@@ -8,11 +8,12 @@ import Accounts from './pages/Accounts';
 import Budgets from './pages/Budgets';
 import BudgetDetails from './pages/BudgetDetails';
 import ConnectBank from './pages/ConnectBank';
+import Plans from './pages/Plans';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import Home from './pages/Home';
+import LandingPage from './pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import StructuredData from './components/StructuredData';
@@ -34,7 +35,7 @@ function App() {
 
           <Routes>
             {/* Rota pública - Homepage */}
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<LandingPage />} />
 
             {/* Rotas públicas de autenticação */}
             <Route path="/login" element={<Login />} />
@@ -58,6 +59,7 @@ function App() {
               <Route path="budgets" element={<Budgets />} />
               <Route path="budgets/:categoryName" element={<BudgetDetails />} />
               <Route path="connect-bank" element={<ConnectBank />} />
+              <Route path="planos" element={<Plans />} />
             </Route>
 
             {/* Rota padrão - manter wildcards funcionando */}
