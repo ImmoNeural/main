@@ -39,6 +39,11 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// IMPORTANTE: Raw body para webhook do Stripe (precisa verificar assinatura)
+app.use('/api/subscriptions/webhook/stripe', express.raw({ type: 'application/json' }));
+
+// JSON parser para todas as outras rotas
 app.use(express.json());
 
 // SQLite desabilitado - usando Supabase agora
