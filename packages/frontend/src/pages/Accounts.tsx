@@ -38,12 +38,20 @@ const Accounts = () => {
       const response = await bankApi.getAccounts();
       setAccounts(response.data);
 
-      // Se não houver banco ativo e houver contas, definir a primeira como ativa
+      // Se não houver banco ativo salvo, definir automaticamente
       const savedActiveAccount = localStorage.getItem('activeAccountId');
       if (!savedActiveAccount && response.data.length > 0) {
-        const firstActiveAccount = response.data.find(acc => acc.status === 'active');
-        if (firstActiveAccount) {
-          setActiveAccount(firstActiveAccount.id);
+        // Se houver apenas 1 conta, torná-la ativa automaticamente
+        if (response.data.length === 1) {
+          console.log('✅ Apenas 1 conta encontrada - tornando ativa automaticamente');
+          setActiveAccount(response.data[0].id);
+        } else {
+          // Se houver múltiplas contas, usar a primeira com status 'active' (conectada)
+          const firstConnectedAccount = response.data.find(acc => acc.status === 'active');
+          if (firstConnectedAccount) {
+            console.log('✅ Múltiplas contas - definindo primeira conta conectada como ativa');
+            setActiveAccount(firstConnectedAccount.id);
+          }
         }
       }
     } catch (error) {
