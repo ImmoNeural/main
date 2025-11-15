@@ -56,9 +56,60 @@ const Transactions = () => {
       ]);
 
       setTransactions(transactionsRes.data.transactions);
-      setCategories(categoriesRes.data);
+
+      // Garantir que "Não Categorizado" esteja sempre disponível no dropdown
+      const categoriesWithUncategorized = categoriesRes.data;
+      if (!categoriesWithUncategorized.some(cat => cat.category === 'Não Categorizado')) {
+        categoriesWithUncategorized.push({
+          category: 'Não Categorizado',
+          icon: '❓',
+          color: '#9CA3AF',
+          count: 0,
+        });
+      }
+      setCategories(categoriesWithUncategorized);
     } catch (error) {
       console.error('Error loading transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRecategorizeAll = async () => {
+    const confirmRecategorize = confirm(
+      '🔄 Recategorizar todas as transações?\n\n' +
+      'Isso irá aplicar as regras de categorização automática em TODAS as suas transações.\n\n' +
+      '⚠️ Importante:\n' +
+      '• Apenas transações com 80%+ de confiança serão categorizadas\n' +
+      '• Transações abaixo de 80% ficarão como "Não Categorizado"\n' +
+      '• Você pode recategorizar manualmente depois\n\n' +
+      'Deseja continuar?'
+    );
+
+    if (!confirmRecategorize) return;
+
+    setIsLoading(true);
+    try {
+      console.log('🔄 Iniciando recategorização de todas as transações...');
+      const response = await transactionApi.recategorizeAll();
+      console.log('✅ Recategorização concluída:', response.data);
+
+      alert(
+        `✅ Recategorização concluída!\n\n` +
+        `📊 Total: ${response.data.total} transações\n` +
+        `✅ Atualizadas: ${response.data.updated} transações\n` +
+        `➖ Sem alteração: ${response.data.unchanged} transações\n\n` +
+        `${response.data.message}`
+      );
+
+      // Recarregar transações
+      await loadData();
+    } catch (error: any) {
+      console.error('❌ Erro ao recategorizar:', error);
+      alert(
+        `❌ Erro ao recategorizar transações\n\n` +
+        `${error.response?.data?.error || error.message || 'Erro desconhecido'}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -321,6 +372,16 @@ const Transactions = () => {
             <span className="sm:hidden">Banco</span>
           </button>
           <button
+            onClick={handleRecategorizeAll}
+            className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+            disabled={isLoading}
+            title="Recategorizar todas as transações usando IA (threshold 80%)"
+          >
+            <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">Recategorizar</span>
+            <span className="md:hidden">Recat.</span>
+          </button>
+          <button
             onClick={exportToCSV}
             className="btn-secondary flex items-center space-x-2 px-3 text-sm"
             title="Exportar para CSV"
@@ -565,11 +626,11 @@ const Transactions = () => {
       {/* Mobile Cards */}
       <div className="md:hidden space-y-2">
         {filteredTransactions.map((transaction) => {
-          const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
+          const isUncategorized = !transaction.category || transaction.category === 'Não Categorizado';
           return (
             <div
               key={transaction.id}
-              className={`card p-2.5 ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : 'bg-white'}`}
+              className={`card p-2.5 ${isUncategorized ? 'bg-gray-100 border-l-4 border-gray-400' : 'bg-white'}`}
             >
               {/* Header do Card */}
               <div className="flex items-start justify-between mb-2">
@@ -601,13 +662,13 @@ const Transactions = () => {
               {/* Categoria */}
               <div className="flex items-center gap-1.5 mb-1.5">
                 {isUncategorized && (
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                  <AlertCircle className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
                 )}
                 <select
                   value={transaction.category || ''}
                   onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
                   className={`text-[10px] border rounded px-1.5 py-1 flex-1 focus:outline-none focus:ring-1 ${
-                    isUncategorized ? 'border-rose-400 bg-rose-100 text-gray-900 font-semibold focus:ring-rose-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
+                    isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
                   }`}
                 >
                   {categories.map((cat) => (
@@ -660,7 +721,7 @@ const Transactions = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTransactions.map((transaction) => {
-                const isUncategorized = !transaction.category || transaction.category === 'Não Categorizado' || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
+                const isUncategorized = !transaction.category || transaction.category === 'Não Categorizado';
                 return (
                   <tr
                     key={transaction.id}

@@ -671,8 +671,9 @@ class CategorizationService {
       }
     }
 
-    // Retornar resultado
-    if (bestMatch) {
+    // Retornar resultado - THRESHOLD DE CONFIANÇA: 80%
+    // Se a confiança for menor que 80%, não categorizar
+    if (bestMatch && bestMatch.score >= 80) {
       return {
         category: bestMatch.rule.category,
         subcategory: bestMatch.rule.subcategory || 'Geral',
@@ -684,13 +685,19 @@ class CategorizationService {
     }
 
     // Categoria padrão para transações não identificadas
+    // OU com confiança menor que 80%
+    const confidence = bestMatch ? bestMatch.score : 0;
+    const matchedBy = bestMatch
+      ? `baixa confiança (${confidence}%) - ${bestMatch.matchedBy}`
+      : 'nenhum match encontrado';
+
     return {
       category: 'Não Categorizado',
       subcategory: 'Requer Classificação Manual',
-      icon: '⚠️',
+      icon: '❓',
       color: '#9CA3AF', // Cinza clarinho
-      confidence: 0,
-      matchedBy: 'nenhum match encontrado',
+      confidence,
+      matchedBy,
     };
   }
 
