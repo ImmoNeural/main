@@ -4,6 +4,7 @@ import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-rea
 import { useAuth } from '../contexts/AuthContext';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { validatePassword } from '../utils/passwordValidation';
+import SEO from '../components/SEO';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -52,6 +53,12 @@ const Register = () => {
   };
 
   return (
+    <>
+      <SEO
+        title="Criar Conta - Comece grátis"
+        description="Crie sua conta gratuita no Guru do Dindin e comece a organizar suas finanças hoje mesmo. Controle de gastos, orçamentos e muito mais!"
+        keywords="criar conta, cadastro, registrar, guru do dindin, finanças gratuito"
+      />
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-primary-500 to-primary-600 px-4 py-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden">
@@ -290,6 +297,7 @@ const Register = () => {
         }
       `}</style>
     </div>
+    </>
   );
 };
 

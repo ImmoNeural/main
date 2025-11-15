@@ -1,0 +1,8 @@
+# robots.txt para Guru do Dindin
+User-agent: *
+Allow: /
+Disallow: /app/*
+Disallow: /api/*
+
+# Sitemap
+Sitemap: https://gurudodindin.com/sitemap.xml

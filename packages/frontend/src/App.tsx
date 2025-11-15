@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -13,44 +14,58 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import ProtectedRoute from './components/ProtectedRoute';
+import GoogleAnalytics from './components/GoogleAnalytics';
+import StructuredData from './components/StructuredData';
+
+// Google Analytics Measurement ID
+// IMPORTANTE: Substitua pelo seu próprio ID do Google Analytics
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXXX';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Rota pública - Homepage */}
-          <Route path="/" element={<Home />} />
+    <HelmetProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          {/* Google Analytics */}
+          <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
 
-          {/* Rotas públicas de autenticação */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Structured Data para SEO */}
+          <StructuredData />
 
-          {/* Rotas protegidas */}
-          <Route
-            path="/app"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/app/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="transactions" element={<Transactions />} />
-            <Route path="accounts" element={<Accounts />} />
-            <Route path="budgets" element={<Budgets />} />
-            <Route path="budgets/:categoryName" element={<BudgetDetails />} />
-            <Route path="connect-bank" element={<ConnectBank />} />
-          </Route>
+          <Routes>
+            {/* Rota pública - Homepage */}
+            <Route path="/" element={<Home />} />
 
-          {/* Rota padrão - manter wildcards funcionando */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* Rotas públicas de autenticação */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Rotas protegidas */}
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="transactions" element={<Transactions />} />
+              <Route path="accounts" element={<Accounts />} />
+              <Route path="budgets" element={<Budgets />} />
+              <Route path="budgets/:categoryName" element={<BudgetDetails />} />
+              <Route path="connect-bank" element={<ConnectBank />} />
+            </Route>
+
+            {/* Rota padrão - manter wildcards funcionando */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </HelmetProvider>
   );
 }
 

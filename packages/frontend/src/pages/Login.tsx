@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { bankApi } from '../services/api';
+import SEO from '../components/SEO';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -44,6 +45,13 @@ const Login = () => {
   };
 
   return (
+    <>
+      <SEO
+        title="Login - Acesse sua conta"
+        description="Faça login no Guru do Dindin e gerencie suas finanças pessoais de forma inteligente. Controle seus gastos, orçamentos e muito mais."
+        keywords="login, entrar, acessar conta, guru do dindin, finanças"
+      />
+
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 via-primary-500 to-purple-600 px-4 py-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden">
@@ -218,6 +226,7 @@ const Login = () => {
         }
       `}</style>
     </div>
+    </>
   );
 };
 
