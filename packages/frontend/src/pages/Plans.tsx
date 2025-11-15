@@ -121,11 +121,6 @@ const Plans = () => {
   const handleSelectPlan = async (plan: Plan) => {
     if (loading) return;
 
-    // Perguntar método de pagamento
-    const billingType = window.confirm(
-      'Escolha o método de pagamento:\n\nOK = Cartão de Crédito\nCancelar = PIX/Boleto'
-    ) ? 'CREDIT_CARD' : 'PIX';
-
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -137,7 +132,6 @@ const Plans = () => {
         },
         body: JSON.stringify({
           planType: plan.type,
-          billingType: billingType,
           paymentCycle: 'yearly' // Sempre anual conforme solicitado
         })
       });
@@ -148,12 +142,11 @@ const Plans = () => {
         throw new Error(data.error || 'Erro ao criar assinatura');
       }
 
-      if (data.paymentUrl) {
-        // Redirecionar para página de pagamento do Asaas
-        window.location.href = data.paymentUrl;
+      if (data.checkoutUrl) {
+        // Redirecionar para Stripe Checkout (página segura do Stripe)
+        window.location.href = data.checkoutUrl;
       } else {
-        alert('Assinatura criada! Aguarde a confirmação do pagamento.');
-        navigate('/app/dashboard');
+        alert('Erro ao criar sessão de pagamento. Tente novamente.');
       }
     } catch (error: any) {
       console.error('Error selecting plan:', error);

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth.middleware';
-import { asaasService } from '../services/asaas.service';
+import { stripeService } from '../services/stripe.service';
 import { supabase } from '../config/supabase';
 
 const router = Router();
@@ -59,12 +59,12 @@ router.get('/current', authenticateToken, async (req: Request, res: Response) =>
 
 /**
  * POST /api/subscriptions/create
- * Criar nova assinatura
+ * Criar nova assinatura via Stripe Checkout
  */
 router.post('/create', authenticateToken, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { planType, billingType, paymentCycle } = req.body;
+    const { planType, paymentCycle } = req.body;
 
     // Validar plano
     if (!PLAN_CONFIGS[planType as PlanType]) {
@@ -73,58 +73,21 @@ router.post('/create', authenticateToken, async (req: Request, res: Response) =>
 
     const planConfig = PLAN_CONFIGS[planType as PlanType];
     const isYearly = paymentCycle === 'yearly';
-    const price = isYearly ? planConfig.yearlyPrice : planConfig.monthlyPrice * 12;
+    const price = isYearly ? planConfig.yearlyPrice : planConfig.monthlyPrice;
 
     // Buscar dados do usuário
     const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
     if (userError) throw userError;
 
-    // Verificar se já existe customer no Asaas
-    let asaasCustomer = await asaasService.getCustomerByEmail(user.email!);
-
-    // Se não existe, criar
-    if (!asaasCustomer) {
-      asaasCustomer = await asaasService.createCustomer({
-        name: user.user_metadata?.name || user.email!.split('@')[0],
-        email: user.email!,
-        cpfCnpj: user.user_metadata?.cpf
-      });
-    }
-
-    // Criar assinatura ou pagamento único
-    let asaasSubscription;
-    let paymentUrl;
-
-    if (isYearly) {
-      // Pagamento anual (único)
-      const nextYear = new Date();
-      nextYear.setFullYear(nextYear.getFullYear() + 1);
-
-      const payment = await asaasService.createPayment({
-        customer: asaasCustomer.id,
-        billingType: billingType,
-        value: price,
-        dueDate: new Date().toISOString().split('T')[0],
-        description: `${planConfig.name} - Assinatura Anual`,
-        externalReference: `${userId}_${planType}_yearly`
-      });
-
-      asaasSubscription = payment;
-      paymentUrl = payment.invoiceUrl || payment.bankSlipUrl;
-    } else {
-      // Assinatura mensal recorrente
-      asaasSubscription = await asaasService.createSubscription({
-        customer: asaasCustomer.id,
-        billingType: billingType,
-        value: planConfig.monthlyPrice,
-        nextDueDate: new Date().toISOString().split('T')[0],
-        cycle: 'MONTHLY',
-        description: `${planConfig.name} - Assinatura Mensal`,
-        externalReference: `${userId}_${planType}_monthly`
-      });
-
-      paymentUrl = asaasSubscription.invoiceUrl;
-    }
+    // Criar sessão de checkout do Stripe
+    const checkoutSession = await stripeService.createCheckoutSession({
+      planType: planType,
+      planName: `${planConfig.name} - ${isYearly ? 'Anual' : 'Mensal'}`,
+      planPrice: price,
+      userId: userId,
+      userEmail: user.email!,
+      paymentMode: isYearly ? 'payment' : 'subscription', // Anual = pagamento único, Mensal = recorrente
+    });
 
     // Calcular data de término
     const endDate = new Date();
@@ -134,7 +97,7 @@ router.post('/create', authenticateToken, async (req: Request, res: Response) =>
       endDate.setMonth(endDate.getMonth() + 1);
     }
 
-    // Salvar assinatura no Supabase
+    // Salvar assinatura pendente no Supabase
     const { data: subscription, error: dbError } = await supabase
       .from('subscriptions')
       .insert({
@@ -144,16 +107,16 @@ router.post('/create', authenticateToken, async (req: Request, res: Response) =>
         plan_price: price,
         status: 'pending',
         end_date: endDate.toISOString(),
-        payment_method: billingType.toLowerCase(),
-        payment_processor: 'asaas',
-        payment_processor_subscription_id: asaasSubscription.id,
-        payment_processor_customer_id: asaasCustomer.id,
+        payment_method: 'credit_card',
+        payment_processor: 'stripe',
+        payment_processor_subscription_id: checkoutSession.id,
+        payment_processor_customer_id: checkoutSession.customer as string,
         max_connected_accounts: planConfig.maxAccounts,
         auto_renew: !isYearly,
         next_billing_date: isYearly ? endDate.toISOString() : new Date().toISOString(),
         metadata: {
           payment_cycle: paymentCycle,
-          asaas_payment_id: asaasSubscription.id
+          stripe_session_id: checkoutSession.id,
         }
       })
       .select()
@@ -168,18 +131,19 @@ router.post('/create', authenticateToken, async (req: Request, res: Response) =>
         subscription_id: subscription.id,
         user_id: userId,
         amount: price,
-        payment_method: billingType.toLowerCase(),
+        payment_method: 'credit_card',
         payment_status: 'pending',
-        payment_processor: 'asaas',
-        payment_processor_payment_id: asaasSubscription.id,
-        payment_processor_invoice_url: paymentUrl,
+        payment_processor: 'stripe',
+        payment_processor_payment_id: checkoutSession.id,
+        payment_processor_invoice_url: checkoutSession.url,
         due_date: new Date().toISOString()
       });
 
+    // Retornar URL do Stripe Checkout
     res.json({
       subscription,
-      paymentUrl,
-      message: 'Assinatura criada com sucesso. Complete o pagamento para ativar.'
+      checkoutUrl: checkoutSession.url,
+      message: 'Redirecionando para pagamento seguro do Stripe...'
     });
   } catch (error: any) {
     console.error('Error creating subscription:', error);
@@ -207,13 +171,13 @@ router.post('/cancel', authenticateToken, async (req: Request, res: Response) =>
       return res.status(404).json({ error: 'Assinatura ativa não encontrada' });
     }
 
-    // Cancelar no Asaas (se for recorrente)
+    // Cancelar no Stripe (se for recorrente)
     if (subscription.payment_processor_subscription_id && subscription.auto_renew) {
       try {
-        await asaasService.cancelSubscription(subscription.payment_processor_subscription_id);
+        await stripeService.cancelSubscription(subscription.payment_processor_subscription_id);
       } catch (error) {
-        console.error('Error canceling Asaas subscription:', error);
-        // Continua mesmo se falhar no Asaas
+        console.error('Error canceling Stripe subscription:', error);
+        // Continua mesmo se falhar no Stripe
       }
     }
 
@@ -237,71 +201,151 @@ router.post('/cancel', authenticateToken, async (req: Request, res: Response) =>
 });
 
 /**
- * POST /api/subscriptions/webhook/asaas
- * Webhook do Asaas para notificações de pagamento
+ * GET /api/subscriptions/portal
+ * Criar sessão do Customer Portal do Stripe
+ * Permite usuário gerenciar sua assinatura (cancelar, ver faturas, etc)
  */
-router.post('/webhook/asaas', async (req: Request, res: Response) => {
+router.get('/portal', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const event = req.body;
+    const userId = req.user!.id;
 
-    console.log('Asaas Webhook Event:', event.event);
+    // Buscar assinatura ativa
+    const { data: subscription, error: fetchError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
 
-    // Processar eventos de pagamento
-    if (event.event === 'PAYMENT_CONFIRMED' || event.event === 'PAYMENT_RECEIVED') {
-      const paymentId = event.payment.id;
-
-      // Buscar assinatura pelo payment_id
-      const { data: subscription, error: fetchError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('payment_processor_subscription_id', paymentId)
-        .single();
-
-      if (!subscription) {
-        console.warn('Subscription not found for payment:', paymentId);
-        return res.json({ received: true });
-      }
-
-      // Atualizar status da assinatura
-      const { error: updateError } = await supabase
-        .from('subscriptions')
-        .update({
-          status: 'active',
-          start_date: new Date().toISOString()
-        })
-        .eq('id', subscription.id);
-
-      if (updateError) throw updateError;
-
-      // Atualizar pagamento
-      await supabase
-        .from('subscription_payments')
-        .update({
-          payment_status: 'paid',
-          payment_date: new Date().toISOString()
-        })
-        .eq('payment_processor_payment_id', paymentId);
-
-      console.log('Subscription activated:', subscription.id);
+    if (fetchError || !subscription) {
+      return res.status(404).json({ error: 'Assinatura ativa não encontrada' });
     }
 
-    // Processar eventos de pagamento vencido
-    if (event.event === 'PAYMENT_OVERDUE') {
-      const paymentId = event.payment.id;
+    if (!subscription.payment_processor_customer_id) {
+      return res.status(400).json({ error: 'Customer ID do Stripe não encontrado' });
+    }
 
-      await supabase
-        .from('subscription_payments')
-        .update({
-          payment_status: 'failed',
-          error_message: 'Pagamento vencido'
-        })
-        .eq('payment_processor_payment_id', paymentId);
+    // Criar sessão do portal
+    const portalSession = await stripeService.createCustomerPortalSession(
+      subscription.payment_processor_customer_id
+    );
+
+    res.json({ url: portalSession.url });
+  } catch (error: any) {
+    console.error('Error creating portal session:', error);
+    res.status(500).json({ error: 'Erro ao criar portal de gerenciamento' });
+  }
+});
+
+/**
+ * POST /api/subscriptions/webhook/stripe
+ * Webhook do Stripe para notificações de pagamento
+ */
+router.post('/webhook/stripe', async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['stripe-signature'] as string;
+
+    if (!signature) {
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+
+    // Validar webhook usando raw body
+    const event = stripeService.constructWebhookEvent(
+      req.body,
+      signature
+    );
+
+    console.log('Stripe Webhook Event:', event.type);
+
+    // Processar eventos
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as any;
+        const userId = session.metadata?.user_id;
+
+        if (!userId) {
+          console.warn('User ID not found in session metadata');
+          break;
+        }
+
+        // Buscar assinatura pelo session ID
+        const { data: subscription, error: fetchError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('payment_processor_subscription_id', session.id)
+          .single();
+
+        if (!subscription) {
+          console.warn('Subscription not found for session:', session.id);
+          break;
+        }
+
+        // Atualizar status da assinatura
+        const { error: updateError } = await supabase
+          .from('subscriptions')
+          .update({
+            status: 'active',
+            start_date: new Date().toISOString(),
+            payment_processor_subscription_id: session.subscription || session.id,
+          })
+          .eq('id', subscription.id);
+
+        if (updateError) throw updateError;
+
+        // Atualizar pagamento
+        await supabase
+          .from('subscription_payments')
+          .update({
+            payment_status: 'paid',
+            payment_date: new Date().toISOString()
+          })
+          .eq('payment_processor_payment_id', session.id);
+
+        console.log('Subscription activated:', subscription.id);
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as any;
+
+        // Atualizar status no Supabase
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: 'canceled',
+            canceled_at: new Date().toISOString(),
+            auto_renew: false
+          })
+          .eq('payment_processor_subscription_id', subscription.id);
+
+        console.log('Subscription canceled:', subscription.id);
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as any;
+
+        // Atualizar pagamento como falho
+        await supabase
+          .from('subscription_payments')
+          .update({
+            payment_status: 'failed',
+            error_message: 'Pagamento falhou'
+          })
+          .eq('payment_processor_payment_id', invoice.id);
+
+        console.log('Payment failed for invoice:', invoice.id);
+        break;
+      }
+
+      default:
+        console.log('Unhandled event type:', event.type);
     }
 
     res.json({ received: true });
   } catch (error: any) {
     console.error('Webhook error:', error);
-    res.status(500).json({ error: 'Erro ao processar webhook' });
+    res.status(400).json({ error: error.message || 'Erro ao processar webhook' });
   }
 });
 
