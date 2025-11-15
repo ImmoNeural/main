@@ -308,7 +308,7 @@ const Transactions = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Transações</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight">Transações</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-1">{filteredTransactions.length} transações encontradas</p>
         </div>
         <div className="flex items-center flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">

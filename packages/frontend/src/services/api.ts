@@ -40,6 +40,16 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.log('❌ 401 Unauthorized:', error.response?.data?.error || 'Token inválido');
+
+      // NÃO fazer logout automático se estiver conectando banco
+      // O Pluggy Connect Widget pode causar requisições que falham temporariamente
+      const isConnectingBank = window.location.pathname.includes('/connect-bank');
+
+      if (isConnectingBank) {
+        console.log('⚠️ 401 durante conexão bancária - ignorando logout automático');
+        return Promise.reject(error);
+      }
+
       console.log('🔄 Clearing local storage and redirecting to login...');
 
       // Token expirado ou inválido

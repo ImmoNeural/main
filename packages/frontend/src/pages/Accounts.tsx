@@ -115,7 +115,7 @@ const Accounts = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Contas Bancárias</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight">Contas Bancárias</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Gerencie suas contas conectadas</p>
         </div>
         <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">

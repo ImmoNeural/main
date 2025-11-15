@@ -56,7 +56,7 @@ const Layout = () => {
         {/* Trial Badge - Topo */}
         {isTrialActive && !sidebarCollapsed && (
           <div className="px-3 pb-2">
-            <div className="bg-yellow-400 text-gray-900 px-3 py-2 rounded-lg text-center">
+            <div className="bg-yellow-100 text-yellow-800 px-3 py-2 rounded-lg text-center border border-yellow-300">
               <p className="text-xs font-bold">🎉 TRIAL ATIVO</p>
               <p className="text-xs mt-1">
                 {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} restante{daysRemaining !== 1 ? 's' : ''}
@@ -88,21 +88,9 @@ const Layout = () => {
                   >
                     <Icon className={`${isActive ? 'w-7 h-7' : 'w-6 h-6'} flex-shrink-0`} />
                     {!sidebarCollapsed && (
-                      <div className="flex-1 flex items-center justify-between">
-                        <span className={`text-base font-medium ${isActive ? 'font-semibold' : ''}`}>
-                          {item.name}
-                        </span>
-                        {isTrialActive && item.path !== '/app/planos' && (
-                          <span className="bg-yellow-400 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded">
-                            TRIAL
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {isTrialActive && sidebarCollapsed && item.path !== '/app/planos' && (
-                      <div className="absolute -top-1 -right-1 bg-yellow-400 text-gray-900 text-[8px] font-bold px-1 py-0.5 rounded">
-                        T
-                      </div>
+                      <span className={`text-base font-medium ${isActive ? 'font-semibold' : ''}`}>
+                        {item.name}
+                      </span>
                     )}
                   </Link>
                 </li>
@@ -222,11 +210,6 @@ const Layout = () => {
                 <span className={`text-[9px] font-medium truncate w-full text-center ${isActive ? 'font-semibold' : ''}`}>
                   {item.name}
                 </span>
-                {isTrialActive && item.path !== '/app/planos' && (
-                  <div className="absolute -top-0.5 -right-0.5 bg-yellow-400 text-gray-900 text-[8px] font-bold px-1 py-0.5 rounded">
-                    TRIAL
-                  </div>
-                )}
               </Link>
             );
           })}

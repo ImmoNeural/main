@@ -161,7 +161,7 @@ const ConnectBank = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Conectar Banco</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight">Conectar Banco</h1>
         <p className="text-gray-500 mt-1">
           Selecione seu banco para conectar via Open Banking (PSD2)
         </p>
