@@ -30,12 +30,50 @@ const PLAN_CONFIGS = {
 type PlanType = keyof typeof PLAN_CONFIGS;
 
 /**
+ * GET /api/subscriptions/debug
+ * DEBUG: Ver todas as assinaturas do usuário (REMOVER EM PRODUÇÃO)
+ */
+router.get('/debug', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId!;
+
+    // Buscar TODAS as assinaturas do usuário
+    const { data: allSubs, error: allError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    // Buscar todos os pagamentos
+    const { data: allPayments, error: payError } = await supabase
+      .from('subscription_payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    res.json({
+      userId: userId,
+      subscriptions: allSubs || [],
+      subscriptionsError: allError,
+      payments: allPayments || [],
+      paymentsError: payError,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error('Error in debug endpoint:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/subscriptions/current
  * Buscar assinatura atual do usuário
  */
 router.get('/current', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.userId!;
+
+    console.log('🔍 Fetching subscription for user:', userId);
 
     const { data, error } = await supabase
       .from('subscriptions')
@@ -47,8 +85,11 @@ router.get('/current', authMiddleware, async (req: Request, res: Response) => {
       .single();
 
     if (error && error.code !== 'PGRST116') {
+      console.error('❌ Error fetching subscription:', error);
       throw error;
     }
+
+    console.log('✅ Current subscription:', data ? data.plan_type + ' - ' + data.status : 'none');
 
     res.json({ subscription: data || null });
   } catch (error: any) {
@@ -246,6 +287,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
     const signature = req.headers['stripe-signature'] as string;
 
     if (!signature) {
+      console.error('❌ Webhook: Missing stripe-signature header');
       return res.status(400).json({ error: 'Missing stripe-signature header' });
     }
 
@@ -255,7 +297,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
       signature
     );
 
-    console.log('Stripe Webhook Event:', event.type);
+    console.log('✅ Stripe Webhook Event Received:', event.type);
 
     // Processar eventos
     switch (event.type) {
@@ -263,34 +305,106 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
         const session = event.data.object as any;
         const userId = session.metadata?.user_id;
 
+        console.log('📦 Checkout Session Completed:', {
+          sessionId: session.id,
+          userId: userId,
+          customerEmail: session.customer_email,
+          paymentStatus: session.payment_status,
+        });
+
         if (!userId) {
-          console.warn('User ID not found in session metadata');
+          console.warn('⚠️ User ID not found in session metadata');
           break;
         }
 
         // Buscar assinatura pelo session ID
+        console.log('🔍 Searching subscription with session ID:', session.id);
         const { data: subscription, error: fetchError } = await supabase
           .from('subscriptions')
           .select('*')
           .eq('payment_processor_subscription_id', session.id)
           .single();
 
+        if (fetchError) {
+          console.error('❌ Error fetching subscription:', fetchError);
+        }
+
         if (!subscription) {
-          console.warn('Subscription not found for session:', session.id);
+          console.warn('⚠️ Subscription not found for session:', session.id);
+          // Tentar buscar por user_id com status pending
+          console.log('🔍 Trying to find by user_id and pending status...');
+          const { data: pendingSub, error: pendingError } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (pendingError) {
+            console.error('❌ Error fetching pending subscription:', pendingError);
+            break;
+          }
+
+          if (!pendingSub) {
+            console.error('❌ No pending subscription found for user:', userId);
+            break;
+          }
+
+          console.log('✅ Found pending subscription:', pendingSub.id);
+
+          // Atualizar esta assinatura
+          const { data: updated, error: updateError } = await supabase
+            .from('subscriptions')
+            .update({
+              status: 'active',
+              start_date: new Date().toISOString(),
+              payment_processor_subscription_id: session.subscription || session.id,
+              payment_processor_customer_id: session.customer,
+            })
+            .eq('id', pendingSub.id)
+            .select();
+
+          if (updateError) {
+            console.error('❌ Error updating subscription:', updateError);
+            throw updateError;
+          }
+
+          console.log('✅ Subscription updated to active:', updated);
+
+          // Atualizar pagamento
+          await supabase
+            .from('subscription_payments')
+            .update({
+              payment_status: 'paid',
+              payment_date: new Date().toISOString(),
+              payment_processor_payment_id: session.payment_intent,
+            })
+            .eq('subscription_id', pendingSub.id);
+
+          console.log('✅ Payment updated to paid');
           break;
         }
 
         // Atualizar status da assinatura
-        const { error: updateError } = await supabase
+        console.log('📝 Updating subscription status to active...');
+        const { data: updated, error: updateError } = await supabase
           .from('subscriptions')
           .update({
             status: 'active',
             start_date: new Date().toISOString(),
             payment_processor_subscription_id: session.subscription || session.id,
           })
-          .eq('id', subscription.id);
+          .eq('id', subscription.id)
+          .select();
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('❌ Error updating subscription:', updateError);
+          throw updateError;
+        }
+
+        console.log('✅ Subscription updated:', updated);
 
         // Atualizar pagamento
         await supabase
@@ -301,7 +415,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
           })
           .eq('payment_processor_payment_id', session.id);
 
-        console.log('Subscription activated:', subscription.id);
+        console.log('✅ Subscription activated:', subscription.id);
         break;
       }
 
