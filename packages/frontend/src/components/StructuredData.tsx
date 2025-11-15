@@ -6,8 +6,8 @@ const StructuredData = () => {
     '@type': 'Organization',
     name: 'Guru do Dindin',
     description: 'Plataforma de controle financeiro pessoal inteligente',
-    url: 'https://gurudodindin.com',
-    logo: 'https://gurudodindin.com/logo.png',
+    url: 'https://gurudodindin.com.br',
+    logo: 'https://gurudodindin.com.br/logo.png',
     sameAs: [
       // Adicione suas redes sociais aqui quando tiver
     ],
@@ -23,7 +23,7 @@ const StructuredData = () => {
     '@type': 'WebApplication',
     name: 'Guru do Dindin',
     description: 'Controle financeiro pessoal inteligente e gratuito',
-    url: 'https://gurudodindin.com',
+    url: 'https://gurudodindin.com.br',
     applicationCategory: 'FinanceApplication',
     operatingSystem: 'Web',
     offers: {
@@ -54,7 +54,7 @@ const StructuredData = () => {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://gurudodindin.com',
+        item: 'https://gurudodindin.com.br',
       },
     ],
   };
