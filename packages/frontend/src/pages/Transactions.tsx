@@ -64,7 +64,6 @@ const Transactions = () => {
           category: 'Não Categorizado',
           icon: '❓',
           color: '#9CA3AF',
-          count: 0,
         });
       }
       setCategories(categoriesWithUncategorized);
