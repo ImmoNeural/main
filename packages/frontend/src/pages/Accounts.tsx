@@ -31,26 +31,47 @@ const Accounts = () => {
     setLoading(true);
     try {
       const response = await bankApi.getAccounts();
+      console.log('📋 Loaded accounts:', response.data);
       setAccounts(response.data);
+
+      if (response.data.length === 0) {
+        console.log('⚠️ Nenhuma conta encontrada');
+        setActiveAccountId(null);
+        localStorage.removeItem('activeAccountId');
+        setLoading(false);
+        return;
+      }
 
       // Verificar se há banco ativo salvo
       const savedActiveAccount = localStorage.getItem('activeAccountId');
+      console.log('💾 localStorage activeAccountId:', savedActiveAccount);
 
-      if (savedActiveAccount) {
-        // Se há banco salvo, usar ele
-        console.log('✅ Banco ativo encontrado no localStorage:', savedActiveAccount);
+      // Verificar se o banco salvo ainda existe na lista
+      const savedAccountExists = savedActiveAccount && response.data.some(acc => acc.id === savedActiveAccount);
+
+      if (savedAccountExists) {
+        // Se há banco salvo E ele existe, usar ele
+        console.log('✅ Banco ativo encontrado e VÁLIDO no localStorage:', savedActiveAccount);
         setActiveAccountId(savedActiveAccount);
-      } else if (response.data.length > 0) {
-        // Se não há banco salvo, definir automaticamente
+      } else {
+        // Se não há banco salvo OU ele não existe mais, definir automaticamente
+        console.log('🔄 Definindo novo banco ativo automaticamente');
+
         if (response.data.length === 1) {
           console.log('✅ Apenas 1 conta encontrada - tornando ativa automaticamente');
-          setActiveAccount(response.data[0].id);
+          const accountId = response.data[0].id;
+          console.log('🎯 Ativando conta:', accountId);
+          setActiveAccount(accountId);
         } else {
           // Se houver múltiplas contas, usar a primeira com status 'active' (conectada)
           const firstConnectedAccount = response.data.find(acc => acc.status === 'active');
           if (firstConnectedAccount) {
-            console.log('✅ Múltiplas contas - definindo primeira conta conectada como ativa');
+            console.log('✅ Múltiplas contas - definindo primeira conta conectada como ativa:', firstConnectedAccount.id);
             setActiveAccount(firstConnectedAccount.id);
+          } else {
+            // Fallback: usar a primeira conta da lista
+            console.log('⚠️ Nenhuma conta com status active, usando primeira da lista:', response.data[0].id);
+            setActiveAccount(response.data[0].id);
           }
         }
       }
@@ -165,6 +186,13 @@ const Accounts = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.map((account) => {
           const isActive = activeAccountId === account.id;
+          console.log('🔍 Account render:', {
+            accountId: account.id,
+            accountName: account.bank_name,
+            activeAccountId: activeAccountId,
+            isActive: isActive,
+            match: activeAccountId === account.id
+          });
           return (
           <div
             key={account.id}
