@@ -660,11 +660,11 @@ const Transactions = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTransactions.map((transaction) => {
-                const isUncategorized = !transaction.category || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
+                const isUncategorized = !transaction.category || transaction.category === 'Não Categorizado' || transaction.category === 'Definir Categoria' || transaction.category === 'Outros' || transaction.category === 'Sem Categoria';
                 return (
                   <tr
                     key={transaction.id}
-                    className={`hover:bg-gray-50 transition ${isUncategorized ? 'bg-rose-50 border-l-4 border-rose-400' : ''}`}
+                    className={`hover:bg-gray-50 transition ${isUncategorized ? 'bg-gray-100 border-l-4 border-gray-400' : ''}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {format(new Date(transaction.date), 'dd/MM/yyyy')}
@@ -688,7 +688,7 @@ const Transactions = () => {
                       <div className="flex items-center space-x-2">
                         {isUncategorized && (
                           <div className="group relative">
-                            <AlertCircle className="w-5 h-5 text-rose-600 animate-pulse" />
+                            <AlertCircle className="w-5 h-5 text-orange-600 animate-pulse" />
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                               ⚠️ Sem categoria definida - Favor categorizar manualmente
                             </div>
@@ -698,7 +698,7 @@ const Transactions = () => {
                           value={transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
                           className={`text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 ${
-                            isUncategorized ? 'border-rose-400 bg-rose-100 text-gray-900 font-semibold focus:ring-rose-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
+                            isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-primary-500'
                           }`}
                         >
                           {categories.map((cat) => (

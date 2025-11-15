@@ -685,10 +685,10 @@ class CategorizationService {
 
     // Categoria padrão para transações não identificadas
     return {
-      category: 'Definir Categoria',
-      subcategory: 'Aguardando Classificação',
-      icon: '❓',
-      color: '#E9D5FF', // Roxo clarinho
+      category: 'Não Categorizado',
+      subcategory: 'Requer Classificação Manual',
+      icon: '⚠️',
+      color: '#9CA3AF', // Cinza clarinho
       confidence: 0,
       matchedBy: 'nenhum match encontrado',
     };
