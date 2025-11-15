@@ -32,6 +32,8 @@ const Plans = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
 
   const plans: Plan[] = [
     {
@@ -106,14 +108,40 @@ const Plans = () => {
       const { data } = await subscriptionApi.getCurrentSubscription();
       if (data.subscription) {
         setCurrentPlan(data.subscription.plan_type);
+        setSubscriptionStatus(data.subscription.status);
+        setTrialEndDate(data.subscription.trial_end_date);
+      } else {
+        // Não tem assinatura
+        setCurrentPlan(null);
+        setSubscriptionStatus(null);
+        setTrialEndDate(null);
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
     }
   };
 
+  const calculateDaysRemaining = () => {
+    if (!trialEndDate) return 0;
+    const now = new Date();
+    const endDate = new Date(trialEndDate);
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  const isOnTrial = subscriptionStatus === 'trial';
+  const isActive = subscriptionStatus === 'active';
+  const daysRemaining = calculateDaysRemaining();
+
   const handleSelectPlan = async (plan: Plan) => {
     if (loading) return;
+
+    // Não permitir se já está no plano pago
+    if (isActive && currentPlan === plan.type) {
+      alert('Você já está neste plano!');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -171,6 +199,38 @@ const Plans = () => {
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Comece 2025 com organização financeira de verdade. Descontos especiais na assinatura anual!
             </p>
+
+            {/* Status da Assinatura */}
+            {isOnTrial && (
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 shadow-md">
+                <p className="text-center text-blue-800 font-semibold">
+                  🎉 Período de teste ativo! Restam {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} grátis
+                </p>
+                <p className="text-center text-blue-600 text-sm mt-1">
+                  Aproveite para testar todas as funcionalidades. Depois escolha seu plano!
+                </p>
+              </div>
+            )}
+            {!isOnTrial && !isActive && (
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-4 shadow-md">
+                <p className="text-center text-yellow-800 font-semibold">
+                  ⚠️ Você não possui um plano ativo
+                </p>
+                <p className="text-center text-yellow-600 text-sm mt-1">
+                  Escolha um plano abaixo para continuar usando o Guru do Dindin
+                </p>
+              </div>
+            )}
+            {isActive && (
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-md">
+                <p className="text-center text-green-800 font-semibold">
+                  ✅ Plano ativo: {currentPlan === 'manual' ? 'Manual' : currentPlan === 'conectado' ? 'Conectado' : 'Conectado Plus'}
+                </p>
+                <p className="text-center text-green-600 text-sm mt-1">
+                  Você pode fazer upgrade para outro plano a qualquer momento
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Cards de Planos */}
@@ -241,7 +301,7 @@ const Plans = () => {
                   {/* Botão de Ação */}
                   <button
                     onClick={() => handleSelectPlan(plan)}
-                    disabled={loading || currentPlan === plan.type}
+                    disabled={loading || (isActive && currentPlan === plan.type)}
                     className={`
                       w-full py-3 px-4 rounded-lg font-semibold transition-all
                       flex items-center justify-center space-x-2
@@ -255,10 +315,15 @@ const Plans = () => {
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : currentPlan === plan.type ? (
+                    ) : (isActive && currentPlan === plan.type) ? (
                       <>
                         <Check className="w-5 h-5" />
                         <span>Plano Atual</span>
+                      </>
+                    ) : (isOnTrial && currentPlan === plan.type) ? (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        <span>Fazer Upgrade</span>
                       </>
                     ) : (
                       <>
@@ -268,9 +333,14 @@ const Plans = () => {
                     )}
                   </button>
 
-                  {currentPlan === plan.type && (
+                  {(isActive && currentPlan === plan.type) && (
                     <p className="text-center text-sm text-green-600 mt-2 font-medium">
                       ✓ Você está neste plano
+                    </p>
+                  )}
+                  {(isOnTrial && currentPlan === plan.type) && (
+                    <p className="text-center text-sm text-blue-600 mt-2 font-medium">
+                      🎉 Plano de teste ativo - Faça upgrade para continuar após o trial
                     </p>
                   )}
                 </div>
