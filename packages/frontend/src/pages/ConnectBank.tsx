@@ -93,9 +93,9 @@ const ConnectBank = () => {
           );
           alert(`✅ Conta ${selectedBank.name} conectada com sucesso!\n\nDados de demonstração foram gerados.`);
 
-          // Navegar para accounts - a flag será removida no componente Accounts.tsx
-          console.log('➡️ Navegando para /accounts (proteção ainda ativa)');
-          navigate('/accounts');
+          // Navegar para dashboard - a flag será removida no componente Dashboard.tsx
+          console.log('➡️ Navegando para /app/dashboard (proteção ainda ativa)');
+          navigate('/app/dashboard');
         } else {
           sessionStorage.removeItem('bank_connection_in_progress');
           setConnecting(false);
@@ -127,9 +127,9 @@ const ConnectBank = () => {
                 );
                 alert('Conta conectada com sucesso!');
 
-                // Navegar para accounts - a flag será removida no componente Accounts.tsx
-                console.log('➡️ Navegando para /accounts (proteção ainda ativa)');
-                navigate('/accounts');
+                // Navegar para dashboard - a flag será removida no componente Dashboard.tsx
+                console.log('➡️ Navegando para /app/dashboard (proteção ainda ativa)');
+                navigate('/app/dashboard');
               } catch (error) {
                 console.error('❌ Error handling callback:', error);
                 alert('Erro ao processar conexão com banco.');

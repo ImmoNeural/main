@@ -75,6 +75,18 @@ const Dashboard = () => {
       setActiveAccountId(savedActiveAccount);
     }
 
+    // Limpar flag de proteção contra logout após conexão bancária
+    // Esta flag é setada em ConnectBank.tsx para evitar logout durante o processo
+    const bankConnectionFlag = sessionStorage.getItem('bank_connection_in_progress');
+    if (bankConnectionFlag) {
+      console.log('🔓 Removendo proteção contra logout (Dashboard carregado)');
+      // Delay para garantir que todas as requisições iniciais completem
+      setTimeout(() => {
+        sessionStorage.removeItem('bank_connection_in_progress');
+        console.log('✅ Proteção removida com sucesso');
+      }, 2000);
+    }
+
     // Listener para mudanças no banco ativo
     const handleActiveAccountChange = (event: any) => {
       const { accountId} = event.detail;
