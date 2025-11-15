@@ -12,6 +12,8 @@ import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import budgetRoutes from './routes/budget.routes';
 import subscriptionRoutes from './routes/subscription.routes';
+import { authMiddleware } from './middleware/auth.middleware';
+import { checkSubscriptionStatus, requireActiveSubscription } from './middleware/subscription.middleware';
 
 const app = express();
 
@@ -51,11 +53,13 @@ app.use(express.json());
 
 // Rotas
 app.use('/api/auth', authRoutes);
-app.use('/api/bank', bankRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/subscriptions', subscriptionRoutes); // Subscription não precisa de verificação (tem rotas públicas)
+
+// Rotas protegidas - requerem autenticação E assinatura ativa
+app.use('/api/bank', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, bankRoutes);
+app.use('/api/transactions', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, transactionRoutes);
+app.use('/api/dashboard', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, dashboardRoutes);
+app.use('/api/budgets', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, budgetRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
