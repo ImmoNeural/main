@@ -11,6 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 import SEO from '../components/SEO';
+import { subscriptionApi } from '../services/api';
 
 interface Plan {
   id: string;
@@ -102,14 +103,7 @@ const Plans = () => {
 
   const fetchCurrentSubscription = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/subscriptions/current', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
+      const { data } = await subscriptionApi.getCurrentSubscription();
       if (data.subscription) {
         setCurrentPlan(data.subscription.plan_type);
       }
@@ -123,24 +117,7 @@ const Plans = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/subscriptions/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          planType: plan.type,
-          paymentCycle: 'yearly' // Sempre anual conforme solicitado
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar assinatura');
-      }
+      const { data } = await subscriptionApi.createSubscription(plan.type, 'yearly');
 
       if (data.checkoutUrl) {
         // Redirecionar para Stripe Checkout (página segura do Stripe)
@@ -150,7 +127,8 @@ const Plans = () => {
       }
     } catch (error: any) {
       console.error('Error selecting plan:', error);
-      alert(error.message || 'Erro ao processar assinatura. Tente novamente.');
+      const errorMessage = error.response?.data?.error || error.message || 'Erro ao processar assinatura. Tente novamente.';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

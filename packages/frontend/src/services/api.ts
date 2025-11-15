@@ -200,4 +200,19 @@ export const budgetApi = {
     api.delete(`/budgets/${encodeURIComponent(categoryName)}`),
 };
 
+// Subscription APIs
+export const subscriptionApi = {
+  getCurrentSubscription: () =>
+    api.get('/subscriptions/current'),
+
+  createSubscription: (planType: string, paymentCycle: string) =>
+    api.post('/subscriptions/create', { planType, paymentCycle }),
+
+  cancelSubscription: () =>
+    api.post('/subscriptions/cancel'),
+
+  getCustomerPortal: () =>
+    api.get('/subscriptions/portal'),
+};
+
 export default api;
