@@ -16,6 +16,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,13 +38,17 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(name, email, password);
+      const response = await register(name, email, password);
       setSuccess(true);
 
-      // Redirecionar novo usuário para conectar banco
+      // Mostrar mensagem personalizada do backend (inclui info sobre trial)
+      const message = response?.data?.message || 'Conta criada com sucesso! Você ganhou 7 dias grátis para testar.';
+      setSuccessMessage(message);
+
+      // Redirecionar novo usuário para dashboard
       setTimeout(() => {
-        navigate('/app/connect-bank');
-      }, 1000);
+        navigate('/app/dashboard');
+      }, 2000); // 2 segundos para ler a mensagem
     } catch (err: any) {
       console.error('Register error:', err);
       setError(err.response?.data?.error || 'Erro ao criar conta. Tente novamente.');
@@ -101,7 +106,7 @@ const Register = () => {
           {success && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3 animate-slide-down">
               <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-green-800">Conta criada com sucesso! Redirecionando...</p>
+              <p className="text-sm text-green-800">{successMessage}</p>
             </div>
           )}
 

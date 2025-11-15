@@ -12,7 +12,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<any>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -65,6 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+
+    return response; // Retornar response para acessar mensagem de trial
   };
 
   const logout = () => {

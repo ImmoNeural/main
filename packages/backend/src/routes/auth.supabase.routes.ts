@@ -70,14 +70,56 @@ router.post('/register', async (req: Request, res: Response) => {
 
     // O profile é criado automaticamente via trigger no Supabase
 
+    // Criar assinatura trial de 7 dias automaticamente
+    try {
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
+
+      const { error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: data.user.id,
+          plan_type: 'manual',
+          plan_name: 'Trial - Plano Manual',
+          plan_price: 0,
+          status: 'trial',
+          start_date: new Date().toISOString(),
+          end_date: trialEndDate.toISOString(),
+          trial_end_date: trialEndDate.toISOString(),
+          payment_method: null,
+          payment_processor: null,
+          max_connected_accounts: 0,
+          auto_renew: false,
+          metadata: {
+            trial_days: 7,
+            created_on_signup: true
+          }
+        });
+
+      if (subscriptionError) {
+        console.error('⚠️ Error creating trial subscription:', subscriptionError);
+        // Não bloqueia o cadastro se falhar ao criar trial
+      } else {
+        console.log('✅ Trial subscription created for user:', data.user.id);
+      }
+    } catch (trialError) {
+      console.error('⚠️ Error creating trial:', trialError);
+      // Não bloqueia o cadastro
+    }
+
     res.status(201).json({
-      message: 'Usuário criado com sucesso',
+      message: 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.',
       token: data.session?.access_token,
       user: {
         id: data.user.id,
         name,
         email: data.user.email,
       },
+      trial: {
+        active: true,
+        days: 7,
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      }
     });
   } catch (error) {
     console.error('❌ Error registering user:', error);
