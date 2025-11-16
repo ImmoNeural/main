@@ -66,22 +66,25 @@ app.get('/api/bank/available', async (req, res) => {
   try {
     const { country = 'BR' } = req.query;
     console.log('🌍 Country:', country);
-    console.log('🔧 OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER);
-    console.log('🔑 PLUGGY_CLIENT_ID:', process.env.PLUGGY_CLIENT_ID ? 'SET' : 'NOT SET');
-    console.log('🔑 PLUGGY_CLIENT_SECRET:', process.env.PLUGGY_CLIENT_SECRET ? 'SET' : 'NOT SET');
+    console.log('🔧 OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER || 'NOT SET');
+    console.log('🔑 PLUGGY_CLIENT_ID:', process.env.PLUGGY_CLIENT_ID ? 'SET ✅' : 'NOT SET ❌');
+    console.log('🔑 PLUGGY_CLIENT_SECRET:', process.env.PLUGGY_CLIENT_SECRET ? 'SET ✅' : 'NOT SET ❌');
 
     const banks = await openBankingService.getAvailableBanks(country as string);
 
     console.log(`\n✅ Retornando ${banks.length} bancos`);
     if (banks.length > 0) {
-      console.log('   Primeiro banco:', banks[0]);
+      console.log('   Primeiro banco:', {
+        id: banks[0].id,
+        name: banks[0].name,
+        country: banks[0].country
+      });
     }
     console.log('🏦 ===============================================\n');
 
     res.json(banks);
   } catch (error) {
     console.error('❌ Error fetching available banks:', error);
-    console.error('   Stack:', error);
     console.log('🏦 ===============================================\n');
     res.status(500).json({ error: 'Failed to fetch available banks' });
   }
