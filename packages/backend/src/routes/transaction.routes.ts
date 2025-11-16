@@ -314,38 +314,66 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
 
     let updated = 0;
     let unchanged = 0;
+    let categorized = 0; // Transações com categoria válida (confiança >= 80%)
+    let uncategorized = 0; // Transações com "Não Categorizado" (confiança < 80%)
 
     for (const transaction of transactions || []) {
+      const oldCategory = transaction.category;
+
+      // RECATEGORIZAR usando IA com threshold de 80%
       const categorization = categorizationService.categorizeTransaction(
         transaction.description || '',
         transaction.merchant || '',
         transaction.amount
       );
 
-      // Atualizar apenas se a categoria mudou ou se estava vazia/Outros
-      if (transaction.category !== categorization.category) {
-        const { error: updateError } = await supabase
-          .from('transactions')
-          .update({ category: categorization.category, updated_at: toISOString(Date.now()) })
-          .eq('id', transaction.id);
+      const newCategory = categorization.category;
+      const confidence = categorization.confidence;
 
-        if (!updateError) {
+      // Contar estatísticas
+      if (newCategory === 'Não Categorizado') {
+        uncategorized++;
+      } else {
+        categorized++;
+      }
+
+      // Atualizar SEMPRE, mesmo que seja a mesma categoria
+      // Isso garante que transações antigas sejam reavaliadas com as novas regras
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({
+          category: newCategory,
+          updated_at: toISOString(Date.now())
+        })
+        .eq('id', transaction.id);
+
+      if (!updateError) {
+        if (oldCategory !== newCategory) {
           updated++;
-          console.log(`✅ ${transaction.description?.substring(0, 50)} → ${categorization.category} (${categorization.confidence}%)`);
+          console.log(`✅ [${confidence}%] ${transaction.description?.substring(0, 40)} | ${oldCategory || 'VAZIO'} → ${newCategory}`);
+        } else {
+          unchanged++;
         }
       } else {
-        unchanged++;
+        console.error(`❌ Erro ao atualizar transação ${transaction.id}:`, updateError);
       }
     }
 
-    console.log(`✨ Recategorização concluída: ${updated} atualizadas, ${unchanged} mantidas`);
+    console.log(`✨ Recategorização concluída:`);
+    console.log(`   📊 Total: ${transactions?.length || 0} transações`);
+    console.log(`   ✅ Atualizadas: ${updated}`);
+    console.log(`   ➖ Sem alteração: ${unchanged}`);
+    console.log(`   🎯 Categorizadas (≥80%): ${categorized}`);
+    console.log(`   ❓ Não Categorizadas (<80%): ${uncategorized}`);
 
     res.json({
       success: true,
       total: transactions?.length || 0,
       updated,
       unchanged,
-      message: `${updated} transações foram recategorizadas automaticamente`
+      categorized,
+      uncategorized,
+      message: `Recategorização concluída! ${categorized} com categoria válida, ${uncategorized} requerem categorização manual (confiança < 80%)`
     });
   } catch (error) {
     console.error('❌ Error recategorizing transactions:', error);

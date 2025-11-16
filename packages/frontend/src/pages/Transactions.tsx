@@ -98,6 +98,8 @@ const Transactions = () => {
         `📊 Total: ${response.data.total} transações\n` +
         `✅ Atualizadas: ${response.data.updated} transações\n` +
         `➖ Sem alteração: ${response.data.unchanged} transações\n\n` +
+        `🎯 Categorizadas (≥80%): ${response.data.categorized || 0} transações\n` +
+        `❓ Não Categorizadas (<80%): ${response.data.uncategorized || 0} transações\n\n` +
         `${response.data.message}`
       );
 
