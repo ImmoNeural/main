@@ -14,6 +14,7 @@ import budgetRoutes from './routes/budget.routes';
 import subscriptionRoutes from './routes/subscription.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 import { checkSubscriptionStatus, requireActiveSubscription } from './middleware/subscription.middleware';
+import openBankingService from './services/openBanking.service';
 
 const app = express();
 
@@ -54,6 +55,37 @@ app.use(express.json());
 // Rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/subscriptions', subscriptionRoutes); // Subscription não precisa de verificação (tem rotas públicas)
+
+// ROTA PÚBLICA: Listar bancos disponíveis (NÃO requer autenticação nem subscription)
+// Isso permite que usuários vejam os bancos antes de se cadastrar ou durante trial
+app.get('/api/bank/available', async (req, res) => {
+  console.log('\n🏦 ===============================================');
+  console.log('🏦 GET /api/bank/available - LISTA DE BANCOS (ROTA PÚBLICA)');
+  console.log('🏦 ===============================================');
+
+  try {
+    const { country = 'BR' } = req.query;
+    console.log('🌍 Country:', country);
+    console.log('🔧 OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER);
+    console.log('🔑 PLUGGY_CLIENT_ID:', process.env.PLUGGY_CLIENT_ID ? 'SET' : 'NOT SET');
+    console.log('🔑 PLUGGY_CLIENT_SECRET:', process.env.PLUGGY_CLIENT_SECRET ? 'SET' : 'NOT SET');
+
+    const banks = await openBankingService.getAvailableBanks(country as string);
+
+    console.log(`\n✅ Retornando ${banks.length} bancos`);
+    if (banks.length > 0) {
+      console.log('   Primeiro banco:', banks[0]);
+    }
+    console.log('🏦 ===============================================\n');
+
+    res.json(banks);
+  } catch (error) {
+    console.error('❌ Error fetching available banks:', error);
+    console.error('   Stack:', error);
+    console.log('🏦 ===============================================\n');
+    res.status(500).json({ error: 'Failed to fetch available banks' });
+  }
+});
 
 // Rotas protegidas - requerem autenticação E assinatura ativa
 app.use('/api/bank', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, bankRoutes);
