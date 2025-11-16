@@ -146,6 +146,30 @@ export const transactionApi = {
       '/transactions/bulk-update-category',
       { transactionIds, newCategory }
     ),
+
+  debugCategorization: (params: { description?: string; merchant?: string; amount?: number; transactionId?: string }) =>
+    api.post<{
+      input: {
+        description: string;
+        merchant: string;
+        amount: number;
+        transactionId: string | null;
+      };
+      result: {
+        category: string;
+        subcategory: string;
+        icon: string;
+        color: string;
+        confidence: number;
+        matchedBy: string;
+      };
+      analysis: {
+        isPassing: boolean;
+        threshold: number;
+        willBeCategorizad: string;
+        reason: string;
+      };
+    }>('/transactions/debug-categorization', params),
 };
 
 // Dashboard APIs

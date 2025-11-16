@@ -509,4 +509,83 @@ router.post('/bulk-update-category', authMiddleware, async (req: Request, res: R
   }
 });
 
+/**
+ * POST /api/transactions/debug-categorization
+ * Debug: Mostra como uma transação seria categorizada
+ */
+router.post('/debug-categorization', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { description, merchant, amount, transactionId } = req.body;
+    const user_id = req.userId!;
+
+    console.log('🐛 DEBUG: Categorização solicitada');
+    console.log('   Description:', description);
+    console.log('   Merchant:', merchant);
+    console.log('   Amount:', amount);
+
+    // Se foi passado um ID de transação, buscar os dados dela
+    let actualDescription = description;
+    let actualMerchant = merchant;
+    let actualAmount = amount;
+
+    if (transactionId) {
+      const { data: transaction } = await supabase
+        .from('transactions')
+        .select('*, bank_accounts!inner(user_id)')
+        .eq('bank_accounts.user_id', user_id)
+        .eq('id', transactionId)
+        .single();
+
+      if (transaction) {
+        actualDescription = transaction.description;
+        actualMerchant = transaction.merchant;
+        actualAmount = transaction.amount;
+        console.log('   Usando dados da transação:', transactionId);
+      }
+    }
+
+    // Categorizar
+    const result = categorizationService.categorizeTransaction(
+      actualDescription || '',
+      actualMerchant || '',
+      actualAmount
+    );
+
+    // Preparar resposta detalhada
+    const response = {
+      input: {
+        description: actualDescription,
+        merchant: actualMerchant,
+        amount: actualAmount,
+        transactionId: transactionId || null,
+      },
+      result: {
+        category: result.category,
+        subcategory: result.subcategory,
+        icon: result.icon,
+        color: result.color,
+        confidence: result.confidence,
+        matchedBy: result.matchedBy,
+      },
+      analysis: {
+        isPassing: result.confidence >= 80,
+        threshold: 80,
+        willBeCategorizad: result.confidence >= 80 ? 'SIM' : 'NÃO',
+        reason: result.confidence >= 80
+          ? `Confiança de ${result.confidence}% está acima do threshold de 80%`
+          : result.confidence > 0
+            ? `Confiança de ${result.confidence}% está ABAIXO do threshold de 80% - ficará como "Não Categorizado"`
+            : 'Nenhum padrão encontrado - ficará como "Não Categorizado"',
+      },
+    };
+
+    console.log('✅ Resultado:', JSON.stringify(response, null, 2));
+
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Error in debug categorization:', error);
+    res.status(500).json({ error: 'Erro ao debugar categorização' });
+  }
+});
+
 export default router;
