@@ -725,8 +725,15 @@ const Transactions = () => {
                 </select>
               </div>
 
-              {/* Badge de Tipo */}
-              <div className="flex justify-end">
+              {/* Badge de Tipo e Botão Debug */}
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={() => handleDebugCategorization(transaction)}
+                  className="px-2 py-1 bg-gray-100 hover:bg-primary-100 border border-gray-300 hover:border-primary-500 rounded text-xs font-semibold transition"
+                  title="🐛 DEBUG"
+                >
+                  🐛 Debug
+                </button>
                 <span
                   className={`inline-flex px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
                     transaction.type === 'credit'
@@ -843,10 +850,10 @@ const Transactions = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <button
                       onClick={() => handleDebugCategorization(transaction)}
-                      className="text-gray-400 hover:text-primary-600 transition"
-                      title="Debug: Ver como foi categorizada"
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-primary-100 border border-gray-300 hover:border-primary-500 rounded-lg transition text-lg font-semibold"
+                      title="🐛 DEBUG: Clique para ver como esta transação foi categorizada"
                     >
-                      🐛
+                      🐛 Debug
                     </button>
                   </td>
                 </tr>
