@@ -4,7 +4,7 @@ import { transactionApi, budgetApi } from '../services/api';
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown } from 'lucide-react';
+import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Wallet } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -852,14 +852,20 @@ export default function Budgets() {
   return (
     <div className="p-3 sm:p-4 lg:p-6 bg-gray-50 min-h-screen pb-20 lg:pb-6">
       <header className="max-w-6xl mx-auto mb-4 sm:mb-6 lg:mb-8">
-        {/* Título */}
-        <div className="mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
-            🎯 Budgets por Categoria
-          </h1>
-          <p className="text-xs sm:text-sm lg:text-base text-gray-500 mt-1 sm:mt-2">
-            Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
-          </p>
+        {/* Título e Botão Conectar Banco */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3 sm:mb-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
+              🎯 Budgets por Categoria
+            </h1>
+            <p className="text-xs sm:text-sm lg:text-base text-gray-500 mt-1 sm:mt-2">
+              Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
+            </p>
+          </div>
+          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
+            <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-sm sm:text-base">Conectar Banco</span>
+          </Link>
         </div>
 
         {/* Seletor de Mês - Centralizado em mobile */}
