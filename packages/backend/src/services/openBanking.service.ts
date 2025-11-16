@@ -57,43 +57,70 @@ class OpenBankingService {
    * Retorna lista de instituições baseada no provedor configurado
    */
   async getAvailableBanks(country: string = 'DE') {
+    console.log('\n📋 [OpenBanking] getAvailableBanks START');
+    console.log('   Country:', country);
+    console.log('   Provider type:', this.providerType);
+
     try {
       const provider = this.getProvider();
-      console.log(`[OpenBanking] Getting banks for country: ${country}, provider: ${this.providerType}`);
+      console.log(`   Provider instance:`, provider.constructor.name);
 
       // Pluggy (Brasil)
       if ('getConnectors' in provider) {
-        console.log('[OpenBanking] Using Pluggy connectors...');
-        const connectors = await (provider as any).getConnectors(country);
-        console.log(`[OpenBanking] Found ${connectors.length} connectors from Pluggy`);
+        console.log('   ✅ Provider has getConnectors (Pluggy detected)');
+        console.log('   🔄 Calling provider.getConnectors...');
 
-        if (connectors.length > 0) {
-          return this.mapConnectorsToBanks(connectors);
+        try {
+          const connectors = await (provider as any).getConnectors(country);
+          console.log(`   📊 Received ${connectors.length} connectors from Pluggy API`);
+
+          if (connectors.length > 0) {
+            console.log('   ✅ Mapping connectors to banks...');
+            const banks = this.mapConnectorsToBanks(connectors);
+            console.log(`   ✅ Returning ${banks.length} banks from Pluggy`);
+            return banks;
+          }
+
+          console.log('   ⚠️ No connectors returned from Pluggy API');
+          console.log('   📋 Falling back to static list');
+        } catch (pluggyError) {
+          console.error('   ❌ Error calling Pluggy getConnectors:', pluggyError);
+          console.error('      Error details:', pluggyError);
+          console.log('   📋 Falling back to static list due to Pluggy error');
         }
-
-        console.log('[OpenBanking] No connectors from API, using static list');
+      } else {
+        console.log('   ℹ️ Provider does NOT have getConnectors');
       }
 
       // Nordigen (Europa)
       if ('getInstitutions' in provider) {
+        console.log('   Using Nordigen institutions');
         const institutions = await (provider as any).getInstitutions(country);
         return this.mapInstitutionsToBanks(institutions);
       }
 
       // Tink (Europa)
       if ('getProviders' in provider) {
+        console.log('   Using Tink providers');
         const providers = await (provider as any).getProviders(country);
         return this.mapProvidersToBanks(providers);
       }
 
       // Fallback para lista estática
-      console.log('[OpenBanking] Using static bank list');
-      return this.getStaticBankList(country);
+      console.log('   📋 Using static bank list (no provider matched or empty response)');
+      const staticBanks = this.getStaticBankList(country);
+      console.log(`   📊 Static list has ${staticBanks.length} banks`);
+      return staticBanks;
     } catch (error) {
-      console.error('[OpenBanking] Error fetching available banks:', error);
+      console.error('   ❌ CATCH: Error in getAvailableBanks:', error);
+      console.error('      Stack:', error);
       // Em caso de erro, retorna lista estática
-      console.log('[OpenBanking] Falling back to static list due to error');
-      return this.getStaticBankList(country);
+      console.log('   📋 Falling back to static list due to CATCH error');
+      const staticBanks = this.getStaticBankList(country);
+      console.log(`   📊 Static list has ${staticBanks.length} banks`);
+      return staticBanks;
+    } finally {
+      console.log('📋 [OpenBanking] getAvailableBanks END\n');
     }
   }
 
