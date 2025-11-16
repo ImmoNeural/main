@@ -672,13 +672,75 @@ class CategorizationService {
     // Retornar resultado - THRESHOLD DE CONFIANÇA: 80%
     // Se a confiança for menor que 80%, não categorizar
     if (bestMatch && bestMatch.score >= 80) {
+      let finalCategory = bestMatch.rule.category;
+      let finalSubcategory = bestMatch.rule.subcategory || 'Geral';
+      let finalIcon = bestMatch.rule.icon;
+      let finalColor = bestMatch.rule.color;
+      let adjustmentReason = '';
+
+      // 🔍 VERIFICAÇÃO DE SINAL DA TRANSAÇÃO (INVESTIMENTOS, SALÁRIO, RECEITAS)
+      // Aplicar lógica inteligente baseada no valor positivo/negativo
+      if (amount !== undefined && amount !== null) {
+        const isPositive = amount > 0;
+        const isNegative = amount < 0;
+        const hasDebitoKeyword = text.includes('debito') || text.includes('deb ');
+
+        // 📈 REGRA 1: INVESTIMENTOS
+        // Se categoria é Investimentos E valor é POSITIVO → mudar para RECEITAS (lucro do investimento)
+        // Se categoria é Investimentos E valor é NEGATIVO → manter como INVESTIMENTOS (aplicação)
+        if (finalCategory === 'Investimentos') {
+          if (isPositive) {
+            finalCategory = 'Receitas';
+            finalSubcategory = 'Rendimentos de Investimentos';
+            finalIcon = '💹';
+            finalColor = '#4CAF50';
+            adjustmentReason = ' → Ajustado para Receitas (valor positivo = lucro de investimento)';
+          } else if (isNegative || hasDebitoKeyword) {
+            // Manter como Investimentos (já está correto)
+            adjustmentReason = ' → Confirmado como Investimentos (valor negativo ou débito = aplicação)';
+          }
+        }
+
+        // 💰 REGRA 2: SALÁRIO
+        // Se categoria é Salário E valor é POSITIVO → manter como SALÁRIO (dinheiro entrando)
+        // Se categoria é Salário E valor é NEGATIVO → mudar para CONTAS (pagamento que o usuário faz)
+        else if (finalCategory === 'Salário') {
+          if (isNegative) {
+            finalCategory = 'Contas';
+            finalSubcategory = 'Boletos e Débitos';
+            finalIcon = '📄';
+            finalColor = '#607D8B';
+            adjustmentReason = ' → Ajustado para Contas (valor negativo = pagamento a fazer)';
+          } else if (isPositive) {
+            // Manter como Salário (já está correto)
+            adjustmentReason = ' → Confirmado como Salário (valor positivo = dinheiro entrando)';
+          }
+        }
+
+        // 💹 REGRA 3: RECEITAS
+        // Se categoria é Receitas E valor é POSITIVO → manter como RECEITAS (dinheiro entrando)
+        // Se categoria é Receitas E valor é NEGATIVO → mudar para INVESTIMENTOS (dinheiro saindo)
+        else if (finalCategory === 'Receitas') {
+          if (isNegative) {
+            finalCategory = 'Investimentos';
+            finalSubcategory = 'Aplicações e Investimentos';
+            finalIcon = '📈';
+            finalColor = '#2196F3';
+            adjustmentReason = ' → Ajustado para Investimentos (valor negativo = aplicação)';
+          } else if (isPositive) {
+            // Manter como Receitas (já está correto)
+            adjustmentReason = ' → Confirmado como Receitas (valor positivo = dinheiro entrando)';
+          }
+        }
+      }
+
       return {
-        category: bestMatch.rule.category,
-        subcategory: bestMatch.rule.subcategory || 'Geral',
-        icon: bestMatch.rule.icon,
-        color: bestMatch.rule.color,
+        category: finalCategory,
+        subcategory: finalSubcategory,
+        icon: finalIcon,
+        color: finalColor,
         confidence: Math.min(bestMatch.score, 100),
-        matchedBy: bestMatch.matchedBy,
+        matchedBy: bestMatch.matchedBy + adjustmentReason,
       };
     }
 
