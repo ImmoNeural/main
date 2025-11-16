@@ -603,9 +603,9 @@ const Dashboard = () => {
           <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2">
-            <Wallet className="w-5 h-5" />
-            <span className="hidden sm:inline">Conectar Banco</span>
+          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 whitespace-nowrap">
+            <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-sm sm:text-base">Conectar Banco</span>
           </Link>
           <select
             value={period}
