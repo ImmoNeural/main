@@ -122,24 +122,41 @@ const Transactions = () => {
   };
 
   const handleDebugCategorization = async (transaction: Transaction) => {
+    console.log('\n\n🐛🐛🐛 ===============================================');
+    console.log('🐛 FRONTEND: Iniciando debug de categorização');
+    console.log('🐛 ===============================================');
+    console.log('Transaction:', transaction);
+    console.log('Transaction ID:', transaction.id);
+    console.log('Description:', transaction.description);
+    console.log('Merchant:', transaction.merchant);
+    console.log('Amount:', transaction.amount);
+
     setDebugLoading(true);
     setShowDebugModal(true);
     setDebugResult(null);
 
     try {
-      console.log('🐛 Debugando categorização da transação:', transaction.id);
+      console.log('🐛 Chamando API: /api/transactions/debug-categorization');
+      console.log('🐛 Payload:', { transactionId: transaction.id });
+
       const response = await transactionApi.debugCategorization({
         transactionId: transaction.id,
       });
-      console.log('✅ Resultado do debug:', response.data);
+
+      console.log('✅ FRONTEND: Resposta recebida do backend:');
+      console.log(response.data);
       setDebugResult(response.data);
     } catch (error: any) {
-      console.error('❌ Erro ao debugar categorização:', error);
+      console.error('❌ FRONTEND: Erro ao debugar categorização:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
       setDebugResult({
         error: true,
         message: error.response?.data?.error || error.message || 'Erro desconhecido',
       });
     } finally {
+      console.log('🐛 FRONTEND: Finalizando debug');
+      console.log('🐛 ===============================================\n\n');
       setDebugLoading(false);
     }
   };

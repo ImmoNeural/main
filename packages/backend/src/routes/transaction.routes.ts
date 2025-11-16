@@ -514,11 +514,17 @@ router.post('/bulk-update-category', authMiddleware, async (req: Request, res: R
  * Debug: Mostra como uma transação seria categorizada
  */
 router.post('/debug-categorization', authMiddleware, async (req: Request, res: Response) => {
+  console.log('\n\n🐛🐛🐛 ===============================================');
+  console.log('🐛 DEBUG CATEGORIZATION ENDPOINT CHAMADO!');
+  console.log('🐛 ===============================================\n');
+
   try {
     const { description, merchant, amount, transactionId } = req.body;
     const user_id = req.userId!;
 
-    console.log('🐛 DEBUG: Categorização solicitada');
+    console.log('🐛 Parâmetros recebidos:');
+    console.log('   User ID:', user_id);
+    console.log('   Transaction ID:', transactionId);
     console.log('   Description:', description);
     console.log('   Merchant:', merchant);
     console.log('   Amount:', amount);
@@ -579,12 +585,17 @@ router.post('/debug-categorization', authMiddleware, async (req: Request, res: R
       },
     };
 
-    console.log('✅ Resultado:', JSON.stringify(response, null, 2));
+    console.log('\n✅ Resultado do Debug:');
+    console.log(JSON.stringify(response, null, 2));
+    console.log('\n🐛 ===============================================');
+    console.log('🐛 DEBUG CATEGORIZATION FINALIZADO COM SUCESSO!');
+    console.log('🐛 ===============================================\n\n');
 
     res.json(response);
   } catch (error) {
-    console.error('❌ Error in debug categorization:', error);
-    res.status(500).json({ error: 'Erro ao debugar categorização' });
+    console.error('\n❌❌❌ ERRO no debug categorization:', error);
+    console.error('Stack:', error);
+    res.status(500).json({ error: 'Erro ao debugar categorização', details: String(error) });
   }
 });
 
