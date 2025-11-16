@@ -67,7 +67,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       // Delivery
       'ifood', 'rappi', 'uber eats', 'ubereats', '99 food', '99food',
       // Fast Food
-      'mcdonalds', 'mc donalds', 'bobs', 'girafas', 'habbibs', 'subway', 'burger king',
+      'mcdonalds', 'mc donalds', 'mcdonald\'s', 'bobs', 'girafas', 'habbibs', 'subway', 'burger king',
       'burguer king', 'kfc', 'pizza hut', 'dominos', 'spoleto', 'china in box',
       // Hamburguerias Premium
       'madero', 'madero container', 'outback', 'fogo de chao', 'barbecue', 'grill',
@@ -75,8 +75,6 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       'starbucks', 'coffee', 'cafe', 'rei do mate', 'ofner', 'kopenhagen',
       // Padarias
       'padaria', 'panificadora', 'santa massa', 'bella paulista',
-      // Adicionadas do JSON (Alimentação/Restaurantes)
-      'mc', 'mcdonald\'s', 'bk', 'ifd', 'ifd*',
     ],
     icon: '🍕',
     color: '#FF5722',
@@ -202,7 +200,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       'combust'
     ],
     brands: [
-      'shell', 'ipiranga', 'petrobras', 'br', 'ale', 'raizen', 'texaco',
+      'shell', 'ipiranga', 'petrobras', 'posto br', 'ale', 'raizen', 'texaco',
       'sem parar', 'veloe', 'conectcar', 'taggy', 'greenpass',
       // Adicionadas do JSON (Transporte/Combustível)
       'br mania' // Já presente em Supermercado/Convenience, mas bom reforçar aqui.
@@ -307,8 +305,8 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     subcategory: 'Bancos e Fintechs',
     keywords: ['banco', 'pagamento', 'tarifa', 'anuidade', 'cartao'],
     brands: [
-      'nubank', 'inter', 'c6', 'c6 bank', 'next', 'neon', 'original',
-      'itau', 'bradesco', 'santander', 'caixa', 'bb', 'banco do brasil',
+      'nubank', 'inter', 'c6 bank', 'next', 'neon', 'original',
+      'itau', 'bradesco', 'santander', 'caixa', 'banco do brasil',
       'picpay', 'mercadopago', 'mercado pago', 'pagseguro', 'paypal',
     ],
     icon: '💳',
@@ -326,10 +324,10 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       'wifi', 'recarga', 'pre-pago', 'pre'
     ],
     brands: [
-      'vivo', 'tim', 'claro', 'oi', 'nextel', 'algar', 'sky', 'net',
+      'vivo', 'tim', 'claro', 'nextel', 'algar', 'sky', 'net',
       'virtua', 'unifique', 'copel', 'gvt', 'telefonica',
       // Adicionadas do JSON (Comunicação)
-      'vivo fibra', 'vfibra', 'claro net', 'net virtua', 'oi fibra', 'tim live'
+      'vivo fibra', 'vfibra', 'claro net', 'net virtua', 'oi fibra', 'oi telecom', 'tim live'
     ],
     icon: '📱',
     color: '#00BCD4',
@@ -569,7 +567,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     category: 'Investimentos',
     subcategory: 'Corretoras e Fundos',
     keywords: ['corretora', 'btg', 'xp investimentos', 'rico', 'clear', 'ações', 'fundos'],
-    brands: ['xp', 'btg', 'rico', 'clear', 'inter invest', 'nuinvest', 'warren'],
+    brands: ['xp investimentos', 'xp inc', 'btg', 'rico', 'clear', 'inter invest', 'nuinvest', 'warren'],
     icon: '📈',
     color: '#2196F3',
     priority: 9,
