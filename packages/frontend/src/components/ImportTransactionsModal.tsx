@@ -75,6 +75,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
     });
 
     console.log('📋 [FRONTEND] Cabeçalhos normalizados:', headers);
+    console.log('📋 [FRONTEND] Cabeçalhos originais:', lines[headerLineIndex].split(separator));
 
     const transactions = [];
 
@@ -88,6 +89,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       }
 
       const values = line.split(separator).map((v: string) => v.trim());
+      console.log(`\n📊 [FRONTEND Linha ${i + 1}] Valores brutos:`, values);
       const transaction: any = {};
 
       headers.forEach((header: string, index: number) => {
@@ -119,8 +121,9 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         }
         // Saldo (Santander) - limpar espaços e caracteres extras
         else if (header.includes('saldo') || header === 'balance') {
-          value = value.replace(/["'\s]/g, '').trim();
-          transaction.saldo = value;
+          const cleanedValue = value.replace(/["'\s]/g, '').trim();
+          transaction.saldo = cleanedValue;
+          console.log(`   💰 [FRONTEND] Header "${header}" (index ${index}): valor bruto="${value}" → limpo="${cleanedValue}"`);
         }
         // Docto/Documento (Santander)
         else if (header === 'docto' || header === 'documento' || header === 'doc') {
