@@ -22,6 +22,7 @@ export interface BankAccount {
 
 export interface Transaction {
   id: string;
+  user_id: string; // Referência direta ao usuário para queries mais eficientes
   account_id: string;
   transaction_id?: string;
   date: number;
