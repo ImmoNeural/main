@@ -87,6 +87,8 @@ export const checkSubscriptionStatus = async (req: Request, res: Response, next:
       return next();
     }
 
+    console.log(`\n🔍 [Subscription Check] User ID: ${userId}, Path: ${req.path}`);
+
     // Buscar assinatura ativa ou trial
     const { data: subscription, error } = await supabase
       .from('subscriptions')
@@ -103,11 +105,19 @@ export const checkSubscriptionStatus = async (req: Request, res: Response, next:
 
     // Se não tem assinatura, marca como expirado
     if (!subscription) {
+      console.log('⚠️ [Subscription Check] No active subscription/trial found for user');
       req.subscription = null;
       req.isTrialExpired = true;
       req.isSubscriptionActive = false;
       return next();
     }
+
+    console.log(`✅ [Subscription Check] Found subscription:`, {
+      status: subscription.status,
+      plan_type: subscription.plan_type,
+      trial_end_date: subscription.trial_end_date,
+      end_date: subscription.end_date
+    });
 
     // Verificar se trial expirou
     const now = new Date();
@@ -147,7 +157,14 @@ export const checkSubscriptionStatus = async (req: Request, res: Response, next:
     // Adicionar ao request
     req.subscription = subscription;
     req.isTrialExpired = subscription.status === 'expired' || subscription.status === 'canceled';
-    req.isSubscriptionActive = subscription.status === 'active';
+    // IMPORTANTE: Considerar trial válido como assinatura ativa para permitir acesso completo durante teste
+    req.isSubscriptionActive = subscription.status === 'active' || subscription.status === 'trial';
+
+    console.log(`✅ [Subscription Check] Final status:`, {
+      isTrialExpired: req.isTrialExpired,
+      isSubscriptionActive: req.isSubscriptionActive,
+      willBlock: req.isTrialExpired && !req.isSubscriptionActive
+    });
 
     next();
   } catch (error) {
@@ -166,17 +183,22 @@ export const requireActiveSubscription = (req: Request, res: Response, next: Nex
     '/api/subscriptions',
     '/api/auth',
     '/api/health',
+    '/api/bank/available',     // Listar bancos (público)
+    '/api/bank/connect',        // Conectar banco (permite primeira conexão)
+    '/api/bank/callback',       // Callback de conexão (permite primeira conexão)
   ];
 
   // Verificar se é rota isenta
   const isExempt = exemptPaths.some(path => req.path.startsWith(path));
   if (isExempt) {
+    console.log(`✅ [Subscription] Route ${req.path} is exempt, allowing access`);
     return next();
   }
 
   // Se não tem assinatura ou expirou, bloqueia
   if (req.isTrialExpired && !req.isSubscriptionActive) {
-    console.log('🚫 Access blocked - subscription required for user:', req.userId);
+    console.log(`🚫 [Subscription] Access blocked for user ${req.userId} - Path: ${req.path}`);
+    console.log(`   Reason: Trial expired = ${req.isTrialExpired}, Subscription active = ${req.isSubscriptionActive}`);
     return res.status(403).json({
       error: 'Assinatura necessária',
       message: 'Seu período de teste expirou. Por favor, escolha um plano para continuar.',
@@ -185,6 +207,7 @@ export const requireActiveSubscription = (req: Request, res: Response, next: Nex
     });
   }
 
+  console.log(`✅ [Subscription] Access granted for user ${req.userId} - Path: ${req.path}`);
   next();
 };
 

@@ -71,11 +71,14 @@ router.post('/register', async (req: Request, res: Response) => {
     // O profile é criado automaticamente via trigger no Supabase
 
     // Criar assinatura trial de 7 dias automaticamente
+    let trialCreated = false;
     try {
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
 
-      const { error: subscriptionError } = await supabase
+      console.log('🎁 Creating trial subscription for user:', data.user.id);
+
+      const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('subscriptions')
         .insert({
           user_id: data.user.id,
@@ -94,31 +97,40 @@ router.post('/register', async (req: Request, res: Response) => {
             trial_days: 7,
             created_on_signup: true
           }
-        });
+        })
+        .select()
+        .single();
 
       if (subscriptionError) {
-        console.error('⚠️ Error creating trial subscription:', subscriptionError);
-        // Não bloqueia o cadastro se falhar ao criar trial
+        console.error('❌ Error creating trial subscription:', subscriptionError);
+        console.error('   Error details:', JSON.stringify(subscriptionError, null, 2));
+        // Não bloqueia o cadastro se falhar ao criar trial, mas loga detalhadamente
       } else {
-        console.log('✅ Trial subscription created for user:', data.user.id);
+        console.log('✅ Trial subscription created successfully:', subscriptionData);
+        trialCreated = true;
       }
     } catch (trialError) {
-      console.error('⚠️ Error creating trial:', trialError);
+      console.error('❌ Exception creating trial:', trialError);
       // Não bloqueia o cadastro
     }
 
     res.status(201).json({
-      message: 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.',
+      message: trialCreated
+        ? 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.'
+        : 'Usuário criado com sucesso! Conecte seu banco para começar.',
       token: data.session?.access_token,
       user: {
         id: data.user.id,
         name,
         email: data.user.email,
       },
-      trial: {
+      trial: trialCreated ? {
         active: true,
         days: 7,
         end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      } : {
+        active: false,
+        message: 'Trial será criado ao conectar seu primeiro banco'
       }
     });
   } catch (error) {

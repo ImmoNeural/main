@@ -109,6 +109,54 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
       return res.status(400).json({ error: 'code and state are required' });
     }
 
+    // GARANTIR TRIAL: Verificar se usuário tem subscription ativa/trial
+    // Se não tiver, criar trial de 7 dias (fallback se falhou no registro)
+    try {
+      const { data: existingSubscription } = await supabase
+        .from('subscriptions')
+        .select('id, status')
+        .eq('user_id', user_id)
+        .in('status', ['active', 'trial'])
+        .single();
+
+      if (!existingSubscription) {
+        console.log('🎁 [Bank Callback] User has no subscription, creating trial now...');
+
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+        const { error: trialError } = await supabase
+          .from('subscriptions')
+          .insert({
+            user_id,
+            plan_type: 'manual',
+            plan_name: 'Trial - Plano Manual',
+            plan_price: 0,
+            status: 'trial',
+            start_date: new Date().toISOString(),
+            end_date: trialEndDate.toISOString(),
+            trial_end_date: trialEndDate.toISOString(),
+            payment_method: null,
+            payment_processor: null,
+            max_connected_accounts: 0,
+            auto_renew: false,
+            metadata: {
+              trial_days: 7,
+              created_on_bank_connect: true
+            }
+          });
+
+        if (trialError) {
+          console.error('⚠️ [Bank Callback] Failed to create trial:', trialError);
+        } else {
+          console.log('✅ [Bank Callback] Trial created successfully on first bank connection');
+        }
+      }
+    } catch (subscriptionCheckError) {
+      console.error('⚠️ [Bank Callback] Error checking subscription:', subscriptionCheckError);
+      // Não bloqueia a conexão bancária
+    }
+
     // Verificar se é modo demo
     if (state.startsWith('DEMO_')) {
       console.log('[Bank] 🎭 Processing DEMO MODE callback');
