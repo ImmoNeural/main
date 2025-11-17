@@ -130,11 +130,12 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         }
       });
 
-      // Só adicionar se tiver pelo menos data e (amount OU crédito OU débito)
+      // Só adicionar se tiver pelo menos data OU descrição
+      // Deixar o backend fazer validação mais rigorosa
       const hasData = transaction.data;
-      const hasValue = transaction.amount || transaction.credito || transaction.debito;
+      const hasDescricao = transaction.descricao;
 
-      if (hasData && hasValue) {
+      if (hasData || hasDescricao) {
         transactions.push(transaction);
       }
     }

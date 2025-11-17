@@ -195,7 +195,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     category: 'Transporte',
     subcategory: 'Combustível e Pedágio',
     keywords: [
-      'posto', 'combustivel', 'gasolina', 'etanol', 'diesel', 'pedagio', 'gnv',
+      'Auto Posto', 'combustivel', 'gasolina', 'etanol', 'diesel', 'pedagio', 'gnv',
       // Adicionadas do JSON (Transporte/Combustível)
       'combust'
     ],
@@ -628,10 +628,16 @@ class CategorizationService {
     for (const rule of sortedRules) {
       let score = 0;
       let matchedBy = '';
+      let hasBrandMatch = false;
+      let hasKeywordMatch = false;
+      let brandMatched = '';
+      let keywordMatched = '';
 
       // 1. Match por marcas específicas (peso alto)
       for (const brand of rule.brands) {
         if (text.includes(this.normalizeText(brand))) {
+          hasBrandMatch = true;
+          brandMatched = brand;
           score = 90 + rule.priority;
           matchedBy = `marca: ${brand}`;
           break;
@@ -653,10 +659,37 @@ class CategorizationService {
       if (score === 0) {
         for (const keyword of rule.keywords) {
           if (text.includes(this.normalizeText(keyword))) {
+            hasKeywordMatch = true;
+            keywordMatched = keyword;
             score = 70 + rule.priority;
             matchedBy = `palavra-chave: ${keyword}`;
             break;
           }
+        }
+      }
+
+      // REGRA ESPECIAL: Serviços Financeiros requer TANTO brand quanto keyword
+      if (rule.category === 'Serviços Financeiros' && score > 0) {
+        // Verificar se tem keyword match (mesmo se já deu match por brand)
+        if (!hasKeywordMatch) {
+          for (const keyword of rule.keywords) {
+            if (text.includes(this.normalizeText(keyword))) {
+              hasKeywordMatch = true;
+              keywordMatched = keyword;
+              break;
+            }
+          }
+        }
+
+        // Se não tiver AMBOS (brand E keyword), descartar este match
+        if (!hasBrandMatch || !hasKeywordMatch) {
+          score = 0; // Descartar match
+          matchedBy = `descartado - Serviços Financeiros requer brand E keyword (brand: ${hasBrandMatch ? brandMatched : 'não'}, keyword: ${hasKeywordMatch ? keywordMatched : 'não'})`;
+          continue; // Pular para próxima regra
+        } else {
+          // Tem ambos! Ajustar matchedBy para mostrar isso
+          matchedBy = `marca: ${brandMatched} + palavra-chave: ${keywordMatched}`;
+          score = 95 + rule.priority; // Aumentar score por ter match duplo
         }
       }
 
