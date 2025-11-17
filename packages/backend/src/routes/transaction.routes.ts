@@ -431,11 +431,21 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
     }
 
     // Extrair palavras-chave (mínimo 3 caracteres)
-    const text = `${description || ''} ${merchant || ''}`.toLowerCase();
+    // Remover padrões irrelevantes: "MC DEB", "MC CRE", números/códigos como "12/34"
+    let text = `${description || ''} ${merchant || ''}`.toLowerCase();
+
+    // Remover padrões de cartão (MC DEB, MC CRE, etc)
+    text = text.replace(/\bmc\s+(deb|cre|credito|debito)\b/gi, '');
+
+    // Remover códigos numéricos (padrões como 12/34, 1234, etc)
+    text = text.replace(/\b\d+\/\d+\b/g, ''); // Remove padrões XX/YY
+    text = text.replace(/\b\d{4,}\b/g, ''); // Remove sequências de 4+ dígitos
+
     const words = text
       .split(/\s+/)
       .filter(word => word.length >= 3)
-      .filter(word => !['the', 'and', 'for', 'with', 'from', 'que', 'para', 'com', 'por'].includes(word));
+      .filter(word => !['the', 'and', 'for', 'with', 'from', 'que', 'para', 'com', 'por', 'ltda', 'sa', 'cia'].includes(word))
+      .filter(word => !/^\d+$/.test(word)); // Remove palavras que são apenas números
 
     if (words.length === 0) {
       return res.json({ similar: [] });
@@ -457,7 +467,12 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
       // IMPORTANTE: Excluir transações que já estão na categoria de destino
       .filter(t => !newCategory || t.category !== newCategory)
       .map(t => {
-        const tText = `${t.description || ''} ${t.merchant || ''}`.toLowerCase();
+        // Aplicar mesma limpeza no texto da transação
+        let tText = `${t.description || ''} ${t.merchant || ''}`.toLowerCase();
+        tText = tText.replace(/\bmc\s+(deb|cre|credito|debito)\b/gi, '');
+        tText = tText.replace(/\b\d+\/\d+\b/g, '');
+        tText = tText.replace(/\b\d{4,}\b/g, '');
+
         const matchedWords = words.filter(word => tText.includes(word));
         const score = matchedWords.length / words.length;
 
@@ -467,7 +482,7 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
           matchedWords: matchedWords,
         };
       })
-      .filter(t => t.matchScore >= 0.4) // Mínimo 40% de match
+      .filter(t => t.matchScore >= 0.7) // Mínimo 70% de match (aumentado de 40%)
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 20); // Máximo 20 resultados
 

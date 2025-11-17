@@ -275,10 +275,35 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Importar Transações</h2>
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900">Importar Transações</h2>
+            <div className="group relative">
+              <button className="text-gray-400 hover:text-blue-600 transition-colors">
+                <Info className="w-5 h-5" />
+              </button>
+              {/* Tooltip com instruções */}
+              <div className="absolute left-0 top-8 w-80 bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="text-xs text-blue-800">
+                  <p className="font-bold mb-2">📋 Como Importar</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Aceita CSV, Excel ou extratos bancários</li>
+                    <li>Detecção automática de formato</li>
+                    <li>Data: DD/MM/YYYY, Valores: R$ 1.234,56</li>
+                  </ul>
+                  <button
+                    onClick={downloadTemplate}
+                    className="mt-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Baixar modelo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -288,83 +313,36 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          {/* Mode Selection */}
-          <div className="flex space-x-4 mb-6">
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Mode Selection - Compact tabs */}
+          <div className="flex space-x-2 mb-4 border-b border-gray-200">
             <button
               onClick={() => setImportMode('csv')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+              className={`px-4 py-2 font-medium transition-colors ${
                 importMode === 'csv'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <FileText className="w-5 h-5 inline mr-2" />
-              Importar CSV
+              <FileText className="w-4 h-4 inline mr-1" />
+              CSV
             </button>
             <button
               onClick={() => setImportMode('manual')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+              className={`px-4 py-2 font-medium transition-colors ${
                 importMode === 'manual'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Upload className="w-5 h-5 inline mr-2" />
-              Adicionar Manual
+              <Upload className="w-4 h-4 inline mr-1" />
+              Manual
             </button>
           </div>
 
           {/* CSV Import */}
           {importMode === 'csv' && (
             <div className="space-y-4">
-              {/* Instructions */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-bold mb-3">📋 Como Importar Suas Transações</p>
-
-                    <div className="mb-4">
-                      <p className="font-semibold mb-2">🏦 Extratos Bancários (Santander, Itaú, etc.):</p>
-                      <ul className="list-disc list-inside ml-2 space-y-1.5">
-                        <li>Baixe o extrato do seu banco em formato <strong>Excel (.xls/.xlsx) ou CSV</strong></li>
-                        <li>Se for Excel, converta para CSV ou copie e cole o conteúdo aqui</li>
-                        <li>O sistema detecta automaticamente: cabeçalhos, separadores, formato de valores</li>
-                        <li>Aceita colunas: <strong>Data, Descrição, Crédito, Débito, Saldo, Docto</strong></li>
-                        <li>Formatos suportados: <strong>DD/MM/YYYY</strong> e valores em <strong>R$ 1.234,56</strong></li>
-                      </ul>
-                    </div>
-
-                    <div className="mb-3">
-                      <p className="font-semibold mb-2">📝 Formato Personalizado:</p>
-                      <ul className="list-disc list-inside ml-2 space-y-1.5">
-                        <li><strong>Campos obrigatórios:</strong> data (date ou data) e valor (amount, crédito ou débito)</li>
-                        <li><strong>Campos opcionais:</strong> descrição, estabelecimento, categoria, moeda</li>
-                        <li><strong>Valores:</strong> use negativo para despesas (-50.00) e positivo para receitas (1500.00)</li>
-                        <li><strong>Data:</strong> aceita DD/MM/YYYY (brasileiro) ou YYYY-MM-DD (internacional)</li>
-                      </ul>
-                    </div>
-
-                    <div className="bg-amber-50 border border-amber-300 rounded p-3 mb-2">
-                      <p className="text-amber-800 text-xs font-semibold mb-1">⚡ IMPORTANTE:</p>
-                      <p className="text-amber-800 text-xs">
-                        • O sistema importa <strong>TODAS as linhas</strong> com data e valor válidos<br/>
-                        • Linhas vazias ou sem data/valor serão automaticamente ignoradas<br/>
-                        • Transações duplicadas serão identificadas e não serão importadas novamente
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={downloadTemplate}
-                      className="mt-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
-                    >
-                      <Download className="w-4 h-4 mr-1" />
-                      Baixar modelo de exemplo
-                    </button>
-                  </div>
-                </div>
-              </div>
 
               {/* File Upload */}
               <div>
@@ -389,29 +367,10 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   onChange={(e) => setCsvContent(e.target.value)}
                   placeholder="date,amount,description,merchant
 2024-01-15,-45.90,Supermercado XYZ,Supermercado"
-                  rows={8}
+                  rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
                 />
               </div>
-
-              {/* Import Button */}
-              <button
-                onClick={handleImportCSV}
-                disabled={importing || !csvContent.trim()}
-                className="w-full btn-primary flex items-center justify-center"
-              >
-                {importing ? (
-                  <>
-                    <Upload className="w-5 h-5 mr-2 animate-spin" />
-                    Importando...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-5 h-5 mr-2" />
-                    Importar CSV
-                  </>
-                )}
-              </button>
             </div>
           )}
 
@@ -484,30 +443,6 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800">
-                  <strong>Dica:</strong> Se não especificar a categoria, o sistema irá categorizá-la automaticamente baseado na descrição e estabelecimento.
-                </p>
-              </div>
-
-              <button
-                onClick={handleImportManual}
-                disabled={importing || !manualTransaction.date || !manualTransaction.amount}
-                className="w-full btn-primary flex items-center justify-center"
-              >
-                {importing ? (
-                  <>
-                    <Upload className="w-5 h-5 mr-2 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-5 h-5 mr-2" />
-                    Adicionar Transação
-                  </>
-                )}
-              </button>
             </div>
           )}
 
@@ -549,6 +484,47 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Footer with action buttons */}
+        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 flex justify-end gap-3">
+          {importMode === 'csv' ? (
+            <button
+              onClick={handleImportCSV}
+              disabled={importing || !csvContent.trim()}
+              className="btn-primary flex items-center"
+            >
+              {importing ? (
+                <>
+                  <Upload className="w-4 h-4 mr-2 animate-spin" />
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar CSV
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handleImportManual}
+              disabled={importing || !manualTransaction.date || !manualTransaction.amount}
+              className="btn-primary flex items-center"
+            >
+              {importing ? (
+                <>
+                  <Upload className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Adicionar Manual
+                </>
+              )}
+            </button>
           )}
         </div>
       </div>

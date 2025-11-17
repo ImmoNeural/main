@@ -1067,34 +1067,40 @@ const Dashboard = () => {
             <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
         </div>
-        <div className="space-y-3">
-          {recentTransactions.map((transaction) => (
-            <div
-              key={transaction.id}
-              className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition bg-white shadow-sm"
-            >
-              <CategoryIcon category={transaction.category || 'Outros'} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-gray-800 truncate">
-                    {transaction.merchant || transaction.description}
-                  </span>
-                  <span
-                    className={`text-sm font-bold ${
-                      transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
-                    {transaction.type === 'credit' ? '+' : '-'}
-                    {formatCurrency(Math.abs(transaction.amount))}
-                  </span>
+        {recentTransactions.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p className="text-sm">Nenhuma transação encontrada neste período</p>
+          </div>
+        ) : (
+          <div className="space-y-3 min-h-[200px]">
+            {recentTransactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition bg-white shadow-sm"
+              >
+                <CategoryIcon category={transaction.category || 'Outros'} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-gray-800 truncate">
+                      {transaction.merchant || transaction.description}
+                    </span>
+                    <span
+                      className={`text-sm font-bold ${
+                        transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {transaction.type === 'credit' ? '+' : '-'}
+                      {formatCurrency(Math.abs(transaction.amount))}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {format(new Date(transaction.date), 'dd/MM/yyyy')} • {transaction.category}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {format(new Date(transaction.date), 'dd/MM/yyyy')} • {transaction.category}
-                </p>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
