@@ -65,7 +65,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 
     // Tentar pegar saldo inicial do metadata (foi importado do CSV)
     for (const account of accounts || []) {
-      if (account.metadata && account.metadata.saldo_inicial !== undefined) {
+      if (account.metadata && account.metadata.saldo_inicial !== undefined && account.metadata.saldo_inicial !== null) {
         initial_balance = account.metadata.saldo_inicial;
         console.log(`💰 Saldo inicial encontrado no metadata da conta: R$ ${initial_balance.toFixed(2)}`);
         break; // Usar o primeiro encontrado
@@ -101,7 +101,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
         .order('date', { ascending: true })
         .limit(1);
 
-      if (firstDayTransactions && firstDayTransactions.length > 0) {
+      if (firstDayTransactions && firstDayTransactions.length > 0 && firstDayTransactions[0].balance_after !== null) {
         initial_balance = firstDayTransactions[0].balance_after;
         console.log(`💰 Saldo inicial encontrado (balance_after): R$ ${initial_balance.toFixed(2)} (data: ${format(firstDayTransactions[0].date, 'dd/MM/yyyy HH:mm')})`);
       } else {
