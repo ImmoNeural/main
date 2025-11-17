@@ -599,4 +599,219 @@ router.post('/debug-categorization', authMiddleware, async (req: Request, res: R
   }
 });
 
+/**
+ * POST /api/transactions/import
+ * Importa transações manualmente (CSV ou JSON)
+ */
+router.post('/import', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { transactions: importedTransactions, account_id } = req.body;
+
+    console.log(`📥 [Import] User ${user_id} importing ${importedTransactions?.length || 0} transactions`);
+
+    if (!importedTransactions || !Array.isArray(importedTransactions)) {
+      return res.status(400).json({ error: 'transactions array is required' });
+    }
+
+    if (importedTransactions.length === 0) {
+      return res.status(400).json({ error: 'No transactions to import' });
+    }
+
+    if (importedTransactions.length > 1000) {
+      return res.status(400).json({ error: 'Maximum 1000 transactions per import' });
+    }
+
+    // Verificar se account_id existe e pertence ao usuário
+    let targetAccountId = account_id;
+
+    if (account_id) {
+      const { data: account, error: accountError } = await supabase
+        .from('bank_accounts')
+        .select('id, user_id')
+        .eq('id', account_id)
+        .eq('user_id', user_id)
+        .single();
+
+      if (accountError || !account) {
+        return res.status(404).json({ error: 'Account not found or does not belong to user' });
+      }
+    } else {
+      // Se não especificou account, buscar ou criar conta "Importação Manual"
+      const { data: manualAccount, error: fetchError } = await supabase
+        .from('bank_accounts')
+        .select('id')
+        .eq('user_id', user_id)
+        .eq('bank_name', 'Importação Manual')
+        .single();
+
+      if (manualAccount) {
+        targetAccountId = manualAccount.id;
+      } else {
+        // Criar conta de importação manual
+        const { v4: uuidv4 } = await import('uuid');
+        const newAccountId = uuidv4();
+        const now = Date.now();
+
+        const { error: createError } = await supabase
+          .from('bank_accounts')
+          .insert({
+            id: newAccountId,
+            user_id,
+            bank_name: 'Importação Manual',
+            account_number: '****',
+            balance: 0,
+            currency: 'BRL',
+            status: 'active',
+            connected_at: toISOString(now),
+            created_at: toISOString(now),
+            updated_at: toISOString(now),
+          });
+
+        if (createError) {
+          console.error('Error creating manual account:', createError);
+          return res.status(500).json({ error: 'Failed to create manual import account' });
+        }
+
+        targetAccountId = newAccountId;
+        console.log('✅ [Import] Created manual import account:', newAccountId);
+      }
+    }
+
+    // Processar e validar transações
+    const { v4: uuidv4 } = await import('uuid');
+    const now = Date.now();
+    const transactionsToInsert: any[] = [];
+    const errors: string[] = [];
+
+    for (let i = 0; i < importedTransactions.length; i++) {
+      const trans = importedTransactions[i];
+
+      // Validação básica
+      if (!trans.date) {
+        errors.push(`Linha ${i + 1}: data é obrigatória`);
+        continue;
+      }
+
+      if (trans.amount === undefined || trans.amount === null) {
+        errors.push(`Linha ${i + 1}: valor é obrigatório`);
+        continue;
+      }
+
+      if (!trans.description && !trans.merchant) {
+        errors.push(`Linha ${i + 1}: descrição ou merchant é obrigatório`);
+        continue;
+      }
+
+      // Converter data para timestamp
+      let dateTimestamp: number;
+      try {
+        const dateObj = new Date(trans.date);
+        if (isNaN(dateObj.getTime())) {
+          errors.push(`Linha ${i + 1}: data inválida "${trans.date}"`);
+          continue;
+        }
+        dateTimestamp = dateObj.getTime();
+      } catch (e) {
+        errors.push(`Linha ${i + 1}: erro ao processar data "${trans.date}"`);
+        continue;
+      }
+
+      // Converter amount para número
+      let amount: number;
+      try {
+        amount = typeof trans.amount === 'string'
+          ? parseFloat(trans.amount.replace(',', '.').replace(/[^\d.-]/g, ''))
+          : Number(trans.amount);
+
+        if (isNaN(amount)) {
+          errors.push(`Linha ${i + 1}: valor inválido "${trans.amount}"`);
+          continue;
+        }
+      } catch (e) {
+        errors.push(`Linha ${i + 1}: erro ao processar valor "${trans.amount}"`);
+        continue;
+      }
+
+      const description = trans.description || trans.merchant || '';
+      const merchant = trans.merchant || '';
+
+      // Categorizar automaticamente se não foi fornecida categoria
+      let category = trans.category || '';
+      if (!category) {
+        const categorization = categorizationService.categorizeTransaction(description, merchant);
+        category = categorization.category;
+      }
+
+      // Determinar tipo (debit/credit)
+      const type = amount < 0 ? 'debit' : 'credit';
+
+      transactionsToInsert.push({
+        id: uuidv4(),
+        account_id: targetAccountId,
+        transaction_id: `MANUAL_${user_id}_${Date.now()}_${i}`,
+        date: dateTimestamp,
+        amount,
+        currency: trans.currency || 'BRL',
+        description,
+        merchant,
+        category,
+        type,
+        status: 'completed',
+        created_at: toISOString(now),
+        updated_at: toISOString(now),
+      });
+    }
+
+    // Se houver muitos erros, retornar sem importar
+    if (errors.length > importedTransactions.length * 0.5) {
+      return res.status(400).json({
+        error: 'Too many errors in import',
+        errors: errors.slice(0, 10), // Primeiros 10 erros
+        totalErrors: errors.length,
+      });
+    }
+
+    // Inserir transações em batch
+    if (transactionsToInsert.length > 0) {
+      const BATCH_SIZE = 500;
+      let totalInserted = 0;
+
+      for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
+        const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
+
+        const { error: insertError } = await supabase
+          .from('transactions')
+          .insert(batch);
+
+        if (insertError) {
+          console.error(`❌ [Import] Error inserting batch ${i / BATCH_SIZE + 1}:`, insertError);
+          errors.push(`Erro ao inserir lote ${i / BATCH_SIZE + 1}: ${insertError.message}`);
+        } else {
+          totalInserted += batch.length;
+          console.log(`✅ [Import] Batch ${i / BATCH_SIZE + 1}: inserted ${batch.length} transactions`);
+        }
+      }
+
+      console.log(`✅ [Import] Successfully imported ${totalInserted} transactions for user ${user_id}`);
+
+      res.json({
+        success: true,
+        imported: totalInserted,
+        errors: errors.length > 0 ? errors : undefined,
+        account_id: targetAccountId,
+        message: `${totalInserted} transações importadas com sucesso!${errors.length > 0 ? ` (${errors.length} erros)` : ''}`,
+      });
+    } else {
+      res.status(400).json({
+        error: 'No valid transactions to import',
+        errors,
+      });
+    }
+  } catch (error) {
+    console.error('❌ [Import] Error importing transactions:', error);
+    res.status(500).json({ error: 'Failed to import transactions' });
+  }
+});
+
 export default router;

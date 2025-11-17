@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown, ChevronDown, ChevronUp, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
+import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { CategoryIconSmall } from '../components/CategoryIcons';
 
 const Transactions = () => {
@@ -29,6 +30,9 @@ const Transactions = () => {
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [debugResult, setDebugResult] = useState<any>(null);
   const [debugLoading, setDebugLoading] = useState(false);
+
+  // Estado para o modal de importação
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Gerar últimos 12 meses dinamicamente
   const getLast12Months = () => {
@@ -416,6 +420,15 @@ const Transactions = () => {
             <PlusCircle className="w-4 sm:w-5 h-4 sm:h-5" />
             <span className="hidden sm:inline">Conectar Banco</span>
             <span className="sm:hidden">Banco</span>
+          </button>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+            title="Importar transações manualmente (CSV ou individual)"
+          >
+            <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="hidden md:inline">Importar</span>
+            <span className="md:hidden">Import</span>
           </button>
           <button
             onClick={handleRecategorizeAll}
@@ -961,6 +974,17 @@ const Transactions = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <ImportTransactionsModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            setShowImportModal(false);
+            loadData();
+          }}
+        />
       )}
     </div>
   );

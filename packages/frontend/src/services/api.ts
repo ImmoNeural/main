@@ -170,6 +170,25 @@ export const transactionApi = {
         reason: string;
       };
     }>('/transactions/debug-categorization', params),
+
+  importTransactions: (data: {
+    transactions: Array<{
+      date: string;
+      amount: number;
+      description?: string;
+      merchant?: string;
+      category?: string;
+      currency?: string;
+    }>;
+    account_id?: string;
+  }) =>
+    api.post<{
+      success: boolean;
+      imported: number;
+      errors?: string[];
+      account_id: string;
+      message: string;
+    }>('/transactions/import', data),
 };
 
 // Dashboard APIs
