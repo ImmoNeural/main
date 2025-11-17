@@ -430,27 +430,24 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
       return res.status(400).json({ error: 'Descrição ou merchant obrigatório' });
     }
 
-    // Extrair palavras-chave (mínimo 3 caracteres)
-    // Remover padrões irrelevantes: "COMPRA CARTAO DEB", "MC DEB", "MC CRE", números/códigos como "12/34"
-    let text = `${description || ''} ${merchant || ''}`.toLowerCase();
+    // Limpar texto da transação original para buscar similares
+    // Remover padrões irrelevantes: "COMPRA CARTAO DEB", "MC xx/zz"
+    let cleanedText = `${description || ''} ${merchant || ''}`;
 
-    // Remover string completa "COMPRA CARTAO DEB" (frase comum em transações de cartão)
-    text = text.replace(/compra\s+cartao\s+deb/gi, '');
+    // 1. Remover "COMPRA CARTAO DEB" (string exata)
+    cleanedText = cleanedText.replace(/\s*COMPRA\s+CARTAO\s+DEB\s*/gi, ' ');
 
-    // Remover padrões de cartão (MC DEB, MC CRE, etc)
-    text = text.replace(/\bmc\s+(deb|cre|credito|debito)\b/gi, '');
+    // 2. Remover "MC xx/zz" onde xx e zz são números (ex: MC 01/09)
+    cleanedText = cleanedText.replace(/\s*MC\s+\d+\/\d+\s*/gi, ' ');
 
-    // Remover códigos numéricos (padrões como 12/34, 1234, etc)
-    text = text.replace(/\b\d+\/\d+\b/g, ''); // Remove padrões XX/YY
-    text = text.replace(/\b\d{4,}\b/g, ''); // Remove sequências de 4+ dígitos
+    // 3. Remover espaços extras e normalizar
+    cleanedText = cleanedText.trim().replace(/\s+/g, ' ').toLowerCase();
 
-    const words = text
-      .split(/\s+/)
-      .filter(word => word.length >= 3)
-      .filter(word => !['the', 'and', 'for', 'with', 'from', 'que', 'para', 'com', 'por', 'ltda', 'sa', 'cia'].includes(word))
-      .filter(word => !/^\d+$/.test(word)); // Remove palavras que são apenas números
+    console.log(`🔍 Texto original: "${description || ''} ${merchant || ''}"`);
+    console.log(`🧹 Texto limpo: "${cleanedText}"`);
 
-    if (words.length === 0) {
+    if (!cleanedText || cleanedText.length < 3) {
+      console.log('⚠️ Texto limpo muito curto ou vazio');
       return res.json({ similar: [] });
     }
 
@@ -464,37 +461,38 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
       throw error;
     }
 
-    // Filtrar transações similares
+    // Filtrar transações similares - busca por MATCH 100% do texto limpo
     const similar = (transactions || [])
       .filter(t => t.id !== excludeId)
       // IMPORTANTE: Excluir transações que já estão na categoria de destino
       .filter(t => !newCategory || t.category !== newCategory)
       .map(t => {
         // Aplicar mesma limpeza no texto da transação
-        let tText = `${t.description || ''} ${t.merchant || ''}`.toLowerCase();
-        tText = tText.replace(/compra\s+cartao\s+deb/gi, ''); // Remover "COMPRA CARTAO DEB"
-        tText = tText.replace(/\bmc\s+(deb|cre|credito|debito)\b/gi, '');
-        tText = tText.replace(/\b\d+\/\d+\b/g, '');
-        tText = tText.replace(/\b\d{4,}\b/g, '');
+        let tCleanedText = `${t.description || ''} ${t.merchant || ''}`;
+        tCleanedText = tCleanedText.replace(/\s*COMPRA\s+CARTAO\s+DEB\s*/gi, ' ');
+        tCleanedText = tCleanedText.replace(/\s*MC\s+\d+\/\d+\s*/gi, ' ');
+        tCleanedText = tCleanedText.trim().replace(/\s+/g, ' ').toLowerCase();
 
-        const matchedWords = words.filter(word => tText.includes(word));
-        const score = matchedWords.length / words.length;
+        // Verificar se o texto limpo da transação CONTÉM o texto limpo buscado
+        // Match 100%: o texto limpo deve estar presente na transação
+        const hasMatch = tCleanedText.includes(cleanedText);
 
         return {
           ...t,
-          matchScore: score,
-          matchedWords: matchedWords,
+          matchScore: hasMatch ? 1.0 : 0,
+          matchedWords: hasMatch ? [cleanedText] : [],
+          cleanedText: tCleanedText,
         };
       })
-      .filter(t => t.matchScore >= 0.7) // Mínimo 70% de match (aumentado de 40%)
-      .sort((a, b) => b.matchScore - a.matchScore)
+      .filter(t => t.matchScore === 1.0) // Apenas 100% match
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Ordenar por data
       .slice(0, 20); // Máximo 20 resultados
 
-    console.log(`🔍 Encontradas ${similar.length} transações similares a: "${description || merchant}" (excluindo categoria: ${newCategory || 'nenhuma'})`);
+    console.log(`✅ Encontradas ${similar.length} transações com match 100% de: "${cleanedText}"`);
 
     res.json({
       similar,
-      keywords: words,
+      cleanedText: cleanedText,
       totalMatches: similar.length,
     });
   } catch (error) {
