@@ -49,16 +49,28 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
     const endDate = Date.now();
 
-    // Total de saldo de todas as contas
+    // Total de saldo de todas as contas (incluindo metadata para saldo inicial)
     const { data: accounts, error: accountsError } = await supabase
       .from('bank_accounts')
-      .select('balance')
+      .select('balance, metadata')
       .eq('user_id', user_id)
       .eq('status', 'active');
 
     if (accountsError) throw accountsError;
 
     const total_balance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+
+    // 💰 Buscar saldo inicial do CSV (metadata.saldo_inicial) se disponível
+    let initial_balance: number | null = null;
+
+    // Tentar pegar saldo inicial do metadata (foi importado do CSV)
+    for (const account of accounts || []) {
+      if (account.metadata && account.metadata.saldo_inicial !== undefined) {
+        initial_balance = account.metadata.saldo_inicial;
+        console.log(`💰 Saldo inicial encontrado no metadata da conta: R$ ${initial_balance.toFixed(2)}`);
+        break; // Usar o primeiro encontrado
+      }
+    }
 
     // Buscar todas as transações no período
     const { data: transactions, error: transactionsError } = await supabase
@@ -71,31 +83,30 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 
     if (transactionsError) throw transactionsError;
 
-    // Buscar saldo inicial (balance_after da primeira transação do período)
-    const startDateObj = new Date(startDate);
-    const startDayStart = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 0, 0, 0).getTime();
-    const startDayEnd = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 23, 59, 59).getTime();
+    // Se não encontrou saldo inicial no metadata, buscar balance_after da primeira transação do período
+    if (initial_balance === null) {
+      const startDateObj = new Date(startDate);
+      const startDayStart = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 0, 0, 0).getTime();
+      const startDayEnd = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 23, 59, 59).getTime();
 
-    console.log(`🔍 Buscando saldo inicial para ${format(startDate, 'dd/MM/yyyy')} (${startDayStart} - ${startDayEnd})`);
+      console.log(`🔍 Buscando saldo inicial (balance_after) para ${format(startDate, 'dd/MM/yyyy')} (${startDayStart} - ${startDayEnd})`);
 
-    const { data: firstDayTransactions, error: firstDayError } = await supabase
-      .from('transactions')
-      .select('balance_after, date, bank_accounts!inner(user_id)')
-      .eq('bank_accounts.user_id', user_id)
-      .gte('date', startDayStart)
-      .lte('date', startDayEnd)
-      .not('balance_after', 'is', null)
-      .order('date', { ascending: true })
-      .limit(1);
+      const { data: firstDayTransactions, error: firstDayError } = await supabase
+        .from('transactions')
+        .select('balance_after, date, bank_accounts!inner(user_id)')
+        .eq('bank_accounts.user_id', user_id)
+        .gte('date', startDayStart)
+        .lte('date', startDayEnd)
+        .not('balance_after', 'is', null)
+        .order('date', { ascending: true })
+        .limit(1);
 
-    const initial_balance = firstDayTransactions && firstDayTransactions.length > 0
-      ? firstDayTransactions[0].balance_after
-      : null;
-
-    if (initial_balance !== null) {
-      console.log(`💰 Saldo inicial encontrado: R$ ${initial_balance.toFixed(2)} (data: ${format(firstDayTransactions![0].date, 'dd/MM/yyyy HH:mm')})`);
-    } else {
-      console.log(`⚠️ Saldo inicial não encontrado para ${format(startDate, 'dd/MM/yyyy')} (balance_after não disponível)`);
+      if (firstDayTransactions && firstDayTransactions.length > 0) {
+        initial_balance = firstDayTransactions[0].balance_after;
+        console.log(`💰 Saldo inicial encontrado (balance_after): R$ ${initial_balance.toFixed(2)} (data: ${format(firstDayTransactions[0].date, 'dd/MM/yyyy HH:mm')})`);
+      } else {
+        console.log(`⚠️ Saldo inicial não encontrado para ${format(startDate, 'dd/MM/yyyy')} (balance_after não disponível)`);
+      }
     }
 
     // Calcular agregações
