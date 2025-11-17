@@ -703,10 +703,13 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         continue;
       }
 
-      const description = trans.description || trans.descricao || trans.merchant || trans.estabelecimento || '';
-      if (!description) {
-        errors.push(`Linha ${i + 1}: descrição é obrigatória`);
-        continue;
+      // Descrição: tentar pegar de múltiplos campos
+      // Se nenhum campo tiver valor, usar um placeholder com informações disponíveis
+      const description = trans.description || trans.descricao || trans.merchant || trans.estabelecimento || trans.docto || 'Transação importada';
+
+      // Log para debug: ver o que está sendo processado
+      if (!trans.description && !trans.descricao && !trans.merchant && !trans.estabelecimento) {
+        console.log(`⚠️ [CSV Import] Linha ${i + 1}: Nenhuma descrição encontrada, usando placeholder. Dados:`, trans);
       }
 
       // Converter data para timestamp - suporta DD/MM/YYYY e YYYY-MM-DD

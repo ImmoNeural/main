@@ -624,19 +624,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* No accounts message */}
-      {!loading && stats?.transaction_count === 0 && (
-        <div className="card text-center py-12">
-          <Wallet className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Nenhuma conta conectada
-          </h3>
-          <p className="text-gray-500">
-            Conecte sua conta bancária para ver suas estatísticas financeiras
-          </p>
-        </div>
-      )}
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
         <div className="card hover:shadow-lg transition-shadow">
