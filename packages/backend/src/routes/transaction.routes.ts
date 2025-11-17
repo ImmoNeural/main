@@ -750,6 +750,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       const trans = importedTransactions[i];
 
       console.log(`\n🔍 [Linha ${i + 1}] Processando:`, JSON.stringify(trans, null, 2));
+      console.log(`   📋 [Linha ${i + 1}] Campo 'saldo' presente: ${trans.saldo !== undefined}, valor: "${trans.saldo}"`);
 
       // 💰 DETECTAR LINHAS ESPECIAIS DE SALDO
       const descricaoLower = (trans.description || trans.descricao || '').toLowerCase();
@@ -936,6 +937,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       if (trans.saldo !== undefined && trans.saldo !== null && trans.saldo !== '') {
         try {
           const saldoStr = typeof trans.saldo === 'string' ? trans.saldo : String(trans.saldo);
+          console.log(`   💰 [Linha ${i + 1}] Processando saldo: "${trans.saldo}" → "${saldoStr}"`);
           balanceAfter = parseFloat(
             saldoStr
               .replace(/\s/g, '')
@@ -944,11 +946,17 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
               .replace(/[^\d.-]/g, '')
           );
           if (isNaN(balanceAfter)) {
+            console.log(`   ⚠️ [Linha ${i + 1}] Saldo resultou em NaN, setando para null`);
             balanceAfter = null;
+          } else {
+            console.log(`   ✅ [Linha ${i + 1}] Saldo convertido: R$ ${balanceAfter.toFixed(2)}`);
           }
         } catch (e) {
+          console.log(`   ❌ [Linha ${i + 1}] Erro ao processar saldo:`, e);
           balanceAfter = null;
         }
+      } else {
+        console.log(`   ⏭️  [Linha ${i + 1}] Campo saldo não disponível ou vazio: trans.saldo = ${trans.saldo}`);
       }
 
       // Transaction ID (pode vir do campo Docto do Santander)
