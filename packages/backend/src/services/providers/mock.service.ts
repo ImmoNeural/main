@@ -92,7 +92,7 @@ const MOCK_TRANSACTIONS = [
 /**
  * Gera transações fictícias para um banco
  */
-export function generateMockTransactions(accountId: string, bankName: string): Transaction[] {
+export function generateMockTransactions(userId: string, accountId: string, bankName: string): Transaction[] {
   const transactions: Transaction[] = [];
   const now = Date.now();
 
@@ -111,6 +111,7 @@ export function generateMockTransactions(accountId: string, bankName: string): T
 
     const transaction: Transaction = {
       id: uuidv4(),
+      user_id: userId, // Adicionar user_id para queries mais eficientes
       account_id: accountId,
       transaction_id: `MOCK_${Date.now()}_${index}`,
       date: transDate,
@@ -213,12 +214,13 @@ export async function createMockBankAccount(
   console.log('[Mock] ✅ Bank account inserted successfully');
 
   // Gerar e salvar transações
-  const transactions = generateMockTransactions(accountId, bankName);
+  const transactions = generateMockTransactions(userId, accountId, bankName);
   console.log(`[Mock] 📝 Generated ${transactions.length} mock transactions`);
 
   // Inserir todas as transações de uma vez
   const transactionsData = transactions.map((tx) => ({
     id: tx.id,
+    user_id: tx.user_id, // Adicionar user_id para queries mais eficientes
     account_id: tx.account_id,
     transaction_id: tx.transaction_id,
     date: tx.date, // BIGINT - manter em ms

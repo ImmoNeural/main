@@ -828,6 +828,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
 
       transactionsToInsert.push({
         id: uuidv4(),
+        user_id, // Adicionar user_id para queries mais eficientes
         account_id: targetAccountId,
         transaction_id: transactionId,
         date: dateTimestamp,

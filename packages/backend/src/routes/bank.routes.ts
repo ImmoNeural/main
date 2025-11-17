@@ -505,10 +505,10 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
  * - Melhoria: ~333x mais rápido para 1000 transações
  */
 async function syncTransactions(accountId: string, accessToken: string, forceFullSync: boolean = false): Promise<number> {
-  // Buscar dados da conta incluindo last_sync_at
+  // Buscar dados da conta incluindo last_sync_at E user_id
   const { data: account, error } = await supabase
     .from('bank_accounts')
-    .select('provider_account_id, last_sync_at')
+    .select('provider_account_id, last_sync_at, user_id')
     .eq('id', accountId)
     .single();
 
@@ -586,6 +586,7 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
 
     return {
       id: uuidv4(),
+      user_id: account.user_id, // Adicionar user_id para queries mais eficientes
       account_id: accountId,
       transaction_id: trans.transaction_id,
       date: new Date(trans.booking_date).getTime(), // BIGINT em ms
