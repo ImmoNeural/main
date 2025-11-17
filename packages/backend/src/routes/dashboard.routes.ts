@@ -49,16 +49,32 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
     const endDate = Date.now();
 
-    // Total de saldo de todas as contas
+    // Total de saldo de todas as contas (incluindo metadata para saldo inicial)
     const { data: accounts, error: accountsError } = await supabase
       .from('bank_accounts')
-      .select('balance')
+      .select('balance, metadata')
       .eq('user_id', user_id)
       .eq('status', 'active');
 
     if (accountsError) throw accountsError;
 
     const total_balance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+
+    // 💰 Tentar buscar saldo inicial do CSV (metadata.saldo_inicial) se disponível
+    let initialBalanceFromMetadata: number | null = null;
+
+    try {
+      for (const account of accounts || []) {
+        if (account.metadata && typeof account.metadata.saldo_inicial === 'number') {
+          const saldoInicial = account.metadata.saldo_inicial;
+          initialBalanceFromMetadata = saldoInicial;
+          console.log(`💰 Saldo inicial encontrado no metadata: R$ ${saldoInicial.toFixed(2)}`);
+          break;
+        }
+      }
+    } catch (e) {
+      console.log('⚠️ Erro ao buscar saldo inicial no metadata:', e);
+    }
 
     // Buscar todas as transações no período
     const { data: transactions, error: transactionsError } = await supabase
@@ -88,12 +104,16 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .order('date', { ascending: true })
       .limit(1);
 
-    const initial_balance = firstDayTransactions && firstDayTransactions.length > 0
-      ? firstDayTransactions[0].balance_after
-      : null;
+    let initial_balance: number | null = null;
 
-    if (initial_balance !== null) {
-      console.log(`💰 Saldo inicial encontrado: R$ ${initial_balance.toFixed(2)} (data: ${format(firstDayTransactions![0].date, 'dd/MM/yyyy HH:mm')})`);
+    // Priorizar saldo inicial do metadata (do CSV)
+    if (initialBalanceFromMetadata !== null) {
+      initial_balance = initialBalanceFromMetadata;
+      console.log(`✅ Usando saldo inicial do CSV (metadata): R$ ${initialBalanceFromMetadata.toFixed(2)}`);
+    } else if (firstDayTransactions && firstDayTransactions.length > 0 && firstDayTransactions[0].balance_after !== null) {
+      const balanceAfter = firstDayTransactions[0].balance_after;
+      initial_balance = balanceAfter;
+      console.log(`✅ Saldo inicial encontrado (balance_after): R$ ${balanceAfter.toFixed(2)} (data: ${format(firstDayTransactions[0].date, 'dd/MM/yyyy HH:mm')})`);
     } else {
       console.log(`⚠️ Saldo inicial não encontrado para ${format(startDate, 'dd/MM/yyyy')} (balance_after não disponível)`);
     }
