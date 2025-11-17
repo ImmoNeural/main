@@ -38,45 +38,112 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       throw new Error('CSV deve ter pelo menos 2 linhas (cabeçalho + dados)');
     }
 
-    const headers = lines[0].split(',').map((h: string) => h.trim().toLowerCase());
-    const transactions = [];
+    // Auto-detectar separador (vírgula ou tabulação)
+    const firstLine = lines[0];
+    const separator = firstLine.includes('\t') ? '\t' : ',';
 
-    // Validar cabeçalhos obrigatórios
-    const requiredHeaders = ['date', 'amount'];
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-    if (missingHeaders.length > 0) {
-      throw new Error(`Cabeçalhos obrigatórios faltando: ${missingHeaders.join(', ')}`);
+    // Auto-detectar linha do cabeçalho (procurar por palavras-chave)
+    let headerLineIndex = 0;
+    const headerKeywords = ['data', 'date', 'descrição', 'description', 'valor', 'amount', 'crédito', 'débito'];
+
+    for (let i = 0; i < Math.min(10, lines.length); i++) {
+      const line = lines[i].toLowerCase();
+      const matchCount = headerKeywords.filter(keyword => line.includes(keyword)).length;
+      if (matchCount >= 2) {
+        headerLineIndex = i;
+        break;
+      }
     }
 
-    for (let i = 1; i < lines.length; i++) {
+    console.log(`📊 [CSV Parser] Detectado cabeçalho na linha ${headerLineIndex + 1}, separador: "${separator === '\t' ? 'TAB' : 'vírgula'}"`);
+
+    // Processar cabeçalho
+    const headers = lines[headerLineIndex].split(separator).map((h: string) => {
+      // Normalizar: remover acentos, espaços extras, parênteses
+      return h.trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/\s+/g, '_') // Substitui espaços por _
+        .replace(/[()]/g, '') // Remove parênteses
+        .replace(/r\$/g, ''); // Remove R$
+    });
+
+    console.log('📋 [CSV Parser] Cabeçalhos detectados:', headers);
+
+    const transactions = [];
+
+    // Processar linhas de dados (pular linhas antes do cabeçalho)
+    for (let i = headerLineIndex + 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      const values = line.split(',').map((v: string) => v.trim());
+      const values = line.split(separator).map((v: string) => v.trim());
       const transaction: any = {};
 
       headers.forEach((header: string, index: number) => {
         const value = values[index] || '';
 
-        if (header === 'date') {
-          transaction.date = value;
-        } else if (header === 'amount' || header === 'valor') {
-          // Remover símbolos de moeda e converter
-          transaction.amount = parseFloat(value.replace(/[^\d.,-]/g, '').replace(',', '.'));
-        } else if (header === 'description' || header === 'descrição' || header === 'descricao') {
-          transaction.description = value;
-        } else if (header === 'merchant' || header === 'estabelecimento') {
+        // Data (português e inglês)
+        if (header === 'date' || header === 'data') {
+          transaction.data = value;
+        }
+        // Descrição
+        else if (header === 'description' || header === 'descricao' || header === 'historico') {
+          transaction.descricao = value;
+        }
+        // Crédito (Santander)
+        else if (header.includes('credito') || header === 'credit') {
+          transaction.credito = value;
+        }
+        // Débito (Santander)
+        else if (header.includes('debito') || header === 'debit') {
+          transaction.debito = value;
+        }
+        // Saldo (Santander)
+        else if (header.includes('saldo') || header === 'balance') {
+          transaction.saldo = value;
+        }
+        // Docto/Documento (Santander)
+        else if (header === 'docto' || header === 'documento' || header === 'doc') {
+          transaction.docto = value;
+        }
+        // Situação (Santander)
+        else if (header === 'situacao' || header === 'status') {
+          transaction.situacao = value;
+        }
+        // Amount (formato padrão)
+        else if (header === 'amount' || header === 'valor') {
+          transaction.amount = value;
+        }
+        // Merchant/Estabelecimento
+        else if (header === 'merchant' || header === 'estabelecimento') {
           transaction.merchant = value;
-        } else if (header === 'category' || header === 'categoria') {
-          transaction.category = value;
-        } else if (header === 'currency' || header === 'moeda') {
+        }
+        // Categoria
+        else if (header === 'category' || header === 'categoria') {
+          transaction.categoria = value;
+        }
+        // Moeda
+        else if (header === 'currency' || header === 'moeda') {
           transaction.currency = value;
         }
       });
 
-      transactions.push(transaction);
+      // Só adicionar se tiver pelo menos data e (amount OU crédito OU débito)
+      const hasData = transaction.data;
+      const hasValue = transaction.amount || transaction.credito || transaction.debito;
+
+      if (hasData && hasValue) {
+        transactions.push(transaction);
+      }
     }
 
+    if (transactions.length === 0) {
+      throw new Error('Nenhuma transação válida encontrada no CSV. Verifique o formato do arquivo.');
+    }
+
+    console.log(`✅ [CSV Parser] ${transactions.length} transações parseadas com sucesso`);
     return transactions;
   };
 
@@ -225,16 +292,35 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                 <div className="flex items-start space-x-3">
                   <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-blue-800">
-                    <p className="font-semibold mb-2">Formato do arquivo CSV:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li><strong>Obrigatório:</strong> date (YYYY-MM-DD), amount (número com . ou ,)</li>
-                      <li><strong>Opcional:</strong> description, merchant, category, currency</li>
-                      <li>Valores negativos para despesas, positivos para receitas</li>
-                      <li>Máximo 1000 transações por importação</li>
-                    </ul>
+                    <p className="font-semibold mb-2">Formatos Aceitos:</p>
+
+                    <div className="mb-3">
+                      <p className="font-medium">✅ Formato Padrão:</p>
+                      <ul className="list-disc list-inside ml-2 space-y-1">
+                        <li><strong>Obrigatório:</strong> date (DD/MM/YYYY ou YYYY-MM-DD), amount (negativo = despesa)</li>
+                        <li><strong>Opcional:</strong> description, merchant, category</li>
+                      </ul>
+                    </div>
+
+                    <div className="mb-3">
+                      <p className="font-medium">✅ Formato Santander (e outros bancos):</p>
+                      <ul className="list-disc list-inside ml-2 space-y-1">
+                        <li>Aceita colunas: <strong>Data, Descrição, Crédito (R$), Débito (R$), Saldo (R$)</strong></li>
+                        <li>Detecta automaticamente o cabeçalho (mesmo se não estiver na linha 1)</li>
+                        <li>Suporta separador por vírgula ou tabulação</li>
+                        <li>Converte valores brasileiros (R$ 1.234,56)</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-green-50 border border-green-300 rounded p-2 mb-2">
+                      <p className="text-green-800 text-xs font-medium">
+                        💡 <strong>Santander:</strong> Cole direto do Excel/XLS convertido para CSV! O sistema detecta automaticamente.
+                      </p>
+                    </div>
+
                     <button
                       onClick={downloadTemplate}
-                      className="mt-3 text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                      className="mt-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Baixar template de exemplo

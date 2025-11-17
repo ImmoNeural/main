@@ -687,57 +687,114 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
     for (let i = 0; i < importedTransactions.length; i++) {
       const trans = importedTransactions[i];
 
-      // Validação básica
-      if (!trans.date) {
+      // Validação básica - suporta "date" ou "data" (português)
+      if (!trans.date && !trans.data) {
         errors.push(`Linha ${i + 1}: data é obrigatória`);
         continue;
       }
 
-      if (trans.amount === undefined || trans.amount === null) {
-        errors.push(`Linha ${i + 1}: valor é obrigatório`);
+      // Suporte para formato Santander: pode ter crédito OU débito separados
+      const hasAmount = trans.amount !== undefined && trans.amount !== null;
+      const hasCredito = trans.credito !== undefined && trans.credito !== null && trans.credito !== '' && trans.credito !== '0' && trans.credito !== '0,00';
+      const hasDebito = trans.debito !== undefined && trans.debito !== null && trans.debito !== '' && trans.debito !== '0' && trans.debito !== '0,00';
+
+      if (!hasAmount && !hasCredito && !hasDebito) {
+        errors.push(`Linha ${i + 1}: valor é obrigatório (amount, crédito ou débito)`);
         continue;
       }
 
-      if (!trans.description && !trans.merchant) {
-        errors.push(`Linha ${i + 1}: descrição ou merchant é obrigatório`);
+      const description = trans.description || trans.descricao || trans.merchant || trans.estabelecimento || '';
+      if (!description) {
+        errors.push(`Linha ${i + 1}: descrição é obrigatória`);
         continue;
       }
 
-      // Converter data para timestamp
+      // Converter data para timestamp - suporta DD/MM/YYYY e YYYY-MM-DD
       let dateTimestamp: number;
       try {
-        const dateObj = new Date(trans.date);
+        const dateStr = trans.date || trans.data;
+        let dateObj: Date;
+
+        if (dateStr.includes('/')) {
+          // Formato brasileiro: DD/MM/YYYY
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1; // Month is 0-indexed
+            const year = parseInt(parts[2]);
+            dateObj = new Date(year, month, day);
+          } else {
+            throw new Error('Formato de data inválido');
+          }
+        } else {
+          // Formato ISO: YYYY-MM-DD
+          dateObj = new Date(dateStr);
+        }
+
         if (isNaN(dateObj.getTime())) {
-          errors.push(`Linha ${i + 1}: data inválida "${trans.date}"`);
+          errors.push(`Linha ${i + 1}: data inválida "${dateStr}"`);
           continue;
         }
         dateTimestamp = dateObj.getTime();
       } catch (e) {
-        errors.push(`Linha ${i + 1}: erro ao processar data "${trans.date}"`);
+        errors.push(`Linha ${i + 1}: erro ao processar data "${trans.date || trans.data}"`);
         continue;
       }
 
-      // Converter amount para número
+      // Converter amount para número - suporta formato brasileiro (vírgula decimal)
       let amount: number;
       try {
-        amount = typeof trans.amount === 'string'
-          ? parseFloat(trans.amount.replace(',', '.').replace(/[^\d.-]/g, ''))
-          : Number(trans.amount);
+        if (hasAmount) {
+          // Formato padrão: amount pode ser positivo ou negativo
+          const amountStr = typeof trans.amount === 'string' ? trans.amount : String(trans.amount);
+          amount = parseFloat(
+            amountStr
+              .replace(/\s/g, '') // Remove espaços
+              .replace(/\./g, '') // Remove pontos de milhar
+              .replace(',', '.') // Converte vírgula decimal para ponto
+              .replace(/[^\d.-]/g, '') // Remove caracteres não numéricos exceto - e .
+          );
+        } else {
+          // Formato Santander: crédito (positivo) ou débito (negativo)
+          if (hasCredito) {
+            const creditoStr = typeof trans.credito === 'string' ? trans.credito : String(trans.credito);
+            amount = parseFloat(
+              creditoStr
+                .replace(/\s/g, '')
+                .replace(/\./g, '')
+                .replace(',', '.')
+                .replace(/[^\d.-]/g, '')
+            );
+            // Crédito é sempre positivo
+            amount = Math.abs(amount);
+          } else {
+            // hasDebito
+            const debitoStr = typeof trans.debito === 'string' ? trans.debito : String(trans.debito);
+            amount = parseFloat(
+              debitoStr
+                .replace(/\s/g, '')
+                .replace(/\./g, '')
+                .replace(',', '.')
+                .replace(/[^\d.-]/g, '')
+            );
+            // Débito é sempre negativo
+            amount = -Math.abs(amount);
+          }
+        }
 
-        if (isNaN(amount)) {
-          errors.push(`Linha ${i + 1}: valor inválido "${trans.amount}"`);
+        if (isNaN(amount) || amount === 0) {
+          errors.push(`Linha ${i + 1}: valor inválido`);
           continue;
         }
       } catch (e) {
-        errors.push(`Linha ${i + 1}: erro ao processar valor "${trans.amount}"`);
+        errors.push(`Linha ${i + 1}: erro ao processar valor`);
         continue;
       }
 
-      const description = trans.description || trans.merchant || '';
-      const merchant = trans.merchant || '';
+      const merchant = trans.merchant || trans.estabelecimento || '';
 
       // Categorizar automaticamente se não foi fornecida categoria
-      let category = trans.category || '';
+      let category = trans.category || trans.categoria || '';
       if (!category) {
         const categorization = categorizationService.categorizeTransaction(description, merchant);
         category = categorization.category;
@@ -746,18 +803,42 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       // Determinar tipo (debit/credit)
       const type = amount < 0 ? 'debit' : 'credit';
 
+      // Balance after (se disponível no formato Santander)
+      let balanceAfter = null;
+      if (trans.saldo !== undefined && trans.saldo !== null && trans.saldo !== '') {
+        try {
+          const saldoStr = typeof trans.saldo === 'string' ? trans.saldo : String(trans.saldo);
+          balanceAfter = parseFloat(
+            saldoStr
+              .replace(/\s/g, '')
+              .replace(/\./g, '')
+              .replace(',', '.')
+              .replace(/[^\d.-]/g, '')
+          );
+          if (isNaN(balanceAfter)) {
+            balanceAfter = null;
+          }
+        } catch (e) {
+          balanceAfter = null;
+        }
+      }
+
+      // Transaction ID (pode vir do campo Docto do Santander)
+      const transactionId = trans.docto || trans.documento || `MANUAL_${user_id}_${Date.now()}_${i}`;
+
       transactionsToInsert.push({
         id: uuidv4(),
         account_id: targetAccountId,
-        transaction_id: `MANUAL_${user_id}_${Date.now()}_${i}`,
+        transaction_id: transactionId,
         date: dateTimestamp,
         amount,
-        currency: trans.currency || 'BRL',
+        currency: trans.currency || trans.moeda || 'BRL',
         description,
         merchant,
         category,
         type,
-        status: 'completed',
+        balance_after: balanceAfter,
+        status: trans.situacao || trans.status || 'completed',
         created_at: toISOString(now),
         updated_at: toISOString(now),
       });
