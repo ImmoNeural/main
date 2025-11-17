@@ -486,7 +486,7 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
           matchedWords: matchedWords,
         };
       })
-      .filter(t => t.matchScore >= 0.7) // Mínimo 70% de match (aumentado de 40%)
+      .filter(t => t.matchScore === 1.0) // 🎯 MATCH 100% EXATO - todas as palavras devem estar presentes
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 20); // Máximo 20 resultados
 
@@ -677,6 +677,10 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Maximum 1000 transactions per import' });
     }
 
+    // 💰 DETECTAR SALDOS ESPECIAIS DO CSV
+    let saldoAnterior: number | null = null; // Saldo inicial do período
+    let saldoContaCorrente: number | null = null; // Saldo final (atual) da conta
+
     // Verificar se account_id existe e pertence ao usuário
     let targetAccountId = account_id;
 
@@ -746,6 +750,53 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       const trans = importedTransactions[i];
 
       console.log(`\n🔍 [Linha ${i + 1}] Processando:`, JSON.stringify(trans, null, 2));
+
+      // 💰 DETECTAR LINHAS ESPECIAIS DE SALDO
+      const descricaoLower = (trans.description || trans.descricao || '').toLowerCase();
+
+      // 1. SALDO ANTERIOR (saldo inicial do período)
+      if (descricaoLower.includes('saldo anterior')) {
+        console.log(`💰 [Linha ${i + 1}] DETECTADO: Saldo Anterior`);
+        if (trans.saldo !== undefined && trans.saldo !== null && trans.saldo !== '') {
+          try {
+            const saldoStr = typeof trans.saldo === 'string' ? trans.saldo : String(trans.saldo);
+            saldoAnterior = parseFloat(
+              saldoStr
+                .replace(/\s/g, '')
+                .replace(/\./g, '')
+                .replace(',', '.')
+                .replace(/[^\d.-]/g, '')
+            );
+            console.log(`✅ [Linha ${i + 1}] Saldo Anterior capturado: R$ ${saldoAnterior.toFixed(2)}`);
+          } catch (e) {
+            console.log(`⚠️ [Linha ${i + 1}] Erro ao processar Saldo Anterior:`, e);
+          }
+        }
+        // Pular esta linha (não é uma transação real)
+        continue;
+      }
+
+      // 2. SALDO DE CONTA CORRENTE (saldo atual/final da conta)
+      if (descricaoLower.includes('saldo de conta corrente') || descricaoLower.includes('saldo conta corrente')) {
+        console.log(`💰 [Linha ${i + 1}] DETECTADO: Saldo de Conta Corrente`);
+        if (trans.saldo !== undefined && trans.saldo !== null && trans.saldo !== '') {
+          try {
+            const saldoStr = typeof trans.saldo === 'string' ? trans.saldo : String(trans.saldo);
+            saldoContaCorrente = parseFloat(
+              saldoStr
+                .replace(/\s/g, '')
+                .replace(/\./g, '')
+                .replace(',', '.')
+                .replace(/[^\d.-]/g, '')
+            );
+            console.log(`✅ [Linha ${i + 1}] Saldo de Conta Corrente capturado: R$ ${saldoContaCorrente.toFixed(2)}`);
+          } catch (e) {
+            console.log(`⚠️ [Linha ${i + 1}] Erro ao processar Saldo de Conta Corrente:`, e);
+          }
+        }
+        // Pular esta linha (não é uma transação real)
+        continue;
+      }
 
       // Validação básica - suporta "date" ou "data" (português)
       if (!trans.date && !trans.data) {
@@ -1004,6 +1055,50 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
 
       console.log(`✅ [Import] Successfully imported ${totalInserted} new transactions for user ${user_id}`);
 
+      // 💰 ATUALIZAR SALDOS DA CONTA BANCÁRIA
+      if (saldoContaCorrente !== null || saldoAnterior !== null) {
+        console.log('\n💰 [Import] Atualizando saldos da conta bancária...');
+
+        const updateData: any = {
+          updated_at: toISOString(Date.now()),
+        };
+
+        if (saldoContaCorrente !== null) {
+          updateData.balance = saldoContaCorrente;
+          console.log(`   💰 Saldo Atual (Conta Corrente): R$ ${saldoContaCorrente.toFixed(2)}`);
+        }
+
+        // Armazenar saldo anterior em metadata (JSON field) se disponível
+        if (saldoAnterior !== null) {
+          console.log(`   💰 Saldo Inicial (Saldo Anterior): R$ ${saldoAnterior.toFixed(2)}`);
+          // Buscar metadata atual da conta
+          const { data: currentAccount } = await supabase
+            .from('bank_accounts')
+            .select('metadata')
+            .eq('id', targetAccountId)
+            .single();
+
+          const currentMetadata = currentAccount?.metadata || {};
+          updateData.metadata = {
+            ...currentMetadata,
+            saldo_inicial: saldoAnterior,
+            saldo_inicial_updated_at: new Date().toISOString(),
+          };
+        }
+
+        // Atualizar conta
+        const { error: updateError } = await supabase
+          .from('bank_accounts')
+          .update(updateData)
+          .eq('id', targetAccountId);
+
+        if (updateError) {
+          console.error('⚠️ [Import] Erro ao atualizar saldos da conta:', updateError);
+        } else {
+          console.log('✅ [Import] Saldos da conta atualizados com sucesso!');
+        }
+      }
+
       const message = totalInserted === 0
         ? 'Nenhuma transação nova foi importada (todas já existiam)'
         : `${totalInserted} ${totalInserted === 1 ? 'transação importada' : 'transações importadas'} com sucesso!${duplicatesCount > 0 ? ` (${duplicatesCount} ${duplicatesCount === 1 ? 'duplicata ignorada' : 'duplicatas ignoradas'})` : ''}`;
@@ -1014,6 +1109,8 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         duplicates: duplicatesCount,
         errors: errors.length > 0 ? errors : undefined,
         account_id: targetAccountId,
+        saldo_inicial: saldoAnterior,
+        saldo_atual: saldoContaCorrente,
         message,
       });
     } else {
