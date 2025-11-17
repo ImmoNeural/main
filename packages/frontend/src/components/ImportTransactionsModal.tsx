@@ -33,7 +33,12 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
   };
 
   const parseCSV = (csv: string) => {
+    console.log('\n🔄 [FRONTEND] Iniciando parse do CSV...');
+    console.log('═══════════════════════════════════════════════════════════════');
+
     const lines = csv.trim().split('\n');
+    console.log(`📄 [FRONTEND] Total de linhas no arquivo: ${lines.length}`);
+
     if (lines.length < 2) {
       throw new Error('CSV deve ter pelo menos 2 linhas (cabeçalho + dados)');
     }
@@ -55,7 +60,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       }
     }
 
-    console.log(`📊 [CSV Parser] Detectado cabeçalho na linha ${headerLineIndex + 1}, separador: "${separator === '\t' ? 'TAB' : 'vírgula'}"`);
+    console.log(`📊 [FRONTEND] Detectado cabeçalho na linha ${headerLineIndex + 1}, separador: "${separator === '\t' ? 'TAB' : 'vírgula'}"`);
 
     // Processar cabeçalho
     const headers = lines[headerLineIndex].split(separator).map((h: string) => {
@@ -69,14 +74,18 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         .replace(/r\$/g, ''); // Remove R$
     });
 
-    console.log('📋 [CSV Parser] Cabeçalhos detectados:', headers);
+    console.log('📋 [FRONTEND] Cabeçalhos normalizados:', headers);
 
     const transactions = [];
 
     // Processar linhas de dados (pular linhas antes do cabeçalho)
+    console.log(`\n🔄 [FRONTEND] Processando ${lines.length - headerLineIndex - 1} linhas de dados...`);
     for (let i = headerLineIndex + 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line) continue;
+      if (!line) {
+        console.log(`⏭️  [FRONTEND Linha ${i + 1}] Linha vazia, pulando...`);
+        continue;
+      }
 
       const values = line.split(separator).map((v: string) => v.trim());
       const transaction: any = {};
@@ -130,6 +139,8 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         }
       });
 
+      console.log(`\n🔍 [FRONTEND Linha ${i + 1}] Transação parseada:`, JSON.stringify(transaction, null, 2));
+
       // Só adicionar se tiver pelo menos data OU descrição
       // Deixar o backend fazer validação mais rigorosa
       const hasData = transaction.data;
@@ -137,14 +148,22 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
 
       if (hasData || hasDescricao) {
         transactions.push(transaction);
+        console.log(`✅ [FRONTEND Linha ${i + 1}] Transação ADICIONADA à lista de envio`);
+      } else {
+        console.log(`⏭️  [FRONTEND Linha ${i + 1}] Transação IGNORADA (sem data e sem descrição)`);
       }
     }
+
+    console.log('\n═══════════════════════════════════════════════════════════════');
+    console.log(`📊 [FRONTEND] Resumo do parse:`);
+    console.log(`   ✅ Transações parseadas: ${transactions.length}`);
+    console.log(`   📤 Enviando para backend...`);
+    console.log('═══════════════════════════════════════════════════════════════\n');
 
     if (transactions.length === 0) {
       throw new Error('Nenhuma transação válida encontrada no CSV. Verifique o formato do arquivo.');
     }
 
-    console.log(`✅ [CSV Parser] ${transactions.length} transações parseadas com sucesso`);
     return transactions;
   };
 
@@ -159,7 +178,9 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
 
     try {
       const transactions = parseCSV(csvContent);
+      console.log(`📤 [FRONTEND] Enviando ${transactions.length} transações para o backend...`);
       const response = await transactionApi.importTransactions({ transactions });
+      console.log('📥 [FRONTEND] Resposta do backend:', response.data);
       setResult(response.data);
 
       if (response.data.success) {
@@ -293,29 +314,35 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                 <div className="flex items-start space-x-3">
                   <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-blue-800">
-                    <p className="font-semibold mb-2">Formatos Aceitos:</p>
+                    <p className="font-bold mb-3">📋 Como Importar Suas Transações</p>
 
-                    <div className="mb-3">
-                      <p className="font-medium">✅ Formato Padrão:</p>
-                      <ul className="list-disc list-inside ml-2 space-y-1">
-                        <li><strong>Obrigatório:</strong> date (DD/MM/YYYY ou YYYY-MM-DD), amount (negativo = despesa)</li>
-                        <li><strong>Opcional:</strong> description, merchant, category</li>
+                    <div className="mb-4">
+                      <p className="font-semibold mb-2">🏦 Extratos Bancários (Santander, Itaú, etc.):</p>
+                      <ul className="list-disc list-inside ml-2 space-y-1.5">
+                        <li>Baixe o extrato do seu banco em formato <strong>Excel (.xls/.xlsx) ou CSV</strong></li>
+                        <li>Se for Excel, converta para CSV ou copie e cole o conteúdo aqui</li>
+                        <li>O sistema detecta automaticamente: cabeçalhos, separadores, formato de valores</li>
+                        <li>Aceita colunas: <strong>Data, Descrição, Crédito, Débito, Saldo, Docto</strong></li>
+                        <li>Formatos suportados: <strong>DD/MM/YYYY</strong> e valores em <strong>R$ 1.234,56</strong></li>
                       </ul>
                     </div>
 
                     <div className="mb-3">
-                      <p className="font-medium">✅ Formato Santander (e outros bancos):</p>
-                      <ul className="list-disc list-inside ml-2 space-y-1">
-                        <li>Aceita colunas: <strong>Data, Descrição, Crédito (R$), Débito (R$), Saldo (R$)</strong></li>
-                        <li>Detecta automaticamente o cabeçalho (mesmo se não estiver na linha 1)</li>
-                        <li>Suporta separador por vírgula ou tabulação</li>
-                        <li>Converte valores brasileiros (R$ 1.234,56)</li>
+                      <p className="font-semibold mb-2">📝 Formato Personalizado:</p>
+                      <ul className="list-disc list-inside ml-2 space-y-1.5">
+                        <li><strong>Campos obrigatórios:</strong> data (date ou data) e valor (amount, crédito ou débito)</li>
+                        <li><strong>Campos opcionais:</strong> descrição, estabelecimento, categoria, moeda</li>
+                        <li><strong>Valores:</strong> use negativo para despesas (-50.00) e positivo para receitas (1500.00)</li>
+                        <li><strong>Data:</strong> aceita DD/MM/YYYY (brasileiro) ou YYYY-MM-DD (internacional)</li>
                       </ul>
                     </div>
 
-                    <div className="bg-green-50 border border-green-300 rounded p-2 mb-2">
-                      <p className="text-green-800 text-xs font-medium">
-                        💡 <strong>Santander:</strong> Cole direto do Excel/XLS convertido para CSV! O sistema detecta automaticamente.
+                    <div className="bg-amber-50 border border-amber-300 rounded p-3 mb-2">
+                      <p className="text-amber-800 text-xs font-semibold mb-1">⚡ IMPORTANTE:</p>
+                      <p className="text-amber-800 text-xs">
+                        • O sistema importa <strong>TODAS as linhas</strong> com data e valor válidos<br/>
+                        • Se alguma transação não aparecer, verifique o console do navegador (F12) para ver os logs detalhados<br/>
+                        • Linhas vazias ou sem data/valor serão automaticamente ignoradas
                       </p>
                     </div>
 
@@ -324,7 +351,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                       className="mt-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
                     >
                       <Download className="w-4 h-4 mr-1" />
-                      Baixar template de exemplo
+                      Baixar modelo de exemplo
                     </button>
                   </div>
                 </div>

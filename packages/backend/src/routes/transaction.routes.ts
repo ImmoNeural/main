@@ -684,12 +684,19 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
     const transactionsToInsert: any[] = [];
     const errors: string[] = [];
 
+    console.log(`\n📥 [CSV Import] Iniciando processamento de ${importedTransactions.length} transações`);
+    console.log('═══════════════════════════════════════════════════════════════');
+
     for (let i = 0; i < importedTransactions.length; i++) {
       const trans = importedTransactions[i];
 
+      console.log(`\n🔍 [Linha ${i + 1}] Processando:`, JSON.stringify(trans, null, 2));
+
       // Validação básica - suporta "date" ou "data" (português)
       if (!trans.date && !trans.data) {
-        errors.push(`Linha ${i + 1}: data é obrigatória`);
+        const erro = `Linha ${i + 1}: data é obrigatória`;
+        console.log(`❌ [Linha ${i + 1}] DESCARTADA - ${erro}`);
+        errors.push(erro);
         continue;
       }
 
@@ -698,19 +705,20 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       const hasCredito = trans.credito !== undefined && trans.credito !== null && trans.credito !== '' && trans.credito !== '0' && trans.credito !== '0,00';
       const hasDebito = trans.debito !== undefined && trans.debito !== null && trans.debito !== '' && trans.debito !== '0' && trans.debito !== '0,00';
 
+      console.log(`   💰 [Linha ${i + 1}] Valores detectados: hasAmount=${hasAmount}, hasCredito=${hasCredito}, hasDebito=${hasDebito}`);
+      console.log(`   💰 [Linha ${i + 1}] Dados brutos: amount=${trans.amount}, credito=${trans.credito}, debito=${trans.debito}`);
+
       if (!hasAmount && !hasCredito && !hasDebito) {
-        errors.push(`Linha ${i + 1}: valor é obrigatório (amount, crédito ou débito)`);
+        const erro = `Linha ${i + 1}: valor é obrigatório (amount, crédito ou débito)`;
+        console.log(`❌ [Linha ${i + 1}] DESCARTADA - ${erro}`);
+        errors.push(erro);
         continue;
       }
 
       // Descrição: tentar pegar de múltiplos campos
       // Se nenhum campo tiver valor, usar um placeholder com informações disponíveis
       const description = trans.description || trans.descricao || trans.merchant || trans.estabelecimento || trans.docto || 'Transação importada';
-
-      // Log para debug: ver o que está sendo processado
-      if (!trans.description && !trans.descricao && !trans.merchant && !trans.estabelecimento) {
-        console.log(`⚠️ [CSV Import] Linha ${i + 1}: Nenhuma descrição encontrada, usando placeholder. Dados:`, trans);
-      }
+      console.log(`   📝 [Linha ${i + 1}] Descrição: "${description}"`)
 
       // Converter data para timestamp - suporta DD/MM/YYYY e YYYY-MM-DD
       let dateTimestamp: number;
@@ -735,12 +743,17 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         }
 
         if (isNaN(dateObj.getTime())) {
-          errors.push(`Linha ${i + 1}: data inválida "${dateStr}"`);
+          const erro = `Linha ${i + 1}: data inválida "${dateStr}"`;
+          console.log(`❌ [Linha ${i + 1}] DESCARTADA - ${erro}`);
+          errors.push(erro);
           continue;
         }
         dateTimestamp = dateObj.getTime();
+        console.log(`   📅 [Linha ${i + 1}] Data convertida: ${dateStr} → ${new Date(dateTimestamp).toLocaleDateString('pt-BR')}`);
       } catch (e) {
-        errors.push(`Linha ${i + 1}: erro ao processar data "${trans.date || trans.data}"`);
+        const erro = `Linha ${i + 1}: erro ao processar data "${trans.date || trans.data}"`;
+        console.log(`❌ [Linha ${i + 1}] DESCARTADA - ${erro}`);
+        errors.push(erro);
         continue;
       }
 
@@ -785,12 +798,18 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
           }
         }
 
+        console.log(`   💵 [Linha ${i + 1}] Valor convertido: R$ ${amount.toFixed(2)}`);
+
         if (isNaN(amount) || amount === 0) {
-          errors.push(`Linha ${i + 1}: valor inválido`);
+          const erro = `Linha ${i + 1}: valor inválido (NaN ou zero)`;
+          console.log(`❌ [Linha ${i + 1}] DESCARTADA - ${erro}`);
+          errors.push(erro);
           continue;
         }
       } catch (e) {
-        errors.push(`Linha ${i + 1}: erro ao processar valor`);
+        const erro = `Linha ${i + 1}: erro ao processar valor - ${e}`;
+        console.log(`❌ [Linha ${i + 1}] DESCARTADA - ${erro}`);
+        errors.push(erro);
         continue;
       }
 
@@ -829,7 +848,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       // Transaction ID (pode vir do campo Docto do Santander)
       const transactionId = trans.docto || trans.documento || `MANUAL_${user_id}_${Date.now()}_${i}`;
 
-      transactionsToInsert.push({
+      const transactionToInsert = {
         id: uuidv4(),
         user_id, // Adicionar user_id para queries mais eficientes
         account_id: targetAccountId,
@@ -845,8 +864,18 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         status: trans.situacao || trans.status || 'completed',
         created_at: toISOString(now),
         updated_at: toISOString(now),
-      });
+      };
+
+      transactionsToInsert.push(transactionToInsert);
+      console.log(`✅ [Linha ${i + 1}] ACEITA - Descrição: "${description}", Valor: R$ ${amount.toFixed(2)}, Categoria: ${category}`);
     }
+
+    console.log('\n═══════════════════════════════════════════════════════════════');
+    console.log(`📊 [CSV Import] Resumo do processamento:`);
+    console.log(`   ✅ Transações aceitas: ${transactionsToInsert.length}`);
+    console.log(`   ❌ Linhas descartadas: ${errors.length}`);
+    console.log(`   📥 Total de linhas processadas: ${importedTransactions.length}`);
+    console.log('═══════════════════════════════════════════════════════════════\n');
 
     // Se houver muitos erros, retornar sem importar
     if (errors.length > importedTransactions.length * 0.5) {
