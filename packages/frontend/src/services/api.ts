@@ -147,6 +147,9 @@ export const transactionApi = {
       { transactionIds, newCategory }
     ),
 
+  deleteAll: () =>
+    api.delete<{ success: boolean; deleted: number; message: string }>('/transactions/all'),
+
   debugCategorization: (params: { description?: string; merchant?: string; amount?: number; transactionId?: string }) =>
     api.post<{
       input: {

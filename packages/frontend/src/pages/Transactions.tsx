@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown, ChevronDown, ChevronUp, Upload } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown, ChevronDown, ChevronUp, Upload, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
@@ -78,6 +78,55 @@ const Transactions = () => {
       setCategories(categoriesWithUncategorized);
     } catch (error) {
       console.error('Error loading transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    const confirmDelete = confirm(
+      '🗑️ ATENÇÃO: Apagar TODAS as transações?\n\n' +
+      '⚠️ ESTA AÇÃO É IRREVERSÍVEL!\n\n' +
+      'Isso irá apagar permanentemente:\n' +
+      '• Todas as suas transações importadas\n' +
+      '• Todos os dados do banco Supabase\n' +
+      '• Esta ação NÃO pode ser desfeita\n\n' +
+      'Tem certeza absoluta que deseja continuar?'
+    );
+
+    if (!confirmDelete) return;
+
+    // Segunda confirmação
+    const doubleConfirm = confirm(
+      '⚠️ ÚLTIMA CONFIRMAÇÃO\n\n' +
+      'Digite OK para confirmar que você entende que:\n\n' +
+      '• TODOS os dados serão PERDIDOS\n' +
+      '• Esta ação é PERMANENTE e IRREVERSÍVEL\n\n' +
+      'Deseja realmente apagar tudo?'
+    );
+
+    if (!doubleConfirm) return;
+
+    setIsLoading(true);
+    try {
+      console.log('🗑️ Deletando todas as transações...');
+      const response = await transactionApi.deleteAll();
+      console.log('✅ Transações deletadas:', response.data);
+
+      alert(
+        `✅ Transações deletadas com sucesso!\n\n` +
+        `🗑️ Total deletado: ${response.data.deleted} transações\n\n` +
+        `${response.data.message}`
+      );
+
+      // Recarregar transações (deve estar vazio agora)
+      await loadData();
+    } catch (error: any) {
+      console.error('❌ Erro ao deletar:', error);
+      alert(
+        `❌ Erro ao deletar transações\n\n` +
+        `${error.response?.data?.error || error.message || 'Erro desconhecido'}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -455,6 +504,16 @@ const Transactions = () => {
           >
             <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Atualizar</span>
+          </button>
+          <button
+            onClick={handleDeleteAll}
+            className="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 flex items-center space-x-2 text-sm sm:text-base"
+            disabled={isLoading}
+            title="Apagar TODAS as transações do banco de dados (IRREVERSÍVEL)"
+          >
+            <Trash2 className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="hidden md:inline">Apagar Todas</span>
+            <span className="md:hidden">Apagar</span>
           </button>
         </div>
       </div>

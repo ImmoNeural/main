@@ -382,6 +382,42 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
 });
 
 /**
+ * DELETE /api/transactions/all
+ * Apaga TODAS as transações do usuário (IRREVERSÍVEL)
+ */
+router.delete('/all', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+
+    console.log('🗑️ [Delete All] Iniciando deleção de todas as transações para user:', user_id);
+
+    // Deletar todas as transações do usuário usando user_id diretamente
+    const { data: deleted, error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('user_id', user_id)
+      .select('id');
+
+    if (error) {
+      console.error('❌ [Delete All] Erro ao deletar transações:', error);
+      throw error;
+    }
+
+    const deletedCount = deleted?.length || 0;
+    console.log(`✅ [Delete All] ${deletedCount} transações deletadas com sucesso`);
+
+    res.json({
+      success: true,
+      deleted: deletedCount,
+      message: `${deletedCount} ${deletedCount === 1 ? 'transação deletada' : 'transações deletadas'} com sucesso!`,
+    });
+  } catch (error) {
+    console.error('❌ [Delete All] Erro:', error);
+    res.status(500).json({ error: 'Erro ao deletar transações' });
+  }
+});
+
+/**
  * POST /api/transactions/find-similar
  * Busca transações similares com base em palavras-chave
  */
@@ -886,13 +922,53 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
-    // Inserir transações em batch
-    if (transactionsToInsert.length > 0) {
-      const BATCH_SIZE = 500;
-      let totalInserted = 0;
+    // Verificar duplicatas antes de inserir
+    console.log('\n🔍 [CSV Import] Verificando duplicatas...');
+    const uniqueTransactions: any[] = [];
+    let duplicatesCount = 0;
 
-      for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
-        const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
+    if (transactionsToInsert.length > 0) {
+      // Buscar transações existentes do usuário para comparação
+      const { data: existingTransactions, error: fetchError } = await supabase
+        .from('transactions')
+        .select('date, description, amount, user_id')
+        .eq('user_id', user_id);
+
+      if (fetchError) {
+        console.error('❌ [Import] Error fetching existing transactions:', fetchError);
+      }
+
+      const existingSet = new Set(
+        (existingTransactions || []).map(t =>
+          `${t.date}_${t.description}_${t.amount}`
+        )
+      );
+
+      console.log(`📊 [CSV Import] Transações existentes no banco: ${existingSet.size}`);
+
+      for (const trans of transactionsToInsert) {
+        const key = `${trans.date}_${trans.description}_${trans.amount}`;
+        if (existingSet.has(key)) {
+          duplicatesCount++;
+          console.log(`⏭️  [CSV Import] Duplicata detectada: "${trans.description}" (${new Date(trans.date).toLocaleDateString('pt-BR')}) R$ ${trans.amount.toFixed(2)}`);
+        } else {
+          uniqueTransactions.push(trans);
+          existingSet.add(key); // Adicionar ao set para evitar duplicatas dentro do mesmo lote
+        }
+      }
+
+      console.log(`\n📊 [CSV Import] Após verificação de duplicatas:`);
+      console.log(`   ✅ Transações únicas para importar: ${uniqueTransactions.length}`);
+      console.log(`   ⏭️  Duplicatas ignoradas: ${duplicatesCount}`);
+    }
+
+    // Inserir transações únicas em batch
+    let totalInserted = 0;
+    if (uniqueTransactions.length > 0) {
+      const BATCH_SIZE = 500;
+
+      for (let i = 0; i < uniqueTransactions.length; i += BATCH_SIZE) {
+        const batch = uniqueTransactions.slice(i, i + BATCH_SIZE);
 
         const { error: insertError } = await supabase
           .from('transactions')
@@ -907,14 +983,19 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         }
       }
 
-      console.log(`✅ [Import] Successfully imported ${totalInserted} transactions for user ${user_id}`);
+      console.log(`✅ [Import] Successfully imported ${totalInserted} new transactions for user ${user_id}`);
+
+      const message = totalInserted === 0
+        ? 'Nenhuma transação nova foi importada (todas já existiam)'
+        : `${totalInserted} ${totalInserted === 1 ? 'transação importada' : 'transações importadas'} com sucesso!${duplicatesCount > 0 ? ` (${duplicatesCount} ${duplicatesCount === 1 ? 'duplicata ignorada' : 'duplicatas ignoradas'})` : ''}`;
 
       res.json({
         success: true,
         imported: totalInserted,
+        duplicates: duplicatesCount,
         errors: errors.length > 0 ? errors : undefined,
         account_id: targetAccountId,
-        message: `${totalInserted} transações importadas com sucesso!${errors.length > 0 ? ` (${errors.length} erros)` : ''}`,
+        message,
       });
     } else {
       res.status(400).json({

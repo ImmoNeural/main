@@ -91,7 +91,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       const transaction: any = {};
 
       headers.forEach((header: string, index: number) => {
-        const value = values[index] || '';
+        let value = values[index] || '';
 
         // Data (português e inglês)
         if (header === 'date' || header === 'data') {
@@ -101,16 +101,25 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         else if (header === 'description' || header === 'descricao' || header === 'historico') {
           transaction.descricao = value;
         }
-        // Crédito (Santander)
+        // Crédito (Santander) - limpar espaços e caracteres extras
         else if (header.includes('credito') || header === 'credit') {
-          transaction.credito = value;
+          // Limpar valor: remover aspas duplas extras, espaços, manter apenas números, vírgula e ponto
+          value = value.replace(/["'\s]/g, '').trim();
+          if (value && value !== '0' && value !== '0,00') {
+            transaction.credito = value;
+          }
         }
-        // Débito (Santander)
+        // Débito (Santander) - limpar espaços e caracteres extras
         else if (header.includes('debito') || header === 'debit') {
-          transaction.debito = value;
+          // Limpar valor: remover aspas duplas extras, espaços, manter apenas números, vírgula e ponto
+          value = value.replace(/["'\s]/g, '').trim();
+          if (value && value !== '0' && value !== '0,00') {
+            transaction.debito = value;
+          }
         }
-        // Saldo (Santander)
+        // Saldo (Santander) - limpar espaços e caracteres extras
         else if (header.includes('saldo') || header === 'balance') {
+          value = value.replace(/["'\s]/g, '').trim();
           transaction.saldo = value;
         }
         // Docto/Documento (Santander)
@@ -341,8 +350,8 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                       <p className="text-amber-800 text-xs font-semibold mb-1">⚡ IMPORTANTE:</p>
                       <p className="text-amber-800 text-xs">
                         • O sistema importa <strong>TODAS as linhas</strong> com data e valor válidos<br/>
-                        • Se alguma transação não aparecer, verifique o console do navegador (F12) para ver os logs detalhados<br/>
-                        • Linhas vazias ou sem data/valor serão automaticamente ignoradas
+                        • Linhas vazias ou sem data/valor serão automaticamente ignoradas<br/>
+                        • Transações duplicadas serão identificadas e não serão importadas novamente
                       </p>
                     </div>
 
