@@ -614,7 +614,11 @@ class CategorizationService {
     confidence: number; // 0-100
     matchedBy: string; // O que causou o match
   } {
-    const text = this.normalizeText(`${description || ''} ${merchant || ''}`);
+    // Remover padrões comuns de cartão antes de categorizar
+    let cleanedText = `${description || ''} ${merchant || ''}`;
+    cleanedText = cleanedText.replace(/compra\s+cartao\s+deb/gi, ''); // Remove "COMPRA CARTAO DEB"
+
+    const text = this.normalizeText(cleanedText);
 
     let bestMatch: {
       rule: CategoryRule;

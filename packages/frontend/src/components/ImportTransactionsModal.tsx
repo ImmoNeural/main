@@ -320,7 +320,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
               onClick={() => setImportMode('csv')}
               className={`px-4 py-2 font-medium transition-colors ${
                 importMode === 'csv'
-                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  ? 'text-primary-600 border-b-2 border-primary-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -331,7 +331,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
               onClick={() => setImportMode('manual')}
               className={`px-4 py-2 font-medium transition-colors ${
                 importMode === 'manual'
-                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  ? 'text-primary-600 border-b-2 border-primary-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -368,7 +368,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   placeholder="date,amount,description,merchant
 2024-01-15,-45.90,Supermercado XYZ,Supermercado"
                   rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
                 />
               </div>
             </div>
@@ -386,7 +386,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                     type="date"
                     value={manualTransaction.date}
                     onChange={(e) => setManualTransaction({ ...manualTransaction, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
 
@@ -400,7 +400,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                     value={manualTransaction.amount}
                     onChange={(e) => setManualTransaction({ ...manualTransaction, amount: e.target.value })}
                     placeholder="-45.90"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -414,7 +414,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   value={manualTransaction.description}
                   onChange={(e) => setManualTransaction({ ...manualTransaction, description: e.target.value })}
                   placeholder="Ex: Compra no supermercado"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
@@ -427,7 +427,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   value={manualTransaction.merchant}
                   onChange={(e) => setManualTransaction({ ...manualTransaction, merchant: e.target.value })}
                   placeholder="Ex: Supermercado XYZ"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
@@ -440,7 +440,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   value={manualTransaction.category}
                   onChange={(e) => setManualTransaction({ ...manualTransaction, category: e.target.value })}
                   placeholder="Ex: Alimentação"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
             </div>

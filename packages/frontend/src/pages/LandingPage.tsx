@@ -202,10 +202,10 @@ const LandingPage = () => {
         </header>
 
         {/* Hero Section */}
-        <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-600 via-primary-500 to-purple-600 text-white relative overflow-hidden">
+        <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-600 via-primary-500 to-primary-600 text-white relative overflow-hidden">
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl"></div>
           </div>
 
           <div className="max-w-7xl mx-auto relative">
@@ -331,7 +331,7 @@ const LandingPage = () => {
                       w-full py-3 rounded-lg font-semibold transition-all
                       ${plan.popular
                         ? 'bg-primary-600 text-white hover:bg-primary-700'
-                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                        : 'bg-primary-600 text-white hover:bg-primary-700'
                       }
                     `}
                   >
@@ -343,7 +343,7 @@ const LandingPage = () => {
 
             <button
               onClick={handleSubscribeClick}
-              className="bg-gradient-to-r from-primary-600 to-purple-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:from-primary-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-xl inline-flex items-center space-x-2"
+              className="bg-gradient-to-r from-primary-600 to-primary-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-105 shadow-xl inline-flex items-center space-x-2"
             >
               <span>Quero ser assinante</span>
               <ArrowRight className="w-5 h-5" />
@@ -431,7 +431,7 @@ const LandingPage = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary-600 to-purple-600 text-white">
+        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary-600 to-primary-600 text-white">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-4xl sm:text-5xl font-bold mb-6">
               Pronto para Transformar suas Finanças?

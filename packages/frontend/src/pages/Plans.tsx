@@ -226,14 +226,14 @@ const Plans = () => {
 
             {/* Status da Assinatura */}
             {processingPayment && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 shadow-md">
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-primary-50 to-pink-50 border-2 border-primary-200 rounded-xl p-4 shadow-md">
                 <div className="flex items-center justify-center space-x-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
-                  <p className="text-center text-purple-800 font-semibold">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary-600" />
+                  <p className="text-center text-primary-800 font-semibold">
                     Processando seu pagamento...
                   </p>
                 </div>
-                <p className="text-center text-purple-600 text-sm mt-1">
+                <p className="text-center text-primary-600 text-sm mt-1">
                   Aguarde enquanto confirmamos sua assinatura
                 </p>
               </div>

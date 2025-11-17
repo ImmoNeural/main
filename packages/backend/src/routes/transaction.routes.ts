@@ -431,8 +431,11 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
     }
 
     // Extrair palavras-chave (mínimo 3 caracteres)
-    // Remover padrões irrelevantes: "MC DEB", "MC CRE", números/códigos como "12/34"
+    // Remover padrões irrelevantes: "COMPRA CARTAO DEB", "MC DEB", "MC CRE", números/códigos como "12/34"
     let text = `${description || ''} ${merchant || ''}`.toLowerCase();
+
+    // Remover string completa "COMPRA CARTAO DEB" (frase comum em transações de cartão)
+    text = text.replace(/compra\s+cartao\s+deb/gi, '');
 
     // Remover padrões de cartão (MC DEB, MC CRE, etc)
     text = text.replace(/\bmc\s+(deb|cre|credito|debito)\b/gi, '');
@@ -469,6 +472,7 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
       .map(t => {
         // Aplicar mesma limpeza no texto da transação
         let tText = `${t.description || ''} ${t.merchant || ''}`.toLowerCase();
+        tText = tText.replace(/compra\s+cartao\s+deb/gi, ''); // Remover "COMPRA CARTAO DEB"
         tText = tText.replace(/\bmc\s+(deb|cre|credito|debito)\b/gi, '');
         tText = tText.replace(/\b\d+\/\d+\b/g, '');
         tText = tText.replace(/\b\d{4,}\b/g, '');

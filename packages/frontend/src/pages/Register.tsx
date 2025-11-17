@@ -64,11 +64,11 @@ const Register = () => {
         description="Crie sua conta gratuita no Guru do Dindin e comece a organizar suas finanças hoje mesmo. Controle de gastos, orçamentos e muito mais!"
         keywords="criar conta, cadastro, registrar, guru do dindin, finanças gratuito"
       />
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-primary-500 to-primary-600 px-4 py-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 via-primary-500 to-primary-600 px-4 py-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/4 w-60 h-60 bg-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/4 w-60 h-60 bg-primary-400/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-400/20 rounded-full blur-3xl"></div>
       </div>
 
@@ -201,7 +201,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading || success}
-              className="w-full bg-gradient-to-r from-purple-600 to-primary-600 text-white py-2.5 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center space-x-2"
+              className="w-full bg-gradient-to-r from-primary-600 to-primary-600 text-white py-2.5 px-4 rounded-lg font-medium hover:from-primary-700 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center space-x-2"
             >
               {loading ? (
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
