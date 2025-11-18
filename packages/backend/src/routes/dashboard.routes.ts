@@ -77,27 +77,27 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     // Primeiro, vamos buscar algumas transações para debug
     const { data: firstFewTransactions, error: debugError } = await supabase
       .from('transactions')
-      .select('id, balance_after, amount, date, description, bank_accounts!inner(user_id)')
+      .select('id, balance_after, amount, date, description, created_at, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .not('balance_after', 'is', null)
       .order('date', { ascending: true })
-      .order('balance_after', { ascending: false }) // Desempate: maior balance_after primeiro
+      .order('id', { ascending: true }) // Desempate: menor id primeiro (ordem de inserção)
       .limit(5);
 
     if (firstFewTransactions && firstFewTransactions.length > 0) {
-      console.log(`📋 Primeiras ${firstFewTransactions.length} transações com balance_after (ordenadas por date ASC, balance_after DESC):`);
+      console.log(`📋 Primeiras ${firstFewTransactions.length} transações com balance_after (ordenadas por date ASC, id ASC):`);
       firstFewTransactions.forEach((tx, idx) => {
-        console.log(`   ${idx + 1}. ${format(tx.date, 'dd/MM/yyyy HH:mm')} - ${tx.description?.substring(0, 30)} - balance_after: ${tx.balance_after}, amount: ${tx.amount}`);
+        console.log(`   ${idx + 1}. ${format(tx.date, 'dd/MM/yyyy HH:mm')} - ID: ${tx.id.substring(0, 8)} - ${tx.description?.substring(0, 30)} - balance_after: ${tx.balance_after}, amount: ${tx.amount}`);
       });
     }
 
     const { data: firstTransactionEver, error: firstTxError } = await supabase
       .from('transactions')
-      .select('balance_after, amount, date, description, bank_accounts!inner(user_id)')
+      .select('balance_after, amount, date, description, id, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .not('balance_after', 'is', null)
       .order('date', { ascending: true }) // Ordena por data ASC para pegar a PRIMEIRA de todas
-      .order('balance_after', { ascending: false }) // Desempate: maior balance_after primeiro (cronologicamente antes)
+      .order('id', { ascending: true }) // Desempate: menor id primeiro (ordem de inserção no CSV)
       .limit(1);
 
     let initial_balance = null;
