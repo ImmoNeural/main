@@ -49,16 +49,30 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
     const endDate = Date.now();
 
-    // Total de saldo de todas as contas
+    // Total de saldo de todas as contas + buscar saldo inicial
     const { data: accounts, error: accountsError } = await supabase
       .from('bank_accounts')
-      .select('balance')
+      .select('balance, initial_balance, initial_balance_date')
       .eq('user_id', user_id)
       .eq('status', 'active');
 
     if (accountsError) throw accountsError;
 
     const total_balance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+
+    // Buscar saldo inicial salvo na conta (calculado durante importação)
+    const initial_balance = accounts && accounts.length > 0 && accounts[0].initial_balance !== undefined
+      ? accounts[0].initial_balance
+      : null;
+
+    if (initial_balance !== null) {
+      console.log(`💰 Saldo Inicial (salvo na conta): R$ ${initial_balance.toFixed(2)}`);
+      if (accounts[0].initial_balance_date) {
+        console.log(`📅 Data do saldo inicial: ${format(accounts[0].initial_balance_date, 'dd/MM/yyyy')}`);
+      }
+    } else {
+      console.log(`⚠️ Saldo inicial não encontrado na conta - aguardando importação de CSV`);
+    }
 
     // Buscar todas as transações no período
     const { data: transactions, error: transactionsError } = await supabase
@@ -70,52 +84,6 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .limit(10000); // Limite alto para garantir todos os dados
 
     if (transactionsError) throw transactionsError;
-
-    // Buscar saldo inicial: sempre a partir da PRIMEIRA transação de TODAS as transações
-    console.log(`🔍 Buscando saldo inicial: primeira transação de todas as transações do usuário`);
-
-    // Primeiro, vamos buscar algumas transações para debug
-    const { data: firstFewTransactions, error: debugError } = await supabase
-      .from('transactions')
-      .select('id, balance_after, amount, date, description, created_at, bank_accounts!inner(user_id)')
-      .eq('bank_accounts.user_id', user_id)
-      .not('balance_after', 'is', null)
-      .order('date', { ascending: true })
-      .order('id', { ascending: true }) // Desempate: menor id primeiro (ordem de inserção)
-      .limit(5);
-
-    if (firstFewTransactions && firstFewTransactions.length > 0) {
-      console.log(`📋 Primeiras ${firstFewTransactions.length} transações com balance_after (ordenadas por date ASC, id ASC):`);
-      firstFewTransactions.forEach((tx, idx) => {
-        console.log(`   ${idx + 1}. ${format(tx.date, 'dd/MM/yyyy HH:mm')} - ID: ${tx.id.substring(0, 8)} - ${tx.description?.substring(0, 30)} - balance_after: ${tx.balance_after}, amount: ${tx.amount}`);
-      });
-    }
-
-    const { data: firstTransactionEver, error: firstTxError } = await supabase
-      .from('transactions')
-      .select('balance_after, amount, date, description, id, bank_accounts!inner(user_id)')
-      .eq('bank_accounts.user_id', user_id)
-      .not('balance_after', 'is', null)
-      .order('date', { ascending: true }) // Ordena por data ASC para pegar a PRIMEIRA de todas
-      .order('id', { ascending: true }) // Desempate: menor id primeiro (ordem de inserção no CSV)
-      .limit(1);
-
-    let initial_balance = null;
-
-    if (firstTransactionEver && firstTransactionEver.length > 0) {
-      const firstTx = firstTransactionEver[0];
-      // Calcular saldo ANTES da primeira transação: balance_after - amount
-      const balanceBefore = firstTx.balance_after - firstTx.amount;
-      initial_balance = balanceBefore;
-      console.log(`\n💰 CÁLCULO DO SALDO INICIAL:`);
-      console.log(`   Primeira transação: ${firstTx.description?.substring(0, 40)} (${format(firstTx.date, 'dd/MM/yyyy HH:mm')})`);
-      console.log(`   balance_after = R$ ${firstTx.balance_after.toFixed(2)}`);
-      console.log(`   amount = R$ ${firstTx.amount.toFixed(2)}`);
-      console.log(`   Fórmula: balance_after - amount = ${firstTx.balance_after.toFixed(2)} - (${firstTx.amount.toFixed(2)})`);
-      console.log(`   ✅ Saldo inicial = R$ ${initial_balance.toFixed(2)}\n`);
-    } else {
-      console.log(`❌ Nenhuma transação encontrada com balance_after`);
-    }
 
     // 💰 Buscar saldo atual da conta (balance_after da transação mais recente)
     const { data: mostRecentTransaction, error: recentError } = await supabase

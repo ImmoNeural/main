@@ -1038,6 +1038,39 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       console.log(`\n📊 [CSV Import] Após verificação de duplicatas:`);
       console.log(`   ✅ Transações únicas para importar: ${uniqueTransactions.length}`);
       console.log(`   ⏭️  Duplicatas ignoradas: ${duplicatesCount}`);
+
+      // 💰 CALCULAR SALDO INICIAL E FINAL DO CSV (se não foram detectados nas linhas especiais)
+      if (uniqueTransactions.length > 0) {
+        // PRIMEIRA transação do CSV = saldo inicial
+        const firstTransaction = uniqueTransactions[0];
+        if (firstTransaction.balance_after !== undefined && firstTransaction.balance_after !== null) {
+          const calculatedInitialBalance = firstTransaction.balance_after - firstTransaction.amount;
+
+          // Se não detectou "Saldo Anterior" nas linhas especiais, usar o calculado
+          if (saldoAnterior === null) {
+            saldoAnterior = calculatedInitialBalance;
+            console.log(`\n💰 [CSV Import] Saldo Inicial calculado da PRIMEIRA transação:`);
+            console.log(`   📅 Data: ${new Date(firstTransaction.date).toLocaleDateString('pt-BR')}`);
+            console.log(`   📝 Descrição: ${firstTransaction.description}`);
+            console.log(`   💵 balance_after: R$ ${firstTransaction.balance_after.toFixed(2)}`);
+            console.log(`   💵 amount: R$ ${firstTransaction.amount.toFixed(2)}`);
+            console.log(`   ✅ Saldo Inicial = ${firstTransaction.balance_after.toFixed(2)} - (${firstTransaction.amount.toFixed(2)}) = R$ ${saldoAnterior.toFixed(2)}`);
+          }
+        }
+
+        // ÚLTIMA transação do CSV = saldo conta corrente
+        const lastTransaction = uniqueTransactions[uniqueTransactions.length - 1];
+        if (lastTransaction.balance_after !== undefined && lastTransaction.balance_after !== null) {
+          // Se não detectou "Saldo de Conta Corrente" nas linhas especiais, usar o da última transação
+          if (saldoContaCorrente === null) {
+            saldoContaCorrente = lastTransaction.balance_after;
+            console.log(`\n💰 [CSV Import] Saldo Conta Corrente da ÚLTIMA transação:`);
+            console.log(`   📅 Data: ${new Date(lastTransaction.date).toLocaleDateString('pt-BR')}`);
+            console.log(`   📝 Descrição: ${lastTransaction.description}`);
+            console.log(`   ✅ Saldo Atual = R$ ${saldoContaCorrente.toFixed(2)}`);
+          }
+        }
+      }
     }
 
     // Inserir transações únicas em batch
@@ -1063,17 +1096,29 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
 
       console.log(`✅ [Import] Successfully imported ${totalInserted} new transactions for user ${user_id}`);
 
-      // 💰 ATUALIZAR SALDO ATUAL DA CONTA BANCÁRIA
-      if (saldoContaCorrente !== null) {
+      // 💰 ATUALIZAR SALDO ATUAL E INICIAL DA CONTA BANCÁRIA
+      if (saldoContaCorrente !== null || saldoAnterior !== null) {
         console.log('\n💰 [Import] Atualizando saldo da conta bancária...');
-        console.log(`   💰 Saldo Atual (Conta Corrente): R$ ${saldoContaCorrente.toFixed(2)}`);
+
+        const updateData: any = {
+          updated_at: toISOString(Date.now()),
+        };
+
+        if (saldoContaCorrente !== null) {
+          updateData.balance = saldoContaCorrente;
+          console.log(`   💰 Saldo Atual (Conta Corrente): R$ ${saldoContaCorrente.toFixed(2)}`);
+        }
+
+        if (saldoAnterior !== null && uniqueTransactions.length > 0) {
+          updateData.initial_balance = saldoAnterior;
+          updateData.initial_balance_date = uniqueTransactions[0].date; // Data da primeira transação
+          console.log(`   💰 Saldo Inicial: R$ ${saldoAnterior.toFixed(2)}`);
+          console.log(`   📅 Data Início: ${new Date(uniqueTransactions[0].date).toLocaleDateString('pt-BR')}`);
+        }
 
         const { error: updateError } = await supabase
           .from('bank_accounts')
-          .update({
-            balance: saldoContaCorrente,
-            updated_at: toISOString(Date.now()),
-          })
+          .update(updateData)
           .eq('id', targetAccountId);
 
         if (updateError) {
