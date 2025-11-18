@@ -74,9 +74,25 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     // Buscar saldo inicial: sempre a partir da PRIMEIRA transação de TODAS as transações
     console.log(`🔍 Buscando saldo inicial: primeira transação de todas as transações do usuário`);
 
+    // Primeiro, vamos buscar algumas transações para debug
+    const { data: firstFewTransactions, error: debugError } = await supabase
+      .from('transactions')
+      .select('id, balance_after, amount, date, description, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .not('balance_after', 'is', null)
+      .order('date', { ascending: true })
+      .limit(3);
+
+    if (firstFewTransactions && firstFewTransactions.length > 0) {
+      console.log(`📋 Primeiras ${firstFewTransactions.length} transações com balance_after:`);
+      firstFewTransactions.forEach((tx, idx) => {
+        console.log(`   ${idx + 1}. ${format(tx.date, 'dd/MM/yyyy HH:mm')} - ${tx.description?.substring(0, 30)} - balance_after: ${tx.balance_after}, amount: ${tx.amount}`);
+      });
+    }
+
     const { data: firstTransactionEver, error: firstTxError } = await supabase
       .from('transactions')
-      .select('balance_after, amount, date, bank_accounts!inner(user_id)')
+      .select('balance_after, amount, date, description, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .not('balance_after', 'is', null)
       .order('date', { ascending: true }) // Ordena por data ASC para pegar a PRIMEIRA de todas
@@ -87,11 +103,14 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     if (firstTransactionEver && firstTransactionEver.length > 0) {
       const firstTx = firstTransactionEver[0];
       // Calcular saldo ANTES da primeira transação: balance_after - amount
-      // Se é débito (saída), amount é negativo, então balance_after - (-valor) = balance_after + valor
-      // Se é crédito (entrada), amount é positivo, então balance_after - valor
       const balanceBefore = firstTx.balance_after - firstTx.amount;
       initial_balance = balanceBefore;
-      console.log(`💰 Saldo inicial calculado: R$ ${initial_balance.toFixed(2)} (balance_after: ${firstTx.balance_after.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)}, data: ${format(firstTx.date, 'dd/MM/yyyy HH:mm')})`);
+      console.log(`\n💰 CÁLCULO DO SALDO INICIAL:`);
+      console.log(`   Primeira transação: ${firstTx.description?.substring(0, 40)} (${format(firstTx.date, 'dd/MM/yyyy HH:mm')})`);
+      console.log(`   balance_after = R$ ${firstTx.balance_after.toFixed(2)}`);
+      console.log(`   amount = R$ ${firstTx.amount.toFixed(2)}`);
+      console.log(`   Fórmula: balance_after - amount = ${firstTx.balance_after.toFixed(2)} - (${firstTx.amount.toFixed(2)})`);
+      console.log(`   ✅ Saldo inicial = R$ ${initial_balance.toFixed(2)}\n`);
     } else {
       console.log(`❌ Nenhuma transação encontrada com balance_after`);
     }
