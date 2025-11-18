@@ -85,7 +85,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .gte('date', startDayStart)
       .lte('date', startDayEnd)
       .not('balance_after', 'is', null)
-      .order('balance_after', { ascending: true }) // Ordena por balance_after para pegar o MENOR (saldo inicial)
+      .order('date', { ascending: true }) // Ordena por data para pegar a PRIMEIRA transação cronologicamente
       .limit(1);
 
     const initial_balance = firstDayTransactions && firstDayTransactions.length > 0
@@ -96,6 +96,37 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       console.log(`💰 Saldo inicial encontrado: R$ ${initial_balance.toFixed(2)} (data: ${format(firstDayTransactions![0].date, 'dd/MM/yyyy HH:mm')})`);
     } else {
       console.log(`⚠️ Saldo inicial não encontrado para ${format(startDate, 'dd/MM/yyyy')} (balance_after não disponível)`);
+    }
+
+    // 💰 Buscar saldo atual da conta (balance_after da transação mais recente)
+    const { data: mostRecentTransaction, error: recentError } = await supabase
+      .from('transactions')
+      .select('balance_after, date, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id)
+      .not('balance_after', 'is', null)
+      .order('date', { ascending: false }) // Ordena por data DESC para pegar a mais recente
+      .limit(1);
+
+    // Atualizar saldo da conta com o saldo da transação mais recente
+    if (mostRecentTransaction && mostRecentTransaction.length > 0) {
+      const currentBalance = mostRecentTransaction[0].balance_after;
+      console.log(`💰 Saldo atual encontrado na transação mais recente: R$ ${currentBalance.toFixed(2)} (data: ${format(mostRecentTransaction[0].date, 'dd/MM/yyyy HH:mm')})`);
+
+      // Atualizar todas as contas ativas do usuário com este saldo
+      const { error: updateBalanceError } = await supabase
+        .from('bank_accounts')
+        .update({
+          balance: currentBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user_id)
+        .eq('status', 'active');
+
+      if (updateBalanceError) {
+        console.error('⚠️ Erro ao atualizar saldo das contas:', updateBalanceError);
+      } else {
+        console.log(`✅ Saldo das contas atualizado para: R$ ${currentBalance.toFixed(2)}`);
+      }
     }
 
     // Calcular agregações
