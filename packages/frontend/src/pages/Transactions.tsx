@@ -260,9 +260,14 @@ const Transactions = () => {
 
     // Calcular saldo ANTES da primeira transação: balance_after - amount
     const firstTx = transactionsWithBalance[0];
-    const balanceBefore = firstTx.balance_after - firstTx.amount;
 
-    console.log(`💰 Saldo inicial calculado: R$ ${balanceBefore.toFixed(2)} (balance_after: ${firstTx.balance_after.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)})`);
+    // Type guard: garantir que balance_after não é undefined
+    if (firstTx.balance_after === undefined || firstTx.balance_after === null) return null;
+
+    const balanceAfter = firstTx.balance_after;
+    const balanceBefore = balanceAfter - firstTx.amount;
+
+    console.log(`💰 Saldo inicial calculado: R$ ${balanceBefore.toFixed(2)} (balance_after: ${balanceAfter.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)})`);
 
     return balanceBefore;
   };
