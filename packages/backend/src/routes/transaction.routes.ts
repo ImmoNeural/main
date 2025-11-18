@@ -1135,7 +1135,8 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       if (saldoAnterior !== null && transactionsToInsert.length > 0) {
         updateData.initial_balance = saldoAnterior;
         // A data do saldo inicial deve ser da transação MAIS ANTIGA (última do array)
-        updateData.initial_balance_date = transactionsToInsert[transactionsToInsert.length - 1].date;
+        // Converter timestamp para formato ISO que o PostgreSQL aceita
+        updateData.initial_balance_date = toISOString(transactionsToInsert[transactionsToInsert.length - 1].date);
         console.log(`   💰 Saldo Inicial: R$ ${saldoAnterior.toFixed(2)}`);
         console.log(`   📅 Data Início: ${new Date(transactionsToInsert[transactionsToInsert.length - 1].date).toLocaleDateString('pt-BR')}`);
       }
