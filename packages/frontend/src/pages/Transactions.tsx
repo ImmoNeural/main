@@ -34,6 +34,10 @@ const Transactions = () => {
   // Estado para o modal de importação
   const [showImportModal, setShowImportModal] = useState(false);
 
+  // Estado para saldo inicial (vindo do backend)
+  const [initialBalance, setInitialBalance] = useState<number | null>(null);
+  const [initialBalanceDate, setInitialBalanceDate] = useState<string | null>(null);
+
   // Gerar últimos 12 meses dinamicamente
   const getLast12Months = () => {
     const months = [];
@@ -65,6 +69,17 @@ const Transactions = () => {
       ]);
 
       setTransactions(transactionsRes.data.transactions);
+
+      // Extrair saldo inicial do backend
+      if (transactionsRes.data.initial_balance !== undefined && transactionsRes.data.initial_balance !== null) {
+        setInitialBalance(transactionsRes.data.initial_balance);
+        setInitialBalanceDate(transactionsRes.data.initial_balance_date);
+        console.log(`💰 Frontend: Saldo inicial recebido do backend: R$ ${transactionsRes.data.initial_balance.toFixed(2)}`);
+      } else {
+        setInitialBalance(null);
+        setInitialBalanceDate(null);
+        console.log(`⚠️ Frontend: Saldo inicial não disponível no backend`);
+      }
 
       // Garantir que "Não Categorizado" esteja sempre disponível no dropdown
       const categoriesWithUncategorized = categoriesRes.data;
@@ -247,63 +262,24 @@ const Transactions = () => {
 
   const last12MonthsTransactions = getLast12MonthsTransactions();
 
-  // Calcular saldo inicial (saldo ANTES da primeira transação)
-  const getInitialBalance = () => {
-    if (transactions.length === 0) return null;
-
-    // Pegar todas as transações com balance_after, ordenadas por data E id
-    const transactionsWithBalance = transactions
-      .filter(t => t.balance_after !== undefined && t.balance_after !== null)
-      .sort((a, b) => {
-        // Ordenar primeiro por data
-        const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
-        if (dateCompare !== 0) return dateCompare;
-        // Se datas iguais, ordenar por ID (ordem de inserção)
-        return a.id.localeCompare(b.id);
-      });
-
-    if (transactionsWithBalance.length === 0) return null;
-
-    // Debug: mostrar primeiras 5 transações
-    console.log(`📋 Frontend: Primeiras ${Math.min(5, transactionsWithBalance.length)} transações com balance_after (ordenadas por date ASC):`);
-    transactionsWithBalance.slice(0, 5).forEach((tx, idx) => {
-      console.log(`   ${idx + 1}. ${format(new Date(tx.date), 'dd/MM/yyyy HH:mm')} - ID: ${tx.id.substring(0, 8)} - ${tx.description?.substring(0, 30)} - balance_after: ${tx.balance_after}, amount: ${tx.amount}`);
-    });
-
-    // Calcular saldo ANTES da primeira transação: balance_after - amount
-    const firstTx = transactionsWithBalance[0];
-
-    // Type guard: garantir que balance_after não é undefined
-    if (firstTx.balance_after === undefined || firstTx.balance_after === null) return null;
-
-    const balanceAfter = firstTx.balance_after;
-    const balanceBefore = balanceAfter - firstTx.amount;
-
-    console.log(`💰 Saldo inicial calculado: R$ ${balanceBefore.toFixed(2)}`);
-    console.log(`   Primeira transação: ${firstTx.description || 'Sem descrição'}`);
-    console.log(`   ID: ${firstTx.id}`);
-    console.log(`   Data: ${format(new Date(firstTx.date), 'dd/MM/yyyy HH:mm')}`);
-    console.log(`   balance_after: ${balanceAfter.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)}`);
-
-    return balanceBefore;
-  };
-
-  const initialBalance = getInitialBalance();
-
-  // Formatar data de início baseada na primeira transação
+  // Formatar data de início baseada no saldo inicial do backend
   const getStartDateLabel = () => {
+    // Se temos a data do saldo inicial do backend, usar ela
+    if (initialBalanceDate) {
+      return format(new Date(initialBalanceDate), 'dd.MM.yy');
+    }
+
+    // Fallback: se não há transações, usar 12 meses atrás
     if (transactions.length === 0) {
-      // Fallback: se não há transações, usar 12 meses atrás
       const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
       return format(twelveMonthsAgo, 'dd.MM.yy');
     }
 
-    // Pegar a data da transação mais antiga
+    // Fallback 2: Pegar a data da transação mais antiga
     const oldestTransaction = transactions.reduce((oldest, current) => {
       return new Date(current.date) < new Date(oldest.date) ? current : oldest;
     }, transactions[0]);
 
-    // Retornar o início do mês dessa transação
     const startDate = startOfMonth(new Date(oldestTransaction.date));
     return format(startDate, 'dd.MM.yy');
   };

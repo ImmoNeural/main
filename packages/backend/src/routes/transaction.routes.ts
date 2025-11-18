@@ -71,11 +71,22 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       throw error;
     }
 
+    // Buscar initial_balance da conta bancária do usuário
+    const { data: accounts } = await supabase
+      .from('bank_accounts')
+      .select('initial_balance, initial_balance_date')
+      .eq('user_id', user_id)
+      .eq('status', 'active')
+      .limit(1)
+      .single();
+
     res.json({
       transactions: transactions || [],
       total: count || 0,
       limit: limitNum,
       offset: offsetNum,
+      initial_balance: accounts?.initial_balance || null,
+      initial_balance_date: accounts?.initial_balance_date || null,
     });
   } catch (error) {
     console.error('Error fetching transactions:', error);
