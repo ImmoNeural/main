@@ -643,7 +643,7 @@ const Dashboard = () => {
         <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Receitas</p>
+              <p className="text-sm text-gray-500">Receitas (desde {getStartDateLabel()})</p>
               <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
                 {formatCurrency(stats?.total_income || 0)}
               </p>
@@ -657,7 +657,7 @@ const Dashboard = () => {
         <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Despesas</p>
+              <p className="text-sm text-gray-500">Despesas (desde {getStartDateLabel()})</p>
               <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
                 {formatCurrency(stats?.total_expenses || 0)}
               </p>
