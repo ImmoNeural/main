@@ -97,12 +97,11 @@ export class BelvoService {
       const state = uuidv4();
 
       // Para Belvo, vamos retornar informações para o Widget
+      // A URL inclui os parâmetros necessários (institution e state)
       return {
         authorization_url: `/app/connect-bank/belvo?institution=${request.bank_id}&state=${state}`,
         state,
         consent_id: state, // Usamos o mesmo ID
-        provider: 'belvo',
-        institution: request.bank_id,
       };
     } catch (error: any) {
       console.error('[Belvo] ❌ Error initiating auth:', error.response?.data || error.message);
