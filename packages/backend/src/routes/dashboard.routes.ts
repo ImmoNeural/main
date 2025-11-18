@@ -81,10 +81,11 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .eq('bank_accounts.user_id', user_id)
       .not('balance_after', 'is', null)
       .order('date', { ascending: true })
-      .limit(3);
+      .order('balance_after', { ascending: false }) // Desempate: maior balance_after primeiro
+      .limit(5);
 
     if (firstFewTransactions && firstFewTransactions.length > 0) {
-      console.log(`📋 Primeiras ${firstFewTransactions.length} transações com balance_after:`);
+      console.log(`📋 Primeiras ${firstFewTransactions.length} transações com balance_after (ordenadas por date ASC, balance_after DESC):`);
       firstFewTransactions.forEach((tx, idx) => {
         console.log(`   ${idx + 1}. ${format(tx.date, 'dd/MM/yyyy HH:mm')} - ${tx.description?.substring(0, 30)} - balance_after: ${tx.balance_after}, amount: ${tx.amount}`);
       });
@@ -96,6 +97,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .eq('bank_accounts.user_id', user_id)
       .not('balance_after', 'is', null)
       .order('date', { ascending: true }) // Ordena por data ASC para pegar a PRIMEIRA de todas
+      .order('balance_after', { ascending: false }) // Desempate: maior balance_after primeiro (cronologicamente antes)
       .limit(1);
 
     let initial_balance = null;
