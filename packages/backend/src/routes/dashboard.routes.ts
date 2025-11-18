@@ -71,48 +71,29 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 
     if (transactionsError) throw transactionsError;
 
-    // Buscar saldo inicial: balance_after da última transação ANTES do início do período
-    console.log(`🔍 Buscando saldo inicial: última transação ANTES de ${format(startDate, 'dd/MM/yyyy')}`);
+    // Buscar saldo inicial: sempre a partir da PRIMEIRA transação de TODAS as transações
+    console.log(`🔍 Buscando saldo inicial: primeira transação de todas as transações do usuário`);
 
-    const { data: transactionBeforeStart, error: beforeStartError } = await supabase
+    const { data: firstTransactionEver, error: firstTxError } = await supabase
       .from('transactions')
-      .select('balance_after, date, bank_accounts!inner(user_id)')
+      .select('balance_after, amount, date, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
-      .lt('date', startDate) // Transações ANTES do início do período
       .not('balance_after', 'is', null)
-      .order('date', { ascending: false }) // Ordena por data DESC para pegar a mais recente antes do período
+      .order('date', { ascending: true }) // Ordena por data ASC para pegar a PRIMEIRA de todas
       .limit(1);
 
     let initial_balance = null;
 
-    if (transactionBeforeStart && transactionBeforeStart.length > 0) {
-      initial_balance = transactionBeforeStart[0].balance_after;
-      console.log(`💰 Saldo inicial encontrado (transação antes do período): R$ ${initial_balance.toFixed(2)} (data: ${format(transactionBeforeStart[0].date, 'dd/MM/yyyy HH:mm')})`);
+    if (firstTransactionEver && firstTransactionEver.length > 0) {
+      const firstTx = firstTransactionEver[0];
+      // Calcular saldo ANTES da primeira transação: balance_after - amount
+      // Se é débito (saída), amount é negativo, então balance_after - (-valor) = balance_after + valor
+      // Se é crédito (entrada), amount é positivo, então balance_after - valor
+      const balanceBefore = firstTx.balance_after - firstTx.amount;
+      initial_balance = balanceBefore;
+      console.log(`💰 Saldo inicial calculado: R$ ${initial_balance.toFixed(2)} (balance_after: ${firstTx.balance_after.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)}, data: ${format(firstTx.date, 'dd/MM/yyyy HH:mm')})`);
     } else {
-      // Se não há transações ANTES do período, calcular saldo inicial a partir da PRIMEIRA transação DO período
-      console.log(`⚠️ Não há transações antes de ${format(startDate, 'dd/MM/yyyy')}. Calculando saldo inicial a partir da primeira transação DO período...`);
-
-      const { data: firstTransactionInPeriod, error: firstTxError } = await supabase
-        .from('transactions')
-        .select('balance_after, amount, type, date, bank_accounts!inner(user_id)')
-        .eq('bank_accounts.user_id', user_id)
-        .gte('date', startDate) // Transações NO período
-        .lte('date', endDate)
-        .not('balance_after', 'is', null)
-        .order('date', { ascending: true }) // Ordena por data ASC para pegar a primeira do período
-        .limit(1);
-
-      if (firstTransactionInPeriod && firstTransactionInPeriod.length > 0) {
-        const firstTx = firstTransactionInPeriod[0];
-        // Calcular saldo ANTES da primeira transação: balance_after - amount (considerando o tipo)
-        // Se é débito (saída), amount é negativo, então balance_after - (-valor) = balance_after + valor
-        // Se é crédito (entrada), amount é positivo, então balance_after - valor
-        const balanceBefore = firstTx.balance_after - firstTx.amount;
-        initial_balance = balanceBefore;
-        console.log(`💰 Saldo inicial calculado: R$ ${initial_balance.toFixed(2)} (balance_after da 1ª tx: ${firstTx.balance_after.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)}, data: ${format(firstTx.date, 'dd/MM/yyyy HH:mm')})`);
-      } else {
-        console.log(`❌ Nenhuma transação encontrada no período com balance_after`);
-      }
+      console.log(`❌ Nenhuma transação encontrada com balance_after`);
     }
 
     // 💰 Buscar saldo atual da conta (balance_after da transação mais recente)
