@@ -251,10 +251,16 @@ const Transactions = () => {
   const getInitialBalance = () => {
     if (transactions.length === 0) return null;
 
-    // Pegar todas as transações com balance_after, ordenadas por data
+    // Pegar todas as transações com balance_after, ordenadas por data E id
     const transactionsWithBalance = transactions
       .filter(t => t.balance_after !== undefined && t.balance_after !== null)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => {
+        // Ordenar primeiro por data
+        const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (dateCompare !== 0) return dateCompare;
+        // Se datas iguais, ordenar por ID (ordem de inserção)
+        return a.id.localeCompare(b.id);
+      });
 
     if (transactionsWithBalance.length === 0) return null;
 
