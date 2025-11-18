@@ -47,6 +47,31 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
     const firstLine = lines[0];
     const separator = firstLine.includes('\t') ? '\t' : ',';
 
+    console.log(`🔍 [FRONTEND] Separador detectado: "${separator === '\t' ? 'TAB' : 'VÍRGULA'}"`);
+
+    // Função para fazer split respeitando aspas (resolve problema de vírgula decimal)
+    const smartSplit = (line: string, sep: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === sep && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+
+      result.push(current.trim());
+      return result;
+    };
+
     // Auto-detectar linha do cabeçalho (procurar por palavras-chave)
     let headerLineIndex = 0;
     const headerKeywords = ['data', 'date', 'descrição', 'description', 'valor', 'amount', 'crédito', 'débito'];
@@ -60,10 +85,10 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       }
     }
 
-    console.log(`📊 [FRONTEND] Detectado cabeçalho na linha ${headerLineIndex + 1}, separador: "${separator === '\t' ? 'TAB' : 'vírgula'}"`);
+    console.log(`📊 [FRONTEND] Detectado cabeçalho na linha ${headerLineIndex + 1}`);
 
-    // Processar cabeçalho
-    const headers = lines[headerLineIndex].split(separator).map((h: string) => {
+    // Processar cabeçalho usando smartSplit
+    const headers = smartSplit(lines[headerLineIndex], separator).map((h: string) => {
       // Normalizar: remover acentos, espaços extras, parênteses
       return h.trim()
         .toLowerCase()
@@ -75,7 +100,7 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
     });
 
     console.log('📋 [FRONTEND] Cabeçalhos normalizados:', headers);
-    console.log('📋 [FRONTEND] Cabeçalhos originais:', lines[headerLineIndex].split(separator));
+    console.log(`📋 [FRONTEND] Total de colunas: ${headers.length}`);
 
     const transactions = [];
 
@@ -88,8 +113,9 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         continue;
       }
 
-      const values = line.split(separator).map((v: string) => v.trim());
-      console.log(`\n📊 [FRONTEND Linha ${i + 1}] Valores brutos:`, values);
+      // Usar smartSplit para respeitar aspas
+      const values = smartSplit(line, separator).map((v: string) => v.trim().replace(/^"|"$/g, '')); // Remove aspas das pontas
+      console.log(`\n📊 [FRONTEND Linha ${i + 1}] Valores (${values.length} colunas):`, values);
       const transaction: any = {};
 
       headers.forEach((header: string, index: number) => {
