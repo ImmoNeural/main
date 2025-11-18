@@ -1115,9 +1115,10 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
 
         if (saldoAnterior !== null && uniqueTransactions.length > 0) {
           updateData.initial_balance = saldoAnterior;
-          updateData.initial_balance_date = uniqueTransactions[0].date; // Data da primeira transação
+          // A data do saldo inicial deve ser da transação MAIS ANTIGA (última do array)
+          updateData.initial_balance_date = uniqueTransactions[uniqueTransactions.length - 1].date;
           console.log(`   💰 Saldo Inicial: R$ ${saldoAnterior.toFixed(2)}`);
-          console.log(`   📅 Data Início: ${new Date(uniqueTransactions[0].date).toLocaleDateString('pt-BR')}`);
+          console.log(`   📅 Data Início: ${new Date(uniqueTransactions[uniqueTransactions.length - 1].date).toLocaleDateString('pt-BR')}`);
         }
 
         const { error: updateError } = await supabase
