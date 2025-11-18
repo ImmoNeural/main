@@ -17,6 +17,7 @@ import { ProviderFactory, ProviderType } from './providers/provider.factory';
  * - GoCardless/Nordigen (gratuito, excelente para Europa)
  * - Tink (popular na Europa)
  * - Pluggy (gratuito, recomendado para Brasil) 🇧🇷
+ * - Belvo (Open Finance para América Latina) 🌎
  * - Mock (para desenvolvimento/testes)
  *
  * Configure o provedor via variável de ambiente OPEN_BANKING_PROVIDER
@@ -92,11 +93,22 @@ class OpenBankingService {
         console.log('   ℹ️ Provider does NOT have getConnectors');
       }
 
-      // Nordigen (Europa)
+      // Belvo (América Latina) ou Nordigen (Europa)
       if ('getInstitutions' in provider) {
-        console.log('   Using Nordigen institutions');
+        // Verificar se é Belvo ou Nordigen pelo nome do construtor
+        const providerName = provider.constructor.name;
+        console.log(`   Provider with getInstitutions: ${providerName}`);
+
         const institutions = await (provider as any).getInstitutions(country);
-        return this.mapInstitutionsToBanks(institutions);
+
+        // Mapear de forma específica dependendo do provedor
+        if (providerName === 'BelvoService') {
+          console.log(`   Using Belvo institutions (${institutions.length} found)`);
+          return this.mapBelvoInstitutionsToBanks(institutions);
+        } else {
+          console.log(`   Using Nordigen institutions (${institutions.length} found)`);
+          return this.mapInstitutionsToBanks(institutions);
+        }
       }
 
       // Tink (Europa)
@@ -179,6 +191,18 @@ class OpenBankingService {
       name: inst.name,
       logo: inst.logo || '🏦',
       country: inst.countries?.[0] || inst.country || 'DE',
+    }));
+  }
+
+  /**
+   * Mapeia instituições do Belvo para nosso formato
+   */
+  private mapBelvoInstitutionsToBanks(institutions: any[]) {
+    return institutions.map(inst => ({
+      id: inst.name, // Belvo usa 'name' como ID
+      name: inst.display_name || inst.name,
+      logo: inst.icon || inst.logo || '🏦',
+      country: inst.country_code || 'BR',
     }));
   }
 
