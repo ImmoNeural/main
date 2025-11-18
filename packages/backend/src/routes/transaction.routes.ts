@@ -1040,34 +1040,37 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       console.log(`   ⏭️  Duplicatas ignoradas: ${duplicatesCount}`);
 
       // 💰 CALCULAR SALDO INICIAL E FINAL DO CSV (se não foram detectados nas linhas especiais)
+      // IMPORTANTE: CSV Santander vem de cima para baixo = MAIS RECENTE → MAIS ANTIGA
+      // uniqueTransactions[0] = primeira linha lida = transação MAIS RECENTE
+      // uniqueTransactions[length-1] = última linha lida = transação MAIS ANTIGA
       if (uniqueTransactions.length > 0) {
-        // PRIMEIRA transação do CSV = saldo inicial
-        const firstTransaction = uniqueTransactions[0];
-        if (firstTransaction.balance_after !== undefined && firstTransaction.balance_after !== null) {
-          const calculatedInitialBalance = firstTransaction.balance_after - firstTransaction.amount;
+        // ÚLTIMA transação do array (mais ANTIGA cronologicamente) = saldo inicial
+        const oldestTransaction = uniqueTransactions[uniqueTransactions.length - 1];
+        if (oldestTransaction.balance_after !== undefined && oldestTransaction.balance_after !== null) {
+          const calculatedInitialBalance = oldestTransaction.balance_after - oldestTransaction.amount;
 
           // Se não detectou "Saldo Anterior" nas linhas especiais, usar o calculado
           if (saldoAnterior === null) {
             saldoAnterior = calculatedInitialBalance;
-            console.log(`\n💰 [CSV Import] Saldo Inicial calculado da PRIMEIRA transação:`);
-            console.log(`   📅 Data: ${new Date(firstTransaction.date).toLocaleDateString('pt-BR')}`);
-            console.log(`   📝 Descrição: ${firstTransaction.description}`);
-            console.log(`   💵 balance_after: R$ ${firstTransaction.balance_after.toFixed(2)}`);
-            console.log(`   💵 amount: R$ ${firstTransaction.amount.toFixed(2)}`);
-            console.log(`   ✅ Saldo Inicial = ${firstTransaction.balance_after.toFixed(2)} - (${firstTransaction.amount.toFixed(2)}) = R$ ${saldoAnterior.toFixed(2)}`);
+            console.log(`\n💰 [CSV Import] Saldo Inicial calculado da transação MAIS ANTIGA:`);
+            console.log(`   📅 Data: ${new Date(oldestTransaction.date).toLocaleDateString('pt-BR')}`);
+            console.log(`   📝 Descrição: ${oldestTransaction.description}`);
+            console.log(`   💵 balance_after: R$ ${oldestTransaction.balance_after.toFixed(2)}`);
+            console.log(`   💵 amount: R$ ${oldestTransaction.amount.toFixed(2)}`);
+            console.log(`   ✅ Saldo Inicial = ${oldestTransaction.balance_after.toFixed(2)} - (${oldestTransaction.amount.toFixed(2)}) = R$ ${saldoAnterior.toFixed(2)}`);
           }
         }
 
-        // ÚLTIMA transação do CSV = saldo conta corrente
-        const lastTransaction = uniqueTransactions[uniqueTransactions.length - 1];
-        if (lastTransaction.balance_after !== undefined && lastTransaction.balance_after !== null) {
-          // Se não detectou "Saldo de Conta Corrente" nas linhas especiais, usar o da última transação
+        // PRIMEIRA transação do array (mais RECENTE cronologicamente) = saldo conta corrente
+        const newestTransaction = uniqueTransactions[0];
+        if (newestTransaction.balance_after !== undefined && newestTransaction.balance_after !== null) {
+          // Se não detectou "Saldo de Conta Corrente" nas linhas especiais, usar o da mais recente
           if (saldoContaCorrente === null) {
-            const balanceAfter = lastTransaction.balance_after;
+            const balanceAfter = newestTransaction.balance_after;
             saldoContaCorrente = balanceAfter;
-            console.log(`\n💰 [CSV Import] Saldo Conta Corrente da ÚLTIMA transação:`);
-            console.log(`   📅 Data: ${new Date(lastTransaction.date).toLocaleDateString('pt-BR')}`);
-            console.log(`   📝 Descrição: ${lastTransaction.description}`);
+            console.log(`\n💰 [CSV Import] Saldo Conta Corrente da transação MAIS RECENTE:`);
+            console.log(`   📅 Data: ${new Date(newestTransaction.date).toLocaleDateString('pt-BR')}`);
+            console.log(`   📝 Descrição: ${newestTransaction.description}`);
             console.log(`   ✅ Saldo Atual = R$ ${balanceAfter.toFixed(2)}`);
           }
         }
