@@ -1011,6 +1011,43 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
+    // 💰 CALCULAR SALDO INICIAL E FINAL DO CSV (ANTES de verificar duplicatas)
+    // IMPORTANTE: CSV Santander vem de cima para baixo = MAIS RECENTE → MAIS ANTIGA
+    // transactionsToInsert[0] = primeira linha lida = transação MAIS RECENTE
+    // transactionsToInsert[length-1] = última linha lida = transação MAIS ANTIGA
+    if (transactionsToInsert.length > 0) {
+      // ÚLTIMA transação do array (mais ANTIGA cronologicamente) = saldo inicial
+      const oldestTransaction = transactionsToInsert[transactionsToInsert.length - 1];
+      if (oldestTransaction.balance_after !== undefined && oldestTransaction.balance_after !== null) {
+        const calculatedInitialBalance = oldestTransaction.balance_after - oldestTransaction.amount;
+
+        // Se não detectou "Saldo Anterior" nas linhas especiais, usar o calculado
+        if (saldoAnterior === null) {
+          saldoAnterior = calculatedInitialBalance;
+          console.log(`\n💰 [CSV Import] Saldo Inicial calculado da transação MAIS ANTIGA:`);
+          console.log(`   📅 Data: ${new Date(oldestTransaction.date).toLocaleDateString('pt-BR')}`);
+          console.log(`   📝 Descrição: ${oldestTransaction.description}`);
+          console.log(`   💵 balance_after: R$ ${oldestTransaction.balance_after.toFixed(2)}`);
+          console.log(`   💵 amount: R$ ${oldestTransaction.amount.toFixed(2)}`);
+          console.log(`   ✅ Saldo Inicial = ${oldestTransaction.balance_after.toFixed(2)} - (${oldestTransaction.amount.toFixed(2)}) = R$ ${saldoAnterior.toFixed(2)}`);
+        }
+      }
+
+      // PRIMEIRA transação do array (mais RECENTE cronologicamente) = saldo conta corrente
+      const newestTransaction = transactionsToInsert[0];
+      if (newestTransaction.balance_after !== undefined && newestTransaction.balance_after !== null) {
+        // Se não detectou "Saldo de Conta Corrente" nas linhas especiais, usar o da mais recente
+        if (saldoContaCorrente === null) {
+          const balanceAfter = newestTransaction.balance_after;
+          saldoContaCorrente = balanceAfter;
+          console.log(`\n💰 [CSV Import] Saldo Conta Corrente da transação MAIS RECENTE:`);
+          console.log(`   📅 Data: ${new Date(newestTransaction.date).toLocaleDateString('pt-BR')}`);
+          console.log(`   📝 Descrição: ${newestTransaction.description}`);
+          console.log(`   ✅ Saldo Atual = R$ ${balanceAfter.toFixed(2)}`);
+        }
+      }
+    }
+
     // Verificar duplicatas antes de inserir
     console.log('\n🔍 [CSV Import] Verificando duplicatas...');
     const uniqueTransactions: any[] = [];
@@ -1049,43 +1086,6 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       console.log(`\n📊 [CSV Import] Após verificação de duplicatas:`);
       console.log(`   ✅ Transações únicas para importar: ${uniqueTransactions.length}`);
       console.log(`   ⏭️  Duplicatas ignoradas: ${duplicatesCount}`);
-
-      // 💰 CALCULAR SALDO INICIAL E FINAL DO CSV (se não foram detectados nas linhas especiais)
-      // IMPORTANTE: CSV Santander vem de cima para baixo = MAIS RECENTE → MAIS ANTIGA
-      // uniqueTransactions[0] = primeira linha lida = transação MAIS RECENTE
-      // uniqueTransactions[length-1] = última linha lida = transação MAIS ANTIGA
-      if (uniqueTransactions.length > 0) {
-        // ÚLTIMA transação do array (mais ANTIGA cronologicamente) = saldo inicial
-        const oldestTransaction = uniqueTransactions[uniqueTransactions.length - 1];
-        if (oldestTransaction.balance_after !== undefined && oldestTransaction.balance_after !== null) {
-          const calculatedInitialBalance = oldestTransaction.balance_after - oldestTransaction.amount;
-
-          // Se não detectou "Saldo Anterior" nas linhas especiais, usar o calculado
-          if (saldoAnterior === null) {
-            saldoAnterior = calculatedInitialBalance;
-            console.log(`\n💰 [CSV Import] Saldo Inicial calculado da transação MAIS ANTIGA:`);
-            console.log(`   📅 Data: ${new Date(oldestTransaction.date).toLocaleDateString('pt-BR')}`);
-            console.log(`   📝 Descrição: ${oldestTransaction.description}`);
-            console.log(`   💵 balance_after: R$ ${oldestTransaction.balance_after.toFixed(2)}`);
-            console.log(`   💵 amount: R$ ${oldestTransaction.amount.toFixed(2)}`);
-            console.log(`   ✅ Saldo Inicial = ${oldestTransaction.balance_after.toFixed(2)} - (${oldestTransaction.amount.toFixed(2)}) = R$ ${saldoAnterior.toFixed(2)}`);
-          }
-        }
-
-        // PRIMEIRA transação do array (mais RECENTE cronologicamente) = saldo conta corrente
-        const newestTransaction = uniqueTransactions[0];
-        if (newestTransaction.balance_after !== undefined && newestTransaction.balance_after !== null) {
-          // Se não detectou "Saldo de Conta Corrente" nas linhas especiais, usar o da mais recente
-          if (saldoContaCorrente === null) {
-            const balanceAfter = newestTransaction.balance_after;
-            saldoContaCorrente = balanceAfter;
-            console.log(`\n💰 [CSV Import] Saldo Conta Corrente da transação MAIS RECENTE:`);
-            console.log(`   📅 Data: ${new Date(newestTransaction.date).toLocaleDateString('pt-BR')}`);
-            console.log(`   📝 Descrição: ${newestTransaction.description}`);
-            console.log(`   ✅ Saldo Atual = R$ ${balanceAfter.toFixed(2)}`);
-          }
-        }
-      }
     }
 
     // Inserir transações únicas em batch
@@ -1110,59 +1110,61 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       }
 
       console.log(`✅ [Import] Successfully imported ${totalInserted} new transactions for user ${user_id}`);
+    }
 
-      // 💰 ATUALIZAR SALDO ATUAL E INICIAL DA CONTA BANCÁRIA
-      if (saldoContaCorrente !== null || saldoAnterior !== null) {
-        console.log('\n💰 [Import] Atualizando saldo da conta bancária...');
+    // 💰 ATUALIZAR SALDO ATUAL E INICIAL DA CONTA BANCÁRIA
+    // Isso deve acontecer SEMPRE que houver CSV válido, mesmo que todas sejam duplicatas
+    if (saldoContaCorrente !== null || saldoAnterior !== null) {
+      console.log('\n💰 [Import] Atualizando saldo da conta bancária...');
 
-        const updateData: any = {
-          updated_at: toISOString(Date.now()),
-        };
+      const updateData: any = {
+        updated_at: toISOString(Date.now()),
+      };
 
-        if (saldoContaCorrente !== null) {
-          updateData.balance = saldoContaCorrente;
-          console.log(`   💰 Saldo Atual (Conta Corrente): R$ ${saldoContaCorrente.toFixed(2)}`);
-        }
-
-        if (saldoAnterior !== null && uniqueTransactions.length > 0) {
-          updateData.initial_balance = saldoAnterior;
-          // A data do saldo inicial deve ser da transação MAIS ANTIGA (última do array)
-          updateData.initial_balance_date = uniqueTransactions[uniqueTransactions.length - 1].date;
-          console.log(`   💰 Saldo Inicial: R$ ${saldoAnterior.toFixed(2)}`);
-          console.log(`   📅 Data Início: ${new Date(uniqueTransactions[uniqueTransactions.length - 1].date).toLocaleDateString('pt-BR')}`);
-        }
-
-        const { error: updateError } = await supabase
-          .from('bank_accounts')
-          .update(updateData)
-          .eq('id', targetAccountId);
-
-        if (updateError) {
-          console.error('⚠️ [Import] Erro ao atualizar saldo da conta:', updateError);
-        } else {
-          console.log('✅ [Import] Saldo da conta atualizado com sucesso!');
-        }
+      if (saldoContaCorrente !== null) {
+        updateData.balance = saldoContaCorrente;
+        console.log(`   💰 Saldo Atual (Conta Corrente): R$ ${saldoContaCorrente.toFixed(2)}`);
       }
 
-      // Log do saldo anterior para referência
-      if (saldoAnterior !== null) {
-        console.log(`💰 [Import] Saldo Anterior detectado: R$ ${saldoAnterior.toFixed(2)} (salvo em balance_after das transações)`);
+      if (saldoAnterior !== null && transactionsToInsert.length > 0) {
+        updateData.initial_balance = saldoAnterior;
+        // A data do saldo inicial deve ser da transação MAIS ANTIGA (última do array)
+        updateData.initial_balance_date = transactionsToInsert[transactionsToInsert.length - 1].date;
+        console.log(`   💰 Saldo Inicial: R$ ${saldoAnterior.toFixed(2)}`);
+        console.log(`   📅 Data Início: ${new Date(transactionsToInsert[transactionsToInsert.length - 1].date).toLocaleDateString('pt-BR')}`);
       }
 
-      const message = totalInserted === 0
-        ? 'Nenhuma transação nova foi importada (todas já existiam)'
-        : `${totalInserted} ${totalInserted === 1 ? 'transação importada' : 'transações importadas'} com sucesso!${duplicatesCount > 0 ? ` (${duplicatesCount} ${duplicatesCount === 1 ? 'duplicata ignorada' : 'duplicatas ignoradas'})` : ''}`;
+      const { error: updateError } = await supabase
+        .from('bank_accounts')
+        .update(updateData)
+        .eq('id', targetAccountId);
 
-      res.json({
-        success: true,
-        imported: totalInserted,
-        duplicates: duplicatesCount,
-        errors: errors.length > 0 ? errors : undefined,
-        account_id: targetAccountId,
-        saldo_inicial: saldoAnterior,
-        saldo_atual: saldoContaCorrente,
-        message,
-      });
+      if (updateError) {
+        console.error('⚠️ [Import] Erro ao atualizar saldo da conta:', updateError);
+      } else {
+        console.log('✅ [Import] Saldo da conta atualizado com sucesso!');
+      }
+    }
+
+    // Log do saldo anterior para referência
+    if (saldoAnterior !== null) {
+      console.log(`💰 [Import] Saldo Anterior detectado: R$ ${saldoAnterior.toFixed(2)} (salvo em balance_after das transações)`);
+    }
+
+    const message = totalInserted === 0
+      ? 'Nenhuma transação nova foi importada (todas já existiam)'
+      : `${totalInserted} ${totalInserted === 1 ? 'transação importada' : 'transações importadas'} com sucesso!${duplicatesCount > 0 ? ` (${duplicatesCount} ${duplicatesCount === 1 ? 'duplicata ignorada' : 'duplicatas ignoradas'})` : ''}`;
+
+    res.json({
+      success: true,
+      imported: totalInserted,
+      duplicates: duplicatesCount,
+      errors: errors.length > 0 ? errors : undefined,
+      account_id: targetAccountId,
+      saldo_inicial: saldoAnterior,
+      saldo_atual: saldoContaCorrente,
+      message,
+    });
     } else {
       res.status(400).json({
         error: 'No valid transactions to import',
