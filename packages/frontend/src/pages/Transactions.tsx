@@ -247,17 +247,24 @@ const Transactions = () => {
 
   const last12MonthsTransactions = getLast12MonthsTransactions();
 
-  // Calcular saldo inicial (balance_after da primeira transação)
+  // Calcular saldo inicial (saldo ANTES da primeira transação)
   const getInitialBalance = () => {
     if (transactions.length === 0) return null;
 
-    // Pegar todas as transações com balance_after
+    // Pegar todas as transações com balance_after, ordenadas por data
     const transactionsWithBalance = transactions
       .filter(t => t.balance_after !== undefined && t.balance_after !== null)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Retornar o balance_after da primeira transação
-    return transactionsWithBalance.length > 0 ? transactionsWithBalance[0].balance_after : null;
+    if (transactionsWithBalance.length === 0) return null;
+
+    // Calcular saldo ANTES da primeira transação: balance_after - amount
+    const firstTx = transactionsWithBalance[0];
+    const balanceBefore = firstTx.balance_after - firstTx.amount;
+
+    console.log(`💰 Saldo inicial calculado: R$ ${balanceBefore.toFixed(2)} (balance_after: ${firstTx.balance_after.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)})`);
+
+    return balanceBefore;
   };
 
   const initialBalance = getInitialBalance();
@@ -309,7 +316,8 @@ const Transactions = () => {
   // Calcular breakdown mensal dos últimos 12 meses COMPLETOS
   const getMonthlyBreakdown = () => {
     const months = [];
-    let accumulatedBalance = 0;
+    // Começar saldo acumulado com o saldo inicial
+    let accumulatedBalance = initialBalance || 0;
 
     // Loop de 11 até 0 para mostrar 12 meses: mês atual + 11 anteriores
     // Ex: Se estamos em nov/2025, mostra de dez/2024 (i=11) até nov/2025 (i=0) = 12 meses
@@ -344,6 +352,15 @@ const Transactions = () => {
         balance: monthBalance,
         accumulatedBalance
       });
+    }
+
+    // Log para verificação: o último saldo acumulado deve ser igual ao saldo da conta corrente
+    if (months.length > 0) {
+      const lastMonth = months[months.length - 1];
+      console.log(`\n✅ VERIFICAÇÃO DO SALDO ACUMULADO:`);
+      console.log(`   Saldo inicial: R$ ${(initialBalance || 0).toFixed(2)}`);
+      console.log(`   Último saldo acumulado (${lastMonth.monthLabel}): R$ ${lastMonth.accumulatedBalance.toFixed(2)}`);
+      console.log(`   Este valor deve ser igual ao saldo da conta corrente!\n`);
     }
 
     return months;
