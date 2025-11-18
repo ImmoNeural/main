@@ -27,10 +27,11 @@ export class BelvoService {
   private secretPassword: string;
 
   constructor() {
-    this.secretId = process.env.BELVO_SECRET_ID || '';
-    this.secretPassword = process.env.BELVO_SECRET_PASSWORD || '';
+    // Trim credentials to remove any accidental whitespace
+    this.secretId = (process.env.BELVO_SECRET_ID || '').trim();
+    this.secretPassword = (process.env.BELVO_SECRET_PASSWORD || '').trim();
 
-    const baseURL = process.env.BELVO_BASE_URL || 'https://api.belvo.com';
+    const baseURL = (process.env.BELVO_BASE_URL || 'https://api.belvo.com').trim();
 
     // Belvo usa Basic Auth (Secret ID:Secret Password em base64)
     const authString = Buffer.from(`${this.secretId}:${this.secretPassword}`).toString('base64');
@@ -44,9 +45,21 @@ export class BelvoService {
       timeout: 30000,
     });
 
-    console.log('[Belvo] Service initialized');
-    console.log('   Secret ID:', this.secretId.substring(0, 8) + '...');
+    console.log('==================================================');
+    console.log('[Belvo] Service initialized - DETAILED DEBUG');
+    console.log('==================================================');
+    console.log('   OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER);
     console.log('   Base URL:', baseURL);
+    console.log('   Base URL is sandbox?', baseURL.includes('sandbox'));
+    console.log('   Secret ID (first 12 chars):', this.secretId.substring(0, 12) + '...');
+    console.log('   Secret ID length:', this.secretId.length);
+    console.log('   Secret ID exists?', !!this.secretId);
+    console.log('   Secret Password (first 8 chars):', this.secretPassword.substring(0, 8) + '...');
+    console.log('   Secret Password length:', this.secretPassword.length);
+    console.log('   Secret Password exists?', !!this.secretPassword);
+    console.log('   Auth String length:', authString.length);
+    console.log('   Auth String (first 20 chars):', authString.substring(0, 20) + '...');
+    console.log('==================================================');
   }
 
   /**
@@ -78,7 +91,16 @@ export class BelvoService {
 
       return institutions;
     } catch (error: any) {
-      console.error('[Belvo] ❌ Error fetching institutions:', error.response?.data || error.message);
+      console.error('==================================================');
+      console.error('[Belvo] ❌ ERROR FETCHING INSTITUTIONS - DETAILED');
+      console.error('==================================================');
+      console.error('   Error message:', error.message);
+      console.error('   Response status:', error.response?.status);
+      console.error('   Response data:', JSON.stringify(error.response?.data, null, 2));
+      console.error('   Request URL:', error.config?.url);
+      console.error('   Request baseURL:', error.config?.baseURL);
+      console.error('   Request headers:', JSON.stringify(error.config?.headers, null, 2));
+      console.error('==================================================');
       throw new Error('Failed to fetch Belvo institutions: ' + (error.response?.data?.message || error.message));
     }
   }
