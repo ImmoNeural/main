@@ -1063,11 +1063,12 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         if (lastTransaction.balance_after !== undefined && lastTransaction.balance_after !== null) {
           // Se não detectou "Saldo de Conta Corrente" nas linhas especiais, usar o da última transação
           if (saldoContaCorrente === null) {
-            saldoContaCorrente = lastTransaction.balance_after;
+            const balanceAfter = lastTransaction.balance_after;
+            saldoContaCorrente = balanceAfter;
             console.log(`\n💰 [CSV Import] Saldo Conta Corrente da ÚLTIMA transação:`);
             console.log(`   📅 Data: ${new Date(lastTransaction.date).toLocaleDateString('pt-BR')}`);
             console.log(`   📝 Descrição: ${lastTransaction.description}`);
-            console.log(`   ✅ Saldo Atual = R$ ${saldoContaCorrente.toFixed(2)}`);
+            console.log(`   ✅ Saldo Atual = R$ ${balanceAfter.toFixed(2)}`);
           }
         }
       }
