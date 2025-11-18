@@ -258,6 +258,12 @@ const Transactions = () => {
 
     if (transactionsWithBalance.length === 0) return null;
 
+    // Debug: mostrar primeiras 5 transações
+    console.log(`📋 Frontend: Primeiras ${Math.min(5, transactionsWithBalance.length)} transações com balance_after (ordenadas por date ASC):`);
+    transactionsWithBalance.slice(0, 5).forEach((tx, idx) => {
+      console.log(`   ${idx + 1}. ${format(new Date(tx.date), 'dd/MM/yyyy HH:mm')} - ID: ${tx.id.substring(0, 8)} - ${tx.description?.substring(0, 30)} - balance_after: ${tx.balance_after}, amount: ${tx.amount}`);
+    });
+
     // Calcular saldo ANTES da primeira transação: balance_after - amount
     const firstTx = transactionsWithBalance[0];
 
@@ -267,7 +273,11 @@ const Transactions = () => {
     const balanceAfter = firstTx.balance_after;
     const balanceBefore = balanceAfter - firstTx.amount;
 
-    console.log(`💰 Saldo inicial calculado: R$ ${balanceBefore.toFixed(2)} (balance_after: ${balanceAfter.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)})`);
+    console.log(`💰 Saldo inicial calculado: R$ ${balanceBefore.toFixed(2)}`);
+    console.log(`   Primeira transação: ${firstTx.description || 'Sem descrição'}`);
+    console.log(`   ID: ${firstTx.id}`);
+    console.log(`   Data: ${format(new Date(firstTx.date), 'dd/MM/yyyy HH:mm')}`);
+    console.log(`   balance_after: ${balanceAfter.toFixed(2)}, amount: ${firstTx.amount.toFixed(2)}`);
 
     return balanceBefore;
   };
