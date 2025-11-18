@@ -247,27 +247,37 @@ const Transactions = () => {
 
   const last12MonthsTransactions = getLast12MonthsTransactions();
 
-  // Calcular saldo inicial (balance_after da primeira transação de 12 meses atrás)
+  // Calcular saldo inicial (balance_after da primeira transação)
   const getInitialBalance = () => {
-    const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
-    const startDayTransactions = last12MonthsTransactions
-      .filter(t => {
-        const txDate = new Date(t.date);
-        return txDate >= twelveMonthsAgo &&
-               txDate < new Date(twelveMonthsAgo.getTime() + 24 * 60 * 60 * 1000);
-      })
-      .filter(t => t.balance_after !== undefined && t.balance_after !== null)
-      .sort((a, b) => a.date - b.date);
+    if (transactions.length === 0) return null;
 
-    return startDayTransactions.length > 0 ? startDayTransactions[0].balance_after : null;
+    // Pegar todas as transações com balance_after
+    const transactionsWithBalance = transactions
+      .filter(t => t.balance_after !== undefined && t.balance_after !== null)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Retornar o balance_after da primeira transação
+    return transactionsWithBalance.length > 0 ? transactionsWithBalance[0].balance_after : null;
   };
 
   const initialBalance = getInitialBalance();
 
-  // Formatar data de início dos 12 meses para o label
+  // Formatar data de início baseada na primeira transação
   const getStartDateLabel = () => {
-    const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
-    return format(twelveMonthsAgo, 'dd.MM.yyyy');
+    if (transactions.length === 0) {
+      // Fallback: se não há transações, usar 12 meses atrás
+      const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
+      return format(twelveMonthsAgo, 'dd.MM.yy');
+    }
+
+    // Pegar a data da transação mais antiga
+    const oldestTransaction = transactions.reduce((oldest, current) => {
+      return new Date(current.date) < new Date(oldest.date) ? current : oldest;
+    }, transactions[0]);
+
+    // Retornar o início do mês dessa transação
+    const startDate = startOfMonth(new Date(oldestTransaction.date));
+    return format(startDate, 'dd.MM.yy');
   };
 
   // Calcular totais dos últimos 12 meses (não afetados por filtros)
