@@ -71,7 +71,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 
     if (transactionsError) throw transactionsError;
 
-    // Buscar saldo inicial (balance_after da primeira transação do período)
+    // Buscar saldo inicial (menor balance_after da primeira transação do período)
     const startDateObj = new Date(startDate);
     const startDayStart = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 0, 0, 0).getTime();
     const startDayEnd = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate(), 23, 59, 59).getTime();
@@ -85,7 +85,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .gte('date', startDayStart)
       .lte('date', startDayEnd)
       .not('balance_after', 'is', null)
-      .order('date', { ascending: true })
+      .order('balance_after', { ascending: true }) // Ordena por balance_after para pegar o MENOR (saldo inicial)
       .limit(1);
 
     const initial_balance = firstDayTransactions && firstDayTransactions.length > 0

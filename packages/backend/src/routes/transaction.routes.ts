@@ -1063,48 +1063,29 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
 
       console.log(`✅ [Import] Successfully imported ${totalInserted} new transactions for user ${user_id}`);
 
-      // 💰 ATUALIZAR SALDOS DA CONTA BANCÁRIA
-      if (saldoContaCorrente !== null || saldoAnterior !== null) {
-        console.log('\n💰 [Import] Atualizando saldos da conta bancária...');
+      // 💰 ATUALIZAR SALDO ATUAL DA CONTA BANCÁRIA
+      if (saldoContaCorrente !== null) {
+        console.log('\n💰 [Import] Atualizando saldo da conta bancária...');
+        console.log(`   💰 Saldo Atual (Conta Corrente): R$ ${saldoContaCorrente.toFixed(2)}`);
 
-        const updateData: any = {
-          updated_at: toISOString(Date.now()),
-        };
-
-        if (saldoContaCorrente !== null) {
-          updateData.balance = saldoContaCorrente;
-          console.log(`   💰 Saldo Atual (Conta Corrente): R$ ${saldoContaCorrente.toFixed(2)}`);
-        }
-
-        // Armazenar saldo anterior em metadata (JSON field) se disponível
-        if (saldoAnterior !== null) {
-          console.log(`   💰 Saldo Inicial (Saldo Anterior): R$ ${saldoAnterior.toFixed(2)}`);
-          // Buscar metadata atual da conta
-          const { data: currentAccount } = await supabase
-            .from('bank_accounts')
-            .select('metadata')
-            .eq('id', targetAccountId)
-            .single();
-
-          const currentMetadata = currentAccount?.metadata || {};
-          updateData.metadata = {
-            ...currentMetadata,
-            saldo_inicial: saldoAnterior,
-            saldo_inicial_updated_at: new Date().toISOString(),
-          };
-        }
-
-        // Atualizar conta
         const { error: updateError } = await supabase
           .from('bank_accounts')
-          .update(updateData)
+          .update({
+            balance: saldoContaCorrente,
+            updated_at: toISOString(Date.now()),
+          })
           .eq('id', targetAccountId);
 
         if (updateError) {
-          console.error('⚠️ [Import] Erro ao atualizar saldos da conta:', updateError);
+          console.error('⚠️ [Import] Erro ao atualizar saldo da conta:', updateError);
         } else {
-          console.log('✅ [Import] Saldos da conta atualizados com sucesso!');
+          console.log('✅ [Import] Saldo da conta atualizado com sucesso!');
         }
+      }
+
+      // Log do saldo anterior para referência
+      if (saldoAnterior !== null) {
+        console.log(`💰 [Import] Saldo Anterior detectado: R$ ${saldoAnterior.toFixed(2)} (salvo em balance_after das transações)`);
       }
 
       const message = totalInserted === 0
