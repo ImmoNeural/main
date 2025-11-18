@@ -83,14 +83,31 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
       .order('date', { ascending: false }) // Ordena por data DESC para pegar a mais recente antes do período
       .limit(1);
 
-    const initial_balance = transactionBeforeStart && transactionBeforeStart.length > 0
-      ? transactionBeforeStart[0].balance_after
-      : null;
+    let initial_balance = null;
 
-    if (initial_balance !== null) {
-      console.log(`💰 Saldo inicial encontrado: R$ ${initial_balance.toFixed(2)} (última transação antes do período: ${format(transactionBeforeStart![0].date, 'dd/MM/yyyy HH:mm')})`);
+    if (transactionBeforeStart && transactionBeforeStart.length > 0) {
+      initial_balance = transactionBeforeStart[0].balance_after;
+      console.log(`💰 Saldo inicial encontrado (transação antes do período): R$ ${initial_balance.toFixed(2)} (data: ${format(transactionBeforeStart[0].date, 'dd/MM/yyyy HH:mm')})`);
     } else {
-      console.log(`⚠️ Saldo inicial não encontrado (não há transações antes de ${format(startDate, 'dd/MM/yyyy')})`);
+      // Se não há transações ANTES do período, pegar balance_after da PRIMEIRA transação DO período
+      console.log(`⚠️ Não há transações antes de ${format(startDate, 'dd/MM/yyyy')}. Buscando primeira transação DO período...`);
+
+      const { data: firstTransactionInPeriod, error: firstTxError } = await supabase
+        .from('transactions')
+        .select('balance_after, date, bank_accounts!inner(user_id)')
+        .eq('bank_accounts.user_id', user_id)
+        .gte('date', startDate) // Transações NO período
+        .lte('date', endDate)
+        .not('balance_after', 'is', null)
+        .order('date', { ascending: true }) // Ordena por data ASC para pegar a primeira do período
+        .limit(1);
+
+      if (firstTransactionInPeriod && firstTransactionInPeriod.length > 0) {
+        initial_balance = firstTransactionInPeriod[0].balance_after;
+        console.log(`💰 Saldo inicial encontrado (primeira transação do período): R$ ${initial_balance.toFixed(2)} (data: ${format(firstTransactionInPeriod[0].date, 'dd/MM/yyyy HH:mm')})`);
+      } else {
+        console.log(`❌ Nenhuma transação encontrada no período com balance_after`);
+      }
     }
 
     // 💰 Buscar saldo atual da conta (balance_after da transação mais recente)

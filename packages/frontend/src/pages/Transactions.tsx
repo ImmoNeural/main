@@ -584,7 +584,7 @@ const Transactions = () => {
           <div className="card hover:shadow-lg transition-all p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Receitas (12m)</p>
+                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Receitas (desde {getStartDateLabel()})</p>
                 <p className="text-sm sm:text-lg lg:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1 truncate">
                   {formatCurrency(totalIncome)}
                 </p>
@@ -599,7 +599,7 @@ const Transactions = () => {
           <div className="card hover:shadow-lg transition-all p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Despesas (12m)</p>
+                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Despesas (desde {getStartDateLabel()})</p>
                 <p className="text-sm sm:text-lg lg:text-2xl font-bold text-red-600 mt-0.5 sm:mt-1 truncate">
                   {formatCurrency(totalExpense)}
                 </p>
@@ -614,7 +614,7 @@ const Transactions = () => {
           <div className="card hover:shadow-lg transition-all p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Saldo (12m)</p>
+                <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500 truncate">Saldo (desde {getStartDateLabel()})</p>
                 <p className={`text-sm sm:text-lg lg:text-2xl font-bold mt-0.5 sm:mt-1 truncate ${
                   balance >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
