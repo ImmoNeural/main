@@ -223,20 +223,20 @@ const ConnectBank = () => {
               className="card hover:shadow-lg transition-shadow text-left p-6"
             >
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 flex items-center justify-center">
-                  {bank.logo?.startsWith('http') ? (
+                <div className="w-16 h-16 flex items-center justify-center flex-shrink-0">
+                  {bank.logo?.startsWith('http') || bank.logo?.startsWith('data:') ? (
                     <img
                       src={bank.logo}
                       alt={bank.name}
-                      className="w-12 h-12 object-contain"
+                      className="w-16 h-16 object-contain"
                       onError={(e) => {
                         // Fallback para emoji se a imagem falhar
                         e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = '🏦';
+                        e.currentTarget.parentElement!.innerHTML = '<span class="text-5xl">🏦</span>';
                       }}
                     />
                   ) : (
-                    <span className="text-4xl">{bank.logo || '🏦'}</span>
+                    <span className="text-5xl">{bank.logo || '🏦'}</span>
                   )}
                 </div>
                 <div>
@@ -253,20 +253,20 @@ const ConnectBank = () => {
       {showConsent && selectedBank && (
         <div className="card max-w-2xl mx-auto">
           <div className="text-center mb-6">
-            <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-              {selectedBank.logo?.startsWith('http') ? (
+            <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center">
+              {selectedBank.logo?.startsWith('http') || selectedBank.logo?.startsWith('data:') ? (
                 <img
                   src={selectedBank.logo}
                   alt={selectedBank.name}
-                  className="w-24 h-24 object-contain"
+                  className="w-32 h-32 object-contain"
                   onError={(e) => {
                     // Fallback para emoji se a imagem falhar
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement!.innerHTML = '<span class="text-6xl">🏦</span>';
+                    e.currentTarget.parentElement!.innerHTML = '<span class="text-7xl">🏦</span>';
                   }}
                 />
               ) : (
-                <span className="text-6xl">{selectedBank.logo || '🏦'}</span>
+                <span className="text-7xl">{selectedBank.logo || '🏦'}</span>
               )}
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
