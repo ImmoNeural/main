@@ -1165,12 +1165,6 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       saldo_atual: saldoContaCorrente,
       message,
     });
-    } else {
-      res.status(400).json({
-        error: 'No valid transactions to import',
-        errors,
-      });
-    }
   } catch (error) {
     console.error('❌ [Import] Error importing transactions:', error);
     res.status(500).json({ error: 'Failed to import transactions' });
