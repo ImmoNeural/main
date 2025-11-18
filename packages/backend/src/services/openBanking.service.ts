@@ -82,12 +82,29 @@ class OpenBankingService {
             return banks;
           }
 
-          console.log('   ⚠️ No connectors returned from Pluggy API');
-          console.log('   📋 Falling back to static list');
-        } catch (pluggyError) {
-          console.error('   ❌ Error calling Pluggy getConnectors:', pluggyError);
-          console.error('      Error details:', pluggyError);
-          console.log('   📋 Falling back to static list due to Pluggy error');
+          console.log('');
+          console.log('   ⚠️⚠️⚠️ WARNING ⚠️⚠️⚠️');
+          console.log('   Pluggy returned 0 connectors!');
+          console.log('   This usually means:');
+          console.log('   1. PLUGGY_CLIENT_ID or PLUGGY_CLIENT_SECRET are missing');
+          console.log('   2. Credentials are invalid');
+          console.log('   3. Pluggy API is down');
+          console.log('');
+          console.log('   📋 Falling back to static bank list');
+          console.log('');
+        } catch (pluggyError: any) {
+          console.error('');
+          console.error('   ❌❌❌ PLUGGY ERROR ❌❌❌');
+          console.error('   Error calling Pluggy getConnectors:');
+          console.error('   Message:', pluggyError.message);
+          console.error('   Stack:', pluggyError.stack);
+          if (pluggyError.response) {
+            console.error('   HTTP Status:', pluggyError.response.status);
+            console.error('   Response:', JSON.stringify(pluggyError.response.data, null, 2));
+          }
+          console.error('');
+          console.error('   📋 Falling back to static bank list due to Pluggy error');
+          console.error('');
         }
       } else {
         console.log('   ℹ️ Provider does NOT have getConnectors');

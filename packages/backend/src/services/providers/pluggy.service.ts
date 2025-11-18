@@ -29,8 +29,8 @@ export class PluggyService {
   private apiKeyExpiresAt: number = 0;
 
   constructor() {
-    this.clientId = process.env.PLUGGY_CLIENT_ID || '';
-    this.clientSecret = process.env.PLUGGY_CLIENT_SECRET || '';
+    this.clientId = (process.env.PLUGGY_CLIENT_ID || '').trim();
+    this.clientSecret = (process.env.PLUGGY_CLIENT_SECRET || '').trim();
 
     const baseURL = process.env.PLUGGY_BASE_URL || 'https://api.pluggy.ai';
 
@@ -41,6 +41,39 @@ export class PluggyService {
       },
       timeout: 30000,
     });
+
+    console.log('==================================================');
+    console.log('[Pluggy] Service initialized - DETAILED DEBUG');
+    console.log('==================================================');
+    console.log('   OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER);
+    console.log('   Base URL:', baseURL);
+    console.log('   Client ID (first 12 chars):', this.clientId.substring(0, 12) + '...');
+    console.log('   Client ID length:', this.clientId.length);
+    console.log('   Client ID exists?', !!this.clientId);
+    console.log('   Client Secret (first 8 chars):', this.clientSecret.substring(0, 8) + '...');
+    console.log('   Client Secret length:', this.clientSecret.length);
+    console.log('   Client Secret exists?', !!this.clientSecret);
+    console.log('==================================================');
+
+    if (!this.clientId || !this.clientSecret) {
+      console.error('');
+      console.error('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
+      console.error('❌ PLUGGY CREDENTIALS MISSING!');
+      console.error('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
+      console.error('');
+      console.error('   PLUGGY_CLIENT_ID:', this.clientId ? 'SET ✅' : 'MISSING ❌');
+      console.error('   PLUGGY_CLIENT_SECRET:', this.clientSecret ? 'SET ✅' : 'MISSING ❌');
+      console.error('');
+      console.error('   Without these credentials, Pluggy will NOT work!');
+      console.error('   The app will fall back to STATIC/MOCK banks.');
+      console.error('');
+      console.error('   To fix: Add these environment variables in Render:');
+      console.error('   - PLUGGY_CLIENT_ID=your_client_id');
+      console.error('   - PLUGGY_CLIENT_SECRET=your_client_secret');
+      console.error('');
+      console.error('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
+      console.error('');
+    }
   }
 
   /**
