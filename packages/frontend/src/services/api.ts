@@ -120,6 +120,8 @@ export const transactionApi = {
       total: number;
       limit: number;
       offset: number;
+      initial_balance: number | null;
+      initial_balance_date: string | null;
     }>('/transactions', { params }),
 
   getTransaction: (id: string) =>
