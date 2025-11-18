@@ -400,31 +400,47 @@ router.delete('/all', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
-    console.log('🗑️ [Delete All] Iniciando deleção de todas as transações para user:', user_id);
+    console.log('🗑️ [Delete All] Iniciando deleção de todas as transações e contas bancárias para user:', user_id);
 
-    // Deletar todas as transações do usuário usando user_id diretamente
-    const { data: deleted, error } = await supabase
+    // 1. Deletar todas as transações do usuário
+    const { data: deleted, error: transError } = await supabase
       .from('transactions')
       .delete()
       .eq('user_id', user_id)
       .select('id');
 
-    if (error) {
-      console.error('❌ [Delete All] Erro ao deletar transações:', error);
-      throw error;
+    if (transError) {
+      console.error('❌ [Delete All] Erro ao deletar transações:', transError);
+      throw transError;
     }
 
     const deletedCount = deleted?.length || 0;
     console.log(`✅ [Delete All] ${deletedCount} transações deletadas com sucesso`);
 
+    // 2. Deletar todas as contas bancárias do usuário
+    const { data: deletedAccounts, error: accountError } = await supabase
+      .from('bank_accounts')
+      .delete()
+      .eq('user_id', user_id)
+      .select('id');
+
+    if (accountError) {
+      console.error('❌ [Delete All] Erro ao deletar contas bancárias:', accountError);
+      throw accountError;
+    }
+
+    const deletedAccountsCount = deletedAccounts?.length || 0;
+    console.log(`✅ [Delete All] ${deletedAccountsCount} contas bancárias deletadas com sucesso`);
+
     res.json({
       success: true,
       deleted: deletedCount,
-      message: `${deletedCount} ${deletedCount === 1 ? 'transação deletada' : 'transações deletadas'} com sucesso!`,
+      deletedAccounts: deletedAccountsCount,
+      message: `${deletedCount} ${deletedCount === 1 ? 'transação deletada' : 'transações deletadas'} e ${deletedAccountsCount} ${deletedAccountsCount === 1 ? 'conta bancária deletada' : 'contas bancárias deletadas'} com sucesso!`,
     });
   } catch (error) {
     console.error('❌ [Delete All] Erro:', error);
-    res.status(500).json({ error: 'Erro ao deletar transações' });
+    res.status(500).json({ error: 'Erro ao deletar transações e contas bancárias' });
   }
 });
 

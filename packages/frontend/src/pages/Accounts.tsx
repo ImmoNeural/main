@@ -111,12 +111,12 @@ const Accounts = () => {
   };
 
   const handleDelete = async (accountId: string) => {
-    if (!confirm('Tem certeza que deseja desconectar esta conta?\n\nNão se preocupe: Seus dados históricos serão preservados e você poderá reconectar esta conta a qualquer momento.')) {
+    if (!confirm('⚠️ ATENÇÃO: Deseja DELETAR esta conta?\n\n🗑️ ESTA AÇÃO É IRREVERSÍVEL!\n\nIsso irá apagar permanentemente:\n• Esta conta bancária\n• TODAS as transações associadas\n• Todos os dados relacionados\n\n❌ Esta ação NÃO pode ser desfeita.\n\n✅ Se importar o CSV novamente ou reconectar via Open Finance, a conta e transações serão recriadas.\n\nTem certeza absoluta que deseja continuar?')) {
       return;
     }
 
     try {
-      console.log('🗑️ Deletando conta:', accountId);
+      console.log('🗑️ Deletando conta e todas transações:', accountId);
       const response = await bankApi.deleteAccount(accountId);
       console.log('✅ Resposta do servidor:', response.data);
 
@@ -133,11 +133,12 @@ const Accounts = () => {
       console.log('🎯 Removendo conta da lista local');
       setAccounts(prevAccounts => prevAccounts.filter(acc => acc.id !== accountId));
 
-      alert('✅ Conta desconectada com sucesso!\n\nSeus dados históricos foram preservados.');
+      const deletedTrans = response.data.deletedTransactions || 0;
+      alert(`✅ Conta bancária deletada com sucesso!\n\n🗑️ ${deletedTrans} ${deletedTrans === 1 ? 'transação foi deletada' : 'transações foram deletadas'}.\n\n💡 Você pode reimportar o CSV ou reconectar via Open Finance para recriar a conta.`);
     } catch (error: any) {
       console.error('❌ Erro ao deletar conta:', error);
       console.error('Detalhes do erro:', error.response?.data || error.message);
-      alert(`Erro ao desconectar conta: ${error.response?.data?.error || error.message || 'Erro desconhecido'}`);
+      alert(`Erro ao deletar conta: ${error.response?.data?.error || error.message || 'Erro desconhecido'}`);
       // Se der erro, recarregar do servidor
       await loadAccounts();
     }
@@ -324,15 +325,14 @@ const Accounts = () => {
             <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
               <h3 className="font-semibold text-blue-900 mb-1">
-                Sobre a sincronização e dados históricos
+                Sobre a sincronização e gerenciamento de dados
               </h3>
               <p className="text-sm text-blue-800">
                 <strong>Sincronização inteligente:</strong> O sistema busca apenas transações novas desde a última sincronização, economizando tempo e recursos.
                 <br />
-                <strong>Dados preservados:</strong> Ao desconectar uma conta, todos os seus dados históricos são mantidos em segurança.
-                Quando você reconectar, apenas as transações novas serão adicionadas ao seu histórico existente.
+                <strong>Validade:</strong> O acesso via Open Finance é válido por 90 dias. Após esse período, basta reconectar a conta.
                 <br />
-                <strong>Validade:</strong> O acesso é válido por 90 dias. Após esse período, basta reconectar a conta.
+                <strong>⚠️ Deletar conta:</strong> Ao clicar no ícone de lixeira, a conta e TODAS as transações associadas serão deletadas permanentemente. Você pode reimportar o CSV ou reconectar via Open Finance para recriar a conta.
               </p>
             </div>
           </div>

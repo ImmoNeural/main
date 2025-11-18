@@ -428,17 +428,20 @@ router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, re
 
 /**
  * DELETE /api/bank/accounts/:accountId
- * Remove uma conta conectada
+ * Remove uma conta conectada e TODAS as transações associadas (HARD DELETE)
  */
 router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
-    console.log('🗑️ Deletando conta:', accountId);
+    const user_id = req.userId!;
+
+    console.log('🗑️ Deletando conta e transações:', accountId);
 
     const { data: account, error: fetchError } = await supabase
       .from('bank_accounts')
       .select('*')
       .eq('id', accountId)
+      .eq('user_id', user_id) // Verificar que pertence ao usuário
       .single();
 
     if (fetchError || !account) {
@@ -448,7 +451,7 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
 
     console.log('📋 Conta encontrada:', account.bank_name);
 
-    // Revogar consentimento no banco
+    // Revogar consentimento no banco (se for Open Finance)
     if (account.access_token) {
       try {
         await openBankingService.revokeConsent(account.access_token);
@@ -463,27 +466,40 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
       }
     }
 
-    // Soft delete: Marcar conta como desconectada, preservando dados históricos
-    const { error: updateError } = await supabase
-      .from('bank_accounts')
-      .update({
-        status: 'disconnected',
-        access_token: null,
-        refresh_token: null,
-        updated_at: toISOString(Date.now())
-      })
-      .eq('id', accountId);
+    // 1. DELETAR todas as transações associadas a esta conta
+    const { data: deletedTransactions, error: transError } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('account_id', accountId)
+      .eq('user_id', user_id)
+      .select('id');
 
-    if (updateError) {
-      console.error('❌ Erro ao atualizar conta no Supabase:', updateError);
-      throw updateError;
+    if (transError) {
+      console.error('❌ Erro ao deletar transações:', transError);
+      throw transError;
     }
 
-    console.log('✅ Conta desconectada com sucesso:', account.bank_name);
+    const deletedTransCount = deletedTransactions?.length || 0;
+    console.log(`✅ ${deletedTransCount} transações deletadas`);
+
+    // 2. DELETAR a conta bancária
+    const { error: deleteError } = await supabase
+      .from('bank_accounts')
+      .delete()
+      .eq('id', accountId)
+      .eq('user_id', user_id);
+
+    if (deleteError) {
+      console.error('❌ Erro ao deletar conta:', deleteError);
+      throw deleteError;
+    }
+
+    console.log('✅ Conta deletada com sucesso:', account.bank_name);
 
     res.json({
       success: true,
-      message: 'Bank account disconnected. Historical data preserved.'
+      deletedTransactions: deletedTransCount,
+      message: `Conta bancária deletada. ${deletedTransCount} ${deletedTransCount === 1 ? 'transação deletada' : 'transações deletadas'}.`
     });
   } catch (error) {
     console.error('❌ Erro ao deletar conta:', error);
