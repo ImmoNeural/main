@@ -1114,8 +1114,14 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
 
     // 💰 ATUALIZAR SALDO ATUAL E INICIAL DA CONTA BANCÁRIA
     // Isso deve acontecer SEMPRE que houver CSV válido, mesmo que todas sejam duplicatas
+    console.log(`\n🔍 [DEBUG] Verificando se deve atualizar banco:`);
+    console.log(`   saldoContaCorrente: ${saldoContaCorrente}`);
+    console.log(`   saldoAnterior: ${saldoAnterior}`);
+    console.log(`   transactionsToInsert.length: ${transactionsToInsert.length}`);
+
     if (saldoContaCorrente !== null || saldoAnterior !== null) {
       console.log('\n💰 [Import] Atualizando saldo da conta bancária...');
+      console.log(`   🔑 targetAccountId: ${targetAccountId}`);
 
       const updateData: any = {
         updated_at: toISOString(Date.now()),
@@ -1134,6 +1140,9 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         console.log(`   📅 Data Início: ${new Date(transactionsToInsert[transactionsToInsert.length - 1].date).toLocaleDateString('pt-BR')}`);
       }
 
+      console.log(`\n🔍 [DEBUG] Dados que serão atualizados no banco:`);
+      console.log(JSON.stringify(updateData, null, 2));
+
       const { error: updateError } = await supabase
         .from('bank_accounts')
         .update(updateData)
@@ -1141,9 +1150,26 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
 
       if (updateError) {
         console.error('⚠️ [Import] Erro ao atualizar saldo da conta:', updateError);
+        console.error('⚠️ [Import] Detalhes do erro:', JSON.stringify(updateError, null, 2));
       } else {
         console.log('✅ [Import] Saldo da conta atualizado com sucesso!');
+
+        // Verificar se realmente foi salvo
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('bank_accounts')
+          .select('id, balance, initial_balance, initial_balance_date')
+          .eq('id', targetAccountId)
+          .single();
+
+        if (!verifyError && verifyData) {
+          console.log('\n🔍 [DEBUG] Dados APÓS update no banco:');
+          console.log(`   balance: ${verifyData.balance}`);
+          console.log(`   initial_balance: ${verifyData.initial_balance}`);
+          console.log(`   initial_balance_date: ${verifyData.initial_balance_date}`);
+        }
       }
+    } else {
+      console.log('\n⚠️ [DEBUG] NÃO vai atualizar banco (ambos são null)');
     }
 
     // Log do saldo anterior para referência
