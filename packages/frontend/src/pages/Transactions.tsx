@@ -310,6 +310,52 @@ const Transactions = () => {
   console.log(`   Investimentos (débito+crédito): R$ ${totalInvestments.toFixed(2)}`);
   console.log(`   Investimentos (só débito): R$ ${totalInvestmentsDebitOnly.toFixed(2)}`);
 
+  // Calcular comparação com o mês anterior
+  const previousMonth = subMonths(currentPeriod, 1);
+  const previousMonthKey = format(previousMonth, 'yyyy-MM');
+
+  const previousMonthTransactions = last12MonthsTransactions.filter(t => {
+    const transactionMonth = format(new Date(t.date), 'yyyy-MM');
+    return transactionMonth === previousMonthKey;
+  });
+
+  const previousMonthIncome = previousMonthTransactions
+    .filter(t => t.type === 'credit')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const previousMonthExpense = previousMonthTransactions
+    .filter(t => t.type === 'debit')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const previousMonthBalance = previousMonthIncome - previousMonthExpense;
+
+  // Calcular transações do mês atual
+  const currentMonthKey = format(currentPeriod, 'yyyy-MM');
+  const currentMonthTransactions = last12MonthsTransactions.filter(t => {
+    const transactionMonth = format(new Date(t.date), 'yyyy-MM');
+    return transactionMonth === currentMonthKey;
+  });
+
+  const currentMonthIncome = currentMonthTransactions
+    .filter(t => t.type === 'credit')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const currentMonthExpense = currentMonthTransactions
+    .filter(t => t.type === 'debit')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const currentMonthBalance = currentMonthIncome - currentMonthExpense;
+
+  // Calcular variações percentuais
+  const calculatePercentageChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const incomeChange = calculatePercentageChange(currentMonthIncome, previousMonthIncome);
+  const expenseChange = calculatePercentageChange(currentMonthExpense, previousMonthExpense);
+  const balanceChange = calculatePercentageChange(currentMonthBalance, previousMonthBalance);
+
   // Calcular breakdown mensal dos últimos 12 meses COMPLETOS - Temporariamente desabilitado
   /* const getMonthlyBreakdown = () => {
     const months = [];
@@ -605,6 +651,9 @@ const Transactions = () => {
             <p className="mt-2 font-extrabold text-3xl text-green-600">
               {formatCurrency(totalIncome)}
             </p>
+            <p className={`mt-1 text-xs ${incomeChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs Mês Passado
+            </p>
           </div>
 
           {/* Total de Despesas */}
@@ -616,6 +665,9 @@ const Transactions = () => {
             <p className="mt-2 font-extrabold text-3xl text-red-600">
               {formatCurrency(totalExpense)}
             </p>
+            <p className={`mt-1 text-xs ${expenseChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs Mês Passado
+            </p>
           </div>
 
           {/* Saldo Líquido */}
@@ -626,6 +678,9 @@ const Transactions = () => {
             </div>
             <p className={`mt-2 font-extrabold text-3xl ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
               {formatCurrency(balance)}
+            </p>
+            <p className={`mt-1 text-xs ${balanceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {balanceChange >= 0 ? '+' : ''}{balanceChange.toFixed(1)}% vs Mês Passado
             </p>
           </div>
 
