@@ -139,32 +139,93 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
       endDate.setMonth(endDate.getMonth() + 1);
     }
 
-    // Salvar assinatura pendente no Supabase
-    const { data: subscription, error: dbError } = await supabase
+    // Verificar se já existe subscription para este usuário
+    const { data: existingSub, error: fetchError } = await supabase
       .from('subscriptions')
-      .insert({
-        user_id: userId,
-        plan_type: planType,
-        plan_name: planConfig.name,
-        plan_price: price,
-        status: 'pending',
-        end_date: endDate.toISOString(),
-        payment_method: 'credit_card',
-        payment_processor: 'stripe',
-        payment_processor_subscription_id: checkoutSession.id,
-        payment_processor_customer_id: checkoutSession.customer as string,
-        max_connected_accounts: planConfig.maxAccounts,
-        auto_renew: !isYearly,
-        next_billing_date: isYearly ? endDate.toISOString() : new Date().toISOString(),
-        metadata: {
-          payment_cycle: paymentCycle,
-          stripe_session_id: checkoutSession.id,
-        }
-      })
-      .select()
-      .single();
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (dbError) throw dbError;
+    if (fetchError) {
+      console.error('❌ Error checking existing subscription:', fetchError);
+      throw fetchError;
+    }
+
+    let subscription;
+
+    if (existingSub) {
+      // ATUALIZAR assinatura existente
+      console.log('🔄 Updating existing subscription for user:', userId);
+
+      // Salvar trial_end_date antigo se existir
+      const metadata: any = {
+        payment_cycle: paymentCycle,
+        stripe_session_id: checkoutSession.id,
+      };
+
+      if (existingSub.trial_end_date) {
+        metadata.old_trial_end_date = existingSub.trial_end_date;
+        console.log('💾 Saving old trial_end_date:', existingSub.trial_end_date);
+      }
+
+      const { data: updatedSub, error: updateError } = await supabase
+        .from('subscriptions')
+        .update({
+          plan_type: planType,
+          plan_name: planConfig.name,
+          plan_price: price,
+          status: 'pending',
+          end_date: endDate.toISOString(),
+          trial_end_date: null, // Remove trial quando muda para plano pago
+          payment_method: 'credit_card',
+          payment_processor: 'stripe',
+          payment_processor_subscription_id: checkoutSession.id,
+          payment_processor_customer_id: checkoutSession.customer as string,
+          max_connected_accounts: planConfig.maxAccounts,
+          auto_renew: !isYearly,
+          next_billing_date: isYearly ? endDate.toISOString() : new Date().toISOString(),
+          metadata: metadata
+        })
+        .eq('id', existingSub.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      subscription = updatedSub;
+      console.log('✅ Subscription updated:', subscription.id);
+    } else {
+      // CRIAR nova assinatura (caso raro - usuário sem subscription)
+      console.log('📝 Creating new subscription for user:', userId);
+      const { data: newSub, error: insertError } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: userId,
+          plan_type: planType,
+          plan_name: planConfig.name,
+          plan_price: price,
+          status: 'pending',
+          end_date: endDate.toISOString(),
+          payment_method: 'credit_card',
+          payment_processor: 'stripe',
+          payment_processor_subscription_id: checkoutSession.id,
+          payment_processor_customer_id: checkoutSession.customer as string,
+          max_connected_accounts: planConfig.maxAccounts,
+          auto_renew: !isYearly,
+          next_billing_date: isYearly ? endDate.toISOString() : new Date().toISOString(),
+          metadata: {
+            payment_cycle: paymentCycle,
+            stripe_session_id: checkoutSession.id,
+          }
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      subscription = newSub;
+      console.log('✅ Subscription created:', subscription.id);
+    }
 
     // Registrar pagamento pendente
     await supabase
@@ -190,6 +251,73 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error creating subscription:', error);
     res.status(500).json({ error: error.message || 'Erro ao criar assinatura' });
+  }
+});
+
+/**
+ * POST /api/subscriptions/cancel-checkout
+ * Usuário cancelou o checkout do Stripe - restaurar trial se ainda tiver dias
+ */
+router.post('/cancel-checkout', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId!;
+
+    console.log('❌ User canceled checkout:', userId);
+
+    // Buscar subscription do usuário
+    const { data: subscription, error: fetchError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fetchError || !subscription) {
+      console.log('⚠️ No subscription found for user');
+      return res.json({ message: 'Checkout cancelado' });
+    }
+
+    // Se estava pending e tinha trial_end_date nos metadata, restaurar
+    if (subscription.status === 'pending') {
+      const oldTrialEndDate = subscription.metadata?.old_trial_end_date;
+
+      if (oldTrialEndDate) {
+        const trialEnd = new Date(oldTrialEndDate);
+        const now = new Date();
+
+        // Verificar se o trial ainda é válido
+        if (trialEnd > now) {
+          console.log('🔄 Restoring trial for user:', userId);
+
+          // Restaurar para trial
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'trial',
+              plan_type: 'manual',
+              plan_name: 'Trial - Plano Manual',
+              plan_price: 0,
+              trial_end_date: oldTrialEndDate,
+              end_date: oldTrialEndDate,
+              payment_method: null,
+              payment_processor: null,
+              payment_processor_subscription_id: null,
+              payment_processor_customer_id: null,
+              auto_renew: false,
+            })
+            .eq('id', subscription.id);
+
+          console.log('✅ Trial restored');
+          return res.json({ message: 'Trial restaurado', trialActive: true });
+        }
+      }
+    }
+
+    res.json({ message: 'Checkout cancelado' });
+  } catch (error: any) {
+    console.error('Error handling canceled checkout:', error);
+    res.status(500).json({ error: 'Erro ao processar cancelamento' });
   }
 });
 
@@ -318,81 +446,29 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
           break;
         }
 
-        // Buscar assinatura pelo session ID
-        console.log('🔍 Searching subscription with session ID:', session.id);
-        const { data: subscription, error: fetchError } = await supabase
+        // Buscar a subscription mais recente do usuário (independente do status)
+        console.log('🔍 Searching subscription for user:', userId);
+        const { data: userSub, error: fetchError } = await supabase
           .from('subscriptions')
           .select('*')
-          .eq('payment_processor_subscription_id', session.id)
-          .single();
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (fetchError) {
-          console.error('❌ Error fetching subscription:', fetchError);
-        }
-
-        if (!subscription) {
-          console.warn('⚠️ Subscription not found for session:', session.id);
-          // Tentar buscar por user_id com status pending
-          console.log('🔍 Trying to find by user_id and pending status...');
-          const { data: pendingSub, error: pendingError } = await supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('status', 'pending')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          if (pendingError) {
-            console.error('❌ Error fetching pending subscription:', pendingError);
-            break;
-          }
-
-          if (!pendingSub) {
-            console.error('❌ No pending subscription found for user:', userId);
-            break;
-          }
-
-          console.log('✅ Found pending subscription:', pendingSub.id);
-
-          // Atualizar esta assinatura
-          const { data: updated, error: updateError } = await supabase
-            .from('subscriptions')
-            .update({
-              status: 'active',
-              start_date: new Date().toISOString(),
-              payment_processor_subscription_id: session.subscription || session.id,
-              payment_processor_customer_id: session.customer,
-            })
-            .eq('id', pendingSub.id)
-            .select();
-
-          if (updateError) {
-            console.error('❌ Error updating subscription:', updateError);
-            throw updateError;
-          }
-
-          console.log('✅ Subscription updated to active:', updated);
-
-          // Atualizar pagamento
-          await supabase
-            .from('subscription_payments')
-            .update({
-              payment_status: 'paid',
-              payment_date: new Date().toISOString(),
-              payment_processor_payment_id: session.payment_intent,
-            })
-            .eq('subscription_id', pendingSub.id);
-
-          console.log('✅ Payment updated to paid');
-
-          // REATIVAR CONEXÕES BANCÁRIAS
-          await handleSubscriptionActivated(userId);
-
+          console.error('❌ Error fetching user subscription:', fetchError);
           break;
         }
 
-        // Atualizar status da assinatura
+        if (!userSub) {
+          console.error('❌ No subscription found for user:', userId);
+          break;
+        }
+
+        console.log('✅ Found subscription:', userSub.id, 'with status:', userSub.status);
+
+        // Atualizar a subscription do usuário para 'active'
         console.log('📝 Updating subscription status to active...');
         const { data: updated, error: updateError } = await supabase
           .from('subscriptions')
@@ -400,8 +476,9 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
             status: 'active',
             start_date: new Date().toISOString(),
             payment_processor_subscription_id: session.subscription || session.id,
+            payment_processor_customer_id: session.customer,
           })
-          .eq('id', subscription.id)
+          .eq('id', userSub.id)
           .select();
 
         if (updateError) {
@@ -409,18 +486,19 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
           throw updateError;
         }
 
-        console.log('✅ Subscription updated:', updated);
+        console.log('✅ Subscription updated to active:', updated);
 
         // Atualizar pagamento
         await supabase
           .from('subscription_payments')
           .update({
             payment_status: 'paid',
-            payment_date: new Date().toISOString()
+            payment_date: new Date().toISOString(),
+            payment_processor_payment_id: session.payment_intent || session.id,
           })
-          .eq('payment_processor_payment_id', session.id);
+          .eq('subscription_id', userSub.id);
 
-        console.log('✅ Subscription activated:', subscription.id);
+        console.log('✅ Payment updated to paid');
 
         // REATIVAR CONEXÕES BANCÁRIAS
         await handleSubscriptionActivated(userId);
