@@ -485,63 +485,68 @@ const Transactions = () => {
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Transações</h1>
-            <p className="text-sm text-gray-500">{filteredTransactions.length} transações encontradas</p>
+            <p className="text-sm text-gray-500 mb-4">{filteredTransactions.length} transações encontradas</p>
+
+            {/* Botões de ação - lado esquerdo */}
+            <div className="flex items-center flex-wrap gap-2 sm:gap-3">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+                title="Importar transações manualmente (CSV ou individual)"
+              >
+                <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
+                <span className="hidden md:inline">Importar</span>
+                <span className="md:hidden">Import</span>
+              </button>
+              <button
+                onClick={handleRecategorizeAll}
+                className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+                disabled={isLoading}
+                title="Recategorizar todas as transações usando IA (threshold 80%)"
+              >
+                <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden md:inline">Recategorizar</span>
+                <span className="md:hidden">Recat.</span>
+              </button>
+              <button
+                onClick={exportToCSV}
+                className="btn-secondary flex items-center space-x-2 px-3 text-sm"
+                title="Exportar para CSV"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline text-sm font-medium">CSV</span>
+              </button>
+              <button
+                onClick={loadData}
+                className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Atualizar</span>
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                className="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 flex items-center space-x-2 text-sm sm:text-base"
+                disabled={isLoading}
+                title="Apagar TODAS as transações do banco de dados (IRREVERSÍVEL)"
+              >
+                <Trash2 className="w-4 sm:w-5 h-4 sm:h-5" />
+                <span className="hidden md:inline">Apagar Todas</span>
+                <span className="md:hidden">Apagar</span>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+
+          {/* Botão Conectar Banco - lado direito */}
+          <div className="flex-shrink-0">
             <button
               onClick={() => navigate('/app/connect-bank')}
-              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg text-sm sm:text-base flex-1 sm:flex-initial"
+              className="btn-primary flex items-center space-x-2 text-sm sm:text-base"
             >
-              <PlusCircle className="w-4 sm:w-5 h-4 sm:h-5 mr-2" />
-              <span className="hidden sm:inline">Conectar Banco</span>
-              <span className="sm:hidden">Banco</span>
-            </button>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 transition font-semibold text-sm sm:text-base"
-              title="Importar transações manualmente (CSV ou individual)"
-            >
-              <Upload className="w-4 sm:w-5 h-4 sm:h-5 mr-2" />
-              <span className="hidden md:inline">Importar</span>
-              <span className="md:hidden">Import</span>
-            </button>
-            <button
-              onClick={handleRecategorizeAll}
-              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 transition font-semibold text-sm sm:text-base"
-              disabled={isLoading}
-              title="Recategorizar todas as transações usando IA (threshold 80%)"
-            >
-              <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden md:inline">Recategorizar</span>
-              <span className="md:hidden">Recat.</span>
-            </button>
-            <button
-              onClick={exportToCSV}
-              className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 transition text-sm"
-              title="Exportar para CSV"
-            >
-              <Download className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline text-sm font-medium">CSV</span>
-            </button>
-            <button
-              onClick={loadData}
-              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 transition text-sm sm:text-base"
-              disabled={isLoading}
-            >
-              <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline ml-2">Atualizar</span>
-            </button>
-            <button
-              onClick={handleDeleteAll}
-              className="flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg transition font-semibold text-sm sm:text-base"
-              disabled={isLoading}
-              title="Apagar TODAS as transações do banco de dados (IRREVERSÍVEL)"
-            >
-              <Trash2 className="w-4 sm:w-5 h-4 sm:h-5 mr-2" />
-              <span className="hidden md:inline">Apagar Todas</span>
-              <span className="md:hidden">Apagar</span>
+              <PlusCircle className="w-4 sm:w-5 h-4 sm:h-5" />
+              <span>Conectar Banco</span>
             </button>
           </div>
         </div>
@@ -584,7 +589,7 @@ const Transactions = () => {
               <h3 className="text-sm font-medium text-gray-600">Saldo (desde {getStartDateLabel()})</h3>
               <DollarSign className={`w-5 h-5 ${balance >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
             </div>
-            <p className={`mt-2 font-extrabold text-4xl lg:text-5xl ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            <p className={`mt-2 font-extrabold text-3xl ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
               {formatCurrency(balance)}
             </p>
             <div className="mt-3 text-xs flex items-center">
