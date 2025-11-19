@@ -270,6 +270,9 @@ export const subscriptionApi = {
   createSubscription: (planType: string, paymentCycle: string) =>
     api.post('/subscriptions/create', { planType, paymentCycle }),
 
+  cancelCheckout: () =>
+    api.post('/subscriptions/cancel-checkout'),
+
   cancelSubscription: () =>
     api.post('/subscriptions/cancel'),
 

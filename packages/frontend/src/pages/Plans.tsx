@@ -149,8 +149,19 @@ const Plans = () => {
       console.log('❌ Usuário cancelou o checkout no Stripe');
       // Limpar URL
       setSearchParams({});
-      // Re-fetch para garantir que os dados do trial estão corretos
-      fetchCurrentSubscription();
+
+      // Chamar backend para restaurar trial se ainda houver dias
+      subscriptionApi.cancelCheckout()
+        .then(() => {
+          console.log('✅ Cancel checkout processed');
+          // Re-fetch para garantir que os dados do trial estão corretos
+          fetchCurrentSubscription();
+        })
+        .catch(err => {
+          console.error('❌ Error canceling checkout:', err);
+          // Re-fetch mesmo se der erro
+          fetchCurrentSubscription();
+        });
     }
   }, []);
 
