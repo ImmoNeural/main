@@ -242,18 +242,18 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       </div>
 
       {/* Grid: Tabela + Gráfico */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Visão Geral - Design Profissional */}
-        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-              <span className="text-2xl">📋</span>
+        <div className="bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 p-3 sm:p-4 lg:p-6">
+          <div className="flex items-center gap-2 mb-3 sm:mb-5">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg sm:text-2xl">📋</span>
             </div>
-            <h3 className="font-bold text-gray-800 text-xl">Visão Geral</h3>
+            <h3 className="font-bold text-gray-800 text-base sm:text-lg lg:text-xl">Visão Geral</h3>
           </div>
 
-          {/* Grid de 3 colunas x 3 linhas */}
-          <div className="space-y-4 mb-5">
+          {/* Grid de 3 colunas x 3 linhas (Mobile: stack vertical) */}
+          <div className="space-y-3 sm:space-y-4 mb-3 sm:mb-5">
             {tableData.map((item) => {
               const diff = item.budget - item.spent;
               const isOver = diff < 0;
@@ -263,31 +263,31 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                 : `R$ ${Math.abs(diff).toFixed(2).replace('.', ',')} ainda disponível`;
 
               return (
-                <div key={item.label} className="grid grid-cols-3 gap-4 items-center">
+                <div key={item.label} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start sm:items-center">
                   {/* Coluna 1: Gasto */}
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
-                        <span className="text-2xl">{item.icon}</span>
+                  <div className="bg-blue-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+                        <span className="text-lg sm:text-2xl">{item.icon}</span>
                       </div>
-                      <p className="font-bold text-gray-800 text-sm">{item.label}</p>
+                      <p className="font-bold text-gray-800 text-xs sm:text-sm">{item.label}</p>
                     </div>
-                    <p className="text-xs font-medium text-gray-600 mb-1">Gasto</p>
-                    <p className="text-xl font-extrabold text-blue-600">
+                    <p className="text-xs font-medium text-gray-600 mb-0.5 sm:mb-1">Gasto</p>
+                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-blue-600">
                       R$ {item.spent.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
 
                   {/* Coluna 2: Budget */}
-                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
-                        <span className="text-2xl">{item.icon}</span>
+                  <div className="bg-purple-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+                        <span className="text-lg sm:text-2xl">{item.icon}</span>
                       </div>
-                      <p className="font-bold text-gray-800 text-sm">{item.label}</p>
+                      <p className="font-bold text-gray-800 text-xs sm:text-sm">{item.label}</p>
                     </div>
-                    <p className="text-xs font-medium text-gray-600 mb-1">Budget</p>
-                    <p className="text-xl font-extrabold text-purple-600">
+                    <p className="text-xs font-medium text-gray-600 mb-0.5 sm:mb-1">Budget</p>
+                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-purple-600">
                       R$ {item.budget.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
@@ -295,14 +295,14 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                   {/* Coluna 3: Status + Barra de Progresso */}
                   <div className="flex flex-col justify-center">
                     {/* Texto de Status acima da barra */}
-                    <div className="mb-2">
-                      <p className={`text-sm font-bold ${isOver ? 'text-orange-600' : 'text-emerald-600'}`}>
+                    <div className="mb-1 sm:mb-2">
+                      <p className={`text-xs sm:text-sm font-bold ${isOver ? 'text-orange-600' : 'text-emerald-600'}`}>
                         {statusText}
                       </p>
                     </div>
 
                     {/* Barra de Progresso */}
-                    <div className="relative h-8 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
+                    <div className="relative h-6 sm:h-8 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
                       <div
                         className="absolute h-full rounded-lg transition-all duration-500"
                         style={{
@@ -316,7 +316,7 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                         }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-sm font-extrabold text-white drop-shadow-md">
+                        <span className="text-xs sm:text-sm font-extrabold text-white drop-shadow-md">
                           {percentage.toFixed(0)}%
                         </span>
                       </div>
@@ -328,38 +328,38 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
           </div>
 
           {/* Linha de Subtotais */}
-          <div className="border-t-2 border-gray-200 pt-5">
-            <div className="grid grid-cols-3 gap-4">
+          <div className="border-t-2 border-gray-200 pt-3 sm:pt-5">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {/* Total Gasto */}
-              <div className="bg-blue-500 rounded-xl p-5 shadow-md text-center transform hover:scale-105 transition-transform">
-                <p className="text-xs font-bold text-blue-50 mb-2 uppercase tracking-wider">Total Gasto</p>
-                <p className="text-2xl font-extrabold text-white">
+              <div className="bg-blue-500 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-5 shadow-md text-center transform hover:scale-105 transition-transform">
+                <p className="text-[10px] sm:text-xs font-bold text-blue-50 mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider">Total Gasto</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-extrabold text-white break-words">
                   R$ {(summary.fixedSpent + summary.variableSpent + summary.investmentsSpent).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Budget */}
-              <div className="bg-purple-500 rounded-xl p-5 shadow-md text-center transform hover:scale-105 transition-transform">
-                <p className="text-xs font-bold text-purple-50 mb-2 uppercase tracking-wider">Total Budget</p>
-                <p className="text-2xl font-extrabold text-white">
+              <div className="bg-purple-500 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-5 shadow-md text-center transform hover:scale-105 transition-transform">
+                <p className="text-[10px] sm:text-xs font-bold text-purple-50 mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider">Total Budget</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-extrabold text-white break-words">
                   R$ {(summary.fixedBudget + summary.variableBudget + summary.investmentsBudget).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Diferença */}
-              <div className={`rounded-xl p-5 shadow-md text-center transform hover:scale-105 transition-transform ${
+              <div className={`rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-5 shadow-md text-center transform hover:scale-105 transition-transform ${
                 (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                 (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
                   ? 'bg-orange-500'
                   : 'bg-emerald-500'
               }`}>
-                <p className={`text-xs font-bold mb-2 uppercase tracking-wider ${
+                <p className={`text-[10px] sm:text-xs font-bold mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider ${
                   (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                   (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
                     ? 'text-orange-50'
                     : 'text-emerald-50'
                 }`}>Diferença</p>
-                <p className="text-2xl font-extrabold text-white">
+                <p className="text-sm sm:text-lg lg:text-2xl font-extrabold text-white break-words">
                   {((summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                     (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0)
                     ? '-'
