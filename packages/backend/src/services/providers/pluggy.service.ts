@@ -258,21 +258,58 @@ export class PluggyService {
     console.log(`[Pluggy] Waiting for item ${itemId} to be ready...`);
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const item = await this.getItem(itemId);
-      console.log(`[Pluggy] Attempt ${attempt}/${maxAttempts} - Status: ${item.status}`);
+      try {
+        const item = await this.getItem(itemId);
+        console.log(`[Pluggy] Attempt ${attempt}/${maxAttempts} - Status: ${item.status}`);
+        console.log(`[Pluggy]    executionStatus: ${item.executionStatus}`);
+        console.log(`[Pluggy]    error: ${item.error ? JSON.stringify(item.error) : 'none'}`);
 
-      // Status finais (sucesso ou erro definitivo)
-      if (item.status === 'UPDATED' || item.status === 'LOGIN_ERROR') {
-        console.log(`[Pluggy] ✅ Item ready with status: ${item.status}`);
-        return item;
+        // Status finais (sucesso ou erro definitivo)
+        if (item.status === 'UPDATED') {
+          console.log(`[Pluggy] ✅ Item ready with status: ${item.status}`);
+          return item;
+        }
+
+        if (item.status === 'LOGIN_ERROR') {
+          console.error(`[Pluggy] ❌ Item has LOGIN_ERROR status`);
+          const errorMessage = item.error?.message || 'Login failed at bank';
+          throw new Error(`Erro no login do banco: ${errorMessage}. Verifique suas credenciais e tente novamente.`);
+        }
+
+        // Verificar se há erro na sincronização
+        if (item.executionStatus === 'ERROR' || item.executionStatus === 'MERGE_ERROR') {
+          console.error(`[Pluggy] ❌ Item has ${item.executionStatus} status`);
+          const errorMessage = item.error?.message || 'Falha na sincronização dos dados';
+          throw new Error(`Erro ao sincronizar dados do banco: ${errorMessage}`);
+        }
+
+        // Status temporários que indicam processamento
+        if (item.status === 'WAITING_USER_INPUT' || item.status === 'WAITING_USER_ACTION') {
+          console.warn(`[Pluggy] ⚠️ Item waiting for user action: ${item.status}`);
+          // Continua aguardando
+        }
+
+        // Aguardar 2 segundos antes de tentar novamente
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        // Se for erro de rede/API, tentar novamente
+        if (error instanceof Error && !error.message.startsWith('Erro')) {
+          console.error(`[Pluggy] ⚠️ Error checking item status (will retry):`, error.message);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        // Se for erro de negócio, repassar
+        throw error;
       }
-
-      // Aguardar 2 segundos antes de tentar novamente
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     // Timeout após todas as tentativas
-    throw new Error(`Timeout waiting for item ${itemId}. Status still not ready after ${maxAttempts * 2}s`);
+    console.error(`[Pluggy] ❌ Timeout waiting for item ${itemId} after ${maxAttempts * 2}s`);
+    throw new Error(
+      'Tempo limite excedido aguardando sincronização do banco. ' +
+      'Isso pode acontecer se o banco estiver fora do ar ou com problemas. ' +
+      'Tente novamente mais tarde.'
+    );
   }
 
   /**

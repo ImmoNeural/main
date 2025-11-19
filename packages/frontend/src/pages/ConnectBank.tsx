@@ -138,7 +138,36 @@ const ConnectBank = () => {
             },
             onError: (error: any) => {
               console.error('❌ Pluggy Connect Error:', error);
-              alert('Erro ao conectar com banco: ' + (error.message || 'Erro desconhecido'));
+
+              // Mensagem de erro mais clara baseada no tipo de erro
+              let errorMessage = 'Erro desconhecido ao conectar com o banco.';
+
+              if (error.message) {
+                errorMessage = error.message;
+              } else if (error.code) {
+                // Mapear códigos de erro comuns do Pluggy
+                switch (error.code) {
+                  case 'ITEM_NOT_SYNCED':
+                    errorMessage = 'Não foi possível sincronizar os dados do banco. O banco pode estar fora do ar ou suas credenciais estão incorretas. Tente novamente mais tarde.';
+                    break;
+                  case 'LOGIN_ERROR':
+                    errorMessage = 'Erro no login do banco. Verifique suas credenciais e tente novamente.';
+                    break;
+                  case 'TIMEOUT':
+                    errorMessage = 'Tempo limite excedido ao conectar com o banco. Tente novamente.';
+                    break;
+                  case 'INVALID_CREDENTIALS':
+                    errorMessage = 'Credenciais inválidas. Verifique seu usuário e senha do banco.';
+                    break;
+                  case 'MFA_REQUIRED':
+                    errorMessage = 'Autenticação de dois fatores necessária. Complete o processo no app do seu banco e tente novamente.';
+                    break;
+                  default:
+                    errorMessage = `Erro ao conectar (${error.code}). Tente novamente.`;
+                }
+              }
+
+              alert('Erro ao conectar com banco:\n\n' + errorMessage);
               sessionStorage.removeItem('bank_connection_in_progress');
               setConnecting(false);
             },
