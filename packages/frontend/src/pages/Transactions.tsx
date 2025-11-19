@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { format, subMonths, startOfMonth } from 'date-fns';
+import { useEffect, useState, useMemo } from 'react';
+import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
@@ -17,6 +17,7 @@ const Transactions = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
   const [showMonthlyBreakdown, setShowMonthlyBreakdown] = useState(false);
 
@@ -479,6 +480,51 @@ const Transactions = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  // Calcular distribuição de despesas por categoria
+  const expenseDistribution = useMemo(() => {
+    const expenses = filteredTransactions.filter(t => t.type === 'debit');
+    const total = expenses.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const categoriesMap = expenses.reduce((acc, t) => {
+      const category = t.category || 'Não Categorizado';
+      acc[category] = (acc[category] || 0) + Math.abs(t.amount);
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Cores para as categorias (usando cores vibrantes)
+    const categoryColors: Record<string, string> = {
+      'Moradia': 'bg-red-500',
+      'Alimentação': 'bg-yellow-500',
+      'Contas': 'bg-green-500',
+      'Entretenimento': 'bg-blue-500',
+      'Transporte': 'bg-indigo-500',
+      'Educação': 'bg-purple-500',
+      'Saúde': 'bg-pink-500',
+      'Compras': 'bg-orange-500',
+      'Supermercado': 'bg-lime-500',
+    };
+
+    const data = Object.entries(categoriesMap)
+      .map(([name, value]) => ({
+        name,
+        value,
+        percentage: total > 0 ? (value / total) * 100 : 0,
+        color: categoryColors[name] || 'bg-gray-500'
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    return { data, total };
+  }, [filteredTransactions]);
+
+  // Funções para navegação de período
+  const handlePreviousMonth = () => {
+    setCurrentPeriod(prev => subMonths(prev, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentPeriod(prev => addMonths(prev, 1));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -600,59 +646,139 @@ const Transactions = () => {
           </div>
         </div>
 
-        {/* Filtros */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-10">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar transações..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
-              />
+        {/* Distribuição de Despesas e Filtros */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+
+          {/* Painel Esquerdo: Distribuição de Despesas */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 h-full">
+              <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                <PieChart className="w-5 h-5 mr-2 text-blue-600" />
+                Distribuição de Despesas (Total: {formatCurrency(expenseDistribution.total)})
+              </h3>
+
+              {expenseDistribution.data.length > 0 ? (
+                <div className="flex flex-col space-y-3">
+                  {expenseDistribution.data.slice(0, 5).map((item, index) => (
+                    <div key={index} className="flex items-center">
+                      <span className={`w-3 h-3 ${item.color} rounded-full mr-3 flex-shrink-0`}></span>
+                      <div className="flex-grow text-sm text-gray-700">
+                        {item.name}
+                      </div>
+                      <div className="text-sm font-semibold text-gray-800 w-24 text-right">
+                        {item.percentage.toFixed(1)}%
+                      </div>
+                      <div className="text-sm text-gray-500 w-32 text-right">
+                        {formatCurrency(item.value)}
+                      </div>
+                    </div>
+                  ))}
+                  {expenseDistribution.data.length > 5 && (
+                    <div className="text-sm text-gray-500 mt-2">
+                      ... e {expenseDistribution.data.length - 5} {expenseDistribution.data.length - 5 === 1 ? 'outra categoria' : 'outras categorias'}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 mt-2 text-center py-6">
+                  Nenhuma despesa para exibir no gráfico neste período.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Painel Direito: Filtros e Navegação */}
+          <div className="flex flex-col gap-6">
+
+            {/* Seletor de Período */}
+            <div className="p-4 bg-white rounded-xl shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={handlePreviousMonth}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  title="Mês anterior"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                <div className="text-center">
+                  <div className="text-lg font-bold text-gray-800">
+                    {format(currentPeriod, 'MMMM', { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())}
+                  </div>
+                  <span className="block text-xs text-gray-500">
+                    {format(currentPeriod, 'yyyy')}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleNextMonth}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  title="Próximo mês"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            {/* Month Filter */}
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Todos os meses</option>
-              {getLast12Months().map((month) => (
-                <option key={month.key} value={month.key}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
+            {/* Barra de Busca Consolidada */}
+            <div className="p-4 bg-white rounded-xl shadow-md border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Busca e Filtros</h3>
 
-            {/* Category Filter */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Todas as categorias</option>
-              {categories.map((cat) => (
-                <option key={cat.category} value={cat.category}>
-                  {cat.icon} {cat.category}
-                </option>
-              ))}
-            </select>
+              {/* Campo de Busca por Texto */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar transações..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
+                />
+              </div>
 
-            {/* Type Filter */}
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Todos os tipos</option>
-              <option value="credit">Receitas</option>
-              <option value="debit">Despesas</option>
-            </select>
+              {/* Dropdowns (Categoria e Tipo) */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {/* Category Filter */}
+                <div className="relative">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                  >
+                    <option value="">Todas categorias</option>
+                    {categories.map((cat) => (
+                      <option key={cat.category} value={cat.category}>
+                        {cat.category}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+
+                {/* Type Filter */}
+                <div className="relative">
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                  >
+                    <option value="">Todos tipos</option>
+                    <option value="credit">Receitas</option>
+                    <option value="debit">Despesas</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Botão Filtros Avançados */}
+              <button
+                className="flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-100 transition font-semibold"
+                title="Filtros Avançados"
+              >
+                <Filter className="w-5 h-5 mr-2" />
+                Filtros Avançados
+              </button>
+            </div>
           </div>
         </div>
 
