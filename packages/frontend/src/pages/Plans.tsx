@@ -103,7 +103,7 @@ const Plans = () => {
   useEffect(() => {
     fetchCurrentSubscription();
 
-    // Verificar se voltou do Stripe Checkout
+    // Verificar se voltou do Stripe Checkout (Sucesso)
     const success = searchParams.get('success');
     if (success === 'true') {
       setProcessingPayment(true);
@@ -140,6 +140,16 @@ const Plans = () => {
 
       // Cleanup
       return () => clearInterval(pollInterval);
+    }
+
+    // Verificar se voltou do Stripe Checkout (Cancelado)
+    const canceled = searchParams.get('canceled');
+    if (canceled === 'true') {
+      console.log('❌ Usuário cancelou o checkout no Stripe');
+      // Limpar URL
+      setSearchParams({});
+      // Re-fetch para garantir que os dados do trial estão corretos
+      fetchCurrentSubscription();
     }
   }, []);
 
@@ -238,25 +248,36 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {!processingPayment && isOnTrial && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 shadow-md">
-                <p className="text-center text-blue-800 font-semibold">
+            {!processingPayment && !initializing && isOnTrial && daysRemaining > 0 && (
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-4 shadow-md">
+                <p className="text-center text-yellow-900 font-semibold">
                   🎉 Período de teste ativo! Restam {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} grátis
                 </p>
-                <p className="text-center text-blue-600 text-sm mt-1">
+                <p className="text-center text-yellow-700 text-sm mt-1">
                   Aproveite para testar todas as funcionalidades. Depois escolha seu plano!
                 </p>
               </div>
             )}
-            {!processingPayment && !isOnTrial && !isActive && !initializing && (
+            {!processingPayment && !initializing && !isOnTrial && !isActive && daysRemaining === 0 && trialEndDate && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-red-800 font-bold text-lg">
-                  {trialEndDate ? '⏰ Seu trial de 7 dias expirou!' : '⚠️ Você não possui um plano ativo'}
+                  ⏰ Seu trial de 7 dias expirou!
                 </p>
                 <p className="text-center text-red-700 text-base mt-2">
-                  {trialEndDate
-                    ? 'Para continuar aproveitando todas as funcionalidades, escolha um plano abaixo.'
-                    : 'Escolha um plano abaixo para continuar usando o Guru do Dindin'}
+                  Para continuar aproveitando todas as funcionalidades, escolha um plano abaixo.
+                </p>
+                <p className="text-center text-red-600 text-sm mt-2 font-semibold">
+                  💡 Todas as suas contas e transações estão salvas e voltarão quando você assinar!
+                </p>
+              </div>
+            )}
+            {!processingPayment && !initializing && !isOnTrial && !isActive && !trialEndDate && (
+              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
+                <p className="text-center text-red-800 font-bold text-lg">
+                  ⚠️ Você não possui um plano ativo
+                </p>
+                <p className="text-center text-red-700 text-base mt-2">
+                  Escolha um plano abaixo para continuar usando o Guru do Dindin
                 </p>
                 <p className="text-center text-red-600 text-sm mt-2 font-semibold">
                   💡 Todas as suas contas e transações estão salvas e voltarão quando você assinar!
