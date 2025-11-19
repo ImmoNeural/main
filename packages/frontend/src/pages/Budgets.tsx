@@ -182,7 +182,7 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
   const tableData = [
     { label: 'Custos Fixos', budget: summary.fixedBudget, spent: summary.fixedSpent, color: '#3F51B5', icon: '🔧' },
     { label: 'Custos Variáveis', budget: summary.variableBudget, spent: summary.variableSpent, color: '#FF9800', icon: '🛒' },
-    { label: 'Investimentos', budget: summary.investmentsBudget, spent: summary.investmentsSpent, color: '#2196F3', icon: '📈' },
+    { label: 'Custo com Investimentos', budget: summary.investmentsBudget, spent: summary.investmentsSpent, color: '#2196F3', icon: '📈' },
   ];
 
   // Dados para o gráfico de barras
@@ -198,7 +198,7 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       Gasto: summary.variableSpent,
     },
     {
-      name: 'Investimentos',
+      name: 'Custo com Invest.',
       Budget: summary.investmentsBudget,
       Gasto: summary.investmentsSpent,
     },
@@ -243,30 +243,108 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
 
       {/* Grid: Tabela + Gráfico */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Tabela */}
+        {/* Visão Geral - Novo Layout 3 Colunas */}
         <div className="bg-white rounded-xl shadow-md p-5">
           <h3 className="font-bold text-gray-800 mb-4 text-lg">📋 Visão Geral</h3>
-          <div className="space-y-3">
+
+          {/* Grid de 3 colunas x 3 linhas */}
+          <div className="space-y-3 mb-4">
             {tableData.map((item) => {
               const diff = item.budget - item.spent;
               const isOver = diff < 0;
+              const percentage = item.budget > 0 ? Math.min((item.spent / item.budget) * 100, 100) : 0;
+
               return (
-                <div key={item.label} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{item.icon}</span>
-                    <div>
-                      <p className="font-semibold text-gray-800 text-sm">{item.label}</p>
-                      <p className="text-xs text-gray-500">
-                        Budget: R$ {item.budget.toFixed(2).replace('.', ',')} | Gasto: R$ {item.spent.toFixed(2).replace('.', ',')}
-                      </p>
+                <div key={item.label} className="grid grid-cols-3 gap-3 items-center">
+                  {/* Coluna 1: Gasto */}
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{item.icon}</span>
+                      <p className="font-semibold text-gray-800 text-xs">{item.label}</p>
                     </div>
+                    <p className="text-sm font-bold text-gray-700">
+                      Gasto: <span className="text-blue-600">R$ {item.spent.toFixed(2).replace('.', ',')}</span>
+                    </p>
                   </div>
-                  <div className={`text-right font-bold ${isOver ? 'text-red-600' : 'text-green-600'}`}>
-                    <p className="text-lg">{isOver ? '-' : ''}R$ {Math.abs(diff).toFixed(2).replace('.', ',')}</p>
+
+                  {/* Coluna 2: Budget e Diferença */}
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{item.icon}</span>
+                      <p className="font-semibold text-gray-800 text-xs">{item.label}</p>
+                    </div>
+                    <p className="text-sm font-bold text-gray-700 mb-1">
+                      Budget: <span className="text-purple-600">R$ {item.budget.toFixed(2).replace('.', ',')}</span>
+                    </p>
+                    <p className={`text-lg font-bold ${isOver ? 'text-red-600' : 'text-green-600'}`}>
+                      {isOver ? '-' : ''}R$ {Math.abs(diff).toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+
+                  {/* Coluna 3: Barra de Progresso */}
+                  <div className="flex items-center h-full">
+                    <div className="w-full">
+                      <div className="relative h-6 rounded-full bg-gray-200 overflow-hidden">
+                        <div
+                          className="absolute h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: isOver ? '100%' : `${percentage}%`,
+                            backgroundColor: isOver ? '#FF9800' : '#4CAF50',
+                            boxShadow: isOver ? '0 0 8px rgba(255, 152, 0, 0.7)' : 'none',
+                          }}
+                        ></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs font-bold text-gray-700 mix-blend-difference">
+                            {percentage.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* Linha de Subtotais */}
+          <div className="border-t-2 border-gray-200 pt-4">
+            <div className="grid grid-cols-3 gap-3 items-center bg-blue-50 rounded-lg p-4">
+              {/* Total Gasto */}
+              <div className="text-center">
+                <p className="text-xs font-medium text-gray-600 mb-1">TOTAL GASTO</p>
+                <p className="text-xl font-bold text-blue-700">
+                  R$ {(summary.fixedSpent + summary.variableSpent + summary.investmentsSpent).toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+
+              {/* Total Budget */}
+              <div className="text-center">
+                <p className="text-xs font-medium text-gray-600 mb-1">TOTAL BUDGET</p>
+                <p className="text-xl font-bold text-purple-700">
+                  R$ {(summary.fixedBudget + summary.variableBudget + summary.investmentsBudget).toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+
+              {/* Total Diferença */}
+              <div className="text-center">
+                <p className="text-xs font-medium text-gray-600 mb-1">DIFERENÇA</p>
+                <p className={`text-xl font-bold ${
+                  (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
+                  (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
+                    ? 'text-red-600'
+                    : 'text-green-600'
+                }`}>
+                  {((summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
+                    (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0)
+                    ? '-'
+                    : ''
+                  }R$ {Math.abs(
+                    (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
+                    (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent)
+                  ).toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
