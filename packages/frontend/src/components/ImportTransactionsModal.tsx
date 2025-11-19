@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Upload, FileText, Info, Check, AlertCircle, Download } from 'lucide-react';
+import { X, Upload, FileText, Info, Check, AlertCircle, Download, Sparkles } from 'lucide-react';
 import { transactionApi } from '../services/api';
 
 interface ImportTransactionsModalProps {
@@ -303,125 +303,156 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-gray-900">Importar Transações</h2>
-            <div className="group relative">
-              <button className="text-gray-400 hover:text-blue-600 transition-colors">
-                <Info className="w-5 h-5" />
-              </button>
-              {/* Tooltip com instruções */}
-              <div className="absolute left-0 top-8 w-80 bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="text-xs text-blue-800">
-                  <p className="font-bold mb-2">📋 Como Importar</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Aceita CSV, Excel ou extratos bancários</li>
-                    <li>Detecção automática de formato</li>
-                    <li>Data: DD/MM/YYYY, Valores: R$ 1.234,56</li>
-                  </ul>
-                  <button
-                    onClick={downloadTemplate}
-                    className="mt-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
-                  >
-                    <Download className="w-3 h-3 mr-1" />
-                    Baixar modelo
-                  </button>
-                </div>
-              </div>
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-blue-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl transform transition-all animate-slide-up">
+        {/* Header com gradiente */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-t-2xl px-6 py-5 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <Upload className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                Importar Transações
+                <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse" />
+              </h2>
+              <p className="text-blue-100 text-sm mt-0.5">Adicione suas transações de forma rápida e fácil</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-white/80 hover:text-white hover:bg-white/20 transition-all p-2 rounded-lg"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Mode Selection - Compact tabs */}
-          <div className="flex space-x-2 mb-4 border-b border-gray-200">
+        <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white">
+          {/* Mode Selection - Modern tabs */}
+          <div className="flex gap-2 mb-6 bg-gray-100 p-1.5 rounded-xl">
             <button
               onClick={() => setImportMode('csv')}
-              className={`px-4 py-2 font-medium transition-colors ${
+              className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 ${
                 importMode === 'csv'
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-blue-600 shadow-md transform scale-105'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              <FileText className="w-4 h-4 inline mr-1" />
-              CSV
+              <FileText className="w-5 h-5" />
+              Importar CSV
             </button>
             <button
               onClick={() => setImportMode('manual')}
-              className={`px-4 py-2 font-medium transition-colors ${
+              className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 ${
                 importMode === 'manual'
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-blue-600 shadow-md transform scale-105'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              <Upload className="w-4 h-4 inline mr-1" />
-              Manual
+              <Upload className="w-5 h-5" />
+              Adicionar Manual
             </button>
           </div>
 
           {/* CSV Import */}
           {importMode === 'csv' && (
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Info box */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-blue-900 mb-1">Como importar seu CSV</p>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• Aceita extratos bancários em CSV ou Excel</li>
+                      <li>• Detecção automática de formato e separador</li>
+                      <li>• Data: DD/MM/YYYY | Valores: R$ 1.234,56</li>
+                    </ul>
+                    <button
+                      onClick={downloadTemplate}
+                      className="mt-3 text-blue-700 hover:text-blue-900 font-semibold flex items-center gap-1 bg-white/50 hover:bg-white px-3 py-1.5 rounded-lg transition-all text-sm border border-blue-300"
+                    >
+                      <Download className="w-4 h-4" />
+                      Baixar modelo de exemplo
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               {/* File Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
                   Selecionar arquivo CSV
                 </label>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileUpload}
-                  className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="block w-full text-sm text-gray-900 border-2 border-gray-300 rounded-xl cursor-pointer bg-white hover:bg-gray-50 focus:outline-none focus:border-blue-500 transition-all p-3 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
               </div>
 
               {/* Or paste content */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ou cole o conteúdo do CSV
-                </label>
-                <textarea
-                  value={csvContent}
-                  onChange={(e) => setCsvContent(e.target.value)}
-                  placeholder="date,amount,description,merchant
-2024-01-15,-45.90,Supermercado XYZ,Supermercado"
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
-                />
+              <div className="relative">
+                <div className="absolute top-0 left-0 right-0 flex items-center justify-center">
+                  <div className="bg-white px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide border border-gray-300 rounded-full -mt-3">
+                    ou
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Cole o conteúdo do CSV aqui
+                  </label>
+                  <textarea
+                    value={csvContent}
+                    onChange={(e) => setCsvContent(e.target.value)}
+                    placeholder="date,amount,description,merchant
+2024-01-15,-45.90,Supermercado XYZ,Supermercado
+2024-01-16,-12.00,Uber,Uber"
+                    rows={7}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-sm bg-gray-50 hover:bg-white"
+                  />
+                </div>
               </div>
             </div>
           )}
 
           {/* Manual Import */}
           {importMode === 'manual' && (
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Info */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-purple-600 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-purple-900 text-sm">
+                      Preencha os campos abaixo. A categorização será feita automaticamente se você deixar a categoria vazia.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data *
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Data <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={manualTransaction.date}
                     onChange={(e) => setManualTransaction({ ...manualTransaction, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Valor * (negativo = despesa)
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Valor <span className="text-red-500">*</span>
+                    <span className="text-xs font-normal text-gray-500 ml-1">(negativo = despesa)</span>
                   </label>
                   <input
                     type="number"
@@ -429,13 +460,13 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                     value={manualTransaction.amount}
                     onChange={(e) => setManualTransaction({ ...manualTransaction, amount: e.target.value })}
                     placeholder="-45.90"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Descrição
                 </label>
                 <input
@@ -443,12 +474,12 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   value={manualTransaction.description}
                   onChange={(e) => setManualTransaction({ ...manualTransaction, description: e.target.value })}
                   placeholder="Ex: Compra no supermercado"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Estabelecimento
                 </label>
                 <input
@@ -456,20 +487,21 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   value={manualTransaction.merchant}
                   onChange={(e) => setManualTransaction({ ...manualTransaction, merchant: e.target.value })}
                   placeholder="Ex: Supermercado XYZ"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categoria (deixe vazio para categorização automática)
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Categoria
+                  <span className="text-xs font-normal text-gray-500 ml-1">(opcional - deixe vazio para auto-categorizar)</span>
                 </label>
                 <input
                   type="text"
                   value={manualTransaction.category}
                   onChange={(e) => setManualTransaction({ ...manualTransaction, category: e.target.value })}
                   placeholder="Ex: Alimentação"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                 />
               </div>
             </div>
@@ -477,35 +509,40 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
 
           {/* Result */}
           {result && (
-            <div className={`mt-6 p-4 rounded-lg border ${
+            <div className={`mt-6 p-5 rounded-xl border-2 shadow-lg transform transition-all animate-slide-up ${
               result.success
-                ? 'bg-green-50 border-green-200'
-                : 'bg-red-50 border-red-200'
+                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
+                : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-300'
             }`}>
-              <div className="flex items-start space-x-3">
-                {result.success ? (
-                  <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                )}
+              <div className="flex items-start gap-4">
+                <div className={`p-2 rounded-full ${result.success ? 'bg-green-100' : 'bg-red-100'}`}>
+                  {result.success ? (
+                    <Check className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  )}
+                </div>
                 <div className="flex-1">
-                  <p className={`font-semibold ${result.success ? 'text-green-900' : 'text-red-900'}`}>
+                  <p className={`font-bold text-lg ${result.success ? 'text-green-900' : 'text-red-900'}`}>
                     {result.message}
                   </p>
                   {result.success && (
-                    <p className="text-sm text-green-700 mt-1">
-                      {result.imported} transação(ões) importada(s) com sucesso!
+                    <p className="text-sm text-green-700 mt-1 font-medium">
+                      🎉 {result.imported} transação(ões) importada(s) com sucesso!
                     </p>
                   )}
                   {result.errors && result.errors.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-sm font-medium text-red-900">Erros:</p>
-                      <ul className="list-disc list-inside text-sm text-red-700 mt-1">
+                    <div className="mt-3 bg-white/50 rounded-lg p-3 border border-red-200">
+                      <p className="text-sm font-semibold text-red-900 mb-2">Erros encontrados:</p>
+                      <ul className="space-y-1 text-sm text-red-700">
                         {result.errors.slice(0, 5).map((error, index) => (
-                          <li key={index}>{error}</li>
+                          <li key={index} className="flex items-start gap-2">
+                            <span className="text-red-500 font-bold">•</span>
+                            <span>{error}</span>
+                          </li>
                         ))}
                         {result.errors.length > 5 && (
-                          <li>... e mais {result.errors.length - 5} erro(s)</li>
+                          <li className="text-red-600 font-medium">... e mais {result.errors.length - 5} erro(s)</li>
                         )}
                       </ul>
                     </div>
@@ -516,22 +553,28 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
           )}
         </div>
 
-        {/* Footer with action buttons */}
-        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 flex justify-end gap-3">
+        {/* Footer com gradiente */}
+        <div className="border-t-2 border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-white hover:border-gray-400 transition-all"
+          >
+            Cancelar
+          </button>
           {importMode === 'csv' ? (
             <button
               onClick={handleImportCSV}
               disabled={importing || !csvContent.trim()}
-              className="btn-primary flex items-center"
+              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
             >
               {importing ? (
                 <>
-                  <Upload className="w-4 h-4 mr-2 animate-spin" />
+                  <Upload className="w-5 h-5 animate-spin" />
                   Importando...
                 </>
               ) : (
                 <>
-                  <Upload className="w-4 h-4 mr-2" />
+                  <Upload className="w-5 h-5" />
                   Importar CSV
                 </>
               )}
@@ -540,17 +583,17 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
             <button
               onClick={handleImportManual}
               disabled={importing || !manualTransaction.date || !manualTransaction.amount}
-              className="btn-primary flex items-center"
+              className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
             >
               {importing ? (
                 <>
-                  <Upload className="w-4 h-4 mr-2 animate-spin" />
+                  <Upload className="w-5 h-5 animate-spin" />
                   Salvando...
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Adicionar Manual
+                  <Check className="w-5 h-5" />
+                  Adicionar Transação
                 </>
               )}
             </button>

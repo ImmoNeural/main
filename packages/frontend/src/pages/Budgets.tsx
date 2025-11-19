@@ -1017,7 +1017,7 @@ export default function Budgets() {
   const isCurrentMonth = format(selectedMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
       <header className="mb-4 sm:mb-6 lg:mb-8">
         {/* Título e Botão Conectar Banco */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3 sm:mb-4">
