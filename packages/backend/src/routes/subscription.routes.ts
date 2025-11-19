@@ -227,20 +227,55 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
       console.log('✅ Subscription created:', subscription.id);
     }
 
-    // Registrar pagamento pendente
-    await supabase
+    // Registrar ou atualizar pagamento pendente
+    // Verificar se já existe payment para este usuário
+    const { data: existingPayment, error: paymentFetchError } = await supabase
       .from('subscription_payments')
-      .insert({
-        subscription_id: subscription.id,
-        user_id: userId,
-        amount: price,
-        payment_method: 'credit_card',
-        payment_status: 'pending',
-        payment_processor: 'stripe',
-        payment_processor_payment_id: checkoutSession.id,
-        payment_processor_invoice_url: checkoutSession.url,
-        due_date: new Date().toISOString()
-      });
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (paymentFetchError) {
+      console.error('❌ Error checking existing payment:', paymentFetchError);
+    }
+
+    if (existingPayment) {
+      // ATUALIZAR pagamento existente
+      console.log('🔄 Updating existing payment for user:', userId);
+      await supabase
+        .from('subscription_payments')
+        .update({
+          subscription_id: subscription.id,
+          amount: price,
+          payment_method: 'credit_card',
+          payment_status: 'pending',
+          payment_processor: 'stripe',
+          payment_processor_payment_id: checkoutSession.id,
+          payment_processor_invoice_url: checkoutSession.url,
+          due_date: new Date().toISOString()
+        })
+        .eq('id', existingPayment.id);
+      console.log('✅ Payment updated');
+    } else {
+      // CRIAR novo pagamento (caso raro - primeiro pagamento do usuário)
+      console.log('📝 Creating new payment for user:', userId);
+      await supabase
+        .from('subscription_payments')
+        .insert({
+          subscription_id: subscription.id,
+          user_id: userId,
+          amount: price,
+          payment_method: 'credit_card',
+          payment_status: 'pending',
+          payment_processor: 'stripe',
+          payment_processor_payment_id: checkoutSession.id,
+          payment_processor_invoice_url: checkoutSession.url,
+          due_date: new Date().toISOString()
+        });
+      console.log('✅ Payment created');
+    }
 
     // Retornar URL do Stripe Checkout
     res.json({
@@ -488,17 +523,29 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
         console.log('✅ Subscription updated to active:', updated);
 
-        // Atualizar pagamento
-        await supabase
+        // Atualizar pagamento - buscar por user_id ao invés de subscription_id
+        const { data: payment, error: paymentFetchError } = await supabase
           .from('subscription_payments')
-          .update({
-            payment_status: 'paid',
-            payment_date: new Date().toISOString(),
-            payment_processor_payment_id: session.payment_intent || session.id,
-          })
-          .eq('subscription_id', userSub.id);
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        console.log('✅ Payment updated to paid');
+        if (payment) {
+          await supabase
+            .from('subscription_payments')
+            .update({
+              subscription_id: userSub.id,
+              payment_status: 'paid',
+              payment_date: new Date().toISOString(),
+              payment_processor_payment_id: session.payment_intent || session.id,
+            })
+            .eq('id', payment.id);
+          console.log('✅ Payment updated to paid');
+        } else {
+          console.warn('⚠️ No payment found for user:', userId);
+        }
 
         // REATIVAR CONEXÕES BANCÁRIAS
         await handleSubscriptionActivated(userId);
