@@ -249,7 +249,7 @@ const Plans = () => {
               </div>
             )}
             {/* Mensagem de Trial Ativo (AMARELA) */}
-            {!processingPayment && !initializing && isOnTrial && daysRemaining > 0 && (
+            {!processingPayment && !initializing && daysRemaining > 0 && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-yellow-900 font-semibold">
                   🎉 Período de teste ativo! Restam {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} grátis
@@ -273,8 +273,8 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {/* Mensagem Sem Plano (VERMELHA) - Só mostra se nunca teve trial OU trial já expirou */}
-            {!processingPayment && !initializing && !isActive && !isOnTrial && daysRemaining <= 0 && (
+            {/* Mensagem Sem Plano (VERMELHA) - Só mostra se NÃO tem dias restantes */}
+            {!processingPayment && !initializing && !isActive && daysRemaining < 0 && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-red-800 font-bold text-lg">
                   ⚠️ Você não possui um plano ativo
