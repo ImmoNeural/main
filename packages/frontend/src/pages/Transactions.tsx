@@ -794,8 +794,8 @@ const Transactions = () => {
           </button>
         </div> */}
 
-        {/* Breakdown Mensal Expansível */}
-        {showMonthlyBreakdown && (
+        {/* Breakdown Mensal Expansível - Temporariamente oculto */}
+        {/* {showMonthlyBreakdown && (
           <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-10">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Detalhamento dos Últimos 12 Meses
@@ -860,7 +860,7 @@ const Transactions = () => {
               </table>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Tabela de Transações */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
