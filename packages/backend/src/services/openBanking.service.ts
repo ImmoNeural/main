@@ -321,6 +321,25 @@ class OpenBankingService {
       throw new Error('Failed to revoke bank consent');
     }
   }
+
+  /**
+   * Busca o status detalhado de um item (para debug de erros)
+   */
+  async getItemStatus(itemId: string): Promise<any> {
+    try {
+      const provider = this.getProvider();
+
+      // Verificar se o provider suporta getItem (Pluggy)
+      if ('getItem' in provider) {
+        return await (provider as any).getItem(itemId);
+      }
+
+      throw new Error('Provider does not support getItem');
+    } catch (error) {
+      console.error('Error fetching item status:', error);
+      throw error;
+    }
+  }
 }
 
 export default new OpenBankingService();

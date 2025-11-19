@@ -97,6 +97,31 @@ router.post('/connect', authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/bank/item-status/:itemId
+ * Busca o status detalhado de um item no Pluggy (para debug de erros)
+ */
+router.get('/item-status/:itemId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { itemId } = req.params;
+
+    console.log(`[Bank] 🔍 Fetching item status for: ${itemId}`);
+
+    // Buscar detalhes do item do Pluggy
+    const itemDetails = await openBankingService.getItemStatus(itemId);
+
+    console.log(`[Bank] 📦 Item status:`, itemDetails);
+
+    res.json(itemDetails);
+  } catch (error: any) {
+    console.error('[Bank] ❌ Error fetching item status:', error);
+    res.status(500).json({
+      error: 'Failed to fetch item status',
+      message: error.message
+    });
+  }
+});
+
+/**
  * POST /api/bank/callback
  * Processa o callback após autorização do banco
  */
