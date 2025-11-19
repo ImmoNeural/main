@@ -310,8 +310,8 @@ const Transactions = () => {
   console.log(`   Investimentos (débito+crédito): R$ ${totalInvestments.toFixed(2)}`);
   console.log(`   Investimentos (só débito): R$ ${totalInvestmentsDebitOnly.toFixed(2)}`);
 
-  // Calcular breakdown mensal dos últimos 12 meses COMPLETOS
-  const getMonthlyBreakdown = () => {
+  // Calcular breakdown mensal dos últimos 12 meses COMPLETOS - Temporariamente desabilitado
+  /* const getMonthlyBreakdown = () => {
     const months = [];
     // Começar saldo acumulado com o saldo inicial
     let accumulatedBalance = initialBalance || 0;
@@ -363,7 +363,7 @@ const Transactions = () => {
     return months;
   };
 
-  const monthlyBreakdown = getMonthlyBreakdown();
+  const monthlyBreakdown = getMonthlyBreakdown(); */
 
   const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
     try {
