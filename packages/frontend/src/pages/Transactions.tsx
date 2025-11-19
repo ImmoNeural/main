@@ -16,7 +16,6 @@ const Transactions = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
   const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
   const [showMonthlyBreakdown, setShowMonthlyBreakdown] = useState(false);
@@ -39,8 +38,8 @@ const Transactions = () => {
   const [initialBalance, setInitialBalance] = useState<number | null>(null);
   const [initialBalanceDate, setInitialBalanceDate] = useState<string | null>(null);
 
-  // Gerar últimos 12 meses dinamicamente
-  const getLast12Months = () => {
+  // Gerar últimos 12 meses dinamicamente (não usado no momento)
+  /* const getLast12Months = () => {
     const months = [];
     for (let i = 0; i < 12; i++) {
       const date = subMonths(new Date(), i);
@@ -51,7 +50,7 @@ const Transactions = () => {
       months.push({ key: monthKey, label: monthLabel });
     }
     return months;
-  };
+  }; */
 
   useEffect(() => {
     loadData();
@@ -246,12 +245,10 @@ const Transactions = () => {
       transaction.description?.toLowerCase().includes(searchLower) ||
       transaction.category?.toLowerCase().includes(searchLower);
 
-    // Filtro por mês
-    const matchesMonth = selectedMonth
-      ? format(new Date(transaction.date), 'yyyy-MM') === selectedMonth
-      : true;
+    // Filtro por período (mês/ano selecionado no PeriodSelector)
+    const matchesPeriod = format(new Date(transaction.date), 'yyyy-MM') === format(currentPeriod, 'yyyy-MM');
 
-    return matchesSearch && matchesMonth;
+    return matchesSearch && matchesPeriod;
   });
 
   // Calcular transações dos últimos 12 meses COMPLETOS (para cards de resumo e breakdown)
