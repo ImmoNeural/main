@@ -191,9 +191,17 @@ class OpenBankingService {
    * Mapeia conectores do Pluggy para nosso formato
    */
   private mapConnectorsToBanks(connectors: any[]) {
-    return connectors.map(connector => ({
+    // Filtrar APENAS conectores Open Finance (regulados pelo Banco Central)
+    // Estes são muito mais confiáveis que os conectores de scraping
+    const openFinanceConnectors = connectors.filter(connector => connector.isOpenFinance === true);
+
+    console.log(`   📊 Total connectors: ${connectors.length}`);
+    console.log(`   ✅ Open Finance connectors: ${openFinanceConnectors.length}`);
+    console.log(`   ❌ Filtered out (non-Open Finance): ${connectors.length - openFinanceConnectors.length}`);
+
+    return openFinanceConnectors.map(connector => ({
       id: connector.id.toString(),
-      name: connector.name,
+      name: `${connector.name} (Open Finance)`,
       logo: connector.imageUrl || '🏦',
       country: connector.country || 'BR',
     }));
