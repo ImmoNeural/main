@@ -163,6 +163,16 @@ const ConnectBank = () => {
                     // Construir mensagem de erro baseada nos detalhes
                     if (itemDetails.status === 'LOGIN_ERROR') {
                       errorMessage = 'Erro no login do banco. Verifique suas credenciais e tente novamente.';
+                    } else if (itemDetails.executionStatus === 'CONNECTION_ERROR') {
+                      const bankName = itemDetails.connector?.name || 'o banco';
+                      errorMessage = `⚠️ Não foi possível conectar com ${bankName}\n\n` +
+                        `Isso NÃO é um problema com suas credenciais.\n\n` +
+                        `Possíveis causas:\n` +
+                        `• ${bankName} está temporariamente fora do ar\n` +
+                        `• A API do banco está com problemas\n` +
+                        `• O banco está em manutenção\n\n` +
+                        `💡 Recomendação: Aguarde alguns minutos e tente novamente.\n\n` +
+                        `Se o problema persistir, tente outro banco ou use o modo DEMO para testar o sistema.`;
                     } else if (itemDetails.executionStatus === 'ERROR' || itemDetails.executionStatus === 'MERGE_ERROR') {
                       const apiError = itemDetails.error?.message || 'Falha na sincronização';
                       errorMessage = `Erro ao sincronizar dados do banco: ${apiError}.\n\nIsso pode acontecer se:\n- O banco está temporariamente fora do ar\n- Suas credenciais mudaram\n- O banco está bloqueando conexões via Open Banking`;
