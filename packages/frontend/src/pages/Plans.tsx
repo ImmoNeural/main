@@ -156,15 +156,22 @@ const Plans = () => {
   const fetchCurrentSubscription = async () => {
     try {
       const { data } = await subscriptionApi.getCurrentSubscription();
+      console.log('📦 [Plans] Subscription data received:', data);
       if (data.subscription) {
         setCurrentPlan(data.subscription.plan_type);
         setSubscriptionStatus(data.subscription.status);
         setTrialEndDate(data.subscription.trial_end_date);
+        console.log('✅ [Plans] Subscription set:', {
+          plan: data.subscription.plan_type,
+          status: data.subscription.status,
+          trialEndDate: data.subscription.trial_end_date
+        });
       } else {
         // Não tem assinatura
         setCurrentPlan(null);
         setSubscriptionStatus(null);
         setTrialEndDate(null);
+        console.log('⚠️ [Plans] No subscription found');
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
@@ -185,6 +192,16 @@ const Plans = () => {
   const isOnTrial = subscriptionStatus === 'trial';
   const isActive = subscriptionStatus === 'active';
   const daysRemaining = calculateDaysRemaining();
+
+  console.log('🎯 [Plans] Current state:', {
+    subscriptionStatus,
+    isOnTrial,
+    isActive,
+    daysRemaining,
+    trialEndDate,
+    initializing,
+    processingPayment
+  });
 
   const handleSelectPlan = async (plan: Plan) => {
     if (loading) return;
@@ -249,7 +266,7 @@ const Plans = () => {
               </div>
             )}
             {/* Mensagem de Trial Ativo (AMARELA) */}
-            {!processingPayment && !initializing && daysRemaining > 0 && (
+            {!processingPayment && !initializing && isOnTrial && daysRemaining > 0 && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-yellow-900 font-semibold">
                   🎉 Período de teste ativo! Restam {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} grátis
