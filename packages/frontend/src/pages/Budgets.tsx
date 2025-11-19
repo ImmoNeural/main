@@ -244,9 +244,9 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       {/* Grid: Tabela + Gráfico */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Visão Geral - Design Profissional */}
-        <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
               <span className="text-2xl">📋</span>
             </div>
             <h3 className="font-bold text-gray-800 text-xl">Visão Geral</h3>
@@ -265,29 +265,29 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
               return (
                 <div key={item.label} className="grid grid-cols-3 gap-4 items-center">
                   {/* Coluna 1: Gasto */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
                         <span className="text-2xl">{item.icon}</span>
                       </div>
                       <p className="font-bold text-gray-800 text-sm">{item.label}</p>
                     </div>
                     <p className="text-xs font-medium text-gray-600 mb-1">Gasto</p>
-                    <p className="text-xl font-extrabold text-blue-700">
+                    <p className="text-xl font-extrabold text-blue-600">
                       R$ {item.spent.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
 
                   {/* Coluna 2: Budget */}
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
                         <span className="text-2xl">{item.icon}</span>
                       </div>
                       <p className="font-bold text-gray-800 text-sm">{item.label}</p>
                     </div>
                     <p className="text-xs font-medium text-gray-600 mb-1">Budget</p>
-                    <p className="text-xl font-extrabold text-purple-700">
+                    <p className="text-xl font-extrabold text-purple-600">
                       R$ {item.budget.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
@@ -296,23 +296,23 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                   <div className="flex flex-col justify-center">
                     {/* Texto de Status acima da barra */}
                     <div className="mb-2">
-                      <p className={`text-sm font-bold ${isOver ? 'text-red-600' : 'text-green-600'}`}>
+                      <p className={`text-sm font-bold ${isOver ? 'text-orange-600' : 'text-emerald-600'}`}>
                         {statusText}
                       </p>
                     </div>
 
                     {/* Barra de Progresso */}
-                    <div className="relative h-8 rounded-lg bg-gray-200 overflow-hidden shadow-inner">
+                    <div className="relative h-8 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
                       <div
                         className="absolute h-full rounded-lg transition-all duration-500"
                         style={{
                           width: isOver ? '100%' : `${percentage}%`,
                           background: isOver
-                            ? 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)'
-                            : 'linear-gradient(135deg, #4CAF50 0%, #388E3C 100%)',
+                            ? 'linear-gradient(135deg, #FB923C 0%, #F97316 100%)'
+                            : 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
                           boxShadow: isOver
-                            ? '0 0 12px rgba(255, 152, 0, 0.5), inset 0 2px 4px rgba(255,255,255,0.2)'
-                            : '0 0 12px rgba(76, 175, 80, 0.3), inset 0 2px 4px rgba(255,255,255,0.2)',
+                            ? '0 0 8px rgba(251, 146, 60, 0.3)'
+                            : '0 0 8px rgba(16, 185, 129, 0.3)',
                         }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -331,35 +331,35 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
           <div className="border-t-2 border-gray-200 pt-5">
             <div className="grid grid-cols-3 gap-4">
               {/* Total Gasto */}
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 shadow-lg text-center transform hover:scale-105 transition-transform">
-                <p className="text-xs font-bold text-blue-100 mb-2 uppercase tracking-wider">Total Gasto</p>
-                <p className="text-2xl font-extrabold text-white drop-shadow-md">
+              <div className="bg-blue-500 rounded-xl p-5 shadow-md text-center transform hover:scale-105 transition-transform">
+                <p className="text-xs font-bold text-blue-50 mb-2 uppercase tracking-wider">Total Gasto</p>
+                <p className="text-2xl font-extrabold text-white">
                   R$ {(summary.fixedSpent + summary.variableSpent + summary.investmentsSpent).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Budget */}
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 shadow-lg text-center transform hover:scale-105 transition-transform">
-                <p className="text-xs font-bold text-purple-100 mb-2 uppercase tracking-wider">Total Budget</p>
-                <p className="text-2xl font-extrabold text-white drop-shadow-md">
+              <div className="bg-purple-500 rounded-xl p-5 shadow-md text-center transform hover:scale-105 transition-transform">
+                <p className="text-xs font-bold text-purple-50 mb-2 uppercase tracking-wider">Total Budget</p>
+                <p className="text-2xl font-extrabold text-white">
                   R$ {(summary.fixedBudget + summary.variableBudget + summary.investmentsBudget).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Diferença */}
-              <div className={`rounded-xl p-5 shadow-lg text-center transform hover:scale-105 transition-transform ${
+              <div className={`rounded-xl p-5 shadow-md text-center transform hover:scale-105 transition-transform ${
                 (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                 (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
-                  ? 'bg-gradient-to-br from-red-500 to-red-600'
-                  : 'bg-gradient-to-br from-green-500 to-green-600'
+                  ? 'bg-orange-500'
+                  : 'bg-emerald-500'
               }`}>
                 <p className={`text-xs font-bold mb-2 uppercase tracking-wider ${
                   (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                   (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
-                    ? 'text-red-100'
-                    : 'text-green-100'
+                    ? 'text-orange-50'
+                    : 'text-emerald-50'
                 }`}>Diferença</p>
-                <p className="text-2xl font-extrabold text-white drop-shadow-md">
+                <p className="text-2xl font-extrabold text-white">
                   {((summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                     (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0)
                     ? '-'
@@ -375,24 +375,24 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
         </div>
 
         {/* Gráfico de Barras - Design Profissional */}
-        <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
               <span className="text-2xl">📊</span>
             </div>
             <h3 className="font-bold text-gray-800 text-xl">Budget vs Gastos</h3>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                 <defs>
                   <linearGradient id="budgetGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#9333EA" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.7} />
+                    <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.7} />
                   </linearGradient>
                   <linearGradient id="gastoGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0.7} />
+                    <stop offset="0%" stopColor="#60A5FA" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.7} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
@@ -410,10 +410,10 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                 <Tooltip
                   formatter={(value: any) => `R$ ${Number(value).toFixed(2).replace('.', ',')}`}
                   contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
                     border: '1px solid #E5E7EB',
                     borderRadius: '8px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                     fontSize: '12px',
                     fontWeight: 600,
                   }}
@@ -427,26 +427,26 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                   y={summary.salary}
                   stroke="#10B981"
                   strokeDasharray="5 5"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   label={{
                     value: 'Salário',
                     position: 'right',
                     fill: '#059669',
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     offset: 10,
                   }}
                 />
                 <Bar
                   dataKey="Budget"
                   fill="url(#budgetGradient)"
-                  radius={[10, 10, 0, 0]}
+                  radius={[8, 8, 0, 0]}
                   maxBarSize={60}
                 />
                 <Bar
                   dataKey="Gasto"
                   fill="url(#gastoGradient)"
-                  radius={[10, 10, 0, 0]}
+                  radius={[8, 8, 0, 0]}
                   maxBarSize={60}
                 />
               </BarChart>
