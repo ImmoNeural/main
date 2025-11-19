@@ -562,10 +562,6 @@ const Transactions = () => {
             <p className="mt-2 font-extrabold text-3xl text-green-600">
               {formatCurrency(totalIncome)}
             </p>
-            <div className="mt-3 text-xs flex items-center">
-              <span className="font-semibold text-green-500">+5%</span>
-              <span className="ml-2 text-gray-500">vs Mês Passado</span>
-            </div>
           </div>
 
           {/* Total de Despesas */}
@@ -577,10 +573,6 @@ const Transactions = () => {
             <p className="mt-2 font-extrabold text-3xl text-red-600">
               {formatCurrency(totalExpense)}
             </p>
-            <div className="mt-3 text-xs flex items-center">
-              <span className="font-semibold text-red-500">-2%</span>
-              <span className="ml-2 text-gray-500">vs Mês Passado</span>
-            </div>
           </div>
 
           {/* Saldo Líquido */}
@@ -592,9 +584,6 @@ const Transactions = () => {
             <p className={`mt-2 font-extrabold text-3xl ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
               {formatCurrency(balance)}
             </p>
-            <div className="mt-3 text-xs flex items-center">
-              <span className="text-gray-500">Saldo líquido do período</span>
-            </div>
           </div>
 
           {/* Saldo Inicial */}
@@ -608,9 +597,6 @@ const Transactions = () => {
                 ? formatCurrency(initialBalance)
                 : 'N/D'}
             </p>
-            <div className="mt-3 text-xs flex items-center">
-              <span className="text-gray-500">Saldo de abertura</span>
-            </div>
           </div>
         </div>
 
