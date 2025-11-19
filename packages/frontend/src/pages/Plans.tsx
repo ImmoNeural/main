@@ -248,6 +248,7 @@ const Plans = () => {
                 </p>
               </div>
             )}
+            {/* Mensagem de Trial Ativo (AMARELA) */}
             {!processingPayment && !initializing && isOnTrial && daysRemaining > 0 && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-yellow-900 font-semibold">
@@ -258,7 +259,8 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {!processingPayment && !initializing && !isOnTrial && !isActive && daysRemaining === 0 && trialEndDate && (
+            {/* Mensagem de Trial Expirado (VERMELHA) - Só mostra se trial expirou */}
+            {!processingPayment && !initializing && !isActive && daysRemaining === 0 && trialEndDate && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-red-800 font-bold text-lg">
                   ⏰ Seu trial de 7 dias expirou!
@@ -271,7 +273,8 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {!processingPayment && !initializing && !isOnTrial && !isActive && !trialEndDate && (
+            {/* Mensagem Sem Plano (VERMELHA) - Só mostra se nunca teve trial OU trial já expirou */}
+            {!processingPayment && !initializing && !isActive && !isOnTrial && daysRemaining <= 0 && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-red-800 font-bold text-lg">
                   ⚠️ Você não possui um plano ativo
