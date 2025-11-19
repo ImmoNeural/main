@@ -301,7 +301,7 @@ const Transactions = () => {
     .filter(t => t.category === 'Investimentos' && t.type === 'debit')
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  const balance = totalIncome - totalExpense;
+  // const balance = totalIncome - totalExpense; // Não usado - agora usamos currentMonthBalance
 
   console.log('\n📊 DEBUG TRANSAÇÕES (Últimos 12 meses):');
   console.log(`   Total transações: ${last12MonthsTransactions.length}`);
