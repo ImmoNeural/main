@@ -61,18 +61,20 @@ export const useSubscription = () => {
 
       // Calcular dias restantes
       let daysRemaining = 0;
-      if (sub.status === 'trial' && trialEndDate) {
-        const diffTime = trialEndDate.getTime() - now.getTime();
+      // Usa trial_end_date se existir, caso contrário usa end_date
+      const dateToUse = trialEndDate || endDate;
+      if ((sub.status === 'trial' || sub.status === 'pending') && dateToUse) {
+        const diffTime = dateToUse.getTime() - now.getTime();
         daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         daysRemaining = Math.max(0, daysRemaining);
       }
 
       // Verificar se expirou
-      const isTrialExpired = !!(sub.status === 'trial' && trialEndDate && now > trialEndDate);
+      const isTrialExpired = !!((sub.status === 'trial' || sub.status === 'pending') && dateToUse && now > dateToUse);
       const isSubscriptionExpired = !!(endDate && now > endDate);
 
       console.log('🎯 [useSubscription] Calculated state:', {
-        isTrialActive: sub.status === 'trial' && !isTrialExpired,
+        isTrialActive: (sub.status === 'trial' || sub.status === 'pending') && !isTrialExpired,
         isSubscriptionActive: sub.status === 'active' && !isSubscriptionExpired,
         isExpired: sub.status === 'expired' || sub.status === 'canceled' || isTrialExpired || isSubscriptionExpired,
         daysRemaining
@@ -81,7 +83,7 @@ export const useSubscription = () => {
       setData({
         subscription: sub,
         isLoading: false,
-        isTrialActive: sub.status === 'trial' && !isTrialExpired,
+        isTrialActive: (sub.status === 'trial' || sub.status === 'pending') && !isTrialExpired,
         isSubscriptionActive: sub.status === 'active' && !isSubscriptionExpired,
         isExpired: sub.status === 'expired' || sub.status === 'canceled' || isTrialExpired || isSubscriptionExpired,
         daysRemaining,

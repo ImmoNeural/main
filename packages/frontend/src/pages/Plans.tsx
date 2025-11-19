@@ -34,6 +34,7 @@ const Plans = () => {
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
 
   const plans: Plan[] = [
@@ -161,16 +162,19 @@ const Plans = () => {
         setCurrentPlan(data.subscription.plan_type);
         setSubscriptionStatus(data.subscription.status);
         setTrialEndDate(data.subscription.trial_end_date);
+        setEndDate(data.subscription.end_date);
         console.log('✅ [Plans] Subscription set:', {
           plan: data.subscription.plan_type,
           status: data.subscription.status,
-          trialEndDate: data.subscription.trial_end_date
+          trialEndDate: data.subscription.trial_end_date,
+          endDate: data.subscription.end_date
         });
       } else {
         // Não tem assinatura
         setCurrentPlan(null);
         setSubscriptionStatus(null);
         setTrialEndDate(null);
+        setEndDate(null);
         console.log('⚠️ [Plans] No subscription found');
       }
     } catch (error) {
@@ -181,24 +185,30 @@ const Plans = () => {
   };
 
   const calculateDaysRemaining = () => {
-    if (!trialEndDate) return 0;
+    // Usa trial_end_date se existir, caso contrário usa end_date
+    const dateToUse = trialEndDate || endDate;
+    if (!dateToUse) return 0;
+
     const now = new Date();
-    const endDate = new Date(trialEndDate);
-    const diffTime = endDate.getTime() - now.getTime();
+    const targetDate = new Date(dateToUse);
+    const diffTime = targetDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   };
 
   const isOnTrial = subscriptionStatus === 'trial';
+  const isPending = subscriptionStatus === 'pending';
   const isActive = subscriptionStatus === 'active';
   const daysRemaining = calculateDaysRemaining();
 
   console.log('🎯 [Plans] Current state:', {
     subscriptionStatus,
     isOnTrial,
+    isPending,
     isActive,
     daysRemaining,
     trialEndDate,
+    endDate,
     initializing,
     processingPayment
   });
@@ -265,8 +275,8 @@ const Plans = () => {
                 </p>
               </div>
             )}
-            {/* Mensagem de Trial Ativo (AMARELA) */}
-            {!processingPayment && !initializing && isOnTrial && daysRemaining > 0 && (
+            {/* Mensagem de Trial/Pending Ativo (AMARELA) */}
+            {!processingPayment && !initializing && (isOnTrial || isPending) && daysRemaining > 0 && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-yellow-900 font-semibold">
                   🎉 Período de teste ativo! Restam {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} grátis
