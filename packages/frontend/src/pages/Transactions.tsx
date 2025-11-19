@@ -745,7 +745,7 @@ const Transactions = () => {
                     <option value="">Todas categorias</option>
                     {categories.map((cat) => (
                       <option key={cat.category} value={cat.category}>
-                        {cat.category}
+                        {cat.icon} {cat.category}
                       </option>
                     ))}
                   </select>
@@ -779,8 +779,8 @@ const Transactions = () => {
           </div>
         </div>
 
-        {/* Indicador de expandir/colapsar breakdown mensal */}
-        <div className="flex justify-center mb-6">
+        {/* Indicador de expandir/colapsar breakdown mensal - Temporariamente oculto */}
+        {/* <div className="flex justify-center mb-6">
           <button
             onClick={() => setShowMonthlyBreakdown(!showMonthlyBreakdown)}
             className="flex items-center space-x-2 text-sm text-gray-600 hover:text-blue-600 transition-colors py-2 px-4 rounded-lg hover:bg-gray-100"
@@ -792,7 +792,7 @@ const Transactions = () => {
               <ChevronDown className="w-4 h-4" />
             )}
           </button>
-        </div>
+        </div> */}
 
         {/* Breakdown Mensal Expansível */}
         {showMonthlyBreakdown && (
@@ -889,7 +889,7 @@ const Transactions = () => {
                 const isUncategorized = !transaction.category || transaction.category === 'Não Categorizado';
                 const isReceita = transaction.type === 'credit';
                 const rowBgClass = isUncategorized ? 'bg-gray-100' : (isReceita ? 'hover:bg-green-50' : 'hover:bg-red-50');
-                const valueClass = isReceita ? 'text-green-600' : 'text-red-600';
+                const valueClass = isReceita ? 'text-green-500' : 'text-red-500';
 
                 return (
                   <tr key={transaction.id} className={`border-b border-gray-100 transition-all duration-150 ${rowBgClass}`}>
@@ -940,7 +940,7 @@ const Transactions = () => {
                         {transaction.type === 'credit' ? 'Receita' : 'Despesa'}
                       </span>
                     </td>
-                    <td className={`p-4 font-bold text-base ${valueClass}`}>
+                    <td className={`p-4 text-base ${valueClass}`}>
                       {isReceita ? '+' : '-'} {formatCurrency(Math.abs(transaction.amount))}
                     </td>
                   </tr>
