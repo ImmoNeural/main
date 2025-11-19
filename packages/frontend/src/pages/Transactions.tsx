@@ -825,7 +825,7 @@ const Transactions = () => {
               <div className="flex justify-between items-center">
                 <button
                   onClick={() => handleDebugCategorization(transaction)}
-                  className="px-2 py-1 bg-gray-100 hover:bg-primary-100 border border-gray-300 hover:border-primary-500 rounded text-xs font-semibold transition"
+                  className="hidden px-2 py-1 bg-gray-100 hover:bg-primary-100 border border-gray-300 hover:border-primary-500 rounded text-xs font-semibold transition"
                   title="🐛 DEBUG"
                 >
                   🐛 Debug
@@ -866,7 +866,7 @@ const Transactions = () => {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Valor
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Debug
                 </th>
               </tr>
@@ -943,7 +943,7 @@ const Transactions = () => {
                       {formatCurrency(Math.abs(transaction.amount))}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="hidden px-6 py-4 whitespace-nowrap text-center">
                     <button
                       onClick={() => handleDebugCategorization(transaction)}
                       className="px-3 py-1.5 bg-gray-100 hover:bg-primary-100 border border-gray-300 hover:border-primary-500 rounded-lg transition text-lg font-semibold"

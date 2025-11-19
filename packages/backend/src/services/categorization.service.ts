@@ -207,7 +207,7 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     ],
     icon: '⛽',
     color: '#FF9800',
-    priority: 8,
+    priority: 10,
   },
 
   // 🚌 TRANSPORTE PÚBLICO
