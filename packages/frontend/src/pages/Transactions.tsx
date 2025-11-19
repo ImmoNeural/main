@@ -986,8 +986,6 @@ const Transactions = () => {
           </div>
         </div>
 
-      </div>
-
       {/* Modal de Recategorização em Lote */}
       <BulkRecategorizeModal
         isOpen={showBulkModal}
