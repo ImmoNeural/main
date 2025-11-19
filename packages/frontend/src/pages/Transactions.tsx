@@ -99,28 +99,9 @@ const Transactions = () => {
   };
 
   const handleDeleteAll = async () => {
-    const confirmDelete = confirm(
-      '🗑️ ATENÇÃO: Apagar TODAS as transações?\n\n' +
-      '⚠️ ESTA AÇÃO É IRREVERSÍVEL!\n\n' +
-      'Isso irá apagar permanentemente:\n' +
-      '• Todas as suas transações importadas\n' +
-      '• Todos os dados do banco Supabase\n' +
-      '• Esta ação NÃO pode ser desfeita\n\n' +
-      'Tem certeza absoluta que deseja continuar?'
-    );
+    const confirmDelete = confirm('⚠️ Deletar TODAS as transações?\n\nEsta ação é irreversível.');
 
     if (!confirmDelete) return;
-
-    // Segunda confirmação
-    const doubleConfirm = confirm(
-      '⚠️ ÚLTIMA CONFIRMAÇÃO\n\n' +
-      'Digite OK para confirmar que você entende que:\n\n' +
-      '• TODOS os dados serão PERDIDOS\n' +
-      '• Esta ação é PERMANENTE e IRREVERSÍVEL\n\n' +
-      'Deseja realmente apagar tudo?'
-    );
-
-    if (!doubleConfirm) return;
 
     setIsLoading(true);
     try {
@@ -128,35 +109,20 @@ const Transactions = () => {
       const response = await transactionApi.deleteAll();
       console.log('✅ Transações deletadas:', response.data);
 
-      alert(
-        `✅ Transações deletadas com sucesso!\n\n` +
-        `🗑️ Total deletado: ${response.data.deleted} transações\n\n` +
-        `${response.data.message}`
-      );
+      alert(`✅ ${response.data.deleted} transações deletadas!`);
 
       // Recarregar transações (deve estar vazio agora)
       await loadData();
     } catch (error: any) {
       console.error('❌ Erro ao deletar:', error);
-      alert(
-        `❌ Erro ao deletar transações\n\n` +
-        `${error.response?.data?.error || error.message || 'Erro desconhecido'}`
-      );
+      alert('❌ Erro ao deletar transações.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRecategorizeAll = async () => {
-    const confirmRecategorize = confirm(
-      '🔄 Recategorizar todas as transações?\n\n' +
-      'Isso irá aplicar as regras de categorização automática em TODAS as suas transações.\n\n' +
-      '⚠️ Importante:\n' +
-      '• Apenas transações com 80%+ de confiança serão categorizadas\n' +
-      '• Transações abaixo de 80% ficarão como "Não Categorizado"\n' +
-      '• Você pode recategorizar manualmente depois\n\n' +
-      'Deseja continuar?'
-    );
+    const confirmRecategorize = confirm('🔄 Recategorizar todas as transações?\n\nApenas transações com 80%+ de confiança serão categorizadas.');
 
     if (!confirmRecategorize) return;
 
@@ -166,24 +132,13 @@ const Transactions = () => {
       const response = await transactionApi.recategorizeAll();
       console.log('✅ Recategorização concluída:', response.data);
 
-      alert(
-        `✅ Recategorização concluída!\n\n` +
-        `📊 Total: ${response.data.total} transações\n` +
-        `✅ Atualizadas: ${response.data.updated} transações\n` +
-        `➖ Sem alteração: ${response.data.unchanged} transações\n\n` +
-        `🎯 Categorizadas (≥80%): ${response.data.categorized || 0} transações\n` +
-        `❓ Não Categorizadas (<80%): ${response.data.uncategorized || 0} transações\n\n` +
-        `${response.data.message}`
-      );
+      alert(`✅ Recategorização concluída! ${response.data.updated} transações atualizadas.`);
 
       // Recarregar transações
       await loadData();
     } catch (error: any) {
       console.error('❌ Erro ao recategorizar:', error);
-      alert(
-        `❌ Erro ao recategorizar transações\n\n` +
-        `${error.response?.data?.error || error.message || 'Erro desconhecido'}`
-      );
+      alert('❌ Erro ao recategorizar.');
     } finally {
       setIsLoading(false);
     }
@@ -569,13 +524,13 @@ const Transactions = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="space-y-6">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div className="flex-1 w-full sm:w-auto">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">Transações</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2">Transações</h1>
             <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-4">{filteredTransactions.length} transações encontradas</p>
 
             {/* Botões de ação - lado esquerdo */}
@@ -1138,6 +1093,7 @@ const Transactions = () => {
           }}
         />
       )}
+      </div>
     </div>
   );
 };

@@ -101,17 +101,17 @@ const Accounts = () => {
     try {
       await bankApi.syncAccount(accountId);
       await loadAccounts();
-      alert('Conta sincronizada com sucesso!');
+      alert('✅ Conta sincronizada!');
     } catch (error) {
       console.error('Error syncing account:', error);
-      alert('Erro ao sincronizar conta');
+      alert('❌ Erro ao sincronizar.');
     } finally {
       setSyncing(null);
     }
   };
 
   const handleDelete = async (accountId: string) => {
-    if (!confirm('⚠️ ATENÇÃO: Deseja DELETAR esta conta?\n\n🗑️ ESTA AÇÃO É IRREVERSÍVEL!\n\nIsso irá apagar permanentemente:\n• Esta conta bancária\n• TODAS as transações associadas\n• Todos os dados relacionados\n\n❌ Esta ação NÃO pode ser desfeita.\n\n✅ Se importar o CSV novamente ou reconectar via Open Finance, a conta e transações serão recriadas.\n\nTem certeza absoluta que deseja continuar?')) {
+    if (!confirm('⚠️ Deletar conta e todas as transações?\n\nEsta ação é irreversível.')) {
       return;
     }
 
@@ -134,11 +134,11 @@ const Accounts = () => {
       setAccounts(prevAccounts => prevAccounts.filter(acc => acc.id !== accountId));
 
       const deletedTrans = response.data.deletedTransactions || 0;
-      alert(`✅ Conta bancária deletada com sucesso!\n\n🗑️ ${deletedTrans} ${deletedTrans === 1 ? 'transação foi deletada' : 'transações foram deletadas'}.\n\n💡 Você pode reimportar o CSV ou reconectar via Open Finance para recriar a conta.`);
+      alert(`✅ Conta deletada! ${deletedTrans} ${deletedTrans === 1 ? 'transação removida' : 'transações removidas'}.`);
     } catch (error: any) {
       console.error('❌ Erro ao deletar conta:', error);
       console.error('Detalhes do erro:', error.response?.data || error.message);
-      alert(`Erro ao deletar conta: ${error.response?.data?.error || error.message || 'Erro desconhecido'}`);
+      alert(`❌ Erro ao deletar conta.`);
       // Se der erro, recarregar do servidor
       await loadAccounts();
     }
@@ -160,11 +160,12 @@ const Accounts = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight">Contas Bancárias</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Contas Bancárias</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Gerencie suas contas conectadas</p>
         </div>
         <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
@@ -338,6 +339,7 @@ const Accounts = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

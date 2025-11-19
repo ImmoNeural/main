@@ -38,11 +38,11 @@ const ConnectBank = () => {
     if (code && state && bankName) {
       try {
         await bankApi.handleCallback(code, state, bankName);
-        alert('Conta conectada com sucesso!');
+        alert('✅ Conta conectada!');
         navigate('/accounts');
       } catch (error) {
         console.error('Error handling callback:', error);
-        alert('Erro ao conectar conta bancária');
+        alert('❌ Erro ao conectar.');
       }
     }
   };
@@ -91,7 +91,7 @@ const ConnectBank = () => {
             response.data.state,
             selectedBank.name
           );
-          alert(`✅ Conta ${selectedBank.name} conectada com sucesso!\n\nDados de demonstração foram gerados.`);
+          alert(`✅ Conta ${selectedBank.name} conectada! (modo demonstração)`);
 
           // Navegar para dashboard - a flag será removida no componente Dashboard.tsx
           console.log('➡️ Navegando para /app/dashboard (proteção ainda ativa)');
@@ -125,14 +125,14 @@ const ConnectBank = () => {
                   connectToken,
                   selectedBank.name
                 );
-                alert('Conta conectada com sucesso!');
+                alert('✅ Conta conectada!');
 
                 // Navegar para dashboard - a flag será removida no componente Dashboard.tsx
                 console.log('➡️ Navegando para /app/dashboard (proteção ainda ativa)');
                 navigate('/app/dashboard');
               } catch (error) {
                 console.error('❌ Error handling callback:', error);
-                alert('Erro ao processar conexão com banco.');
+                alert('❌ Erro ao conectar.');
                 sessionStorage.removeItem('bank_connection_in_progress');
               }
             },
@@ -213,7 +213,7 @@ const ConnectBank = () => {
                 }
               }
 
-              alert('Erro ao conectar com banco:\n\n' + errorMessage);
+              alert('❌ ' + errorMessage);
               sessionStorage.removeItem('bank_connection_in_progress');
               setConnecting(false);
             },
@@ -234,7 +234,7 @@ const ConnectBank = () => {
       }
     } catch (error) {
       console.error('❌ Error connecting bank:', error);
-      alert('Erro ao conectar banco. Verifique as credenciais do provedor Open Banking.');
+      alert('❌ Erro ao conectar banco.');
       sessionStorage.removeItem('bank_connection_in_progress');
       setConnecting(false);
     }
@@ -249,10 +249,11 @@ const ConnectBank = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight">Conectar Banco</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Conectar Banco</h1>
         <p className="text-gray-500 mt-1">
           Selecione seu banco para conectar via Open Banking (PSD2)
         </p>
@@ -449,6 +450,7 @@ const ConnectBank = () => {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 };

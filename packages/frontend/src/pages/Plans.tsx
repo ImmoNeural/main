@@ -127,12 +127,12 @@ const Plans = () => {
             setTrialEndDate(data.subscription.trial_end_date);
             setProcessingPayment(false);
             clearInterval(pollInterval);
-            alert('🎉 Pagamento confirmado! Seu plano foi ativado com sucesso.');
+            alert('🎉 Plano ativado!');
           } else if (attempts >= maxAttempts) {
             // Timeout - webhook pode estar demorando
             setProcessingPayment(false);
             clearInterval(pollInterval);
-            alert('⏳ Seu pagamento está sendo processado. Atualize a página em alguns instantes.');
+            alert('⏳ Pagamento em processamento. Atualize em instantes.');
           }
         } catch (error) {
           console.error('Erro ao verificar pagamento:', error);
@@ -229,7 +229,7 @@ const Plans = () => {
 
     // Não permitir se já está no plano pago
     if (isActive && currentPlan === plan.type) {
-      alert('Você já está neste plano!');
+      alert('✅ Você já está neste plano!');
       return;
     }
 
@@ -241,12 +241,11 @@ const Plans = () => {
         // Redirecionar para Stripe Checkout (página segura do Stripe)
         window.location.href = data.checkoutUrl;
       } else {
-        alert('Erro ao criar sessão de pagamento. Tente novamente.');
+        alert('❌ Erro ao criar sessão de pagamento.');
       }
     } catch (error: any) {
       console.error('Error selecting plan:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Erro ao processar assinatura. Tente novamente.';
-      alert(errorMessage);
+      alert('❌ Erro ao processar assinatura.');
     } finally {
       setLoading(false);
     }
@@ -262,10 +261,10 @@ const Plans = () => {
 
       <div className="min-h-screen bg-gray-50">
         {/* Container principal */}
-        <div className="relative min-h-screen px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Título */}
           <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-4">
               Escolha o Plano Perfeito
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">

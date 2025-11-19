@@ -595,11 +595,12 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-800 tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Dashboard</h1>
           <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
         </div>
         <div className="flex items-center space-x-3">
@@ -1101,6 +1102,7 @@ const Dashboard = () => {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
