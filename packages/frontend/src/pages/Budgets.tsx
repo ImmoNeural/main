@@ -243,61 +243,82 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
 
       {/* Grid: Tabela + Gráfico */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Visão Geral - Novo Layout 3 Colunas */}
-        <div className="bg-white rounded-xl shadow-md p-5">
-          <h3 className="font-bold text-gray-800 mb-4 text-lg">📋 Visão Geral</h3>
+        {/* Visão Geral - Design Profissional */}
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <span className="text-2xl">📋</span>
+            </div>
+            <h3 className="font-bold text-gray-800 text-xl">Visão Geral</h3>
+          </div>
 
           {/* Grid de 3 colunas x 3 linhas */}
-          <div className="space-y-3 mb-4">
+          <div className="space-y-4 mb-5">
             {tableData.map((item) => {
               const diff = item.budget - item.spent;
               const isOver = diff < 0;
               const percentage = item.budget > 0 ? Math.min((item.spent / item.budget) * 100, 100) : 0;
+              const statusText = isOver
+                ? `R$ ${Math.abs(diff).toFixed(2).replace('.', ',')} excedido`
+                : `R$ ${Math.abs(diff).toFixed(2).replace('.', ',')} ainda disponível`;
 
               return (
-                <div key={item.label} className="grid grid-cols-3 gap-3 items-center">
+                <div key={item.label} className="grid grid-cols-3 gap-4 items-center">
                   {/* Coluna 1: Gasto */}
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">{item.icon}</span>
-                      <p className="font-semibold text-gray-800 text-xs">{item.label}</p>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        <span className="text-2xl">{item.icon}</span>
+                      </div>
+                      <p className="font-bold text-gray-800 text-sm">{item.label}</p>
                     </div>
-                    <p className="text-sm font-bold text-gray-700">
-                      Gasto: <span className="text-blue-600">R$ {item.spent.toFixed(2).replace('.', ',')}</span>
+                    <p className="text-xs font-medium text-gray-600 mb-1">Gasto</p>
+                    <p className="text-xl font-extrabold text-blue-700">
+                      R$ {item.spent.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
 
-                  {/* Coluna 2: Budget e Diferença */}
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">{item.icon}</span>
-                      <p className="font-semibold text-gray-800 text-xs">{item.label}</p>
+                  {/* Coluna 2: Budget */}
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        <span className="text-2xl">{item.icon}</span>
+                      </div>
+                      <p className="font-bold text-gray-800 text-sm">{item.label}</p>
                     </div>
-                    <p className="text-sm font-bold text-gray-700 mb-1">
-                      Budget: <span className="text-purple-600">R$ {item.budget.toFixed(2).replace('.', ',')}</span>
-                    </p>
-                    <p className={`text-lg font-bold ${isOver ? 'text-red-600' : 'text-green-600'}`}>
-                      {isOver ? '-' : ''}R$ {Math.abs(diff).toFixed(2).replace('.', ',')}
+                    <p className="text-xs font-medium text-gray-600 mb-1">Budget</p>
+                    <p className="text-xl font-extrabold text-purple-700">
+                      R$ {item.budget.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
 
-                  {/* Coluna 3: Barra de Progresso */}
-                  <div className="flex items-center h-full">
-                    <div className="w-full">
-                      <div className="relative h-6 rounded-full bg-gray-200 overflow-hidden">
-                        <div
-                          className="absolute h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: isOver ? '100%' : `${percentage}%`,
-                            backgroundColor: isOver ? '#FF9800' : '#4CAF50',
-                            boxShadow: isOver ? '0 0 8px rgba(255, 152, 0, 0.7)' : 'none',
-                          }}
-                        ></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs font-bold text-gray-700 mix-blend-difference">
-                            {percentage.toFixed(0)}%
-                          </span>
-                        </div>
+                  {/* Coluna 3: Status + Barra de Progresso */}
+                  <div className="flex flex-col justify-center">
+                    {/* Texto de Status acima da barra */}
+                    <div className="mb-2">
+                      <p className={`text-sm font-bold ${isOver ? 'text-red-600' : 'text-green-600'}`}>
+                        {statusText}
+                      </p>
+                    </div>
+
+                    {/* Barra de Progresso */}
+                    <div className="relative h-8 rounded-lg bg-gray-200 overflow-hidden shadow-inner">
+                      <div
+                        className="absolute h-full rounded-lg transition-all duration-500"
+                        style={{
+                          width: isOver ? '100%' : `${percentage}%`,
+                          background: isOver
+                            ? 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)'
+                            : 'linear-gradient(135deg, #4CAF50 0%, #388E3C 100%)',
+                          boxShadow: isOver
+                            ? '0 0 12px rgba(255, 152, 0, 0.5), inset 0 2px 4px rgba(255,255,255,0.2)'
+                            : '0 0 12px rgba(76, 175, 80, 0.3), inset 0 2px 4px rgba(255,255,255,0.2)',
+                        }}
+                      ></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-sm font-extrabold text-white drop-shadow-md">
+                          {percentage.toFixed(0)}%
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -307,33 +328,38 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
           </div>
 
           {/* Linha de Subtotais */}
-          <div className="border-t-2 border-gray-200 pt-4">
-            <div className="grid grid-cols-3 gap-3 items-center bg-blue-50 rounded-lg p-4">
+          <div className="border-t-2 border-gray-200 pt-5">
+            <div className="grid grid-cols-3 gap-4">
               {/* Total Gasto */}
-              <div className="text-center">
-                <p className="text-xs font-medium text-gray-600 mb-1">TOTAL GASTO</p>
-                <p className="text-xl font-bold text-blue-700">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 shadow-lg text-center transform hover:scale-105 transition-transform">
+                <p className="text-xs font-bold text-blue-100 mb-2 uppercase tracking-wider">Total Gasto</p>
+                <p className="text-2xl font-extrabold text-white drop-shadow-md">
                   R$ {(summary.fixedSpent + summary.variableSpent + summary.investmentsSpent).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Budget */}
-              <div className="text-center">
-                <p className="text-xs font-medium text-gray-600 mb-1">TOTAL BUDGET</p>
-                <p className="text-xl font-bold text-purple-700">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 shadow-lg text-center transform hover:scale-105 transition-transform">
+                <p className="text-xs font-bold text-purple-100 mb-2 uppercase tracking-wider">Total Budget</p>
+                <p className="text-2xl font-extrabold text-white drop-shadow-md">
                   R$ {(summary.fixedBudget + summary.variableBudget + summary.investmentsBudget).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Diferença */}
-              <div className="text-center">
-                <p className="text-xs font-medium text-gray-600 mb-1">DIFERENÇA</p>
-                <p className={`text-xl font-bold ${
+              <div className={`rounded-xl p-5 shadow-lg text-center transform hover:scale-105 transition-transform ${
+                (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
+                (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
+                  ? 'bg-gradient-to-br from-red-500 to-red-600'
+                  : 'bg-gradient-to-br from-green-500 to-green-600'
+              }`}>
+                <p className={`text-xs font-bold mb-2 uppercase tracking-wider ${
                   (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                   (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
-                    ? 'text-red-600'
-                    : 'text-green-600'
-                }`}>
+                    ? 'text-red-100'
+                    : 'text-green-100'
+                }`}>Diferença</p>
+                <p className="text-2xl font-extrabold text-white drop-shadow-md">
                   {((summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                     (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0)
                     ? '-'
@@ -348,21 +374,84 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
           </div>
         </div>
 
-        {/* Gráfico de Barras */}
-        <div className="bg-white rounded-xl shadow-md p-5">
-          <h3 className="font-bold text-gray-800 mb-4 text-lg">📊 Budget vs Gasto</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(value: any) => `R$ ${Number(value).toFixed(2).replace('.', ',')}`} />
-              <Legend wrapperStyle={{ fontSize: '12px' }} />
-              <ReferenceLine y={summary.salary} stroke="#4CAF50" strokeDasharray="5 5" strokeWidth={2} label={{ value: 'Salário', position: 'right', fill: '#4CAF50', fontSize: 11 }} />
-              <Bar dataKey="Budget" fill="#90CAF9" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="Gasto" fill="#42A5F5" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        {/* Gráfico de Barras - Design Profissional */}
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <span className="text-2xl">📊</span>
+            </div>
+            <h3 className="font-bold text-gray-800 text-xl">Budget vs Gastos</h3>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="budgetGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#9333EA" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.7} />
+                  </linearGradient>
+                  <linearGradient id="gastoGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: '#6B7280', fontWeight: 600 }}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#6B7280' }}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tickLine={false}
+                />
+                <Tooltip
+                  formatter={(value: any) => `R$ ${Number(value).toFixed(2).replace('.', ',')}`}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                  }}
+                  labelStyle={{ color: '#1F2937', fontWeight: 700 }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: '13px', fontWeight: 600 }}
+                  iconType="circle"
+                />
+                <ReferenceLine
+                  y={summary.salary}
+                  stroke="#10B981"
+                  strokeDasharray="5 5"
+                  strokeWidth={2.5}
+                  label={{
+                    value: 'Salário',
+                    position: 'right',
+                    fill: '#059669',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    offset: 10,
+                  }}
+                />
+                <Bar
+                  dataKey="Budget"
+                  fill="url(#budgetGradient)"
+                  radius={[10, 10, 0, 0]}
+                  maxBarSize={60}
+                />
+                <Bar
+                  dataKey="Gasto"
+                  fill="url(#gastoGradient)"
+                  radius={[10, 10, 0, 0]}
+                  maxBarSize={60}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
