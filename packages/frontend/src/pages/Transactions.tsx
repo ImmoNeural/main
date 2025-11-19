@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ArrowDown, ChevronDown, ChevronUp, Upload, Trash2, DollarSign } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, PlusCircle, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
@@ -26,10 +26,10 @@ const Transactions = () => {
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  // Estados para o modal de debug
-  const [showDebugModal, setShowDebugModal] = useState(false);
-  const [debugResult, setDebugResult] = useState<any>(null);
-  const [debugLoading, setDebugLoading] = useState(false);
+  // Estados para o modal de debug (desabilitado por enquanto)
+  // const [showDebugModal, setShowDebugModal] = useState(false);
+  // const [debugResult, setDebugResult] = useState<any>(null);
+  // const [debugLoading, setDebugLoading] = useState(false);
 
   // Estado para o modal de importação
   const [showImportModal, setShowImportModal] = useState(false);
@@ -189,6 +189,7 @@ const Transactions = () => {
     }
   };
 
+  /* Debug function temporarily disabled
   const handleDebugCategorization = async (transaction: Transaction) => {
     console.log('\n\n🐛🐛🐛 ===============================================');
     console.log('🐛 FRONTEND: Iniciando debug de categorização');
@@ -228,6 +229,7 @@ const Transactions = () => {
       setDebugLoading(false);
     }
   };
+  */
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -853,8 +855,8 @@ const Transactions = () => {
         loading={bulkLoading}
       />
 
-      {/* Modal de Debug de Categorização */}
-      {showDebugModal && (
+      {/* Modal de Debug de Categorização - Temporariamente desabilitado */}
+      {/* {showDebugModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -879,7 +881,6 @@ const Transactions = () => {
                 </div>
               ) : debugResult ? (
                 <div className="space-y-4">
-                  {/* Input */}
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 mb-2">📥 Dados da Transação</h3>
                     <div className="text-sm space-y-1">
@@ -889,7 +890,6 @@ const Transactions = () => {
                     </div>
                   </div>
 
-                  {/* Result */}
                   <div className="bg-blue-50 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 mb-2">🎯 Resultado da IA</h3>
                     <div className="text-sm space-y-1">
@@ -900,7 +900,6 @@ const Transactions = () => {
                     </div>
                   </div>
 
-                  {/* Analysis */}
                   <div className={`rounded-lg p-4 ${debugResult.analysis.isPassing ? 'bg-green-50' : 'bg-orange-50'}`}>
                     <h3 className="font-semibold text-gray-900 mb-2">📊 Análise (Threshold: {debugResult.analysis.threshold}%)</h3>
                     <div className="text-sm space-y-2">
@@ -916,7 +915,6 @@ const Transactions = () => {
                     </div>
                   </div>
 
-                  {/* Legend */}
                   <div className="bg-gray-100 rounded-lg p-3 text-xs text-gray-600">
                     <p><strong>💡 Como funciona:</strong></p>
                     <ul className="list-disc list-inside mt-1 space-y-1">
@@ -940,7 +938,7 @@ const Transactions = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Import Modal */}
       {showImportModal && (
