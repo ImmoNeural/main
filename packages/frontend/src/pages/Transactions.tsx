@@ -645,11 +645,11 @@ const Transactions = () => {
           {/* Total de Receitas */}
           <div className="p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl bg-green-50">
             <div className="flex justify-between items-start">
-              <h3 className="text-sm font-medium text-gray-600">Receitas (desde {getStartDateLabel()})</h3>
+              <h3 className="text-sm font-medium text-gray-600">Receitas</h3>
               <ChevronUp className="w-5 h-5 text-green-500" />
             </div>
             <p className="mt-2 font-extrabold text-3xl text-green-600">
-              {formatCurrency(totalIncome)}
+              {formatCurrency(currentMonthIncome)}
             </p>
             <p className={`mt-1 text-xs ${incomeChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs Mês Passado
@@ -659,11 +659,11 @@ const Transactions = () => {
           {/* Total de Despesas */}
           <div className="p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl bg-red-50">
             <div className="flex justify-between items-start">
-              <h3 className="text-sm font-medium text-gray-600">Despesas (desde {getStartDateLabel()})</h3>
+              <h3 className="text-sm font-medium text-gray-600">Despesas</h3>
               <ChevronDown className="w-5 h-5 text-red-500" />
             </div>
             <p className="mt-2 font-extrabold text-3xl text-red-600">
-              {formatCurrency(totalExpense)}
+              {formatCurrency(currentMonthExpense)}
             </p>
             <p className={`mt-1 text-xs ${expenseChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs Mês Passado
@@ -671,13 +671,13 @@ const Transactions = () => {
           </div>
 
           {/* Saldo Líquido */}
-          <div className={`p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl ${balance >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
+          <div className={`p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl ${currentMonthBalance >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
             <div className="flex justify-between items-start">
-              <h3 className="text-sm font-medium text-gray-600">Saldo (desde {getStartDateLabel()})</h3>
-              <DollarSign className={`w-5 h-5 ${balance >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
+              <h3 className="text-sm font-medium text-gray-600">Saldo</h3>
+              <DollarSign className={`w-5 h-5 ${currentMonthBalance >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
             </div>
-            <p className={`mt-2 font-extrabold text-3xl ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              {formatCurrency(balance)}
+            <p className={`mt-2 font-extrabold text-3xl ${currentMonthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              {formatCurrency(currentMonthBalance)}
             </p>
             <p className={`mt-1 text-xs ${balanceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {balanceChange >= 0 ? '+' : ''}{balanceChange.toFixed(1)}% vs Mês Passado
