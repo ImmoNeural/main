@@ -18,7 +18,7 @@ const Transactions = () => {
   const [selectedType, setSelectedType] = useState('');
   const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
-  const [showMonthlyBreakdown, setShowMonthlyBreakdown] = useState(false);
+  // const [showMonthlyBreakdown, setShowMonthlyBreakdown] = useState(false); // Temporariamente desabilitado
 
   // Estados para o modal de recategorização em lote
   const [showBulkModal, setShowBulkModal] = useState(false);
