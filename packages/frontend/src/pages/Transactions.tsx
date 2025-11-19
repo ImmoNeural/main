@@ -573,124 +573,124 @@ const Transactions = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Transações</h1>
-            <p className="text-sm text-gray-500 mb-4">{filteredTransactions.length} transações encontradas</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex-1 w-full sm:w-auto">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">Transações</h1>
+            <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-4">{filteredTransactions.length} transações encontradas</p>
 
             {/* Botões de ação - lado esquerdo */}
-            <div className="flex items-center flex-wrap gap-2 sm:gap-3">
+            <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 md:gap-3">
               <button
                 onClick={() => setShowImportModal(true)}
-                className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
                 title="Importar transações manualmente (CSV ou individual)"
               >
-                <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
-                <span className="hidden md:inline">Importar</span>
-                <span className="md:hidden">Import</span>
+                <Upload className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                <span className="hidden sm:inline">Importar</span>
+                <span className="sm:hidden">Import</span>
               </button>
               <button
                 onClick={handleRecategorizeAll}
-                className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
                 disabled={isLoading}
                 title="Recategorizar todas as transações usando IA (threshold 80%)"
               >
-                <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="hidden md:inline">Recategorizar</span>
-                <span className="md:hidden">Recat.</span>
+                <RefreshCw className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Recategorizar</span>
+                <span className="sm:hidden">Recat.</span>
               </button>
               <button
                 onClick={exportToCSV}
-                className="btn-secondary flex items-center space-x-2 px-3 text-sm"
+                className="btn-secondary flex items-center space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
                 title="Exportar para CSV"
               >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline text-sm font-medium">CSV</span>
+                <Download className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                <span className="hidden sm:inline text-xs sm:text-sm font-medium">CSV</span>
               </button>
               <button
                 onClick={loadData}
-                className="btn-secondary flex items-center space-x-2 text-sm sm:text-base"
+                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
                 disabled={isLoading}
               >
-                <RefreshCw className={`w-4 sm:w-5 h-4 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isLoading ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">Atualizar</span>
               </button>
               <button
                 onClick={handleDeleteAll}
-                className="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 flex items-center space-x-2 text-sm sm:text-base"
+                className="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
                 disabled={isLoading}
                 title="Apagar TODAS as transações do banco de dados (IRREVERSÍVEL)"
               >
-                <Trash2 className="w-4 sm:w-5 h-4 sm:h-5" />
-                <span className="hidden md:inline">Apagar Todas</span>
-                <span className="md:hidden">Apagar</span>
+                <Trash2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                <span className="hidden sm:inline">Apagar Todas</span>
+                <span className="sm:hidden">Apagar</span>
               </button>
             </div>
           </div>
 
           {/* Botão Conectar Banco - lado direito */}
-          <div className="flex-shrink-0">
+          <div className="w-full sm:w-auto mt-3 sm:mt-0">
             <button
               onClick={() => navigate('/app/connect-bank')}
-              className="btn-primary flex items-center space-x-2 text-sm sm:text-base"
+              className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2"
             >
-              <PlusCircle className="w-4 sm:w-5 h-4 sm:h-5" />
+              <PlusCircle className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
               <span>Conectar Banco</span>
             </button>
           </div>
         </div>
 
         {/* Resumo Financeiro (Cards) */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8 lg:mb-10">
           {/* Total de Receitas */}
-          <div className="p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl bg-green-50">
+          <div className="p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl bg-green-50">
             <div className="flex justify-between items-start">
-              <h3 className="text-sm font-medium text-gray-600">Receitas</h3>
-              <ChevronUp className="w-5 h-5 text-green-500" />
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600">Receitas</h3>
+              <ChevronUp className="w-4 sm:w-5 h-4 sm:h-5 text-green-500" />
             </div>
-            <p className="mt-2 font-extrabold text-3xl text-green-600">
+            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-green-600">
               {formatCurrency(currentMonthIncome)}
             </p>
-            <p className={`mt-1 text-xs ${incomeChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`mt-0.5 sm:mt-1 text-xs ${incomeChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs Mês Passado
             </p>
           </div>
 
           {/* Total de Despesas */}
-          <div className="p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl bg-red-50">
+          <div className="p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl bg-red-50">
             <div className="flex justify-between items-start">
-              <h3 className="text-sm font-medium text-gray-600">Despesas</h3>
-              <ChevronDown className="w-5 h-5 text-red-500" />
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600">Despesas</h3>
+              <ChevronDown className="w-4 sm:w-5 h-4 sm:h-5 text-red-500" />
             </div>
-            <p className="mt-2 font-extrabold text-3xl text-red-600">
+            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-red-600">
               {formatCurrency(currentMonthExpense)}
             </p>
-            <p className={`mt-1 text-xs ${expenseChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`mt-0.5 sm:mt-1 text-xs ${expenseChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs Mês Passado
             </p>
           </div>
 
           {/* Saldo Líquido */}
-          <div className={`p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl ${currentMonthBalance >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
+          <div className={`p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl ${currentMonthBalance >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
             <div className="flex justify-between items-start">
-              <h3 className="text-sm font-medium text-gray-600">Saldo</h3>
-              <DollarSign className={`w-5 h-5 ${currentMonthBalance >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
+              <h3 className="text-xs sm:text-sm font-medium text-gray-600">Saldo</h3>
+              <DollarSign className={`w-4 sm:w-5 h-4 sm:h-5 ${currentMonthBalance >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
             </div>
-            <p className={`mt-2 font-extrabold text-3xl ${currentMonthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            <p className={`mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl ${currentMonthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
               {formatCurrency(currentMonthBalance)}
             </p>
-            <p className={`mt-1 text-xs ${balanceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`mt-0.5 sm:mt-1 text-xs ${balanceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {balanceChange >= 0 ? '+' : ''}{balanceChange.toFixed(1)}% vs Mês Passado
             </p>
           </div>
 
           {/* Saldo Inicial */}
-          <div className="p-6 rounded-2xl shadow-xl transition duration-300 hover:shadow-2xl bg-gradient-to-br from-indigo-50 to-purple-50">
+          <div className="p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl bg-gradient-to-br from-indigo-50 to-purple-50">
             <div className="flex justify-between items-start">
-              <h3 className="text-sm font-medium text-indigo-600">💰 Inicial ({getStartDateLabel()})</h3>
-              <ArrowUp className="w-5 h-5 text-indigo-500" />
+              <h3 className="text-xs sm:text-sm font-medium text-indigo-600">💰 Inicial ({getStartDateLabel()})</h3>
+              <ArrowUp className="w-4 sm:w-5 h-4 sm:h-5 text-indigo-500" />
             </div>
-            <p className="mt-2 font-extrabold text-3xl text-indigo-700">
+            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-indigo-700">
               {initialBalance !== null && initialBalance !== undefined
                 ? formatCurrency(initialBalance)
                 : 'N/D'}
@@ -699,14 +699,15 @@ const Transactions = () => {
         </div>
 
         {/* Distribuição de Despesas e Filtros */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 lg:mb-10">
 
           {/* Painel Esquerdo: Distribuição de Despesas */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 h-full">
-              <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                <PieChart className="w-5 h-5 mr-2 text-blue-600" />
-                Distribuição de Despesas (Total: {formatCurrency(expenseDistribution.total)})
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6 h-full">
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center flex-wrap">
+                <PieChart className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-blue-600 flex-shrink-0" />
+                <span className="break-words">Distribuição de Despesas</span>
+                <span className="text-sm sm:text-base w-full sm:w-auto sm:ml-2 text-gray-600">(Total: {formatCurrency(expenseDistribution.total)})</span>
               </h3>
 
               {expenseDistribution.data.length > 0 ? (
@@ -919,27 +920,28 @@ const Transactions = () => {
 
         {/* Tabela de Transações */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Data
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Descrição / Detalhe
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Categoria
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Tipo
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Valor
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Data
+                  </th>
+                  <th scope="col" className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Descrição / Detalhe
+                  </th>
+                  <th scope="col" className="hidden md:table-cell px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Categoria
+                  </th>
+                  <th scope="col" className="hidden sm:table-cell px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Tipo
+                  </th>
+                  <th scope="col" className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                    Valor
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
               {filteredTransactions.map(transaction => {
                 const isUncategorized = !transaction.category || transaction.category === 'Não Categorizado';
                 const isReceita = transaction.type === 'credit';
@@ -948,31 +950,47 @@ const Transactions = () => {
 
                 return (
                   <tr key={transaction.id} className={`border-b border-gray-100 transition-all duration-150 ${rowBgClass}`}>
-                    <td className="p-4 text-sm font-medium text-gray-500">
-                      {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                    <td className="p-2 sm:p-3 lg:p-4 text-xs sm:text-sm font-medium text-gray-500 whitespace-nowrap">
+                      {format(new Date(transaction.date), 'dd/MM/yy')}
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white shadow-inner flex-shrink-0">
+                    <td className="p-2 sm:p-3 lg:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white shadow-inner flex-shrink-0">
                           <CategoryIconSmall category={transaction.category || 'Outros'} />
                         </div>
-                        <div>
-                          <div className="font-semibold text-gray-800">{transaction.merchant || transaction.description}</div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-xs sm:text-sm lg:text-base text-gray-800 truncate">{transaction.merchant || transaction.description}</div>
                           {transaction.reference && (
-                            <div className="text-xs text-gray-500 mt-0.5">{transaction.reference}</div>
+                            <div className="text-xs text-gray-500 mt-0.5 truncate md:whitespace-normal">{transaction.reference}</div>
                           )}
+                          {/* Mostrar categoria em mobile */}
+                          <div className="md:hidden mt-1">
+                            <select
+                              value={transaction.category || ''}
+                              onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
+                              className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 w-full ${
+                                isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
+                              }`}
+                            >
+                              {categories.map((cat) => (
+                                <option key={cat.category} value={cat.category}>
+                                  {cat.category}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="hidden md:table-cell p-2 sm:p-3 lg:p-4">
                       <div className="flex items-center space-x-2">
                         {isUncategorized && (
-                          <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                          <AlertCircle className="w-4 lg:w-5 h-4 lg:h-5 text-orange-600 flex-shrink-0" />
                         )}
                         <select
                           value={transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                          className={`text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 ${
+                          className={`text-xs sm:text-sm border rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 focus:outline-none focus:ring-2 ${
                             isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
                           }`}
                         >
@@ -984,9 +1002,9 @@ const Transactions = () => {
                         </select>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="hidden sm:table-cell p-2 sm:p-3 lg:p-4">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        className={`inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
                           transaction.type === 'credit'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
@@ -995,7 +1013,7 @@ const Transactions = () => {
                         {transaction.type === 'credit' ? 'Receita' : 'Despesa'}
                       </span>
                     </td>
-                    <td className={`p-4 text-base ${valueClass}`}>
+                    <td className={`p-2 sm:p-3 lg:p-4 text-xs sm:text-sm lg:text-base font-medium whitespace-nowrap ${valueClass}`}>
                       {isReceita ? '+' : '-'} {formatCurrency(Math.abs(transaction.amount))}
                     </td>
                   </tr>
@@ -1003,13 +1021,14 @@ const Transactions = () => {
               })}
               {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
+                  <td colSpan={5} className="p-4 sm:p-8 text-center text-sm sm:text-base text-gray-500">
                     Nenhuma transação encontrada para o termo de busca.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
       </div>
