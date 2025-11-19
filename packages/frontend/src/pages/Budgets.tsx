@@ -1065,7 +1065,7 @@ export default function Budgets() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto">
+      <div>
         {/* Resumo Financeiro */}
         <FinancialSummary summary={monthSummary} selectedMonth={selectedMonth} />
 
