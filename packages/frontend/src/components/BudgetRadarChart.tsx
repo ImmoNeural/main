@@ -90,6 +90,7 @@ export const BudgetRadarChart = () => {
         });
 
       console.log('📊 [RADAR] Despesas por categoria:', expensesByCategory);
+      console.log('📊 [RADAR] Total de categorias com despesas:', Object.keys(expensesByCategory).length);
 
       // 4. Criar dados do radar combinando budgets e despesas
       const radarData: RadarData[] = [];
@@ -99,6 +100,9 @@ export const BudgetRadarChart = () => {
         ...Object.keys(budgets),
         ...Object.keys(expensesByCategory),
       ]));
+
+      console.log('📊 [RADAR] Total de categorias únicas (budgets + despesas):', allCategories.length);
+      console.log('📊 [RADAR] Categorias únicas:', allCategories);
 
       allCategories.forEach((category, index) => {
         const orcado = budgets[category] || 0;
@@ -121,25 +125,26 @@ export const BudgetRadarChart = () => {
         }
       });
 
+      console.log('📊 [RADAR] Categorias após filtro (excluindo Não categorizado):', radarData.length);
+
       // Ordenar por MAIOR DESPESA REALIZADA (gasto real)
       radarData.sort((a, b) => b.realizado - a.realizado);
 
-      // Limitar às 18 categorias com MAIORES DESPESAS
-      const top18Data = radarData.slice(0, 18);
+      // Pegar TODAS as categorias disponíveis (sem limitar a 18)
+      console.log('📊 [RADAR] Total final de categorias no radar:', radarData.length);
+      console.log('📊 [RADAR] Dados finais do radar:', radarData);
 
-      console.log('📊 [RADAR] Top 18 categorias por despesa realizada:', top18Data);
-
-      setData(top18Data);
+      setData(radarData);
 
       // 5. Calcular análise
-      if (top18Data.length > 0) {
+      if (radarData.length > 0) {
         // Encontrar categoria com maior desvio absoluto
-        const maxDesvio = top18Data.reduce((prev, current) =>
+        const maxDesvio = radarData.reduce((prev, current) =>
           Math.abs(current.desvio) > Math.abs(prev.desvio) ? current : prev
         );
 
-        const totalOrcado = top18Data.reduce((sum, item) => sum + item.orcado, 0);
-        const totalRealizado = top18Data.reduce((sum, item) => sum + item.realizado, 0);
+        const totalOrcado = radarData.reduce((sum, item) => sum + item.orcado, 0);
+        const totalRealizado = radarData.reduce((sum, item) => sum + item.realizado, 0);
         const desvioGeral = totalRealizado - totalOrcado;
 
         setAnalysis({
@@ -252,10 +257,10 @@ export const BudgetRadarChart = () => {
         {/* Conteúdo Principal - Gráfico */}
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Top 18 Categorias - Orçamento vs Realizado
+            Todas as Categorias - Orçamento vs Realizado
           </h3>
           <p className="text-sm text-gray-600 mb-4">
-            Mostrando as 18 categorias com maiores despesas em{' '}
+            Mostrando {data.length} categorias com despesas em{' '}
             <span className="font-semibold text-blue-600">
               {format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}
             </span>
