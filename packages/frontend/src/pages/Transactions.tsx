@@ -20,9 +20,6 @@ const Transactions = () => {
   const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
 
-  // Estado para controlar dropdown de categorias expandido
-  const [expandedCategory, setExpandedCategory] = useState<string>('');
-
   // Mapeamento de subcategorias por categoria
   const subcategoriesMap: Record<string, string[]> = {
     'Supermercado': ['Compras de Mercado'],
