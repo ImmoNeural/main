@@ -165,7 +165,8 @@ export const BudgetRadarChart = () => {
         const realizado = expensesByCategory[category] || 0;
 
         // Log de cada categoria sendo avaliada
-        const shouldInclude = realizado > 0 && category !== 'Não categorizado' && category !== 'Sem Categoria';
+        // INCLUIR: Categorias com budget OU com despesas (exceto "Não categorizado")
+        const shouldInclude = (orcado > 0 || realizado > 0) && category !== 'Não categorizado' && category !== 'Sem Categoria';
 
         if (shouldInclude) {
           const desvio = realizado - orcado;
@@ -178,6 +179,7 @@ export const BudgetRadarChart = () => {
             // Se não há budget mas há gasto, considerar como 100% de excesso
             desvioPercentual = 100;
           }
+          // Se orcado = 0 e realizado = 0, desvioPercentual fica 0
 
           const color = getCategoryColor(category, index);
 
@@ -199,7 +201,12 @@ export const BudgetRadarChart = () => {
           includedCount++;
         } else {
           excludedCount++;
-          console.log(`  ❌ Excluída: ${category} (realizado: R$ ${realizado.toFixed(2)}, motivo: ${realizado === 0 ? 'sem despesas' : 'categoria filtrada'})`);
+          const motivo = (orcado === 0 && realizado === 0)
+            ? 'sem budget e sem despesas'
+            : (category === 'Não categorizado' || category === 'Sem Categoria')
+            ? 'categoria de sistema excluída'
+            : 'outro motivo';
+          console.log(`  ❌ Excluída: ${category} (orçado: R$ ${orcado.toFixed(2)}, realizado: R$ ${realizado.toFixed(2)}, motivo: ${motivo})`);
         }
       });
 
