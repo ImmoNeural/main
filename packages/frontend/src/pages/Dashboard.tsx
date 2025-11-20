@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, Mouse
 import { dashboardApi, transactionApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import { CategoryIcon } from '../components/CategoryIcons';
+import { BudgetRadarChart } from '../components/BudgetRadarChart';
 import {
   BarChart,
   Bar,
@@ -1055,6 +1056,9 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Budget Radar Chart */}
+      <BudgetRadarChart period={period} />
 
       {/* Recent Transactions */}
       <div ref={transactionsRef} className="card">
