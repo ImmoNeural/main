@@ -236,7 +236,7 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
             dataKey="category"
             tick={(props: any) => {
               const { x, y, payload } = props;
-              const item = data.find(d => d.category === payload.value);
+              const item = data.find((d) => d.category === payload.value);
               const color = item?.color || '#6b7280';
 
               return (
@@ -255,28 +255,33 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
           />
           <PolarRadiusAxis
             angle={90}
-            domain={[0, 'dataMax']}
+            domain={[0, (dataMax: number) => {
+              // Calcular o maior valor entre orçado e realizado
+              const maxValue = Math.max(...data.flatMap(item => [item.orcado, item.realizado]));
+              // Arredondar para o próximo múltiplo de 500 para escala limpa
+              return Math.ceil(maxValue / 500) * 500;
+            }]}
             tick={{ fill: '#6b7280', fontSize: 10 }}
+            tickFormatter={(value: number) => formatCurrency(value)}
           />
+          {/* Polígono Azul - Orçado (Budget) */}
           <Radar
-            name="Orçado"
+            name="Orçado (Budget)"
             dataKey="orcado"
             stroke="#3b82f6"
             fill="#3b82f6"
-            fillOpacity={0.2}
-            strokeWidth={2}
+            fillOpacity={0.25}
+            strokeWidth={2.5}
           />
-          {data.map((item, index) => (
-            <Radar
-              key={`realizado-${index}`}
-              name={item.category}
-              dataKey={(entry: RadarData) => entry.category === item.category ? entry.realizado : 0}
-              stroke={item.color}
-              fill={item.color}
-              fillOpacity={0.3}
-              strokeWidth={2}
-            />
-          ))}
+          {/* Polígono Vermelho - Realizado (Gasto) */}
+          <Radar
+            name="Realizado (Gasto)"
+            dataKey="realizado"
+            stroke="#ef4444"
+            fill="#ef4444"
+            fillOpacity={0.25}
+            strokeWidth={2.5}
+          />
           <Legend />
           <Tooltip content={<CustomTooltip />} />
         </RadarChart>
@@ -367,20 +372,55 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
               </div>
             </div>
 
-            {/* Interpretação */}
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600 leading-relaxed">
-                <span className="font-semibold">Interpretação:</span> O gráfico de radar mostra cada categoria com sua cor específica,
-                permitindo identificar rapidamente quais categorias têm maior impacto no orçamento mensal.
-                {analysis.desvioGeral > 0 ? (
-                  <> A linha <span className="font-semibold text-blue-600">azul</span> representa o orçamento planejado, e as linhas coloridas mostram os gastos reais.
-                  Há <span className="font-semibold text-red-700">excesso de gastos</span> em algumas categorias, indicando oportunidades de melhoria no controle financeiro.</>
-                ) : (
-                  <> A linha <span className="font-semibold text-blue-600">azul</span> representa o orçamento planejado, e as linhas coloridas mostram os gastos reais.
-                  Você manteve um <span className="font-semibold text-green-700">bom controle financeiro</span>,
-                  gastando dentro ou abaixo do orçado na maioria das categorias.</>
-                )}
-              </p>
+            {/* Interpretação e Análise */}
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-red-50 rounded-lg border border-gray-200">
+              <p className="text-sm font-semibold text-gray-800 mb-2">📊 Análise Visual do Gráfico:</p>
+              <div className="space-y-2 text-xs text-gray-700">
+                <p>
+                  <span className="font-semibold">Interpretação:</span> O gráfico de radar compara visualmente o{' '}
+                  <span className="font-semibold text-blue-600">Orçamento Planejado (Azul)</span> com os{' '}
+                  <span className="font-semibold text-red-600">Gastos Reais (Vermelho)</span> nas 10 categorias de maior impacto financeiro.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                  <div className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">⚠️</span>
+                    <div>
+                      <p className="font-semibold text-red-700">Excesso de Gasto:</p>
+                      <p>Quando a área <span className="font-semibold text-red-600">vermelha</span> se estende além da <span className="font-semibold text-blue-600">azul</span>, indica que os gastos superaram o orçamento naquela categoria.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600 font-bold">✓</span>
+                    <div>
+                      <p className="font-semibold text-green-700">Economia:</p>
+                      <p>Quando a área <span className="font-semibold text-red-600">vermelha</span> fica dentro da <span className="font-semibold text-blue-600">azul</span>, mostra que você economizou e gastou menos que o planejado.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-2 bg-white rounded border border-gray-200">
+                  <p className="font-semibold text-gray-800 mb-1">Diagnóstico Financeiro:</p>
+                  {analysis.desvioGeral > 0 ? (
+                    <p>
+                      Há um <span className="font-semibold text-red-700">excesso de gastos de {formatCurrency(analysis.desvioGeral)}</span> nas top 10 categorias.
+                      Categorias com maior extrapolação precisam de atenção para melhorar o controle financeiro.
+                      Foque em ajustar os hábitos nas categorias onde o vermelho ultrapassa significativamente o azul.
+                    </p>
+                  ) : (
+                    <p>
+                      Parabéns! Você teve uma <span className="font-semibold text-green-700">economia de {formatCurrency(Math.abs(analysis.desvioGeral))}</span> nas top 10 categorias.
+                      O orçamento foi respeitado, e os gastos ficaram controlados. Continue monitorando para manter esse padrão positivo.
+                    </p>
+                  )}
+                </div>
+
+                <p className="mt-2 text-xs text-gray-600">
+                  <span className="font-semibold">Escala:</span> Os eixos radiais são calculados proporcionalmente ao maior valor encontrado ({formatCurrency(Math.max(...data.flatMap(item => [item.orcado, item.realizado])))}).
+                  Quanto mais distante do centro, maior o valor em Reais (R$).
+                </p>
+              </div>
             </div>
 
             {/* Ranking de Categorias */}
