@@ -419,9 +419,18 @@ const Transactions = () => {
 
   const monthlyBreakdown = getMonthlyBreakdown(); */
 
-  const handleUpdateCategory = async (transactionId: string, newCategory: string) => {
+  const handleUpdateCategory = async (transactionId: string, categoryValue: string) => {
     try {
+      // Se o valor contém "::", é uma subcategoria no formato "Categoria::Subcategoria"
+      // Extrair apenas a categoria principal para salvar no backend
+      const newCategory = categoryValue.includes('::')
+        ? categoryValue.split('::')[0]
+        : categoryValue;
+
       console.log('🔄 Atualizando categoria da transação:', transactionId, 'para:', newCategory);
+      if (categoryValue.includes('::')) {
+        console.log('📋 Subcategoria selecionada:', categoryValue.split('::')[1]);
+      }
 
       // Encontrar a transação sendo atualizada
       const transaction = transactions.find(t => t.id === transactionId);
@@ -1011,8 +1020,11 @@ const Transactions = () => {
                                 if (subcats.length > 0) {
                                   return (
                                     <optgroup key={cat.category} label={`${cat.icon} ${cat.category}`}>
+                                      <option key={cat.category} value={cat.category}>
+                                        {cat.category} (geral)
+                                      </option>
                                       {subcats.map((sub) => (
-                                        <option key={`${cat.category}-${sub}`} value={cat.category}>
+                                        <option key={`${cat.category}-${sub}`} value={`${cat.category}::${sub}`}>
                                           ⤷ {sub}
                                         </option>
                                       ))}
@@ -1054,8 +1066,11 @@ const Transactions = () => {
                             if (subcats.length > 0) {
                               return (
                                 <optgroup key={cat.category} label={`${cat.icon} ${cat.category}`}>
+                                  <option key={cat.category} value={cat.category}>
+                                    {cat.category} (geral)
+                                  </option>
                                   {subcats.map((sub) => (
-                                    <option key={`${cat.category}-${sub}`} value={cat.category}>
+                                    <option key={`${cat.category}-${sub}`} value={`${cat.category}::${sub}`}>
                                       ⤷ {sub}
                                     </option>
                                   ))}
