@@ -113,22 +113,29 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
         }
       });
 
-      // Ordenar por maior orçamento (categorias mais relevantes primeiro)
-      radarData.sort((a, b) => b.orcado - a.orcado);
+      // Ordenar por maior média entre orçado e realizado (categorias mais relevantes primeiro)
+      radarData.sort((a, b) => {
+        const mediaA = (a.orcado + a.realizado) / 2;
+        const mediaB = (b.orcado + b.realizado) / 2;
+        return mediaB - mediaA;
+      });
 
-      console.log('📊 [RADAR] Dados do radar (todas as categorias):', radarData);
+      // Limitar às 10 categorias com maiores médias
+      const top10Data = radarData.slice(0, 10);
 
-      setData(radarData);
+      console.log('📊 [RADAR] Top 10 categorias por média:', top10Data);
+
+      setData(top10Data);
 
       // 5. Calcular análise
-      if (radarData.length > 0) {
+      if (top10Data.length > 0) {
         // Encontrar categoria com maior desvio absoluto
-        const maxDesvio = radarData.reduce((prev, current) =>
+        const maxDesvio = top10Data.reduce((prev, current) =>
           Math.abs(current.desvio) > Math.abs(prev.desvio) ? current : prev
         );
 
-        const totalOrcado = radarData.reduce((sum, item) => sum + item.orcado, 0);
-        const totalRealizado = radarData.reduce((sum, item) => sum + item.realizado, 0);
+        const totalOrcado = top10Data.reduce((sum, item) => sum + item.orcado, 0);
+        const totalRealizado = top10Data.reduce((sum, item) => sum + item.realizado, 0);
         const desvioGeral = totalRealizado - totalOrcado;
 
         setAnalysis({
@@ -215,8 +222,11 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Orçamento vs Realizado - Análise Radar
+        Top 10 Categorias - Orçamento vs Realizado
       </h3>
+      <p className="text-sm text-gray-600 mb-4">
+        Mostrando as 10 categorias com maiores médias de orçamento e gasto
+      </p>
 
       {/* Gráfico de Radar */}
       <ResponsiveContainer width="100%" height={500}>
@@ -373,20 +383,24 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
               </p>
             </div>
 
-            {/* Legenda de Categorias com Top 5 */}
+            {/* Ranking de Categorias */}
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs font-semibold text-gray-700 mb-2">Top 5 Categorias por Impacto:</p>
+              <p className="text-xs font-semibold text-gray-700 mb-2">Ranking por Média (Orçado + Realizado):</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {data.slice(0, 5).map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 text-xs">
-                    <span
-                      className="w-3 h-3 rounded flex-shrink-0"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="font-medium text-gray-700 truncate">{item.category}</span>
-                    <span className="text-gray-500 ml-auto">{formatCurrency(item.realizado)}</span>
-                  </div>
-                ))}
+                {data.map((item, index) => {
+                  const media = (item.orcado + item.realizado) / 2;
+                  return (
+                    <div key={index} className="flex items-center gap-2 text-xs">
+                      <span className="text-gray-500 font-semibold w-5">{index + 1}º</span>
+                      <span
+                        className="w-3 h-3 rounded flex-shrink-0"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="font-medium text-gray-700 truncate">{item.category}</span>
+                      <span className="text-gray-500 ml-auto">{formatCurrency(media)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
