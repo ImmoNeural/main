@@ -671,10 +671,29 @@ export default function Budgets() {
     let skippedNoCategory = 0;
     let skippedNoRule = 0;
 
-    // Para debug detalhado de transferências
+    // Para debug detalhado de transferências e serviços financeiros
     const transferencias: { description: string; amount: number }[] = [];
+    const servicosFinanceiros: { description: string; amount: number; category: string }[] = [];
 
     console.log(`💸 [BUDGETS] Processando despesas do mês ${currentMonth}...`);
+
+    // Primeiro pass: coletar todas as categorias únicas para debug
+    const uniqueCategories = new Set<string>();
+    txs.forEach((tx) => {
+      if (tx.category && tx.amount < 0) {
+        uniqueCategories.add(tx.category);
+      }
+    });
+    console.log(`\n📋 [BUDGETS] Categorias únicas encontradas nas transações (${uniqueCategories.size}):`);
+    Array.from(uniqueCategories).sort().forEach((cat, idx) => {
+      if (idx < 20) { // Mostrar as primeiras 20
+        console.log(`   ${idx + 1}. "${cat}"`);
+      }
+    });
+    if (uniqueCategories.size > 20) {
+      console.log(`   ... e mais ${uniqueCategories.size - 20} categorias`);
+    }
+    console.log(``);
 
     txs.forEach((tx) => {
       if (!tx.category) {
@@ -716,9 +735,13 @@ export default function Budgets() {
           subcategoryMap[key].currentMonthSpent += amount;
           processedExpenses++;
 
-          // Log específico para Serviços Financeiros para debug
+          // Coletar Serviços Financeiros para log detalhado
           if (matchingRule.category === 'Serviços Financeiros') {
-            console.log(`  💳 [Serviços Financeiros] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
+            servicosFinanceiros.push({
+              description: tx.description || tx.merchant || 'Sem descrição',
+              amount,
+              category: tx.category || 'sem categoria'
+            });
           }
 
           // Coletar transferências para log detalhado
@@ -737,6 +760,26 @@ export default function Budgets() {
     console.log(`  ✅ Despesas processadas: ${processedExpenses}`);
     console.log(`  ⚠️ Sem categoria: ${skippedNoCategory}`);
     console.log(`  ⚠️ Categoria não mapeada: ${skippedNoRule}`);
+
+    // Log detalhado de Serviços Financeiros
+    if (servicosFinanceiros.length > 0) {
+      console.log(`\n💳 [BUDGETS] DETALHAMENTO DE SERVIÇOS FINANCEIROS (${servicosFinanceiros.length} transações):`);
+      const totalServicosFinanceiros = servicosFinanceiros.reduce((sum, t) => sum + t.amount, 0);
+      servicosFinanceiros.forEach((t, idx) => {
+        console.log(`  ${idx + 1}. R$ ${t.amount.toFixed(2).padStart(12)} - ${t.description} (categoria: "${t.category}")`);
+      });
+      console.log(`  ═══════════════════════════════════════════════════`);
+      console.log(`  📊 TOTAL SERVIÇOS FINANCEIROS: R$ ${totalServicosFinanceiros.toFixed(2)}`);
+      console.log(`  ⚠️ ESPERADO: R$ 2.287,25`);
+      if (Math.abs(totalServicosFinanceiros - 2287.25) > 0.01) {
+        console.error(`  ❌ ERRO: Total calculado (R$ ${totalServicosFinanceiros.toFixed(2)}) DIFERENTE do esperado (R$ 2.287,25)`);
+      } else {
+        console.log(`  ✅ Total calculado está correto!`);
+      }
+    } else {
+      console.error(`\n❌ [BUDGETS] NENHUMA transação de Serviços Financeiros encontrada no mês!`);
+      console.error(`  Isso pode indicar que as transações estão com outra categoria.`);
+    }
 
     // Log detalhado de transferências
     if (transferencias.length > 0) {
@@ -929,12 +972,20 @@ export default function Budgets() {
     });
     console.log(`     ────────────────────────────────────────────────────`);
     console.log(`     ✅ TOTAL FIXAS: Budget R$ ${fixedBudget.toFixed(2)} | Gasto R$ ${fixedSpent.toFixed(2)}`);
+
     // Validação: verificar se Serviços Financeiros está na lista
     const hasServicosFinanceiros = fixedItems.some(item => item.cat === 'Serviços Financeiros');
     if (!hasServicosFinanceiros) {
       console.error(`     ❌ ALERTA: "Serviços Financeiros" NÃO está incluído nos Custos Fixos!`);
+      console.error(`     Isso significa que a categoria não tem transações OU não foi classificada como "Despesas Fixas"`);
     } else {
+      const servicosItem = fixedItems.find(item => item.cat === 'Serviços Financeiros');
       console.log(`     ✅ VERIFICAÇÃO: "Serviços Financeiros" está incluído nos Custos Fixos`);
+      console.log(`        Budget: R$ ${servicosItem?.budget.toFixed(2)}, Gasto: R$ ${servicosItem?.spent.toFixed(2)}`);
+      console.log(`        Esperado: Gasto R$ 2.287,25`);
+      if (servicosItem && Math.abs(servicosItem.spent - 2287.25) > 0.01) {
+        console.error(`        ❌ ERRO: Gasto calculado (R$ ${servicosItem.spent.toFixed(2)}) DIFERENTE do esperado (R$ 2.287,25)`);
+      }
     }
 
     console.log(`\n  🛒 DESPESAS VARIÁVEIS (${variableItems.length} itens):`);
