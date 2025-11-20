@@ -228,11 +228,17 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       }
     } catch (error: any) {
       console.error('Error importing CSV:', error);
+
+      // Detectar erro 413 (arquivo muito grande)
+      const is413Error = error.message?.includes('413') || error.response?.status === 413;
+
       setResult({
         success: false,
         imported: 0,
-        errors: [error.message || 'Erro ao importar CSV'],
-        message: 'Falha na importação',
+        errors: is413Error
+          ? ['Arquivo muito grande. Tente dividir em arquivos menores (ex: 3-4 meses por vez).']
+          : [error.message || 'Erro ao importar CSV'],
+        message: is413Error ? 'Arquivo muito grande' : 'Falha na importação',
       });
     } finally {
       setImporting(false);
