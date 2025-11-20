@@ -688,38 +688,46 @@ export default function Budgets() {
       );
 
       if (!matchingRule) {
-        if (skippedNoRule < 5) { // Mostrar apenas os primeiros 5
-          console.log(`⚠️ [BUDGETS] Categoria não encontrada nas regras: "${tx.category}" - ${tx.description || tx.merchant}`);
+        if (skippedNoRule < 10) { // Mostrar as primeiras 10 para debug
+          console.log(`⚠️ [BUDGETS] Categoria não encontrada nas regras: "${tx.category}" - ${tx.description || tx.merchant} - R$ ${tx.amount.toFixed(2)}`);
         }
         skippedNoRule++;
         return;
       }
 
       const key = `${matchingRule.category}::${matchingRule.subcategory}`;
-      if (subcategoryMap[key]) {
-        const month = format(new Date(tx.date), 'yyyy-MM');
-        const amount = Math.abs(tx.amount);
+      if (!subcategoryMap[key]) {
+        console.error(`❌ [BUDGETS] ERRO: Key "${key}" não existe no subcategoryMap! Categoria: "${tx.category}"`);
+        return;
+      }
 
-        // Somente despesas (valores negativos) para cálculo de budget
-        if (tx.amount < 0) {
-          if (!subcategoryMap[key].monthlyTotals[month]) {
-            subcategoryMap[key].monthlyTotals[month] = 0;
+      const month = format(new Date(tx.date), 'yyyy-MM');
+      const amount = Math.abs(tx.amount);
+
+      // Somente despesas (valores negativos) para cálculo de budget
+      if (tx.amount < 0) {
+        if (!subcategoryMap[key].monthlyTotals[month]) {
+          subcategoryMap[key].monthlyTotals[month] = 0;
+        }
+        subcategoryMap[key].monthlyTotals[month] += amount;
+
+        // Gasto do mês selecionado
+        if (month === currentMonth) {
+          subcategoryMap[key].currentMonthSpent += amount;
+          processedExpenses++;
+
+          // Log específico para Serviços Financeiros para debug
+          if (matchingRule.category === 'Serviços Financeiros') {
+            console.log(`  💳 [Serviços Financeiros] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
           }
-          subcategoryMap[key].monthlyTotals[month] += amount;
 
-          // Gasto do mês selecionado
-          if (month === currentMonth) {
-            subcategoryMap[key].currentMonthSpent += amount;
-            processedExpenses++;
+          // Coletar transferências para log detalhado
+          if (matchingRule.category === 'Transferências' || matchingRule.category === 'PIX' || matchingRule.category === 'TED/DOC') {
+            transferencias.push({ description: tx.description || tx.merchant || 'Sem descrição', amount });
+          }
 
-            // Coletar transferências para log detalhado
-            if (matchingRule.category === 'Transferências' || matchingRule.category === 'PIX' || matchingRule.category === 'TED/DOC') {
-              transferencias.push({ description: tx.description || tx.merchant || 'Sem descrição', amount });
-            }
-
-            if (processedExpenses <= 10) { // Mostrar as primeiras 10 despesas gerais
-              console.log(`  📌 [${matchingRule.category}] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
-            }
+          if (processedExpenses <= 10) { // Mostrar as primeiras 10 despesas gerais
+            console.log(`  📌 [${matchingRule.category}] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
           }
         }
       }
@@ -804,6 +812,16 @@ export default function Budgets() {
         monthsWithData,
       };
 
+      // Log específico para Serviços Financeiros
+      if (data.rule.category === 'Serviços Financeiros') {
+        console.log(`\n  💳 [Serviços Financeiros] Processando subcategoria:`);
+        console.log(`     Subcategoria: ${data.rule.subcategory}`);
+        console.log(`     Tipo: ${effectiveType}`);
+        console.log(`     Gasto atual: R$ ${data.currentMonthSpent.toFixed(2)}`);
+        console.log(`     Budget sugerido: R$ ${Math.round(avgMonthly).toFixed(2)}`);
+        console.log(`     Meses com dados: ${monthsWithData}`);
+      }
+
       // Acumular totais por categoria principal
       if (!categoryTotals[data.rule.category]) {
         categoryTotals[data.rule.category] = {
@@ -829,6 +847,9 @@ export default function Budgets() {
         grouped[effectiveType][data.rule.category].subcategories.push(categoryData);
         grouped[effectiveType][data.rule.category].totalSpent += categoryData.currentSpent;
         // NÃO somar budget aqui - será calculado depois por categoria
+      } else {
+        console.error(`❌ [BUDGETS] ERRO: grouped["${effectiveType}"]["${data.rule.category}"] não existe!`);
+        console.error(`   Isso significa que a categoria não foi inicializada corretamente.`);
       }
     });
 
@@ -859,6 +880,7 @@ export default function Budgets() {
 
         // Acumular para resumo da Visão Geral
         if (type === 'Despesas Fixas') {
+          console.log(`     ➕ Somando ao CUSTOS FIXOS: budget +R$ ${categoryBudget.toFixed(2)}, spent +R$ ${category.totalSpent.toFixed(2)}`);
           fixedBudget += categoryBudget;
           fixedSpent += category.totalSpent;
           fixedItems.push({
@@ -868,6 +890,7 @@ export default function Budgets() {
             spent: category.totalSpent
           });
         } else if (type === 'Despesas Variáveis') {
+          console.log(`     ➕ Somando ao CUSTOS VARIÁVEIS: budget +R$ ${categoryBudget.toFixed(2)}, spent +R$ ${category.totalSpent.toFixed(2)}`);
           variableBudget += categoryBudget;
           variableSpent += category.totalSpent;
           variableItems.push({
@@ -878,6 +901,7 @@ export default function Budgets() {
           });
         } else if (type === 'Movimentações (Despesas)') {
           // Movimentações de despesas (Investimentos, Transferências, Saques)
+          console.log(`     ➕ Somando ao INVESTIMENTOS: budget +R$ ${categoryBudget.toFixed(2)}, spent +R$ ${category.totalSpent.toFixed(2)}`);
           investmentsBudget += categoryBudget;
           investmentsSpent += category.totalSpent;
           investmentItems.push({
@@ -886,6 +910,8 @@ export default function Budgets() {
             budget: categoryBudget,
             spent: category.totalSpent
           });
+        } else {
+          console.log(`     ⚠️ Tipo "${type}" NÃO incluído no resumo (ex: Movimentações Receitas)`);
         }
         // Movimentações (Receitas) não entram na Visão Geral pois são entradas de dinheiro
       });
@@ -903,6 +929,13 @@ export default function Budgets() {
     });
     console.log(`     ────────────────────────────────────────────────────`);
     console.log(`     ✅ TOTAL FIXAS: Budget R$ ${fixedBudget.toFixed(2)} | Gasto R$ ${fixedSpent.toFixed(2)}`);
+    // Validação: verificar se Serviços Financeiros está na lista
+    const hasServicosFinanceiros = fixedItems.some(item => item.cat === 'Serviços Financeiros');
+    if (!hasServicosFinanceiros) {
+      console.error(`     ❌ ALERTA: "Serviços Financeiros" NÃO está incluído nos Custos Fixos!`);
+    } else {
+      console.log(`     ✅ VERIFICAÇÃO: "Serviços Financeiros" está incluído nos Custos Fixos`);
+    }
 
     console.log(`\n  🛒 DESPESAS VARIÁVEIS (${variableItems.length} itens):`);
     variableItems.forEach((item, idx) => {
@@ -921,6 +954,17 @@ export default function Budgets() {
     console.log(`     ✅ TOTAL INVESTIMENTOS: Budget R$ ${investmentsBudget.toFixed(2)} | Gasto R$ ${investmentsSpent.toFixed(2)}`);
 
     console.log(`\n💰 [BUDGETS] ═══════════════════════════════════════════════════`);
+
+    // Validação final: somar manualmente para confirmar
+    const manualFixedBudget = fixedItems.reduce((sum, item) => sum + item.budget, 0);
+    const manualFixedSpent = fixedItems.reduce((sum, item) => sum + item.spent, 0);
+    if (Math.abs(manualFixedBudget - fixedBudget) > 0.01 || Math.abs(manualFixedSpent - fixedSpent) > 0.01) {
+      console.error(`❌ ERRO: Discrepância nos totais de Custos Fixos!`);
+      console.error(`   Calculado: Budget R$ ${fixedBudget.toFixed(2)}, Gasto R$ ${fixedSpent.toFixed(2)}`);
+      console.error(`   Manual:    Budget R$ ${manualFixedBudget.toFixed(2)}, Gasto R$ ${manualFixedSpent.toFixed(2)}`);
+    } else {
+      console.log(`✅ [BUDGETS] Validação: Totais de Custos Fixos estão corretos`);
+    }
 
     // Log detalhado de totais por categoria (todos os meses)
     console.log(`\n📊 [BUDGETS] ═══════════════════════════════════════════════════`);
@@ -961,7 +1005,7 @@ export default function Budgets() {
     console.log(`📈 [BUDGETS] ═══════════════════════════════════════════════════`);
     console.log(`\n✅ [BUDGETS] Processamento concluído!\n`);
 
-    setMonthSummary({
+    const summaryObject = {
       salary,
       fixedBudget,
       fixedSpent,
@@ -969,7 +1013,16 @@ export default function Budgets() {
       variableSpent,
       investmentsBudget,
       investmentsSpent,
-    });
+    };
+
+    console.log(`\n📤 [BUDGETS] Salvando resumo no estado (será exibido na UI):`);
+    console.log(`   Salário: R$ ${salary.toFixed(2)}`);
+    console.log(`   CUSTOS FIXOS - Budget: R$ ${fixedBudget.toFixed(2)}, Gasto: R$ ${fixedSpent.toFixed(2)}`);
+    console.log(`   CUSTOS VARIÁVEIS - Budget: R$ ${variableBudget.toFixed(2)}, Gasto: R$ ${variableSpent.toFixed(2)}`);
+    console.log(`   INVESTIMENTOS - Budget: R$ ${investmentsBudget.toFixed(2)}, Gasto: R$ ${investmentsSpent.toFixed(2)}`);
+    console.log(``);
+
+    setMonthSummary(summaryObject);
 
     setCategoryData(grouped);
   };
