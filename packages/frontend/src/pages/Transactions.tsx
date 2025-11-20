@@ -16,6 +16,7 @@ const Transactions = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [selectedCostType, setSelectedCostType] = useState(''); // Novo: Filtro de tipo de custo
   const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
   // const [showMonthlyBreakdown, setShowMonthlyBreakdown] = useState(false); // Temporariamente desabilitado
@@ -193,6 +194,33 @@ const Transactions = () => {
     }).format(value);
   };
 
+  // Mapeamento de categorias para tipos de custo
+  const costTypeMap: Record<string, string> = {
+    // Despesas Fixas
+    'Contas': 'Fixos',
+    'Serviços Financeiros': 'Fixos',
+    'Entretenimento': 'Fixos', // Streaming e assinaturas
+    'Educação': 'Fixos',
+    'Impostos e Taxas': 'Fixos',
+    'Saúde': 'Fixos', // Planos e mensalidades
+
+    // Despesas Variáveis
+    'Supermercado': 'Variáveis',
+    'Alimentação': 'Variáveis',
+    'Transporte': 'Variáveis',
+    'Compras': 'Variáveis',
+    'Casa': 'Variáveis',
+    'Pet': 'Variáveis',
+    'Viagens': 'Variáveis',
+
+    // Investimentos e Movimentações
+    'Investimentos': 'Investimentos',
+    'Transferências': 'Investimentos',
+    'Saques': 'Investimentos',
+    'PIX': 'Investimentos',
+    'TED/DOC': 'Investimentos',
+  };
+
   const filteredTransactions = transactions.filter((transaction) => {
     const searchLower = search.toLowerCase();
     const matchesSearch =
@@ -203,7 +231,10 @@ const Transactions = () => {
     // Filtro por período (mês/ano selecionado no PeriodSelector)
     const matchesPeriod = format(new Date(transaction.date), 'yyyy-MM') === format(currentPeriod, 'yyyy-MM');
 
-    return matchesSearch && matchesPeriod;
+    // Filtro por tipo de custo
+    const matchesCostType = !selectedCostType || costTypeMap[transaction.category || ''] === selectedCostType;
+
+    return matchesSearch && matchesPeriod && matchesCostType;
   });
 
   // Calcular transações dos últimos 12 meses COMPLETOS (para cards de resumo e breakdown)
@@ -744,7 +775,7 @@ const Transactions = () => {
                 />
               </div>
 
-              {/* Dropdowns (Categoria e Tipo) */}
+              {/* Dropdowns (Categoria, Tipo e Tipo de Custo) */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {/* Category Filter */}
                 <div className="relative">
@@ -773,6 +804,23 @@ const Transactions = () => {
                     <option value="">Todos tipos</option>
                     <option value="credit">Receitas</option>
                     <option value="debit">Despesas</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Filtro de Tipo de Custo */}
+              <div className="mb-4">
+                <div className="relative">
+                  <select
+                    value={selectedCostType}
+                    onChange={(e) => setSelectedCostType(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                  >
+                    <option value="">Todos os tipos de custo</option>
+                    <option value="Fixos">🔧 Custos Fixos</option>
+                    <option value="Variáveis">🛒 Custos Variáveis</option>
+                    <option value="Investimentos">📈 Investimentos</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
@@ -919,11 +967,20 @@ const Transactions = () => {
                             <div className="text-xs text-gray-500 mt-0.5 truncate md:whitespace-normal">{transaction.reference}</div>
                           )}
                           {/* Mostrar categoria em mobile */}
-                          <div className="md:hidden mt-1">
+                          <div className="md:hidden mt-1 flex items-center space-x-1">
+                            {/* Ícone da categoria (mobile) */}
+                            {!isUncategorized && transaction.category && (
+                              <div className="flex-shrink-0">
+                                <CategoryIconSmall category={transaction.category} className="w-4 h-4" />
+                              </div>
+                            )}
+                            {isUncategorized && (
+                              <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                            )}
                             <select
                               value={transaction.category || ''}
                               onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                              className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 w-full ${
+                              className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 flex-1 ${
                                 isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
                               }`}
                             >
@@ -939,13 +996,19 @@ const Transactions = () => {
                     </td>
                     <td className="hidden md:table-cell p-2 sm:p-3 lg:p-4">
                       <div className="flex items-center space-x-2">
+                        {/* Ícone da categoria */}
+                        {!isUncategorized && transaction.category && (
+                          <div className="flex-shrink-0">
+                            <CategoryIconSmall category={transaction.category} className="w-4 h-4 lg:w-5 lg:h-5" />
+                          </div>
+                        )}
                         {isUncategorized && (
                           <AlertCircle className="w-4 lg:w-5 h-4 lg:h-5 text-orange-600 flex-shrink-0" />
                         )}
                         <select
                           value={transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                          className={`text-xs sm:text-sm border rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 focus:outline-none focus:ring-2 ${
+                          className={`text-xs sm:text-sm border rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 focus:outline-none focus:ring-2 flex-1 ${
                             isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
                           }`}
                         >
