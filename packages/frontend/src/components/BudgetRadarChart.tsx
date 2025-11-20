@@ -99,34 +99,69 @@ export const BudgetRadarChart = () => {
       const transactionsByCategory: Record<string, any[]> = {};
 
       console.log(`\n📊 [STEP 4] AGREGANDO DESPESAS POR CATEGORIA:`);
+      console.log(`\n🔍 ANÁLISE DETALHADA DE TODAS AS TRANSAÇÕES:`);
+
+      // Log de TODAS as transações antes de filtrar
+      console.log(`\n📝 TODAS AS ${transactions.length} TRANSAÇÕES (antes do filtro):`);
+      const categoryCounts: Record<string, number> = {};
+
+      transactions.forEach((t, idx) => {
+        const cat = t.category || 'SEM CATEGORIA';
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+
+        // Log das primeiras 20 transações para debug
+        if (idx < 20) {
+          console.log(`  #${idx + 1}: ${t.type} | ${cat} | R$ ${Math.abs(t.amount).toFixed(2)} | ${t.description || 'sem descrição'}`);
+        }
+      });
+
+      console.log(`\n📊 CONTAGEM BRUTA POR CATEGORIA (TODAS as transações):`);
+      Object.entries(categoryCounts).sort(([,a], [,b]) => b - a).forEach(([cat, count]) => {
+        console.log(`  ${cat}: ${count} transações`);
+      });
 
       let processedCount = 0;
-      transactions
-        .filter((t) => t.type === 'debit' && t.category)
-        .forEach((t) => {
-          const category = t.category!;
-          const amount = Math.abs(t.amount);
+      let skippedCount = 0;
 
-          // Inicializar se não existe
-          if (!expensesByCategory[category]) {
-            expensesByCategory[category] = 0;
-            transactionsByCategory[category] = [];
+      console.log(`\n🔍 PROCESSANDO APENAS DÉBITOS COM CATEGORIA:`);
+
+      transactions.forEach((t, idx) => {
+        const isDebit = t.type === 'debit';
+        const hasCategory = !!t.category;
+
+        if (!isDebit || !hasCategory) {
+          skippedCount++;
+          if (skippedCount <= 10) {
+            console.log(`  ⏭️ Pulando #${idx + 1}: type=${t.type}, category=${t.category || 'null'}, motivo=${!isDebit ? 'não é débito' : 'sem categoria'}`);
           }
+          return;
+        }
 
-          // Adicionar ao total
-          expensesByCategory[category] += amount;
-          transactionsByCategory[category].push({
-            id: t.id,
-            date: new Date(t.date).toLocaleDateString('pt-BR'),
-            description: t.description,
-            merchant: t.merchant,
-            amount: amount,
-          });
+        const category = t.category!;
+        const amount = Math.abs(t.amount);
 
-          processedCount++;
+        // Inicializar se não existe
+        if (!expensesByCategory[category]) {
+          expensesByCategory[category] = 0;
+          transactionsByCategory[category] = [];
+          console.log(`  🆕 Nova categoria detectada: "${category}"`);
+        }
+
+        // Adicionar ao total
+        expensesByCategory[category] += amount;
+        transactionsByCategory[category].push({
+          id: t.id,
+          date: new Date(t.date).toLocaleDateString('pt-BR'),
+          description: t.description,
+          merchant: t.merchant,
+          amount: amount,
         });
 
-      console.log(`✅ ${processedCount} transações processadas`);
+        processedCount++;
+      });
+
+      console.log(`\n✅ ${processedCount} transações de débito COM categoria processadas`);
+      console.log(`⏭️ ${skippedCount} transações puladas`);
       console.log(`✅ ${Object.keys(expensesByCategory).length} categorias únicas identificadas\n`);
 
       // Log detalhado de cada categoria
@@ -154,6 +189,38 @@ export const BudgetRadarChart = () => {
       console.log(`\n📊 [STEP 5] COMBINANDO BUDGETS E DESPESAS:`);
       console.log(`Total de categorias únicas: ${allCategories.length}`);
       console.log(`Categorias:`, allCategories.sort());
+
+      console.log(`\n🔍 ANÁLISE DETALHADA DAS CATEGORIAS:`);
+      console.log(`📌 Categorias SOMENTE com budget (${Object.keys(budgets).length}):`);
+      Object.keys(budgets).sort().forEach((cat) => {
+        console.log(`  - ${cat}: R$ ${budgets[cat].toFixed(2)}`);
+      });
+
+      console.log(`\n📌 Categorias SOMENTE com despesas (${Object.keys(expensesByCategory).length}):`);
+      Object.keys(expensesByCategory).sort().forEach((cat) => {
+        console.log(`  - ${cat}: R$ ${expensesByCategory[cat].toFixed(2)}`);
+      });
+
+      console.log(`\n📌 Categorias que aparecem em AMBOS:`);
+      const inBoth = Object.keys(budgets).filter(cat => expensesByCategory[cat]);
+      console.log(`  Total: ${inBoth.length}`);
+      inBoth.forEach(cat => {
+        console.log(`  - ${cat}: Budget R$ ${budgets[cat].toFixed(2)} | Realizado R$ ${expensesByCategory[cat].toFixed(2)}`);
+      });
+
+      console.log(`\n📌 Categorias SOMENTE com budget (sem despesas):`);
+      const onlyBudget = Object.keys(budgets).filter(cat => !expensesByCategory[cat]);
+      console.log(`  Total: ${onlyBudget.length}`);
+      onlyBudget.forEach(cat => {
+        console.log(`  - ${cat}: R$ ${budgets[cat].toFixed(2)}`);
+      });
+
+      console.log(`\n📌 Categorias SOMENTE com despesas (sem budget):`);
+      const onlyExpenses = Object.keys(expensesByCategory).filter(cat => !budgets[cat]);
+      console.log(`  Total: ${onlyExpenses.length}`);
+      onlyExpenses.forEach(cat => {
+        console.log(`  - ${cat}: R$ ${expensesByCategory[cat].toFixed(2)}`);
+      });
 
       console.log(`\n📊 [STEP 6] CRIANDO DADOS DO RADAR:`);
 
