@@ -104,8 +104,8 @@ export const BudgetRadarChart = () => {
         const orcado = budgets[category] || 0;
         const realizado = expensesByCategory[category] || 0;
 
-        // Incluir apenas se tiver gasto realizado (despesa)
-        if (realizado > 0) {
+        // Incluir apenas se tiver gasto realizado (despesa) E não for "Não categorizado"
+        if (realizado > 0 && category !== 'Não categorizado' && category !== 'Sem Categoria') {
           const desvio = realizado - orcado;
           const desvioPercentual = orcado > 0 ? ((desvio / orcado) * 100) : 0;
           const color = getCategoryColor(category, index);
@@ -124,22 +124,22 @@ export const BudgetRadarChart = () => {
       // Ordenar por MAIOR DESPESA REALIZADA (gasto real)
       radarData.sort((a, b) => b.realizado - a.realizado);
 
-      // Limitar às 10 categorias com MAIORES DESPESAS
-      const top10Data = radarData.slice(0, 10);
+      // Limitar às 18 categorias com MAIORES DESPESAS
+      const top18Data = radarData.slice(0, 18);
 
-      console.log('📊 [RADAR] Top 10 categorias por média:', top10Data);
+      console.log('📊 [RADAR] Top 18 categorias por despesa realizada:', top18Data);
 
-      setData(top10Data);
+      setData(top18Data);
 
       // 5. Calcular análise
-      if (top10Data.length > 0) {
+      if (top18Data.length > 0) {
         // Encontrar categoria com maior desvio absoluto
-        const maxDesvio = top10Data.reduce((prev, current) =>
+        const maxDesvio = top18Data.reduce((prev, current) =>
           Math.abs(current.desvio) > Math.abs(prev.desvio) ? current : prev
         );
 
-        const totalOrcado = top10Data.reduce((sum, item) => sum + item.orcado, 0);
-        const totalRealizado = top10Data.reduce((sum, item) => sum + item.realizado, 0);
+        const totalOrcado = top18Data.reduce((sum, item) => sum + item.orcado, 0);
+        const totalRealizado = top18Data.reduce((sum, item) => sum + item.realizado, 0);
         const desvioGeral = totalRealizado - totalOrcado;
 
         setAnalysis({
@@ -252,10 +252,10 @@ export const BudgetRadarChart = () => {
         {/* Conteúdo Principal - Gráfico */}
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Top 10 Categorias - Orçamento vs Realizado
+            Top 18 Categorias - Orçamento vs Realizado
           </h3>
           <p className="text-sm text-gray-600 mb-4">
-            Mostrando as 10 categorias com maiores despesas em{' '}
+            Mostrando as 18 categorias com maiores despesas em{' '}
             <span className="font-semibold text-blue-600">
               {format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}
             </span>
@@ -412,7 +412,7 @@ export const BudgetRadarChart = () => {
                 <p>
                   <span className="font-semibold">Interpretação:</span> O gráfico de radar compara visualmente o{' '}
                   <span className="font-semibold text-blue-600">Orçamento Planejado (Azul)</span> com os{' '}
-                  <span className="font-semibold text-red-600">Gastos Reais (Vermelho)</span> nas 10 categorias de maior impacto financeiro.
+                  <span className="font-semibold text-red-600">Gastos Reais (Vermelho)</span> nas 18 categorias de maior impacto financeiro.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
@@ -437,13 +437,13 @@ export const BudgetRadarChart = () => {
                   <p className="font-semibold text-gray-800 mb-1">Diagnóstico Financeiro:</p>
                   {analysis.desvioGeral > 0 ? (
                     <p>
-                      Há um <span className="font-semibold text-red-700">excesso de gastos de {formatCurrency(analysis.desvioGeral)}</span> nas top 10 categorias.
+                      Há um <span className="font-semibold text-red-700">excesso de gastos de {formatCurrency(analysis.desvioGeral)}</span> nas top 18 categorias.
                       Categorias com maior extrapolação precisam de atenção para melhorar o controle financeiro.
                       Foque em ajustar os hábitos nas categorias onde o vermelho ultrapassa significativamente o azul.
                     </p>
                   ) : (
                     <p>
-                      Parabéns! Você teve uma <span className="font-semibold text-green-700">economia de {formatCurrency(Math.abs(analysis.desvioGeral))}</span> nas top 10 categorias.
+                      Parabéns! Você teve uma <span className="font-semibold text-green-700">economia de {formatCurrency(Math.abs(analysis.desvioGeral))}</span> nas top 18 categorias.
                       O orçamento foi respeitado, e os gastos ficaram controlados. Continue monitorando para manter esse padrão positivo.
                     </p>
                   )}
