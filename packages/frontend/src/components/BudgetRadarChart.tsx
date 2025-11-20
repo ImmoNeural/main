@@ -24,11 +24,7 @@ interface RadarData {
   color: string;
 }
 
-interface BudgetRadarChartProps {
-  period?: number; // Em dias, padrão 30 (mês atual)
-}
-
-export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
+export const BudgetRadarChart = () => {
   const [data, setData] = useState<RadarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
