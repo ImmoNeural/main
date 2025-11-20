@@ -46,8 +46,9 @@ app.use(cors({
 // IMPORTANTE: Raw body para webhook do Stripe (precisa verificar assinatura)
 app.use('/api/subscriptions/webhook/stripe', express.raw({ type: 'application/json' }));
 
-// JSON parser para todas as outras rotas
-app.use(express.json());
+// JSON parser para todas as outras rotas (limite aumentado para suportar CSVs grandes)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // SQLite desabilitado - usando Supabase agora
 // initDatabase();
