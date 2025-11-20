@@ -56,17 +56,23 @@ export const BudgetRadarChart = () => {
   const loadRadarData = async () => {
     setLoading(true);
     try {
+      console.log('\n========== 🔍 INÍCIO DA ANÁLISE DO RADAR ==========');
+
       // 1. Buscar budgets configurados
       const budgetsResponse = await budgetApi.getAllBudgets();
       const budgets = budgetsResponse.data;
 
-      console.log('📊 [RADAR] Budgets carregados:', budgets);
+      console.log('\n📊 [STEP 1] BUDGETS CARREGADOS:');
+      console.log('Total de categorias com budget:', Object.keys(budgets).length);
+      console.log('Detalhes:', JSON.stringify(budgets, null, 2));
 
       // 2. Buscar transações do mês selecionado
       const startDate = startOfMonth(selectedMonth);
       const endDate = endOfMonth(selectedMonth);
 
-      console.log(`📊 [RADAR] Buscando transações de ${format(startDate, 'dd/MM/yyyy')} até ${format(endDate, 'dd/MM/yyyy')}`);
+      console.log(`\n📊 [STEP 2] PERÍODO SELECIONADO:`);
+      console.log(`De: ${format(startDate, 'dd/MM/yyyy HH:mm:ss')}`);
+      console.log(`Até: ${format(endDate, 'dd/MM/yyyy HH:mm:ss')}`);
 
       const transactionsResponse = await transactionApi.getTransactions({
         start_date: startDate.toISOString(),
@@ -74,23 +80,67 @@ export const BudgetRadarChart = () => {
       });
 
       const transactions = transactionsResponse.data.transactions;
-      console.log(`📊 [RADAR] ${transactions.length} transações carregadas`);
+      console.log(`\n📊 [STEP 3] TRANSAÇÕES CARREGADAS:`);
+      console.log(`Total geral: ${transactions.length} transações`);
+
+      // Análise detalhada das transações
+      const debitTransactions = transactions.filter((t) => t.type === 'debit');
+      const creditTransactions = transactions.filter((t) => t.type === 'credit');
+      const debitWithCategory = debitTransactions.filter((t) => t.category);
+      const debitWithoutCategory = debitTransactions.filter((t) => !t.category);
+
+      console.log(`  - Débitos (despesas): ${debitTransactions.length}`);
+      console.log(`  - Créditos (receitas): ${creditTransactions.length}`);
+      console.log(`  - Débitos COM categoria: ${debitWithCategory.length}`);
+      console.log(`  - Débitos SEM categoria: ${debitWithoutCategory.length}`);
 
       // 3. Agrupar despesas por categoria (apenas despesas, não receitas)
       const expensesByCategory: Record<string, number> = {};
+      const transactionsByCategory: Record<string, any[]> = {};
 
+      console.log(`\n📊 [STEP 4] AGREGANDO DESPESAS POR CATEGORIA:`);
+
+      let processedCount = 0;
       transactions
         .filter((t) => t.type === 'debit' && t.category)
         .forEach((t) => {
           const category = t.category!;
+          const amount = Math.abs(t.amount);
+
+          // Inicializar se não existe
           if (!expensesByCategory[category]) {
             expensesByCategory[category] = 0;
+            transactionsByCategory[category] = [];
           }
-          expensesByCategory[category] += Math.abs(t.amount);
+
+          // Adicionar ao total
+          expensesByCategory[category] += amount;
+          transactionsByCategory[category].push({
+            id: t.id,
+            date: new Date(t.date).toLocaleDateString('pt-BR'),
+            description: t.description,
+            merchant: t.merchant,
+            amount: amount,
+          });
+
+          processedCount++;
         });
 
-      console.log('📊 [RADAR] Despesas por categoria:', expensesByCategory);
-      console.log('📊 [RADAR] Total de categorias com despesas:', Object.keys(expensesByCategory).length);
+      console.log(`✅ ${processedCount} transações processadas`);
+      console.log(`✅ ${Object.keys(expensesByCategory).length} categorias únicas identificadas\n`);
+
+      // Log detalhado de cada categoria
+      console.log('📋 DESPESAS POR CATEGORIA (ordenado por valor):');
+      const sortedCategories = Object.entries(expensesByCategory)
+        .sort(([, a], [, b]) => b - a);
+
+      sortedCategories.forEach(([category, total], index) => {
+        const txCount = transactionsByCategory[category].length;
+        console.log(`${index + 1}. ${category}:`);
+        console.log(`   Total: R$ ${total.toFixed(2)}`);
+        console.log(`   Transações: ${txCount}`);
+        console.log(`   Média por transação: R$ ${(total / txCount).toFixed(2)}`);
+      });
 
       // 4. Criar dados do radar combinando budgets e despesas
       const radarData: RadarData[] = [];
@@ -101,17 +151,34 @@ export const BudgetRadarChart = () => {
         ...Object.keys(expensesByCategory),
       ]));
 
-      console.log('📊 [RADAR] Total de categorias únicas (budgets + despesas):', allCategories.length);
-      console.log('📊 [RADAR] Categorias únicas:', allCategories);
+      console.log(`\n📊 [STEP 5] COMBINANDO BUDGETS E DESPESAS:`);
+      console.log(`Total de categorias únicas: ${allCategories.length}`);
+      console.log(`Categorias:`, allCategories.sort());
+
+      console.log(`\n📊 [STEP 6] CRIANDO DADOS DO RADAR:`);
+
+      let includedCount = 0;
+      let excludedCount = 0;
 
       allCategories.forEach((category, index) => {
         const orcado = budgets[category] || 0;
         const realizado = expensesByCategory[category] || 0;
 
-        // Incluir apenas se tiver gasto realizado (despesa) E não for "Não categorizado"
-        if (realizado > 0 && category !== 'Não categorizado' && category !== 'Sem Categoria') {
+        // Log de cada categoria sendo avaliada
+        const shouldInclude = realizado > 0 && category !== 'Não categorizado' && category !== 'Sem Categoria';
+
+        if (shouldInclude) {
           const desvio = realizado - orcado;
-          const desvioPercentual = orcado > 0 ? ((desvio / orcado) * 100) : 0;
+
+          // Calcular desvio percentual de forma correta
+          let desvioPercentual = 0;
+          if (orcado > 0) {
+            desvioPercentual = ((desvio / orcado) * 100);
+          } else if (realizado > 0) {
+            // Se não há budget mas há gasto, considerar como 100% de excesso
+            desvioPercentual = 100;
+          }
+
           const color = getCategoryColor(category, index);
 
           radarData.push({
@@ -122,30 +189,88 @@ export const BudgetRadarChart = () => {
             desvioPercentual,
             color,
           });
+
+          console.log(`  ✅ #${includedCount + 1} ${category}:`);
+          console.log(`     Orçado: R$ ${orcado.toFixed(2)}`);
+          console.log(`     Realizado: R$ ${realizado.toFixed(2)}`);
+          console.log(`     Desvio: R$ ${desvio.toFixed(2)} (${desvioPercentual.toFixed(1)}%)`);
+          console.log(`     Cor: ${color}`);
+
+          includedCount++;
+        } else {
+          excludedCount++;
+          console.log(`  ❌ Excluída: ${category} (realizado: R$ ${realizado.toFixed(2)}, motivo: ${realizado === 0 ? 'sem despesas' : 'categoria filtrada'})`);
         }
       });
 
-      console.log('📊 [RADAR] Categorias após filtro (excluindo Não categorizado):', radarData.length);
+      console.log(`\n✅ Categorias incluídas no radar: ${includedCount}`);
+      console.log(`❌ Categorias excluídas: ${excludedCount}`);
 
       // Ordenar por MAIOR DESPESA REALIZADA (gasto real)
       radarData.sort((a, b) => b.realizado - a.realizado);
 
-      // Pegar TODAS as categorias disponíveis (sem limitar a 18)
-      console.log('📊 [RADAR] Total final de categorias no radar:', radarData.length);
-      console.log('📊 [RADAR] Dados finais do radar:', radarData);
+      console.log(`\n📊 [STEP 7] RANKING FINAL (ordenado por despesa real):`);
+      radarData.forEach((item, index) => {
+        console.log(`${index + 1}º. ${item.category} - R$ ${item.realizado.toFixed(2)}`);
+      });
 
       setData(radarData);
 
       // 5. Calcular análise
+      console.log(`\n📊 [STEP 8] CALCULANDO ANÁLISE GERAL:`);
+
       if (radarData.length > 0) {
+        // Calcular totais
+        console.log(`\nCalculando totais de ${radarData.length} categorias:`);
+
+        let totalOrcado = 0;
+        let totalRealizado = 0;
+
+        radarData.forEach((item, index) => {
+          totalOrcado += item.orcado;
+          totalRealizado += item.realizado;
+
+          console.log(`  ${index + 1}. ${item.category}:`);
+          console.log(`     Contribuição orçado: R$ ${item.orcado.toFixed(2)}`);
+          console.log(`     Contribuição realizado: R$ ${item.realizado.toFixed(2)}`);
+        });
+
+        const desvioGeral = totalRealizado - totalOrcado;
+        const desvioGeralPercentual = totalOrcado > 0 ? ((desvioGeral / totalOrcado) * 100) : 0;
+
+        console.log(`\n💰 TOTAIS FINAIS:`);
+        console.log(`   Total Orçado: R$ ${totalOrcado.toFixed(2)}`);
+        console.log(`   Total Realizado: R$ ${totalRealizado.toFixed(2)}`);
+        console.log(`   Desvio Geral: R$ ${desvioGeral.toFixed(2)} (${desvioGeralPercentual.toFixed(1)}%)`);
+        console.log(`   Status: ${desvioGeral > 0 ? '❌ ACIMA DO ORÇAMENTO' : '✅ DENTRO DO ORÇAMENTO'}`);
+
         // Encontrar categoria com maior desvio absoluto
         const maxDesvio = radarData.reduce((prev, current) =>
           Math.abs(current.desvio) > Math.abs(prev.desvio) ? current : prev
         );
 
-        const totalOrcado = radarData.reduce((sum, item) => sum + item.orcado, 0);
-        const totalRealizado = radarData.reduce((sum, item) => sum + item.realizado, 0);
-        const desvioGeral = totalRealizado - totalOrcado;
+        console.log(`\n⚠️ CATEGORIA COM MAIOR DESVIO:`);
+        console.log(`   Categoria: ${maxDesvio.category}`);
+        console.log(`   Orçado: R$ ${maxDesvio.orcado.toFixed(2)}`);
+        console.log(`   Realizado: R$ ${maxDesvio.realizado.toFixed(2)}`);
+        console.log(`   Desvio: R$ ${maxDesvio.desvio.toFixed(2)} (${maxDesvio.desvioPercentual.toFixed(1)}%)`);
+
+        // Validações de integridade
+        console.log(`\n🔍 VALIDAÇÕES DE INTEGRIDADE:`);
+
+        // Verificar se algum valor é NaN
+        const hasNaN = radarData.some((item) =>
+          isNaN(item.orcado) || isNaN(item.realizado) || isNaN(item.desvio) || isNaN(item.desvioPercentual)
+        );
+        console.log(`   ✓ Valores NaN detectados: ${hasNaN ? '❌ SIM - ERRO!' : '✅ Não'}`);
+
+        // Verificar se algum valor é negativo (realizado não pode ser negativo)
+        const hasNegativeRealizado = radarData.some((item) => item.realizado < 0);
+        console.log(`   ✓ Valores negativos em 'realizado': ${hasNegativeRealizado ? '❌ SIM - ERRO!' : '✅ Não'}`);
+
+        // Verificar se soma dos valores individuais bate com o total
+        const sumCheck = Math.abs(totalRealizado - radarData.reduce((sum, item) => sum + item.realizado, 0)) < 0.01;
+        console.log(`   ✓ Soma de verificação: ${sumCheck ? '✅ OK' : '❌ ERRO - Totais não batem!'}`);
 
         setAnalysis({
           maxDesvio,
@@ -154,11 +279,10 @@ export const BudgetRadarChart = () => {
           desvioGeral,
         });
 
-        console.log('📊 [RADAR] Análise:', {
-          maxDesvio: maxDesvio.category,
-          desvioPercentual: maxDesvio.desvioPercentual.toFixed(1),
-          desvioGeral: desvioGeral.toFixed(2),
-        });
+        console.log(`\n========== ✅ FIM DA ANÁLISE DO RADAR ==========\n`);
+      } else {
+        console.log(`\n⚠️ Nenhuma categoria para analisar.`);
+        console.log(`========== ⚠️ FIM DA ANÁLISE DO RADAR (VAZIO) ==========\n`);
       }
     } catch (error) {
       console.error('❌ [RADAR] Erro ao carregar dados:', error);
