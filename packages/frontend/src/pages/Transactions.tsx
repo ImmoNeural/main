@@ -19,6 +19,31 @@ const Transactions = () => {
   const [selectedCostType, setSelectedCostType] = useState(''); // Novo: Filtro de tipo de custo
   const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
+
+  // Estado para controlar dropdown de categorias expandido
+  const [expandedCategory, setExpandedCategory] = useState<string>('');
+
+  // Mapeamento de subcategorias por categoria
+  const subcategoriesMap: Record<string, string[]> = {
+    'Supermercado': ['Compras de Mercado'],
+    'Alimentação': ['Restaurantes e Delivery'],
+    'Saúde': ['Odontologia', 'Farmácias e Drogarias', 'Médicos e Clínicas', 'Academia e Fitness'],
+    'Entretenimento': ['Lazer e Diversão', 'Streaming e Assinaturas'],
+    'Transporte': ['Apps de Transporte', 'Combustível e Pedágio', 'Transporte Público'],
+    'Compras': ['E-commerce', 'Moda e Vestuário', 'Tecnologia'],
+    'Casa': ['Construção e Reforma', 'Móveis e Decoração'],
+    'Serviços Financeiros': ['Bancos e Fintechs'],
+    'Contas': ['Telefonia e Internet', 'Energia e Água', 'Boletos e Débitos'],
+    'Educação': ['Livrarias e Papelarias', 'Cursos e Ensino'],
+    'Pet': ['Pet Shop e Veterinário'],
+    'Viagens': ['Aéreo e Turismo'],
+    'Salário': ['Salário e Rendimentos'],
+    'Saques': ['Saques em Dinheiro'],
+    'Investimentos': ['Aplicações e Investimentos', 'Poupança e Capitalização', 'Corretoras e Fundos'],
+    'Receitas': ['Rendimentos de Investimentos'],
+    'Transferências': ['PIX', 'TED/DOC'],
+    'Impostos e Taxas': ['IOF e Impostos'],
+  };
   // const [showMonthlyBreakdown, setShowMonthlyBreakdown] = useState(false); // Temporariamente desabilitado
 
   // Estados para o modal de recategorização em lote
@@ -923,23 +948,23 @@ const Transactions = () => {
 
         {/* Tabela de Transações */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="w-full">
+            <table className="w-full divide-y divide-gray-200 table-fixed">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                  <th scope="col" className="w-16 sm:w-20 px-1 sm:px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
                     Data
                   </th>
-                  <th scope="col" className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Descrição / Detalhe
+                  <th scope="col" className="px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
+                    Descrição
                   </th>
-                  <th scope="col" className="hidden md:table-cell px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th scope="col" className="hidden md:table-cell w-32 lg:w-40 px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
                     Categoria
                   </th>
-                  <th scope="col" className="hidden sm:table-cell px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                  <th scope="col" className="hidden sm:table-cell w-20 px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
                     Tipo
                   </th>
-                  <th scope="col" className="px-2 sm:px-3 lg:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+                  <th scope="col" className="w-24 sm:w-28 px-1 sm:px-2 py-2 text-right text-xs font-semibold text-gray-600 uppercase">
                     Valor
                   </th>
                 </tr>
@@ -953,18 +978,18 @@ const Transactions = () => {
 
                 return (
                   <tr key={transaction.id} className={`border-b border-gray-100 transition-all duration-150 ${rowBgClass}`}>
-                    <td className="p-2 sm:p-3 lg:p-4 text-xs sm:text-sm font-medium text-gray-500 whitespace-nowrap">
+                    <td className="px-1 sm:px-2 py-2 text-xs font-medium text-gray-500">
                       {format(new Date(transaction.date), 'dd/MM/yy')}
                     </td>
-                    <td className="p-2 sm:p-3 lg:p-4">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white shadow-inner flex-shrink-0">
-                          <CategoryIconSmall category={transaction.category || 'Outros'} />
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-white shadow-sm flex-shrink-0">
+                          <CategoryIconSmall category={transaction.category || 'Outros'} className="w-4 h-4" />
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-xs sm:text-sm lg:text-base text-gray-800 truncate">{transaction.merchant || transaction.description}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-xs sm:text-sm text-gray-800 truncate">{transaction.merchant || transaction.description}</div>
                           {transaction.reference && (
-                            <div className="text-xs text-gray-500 mt-0.5 truncate md:whitespace-normal">{transaction.reference}</div>
+                            <div className="text-xs text-gray-500 truncate">{transaction.reference}</div>
                           )}
                           {/* Mostrar categoria em mobile */}
                           <div className="md:hidden mt-1 flex items-center space-x-1">
@@ -984,55 +1009,85 @@ const Transactions = () => {
                                 isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
                               }`}
                             >
-                              {categories.map((cat) => (
-                                <option key={cat.category} value={cat.category}>
-                                  {cat.category}
-                                </option>
-                              ))}
+                              {categories.map((cat) => {
+                                const subcats = subcategoriesMap[cat.category] || [];
+                                if (subcats.length > 0) {
+                                  return (
+                                    <optgroup key={cat.category} label={`${cat.icon} ${cat.category}`}>
+                                      {subcats.map((sub) => (
+                                        <option key={`${cat.category}-${sub}`} value={cat.category}>
+                                          ⤷ {sub}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  );
+                                } else {
+                                  return (
+                                    <option key={cat.category} value={cat.category}>
+                                      {cat.icon} {cat.category}
+                                    </option>
+                                  );
+                                }
+                              })}
                             </select>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="hidden md:table-cell p-2 sm:p-3 lg:p-4">
-                      <div className="flex items-center space-x-2">
+                    <td className="hidden md:table-cell px-2 py-2">
+                      <div className="flex items-center space-x-1">
                         {/* Ícone da categoria */}
                         {!isUncategorized && transaction.category && (
                           <div className="flex-shrink-0">
-                            <CategoryIconSmall category={transaction.category} className="w-4 h-4 lg:w-5 lg:h-5" />
+                            <CategoryIconSmall category={transaction.category} className="w-4 h-4" />
                           </div>
                         )}
                         {isUncategorized && (
-                          <AlertCircle className="w-4 lg:w-5 h-4 lg:h-5 text-orange-600 flex-shrink-0" />
+                          <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
                         )}
                         <select
                           value={transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                          className={`text-xs sm:text-sm border rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 focus:outline-none focus:ring-2 flex-1 ${
+                          className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 w-full ${
                             isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
                           }`}
                         >
-                          {categories.map((cat) => (
-                            <option key={cat.category} value={cat.category}>
-                              {cat.category}
-                            </option>
-                          ))}
+                          {categories.map((cat) => {
+                            const subcats = subcategoriesMap[cat.category] || [];
+                            if (subcats.length > 0) {
+                              return (
+                                <optgroup key={cat.category} label={`${cat.icon} ${cat.category}`}>
+                                  {subcats.map((sub) => (
+                                    <option key={`${cat.category}-${sub}`} value={cat.category}>
+                                      ⤷ {sub}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              );
+                            } else {
+                              return (
+                                <option key={cat.category} value={cat.category}>
+                                  {cat.icon} {cat.category}
+                                </option>
+                              );
+                            }
+                          })}
                         </select>
                       </div>
                     </td>
-                    <td className="hidden sm:table-cell p-2 sm:p-3 lg:p-4">
+                    <td className="hidden sm:table-cell px-2 py-2">
                       <span
-                        className={`inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                        className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
                           transaction.type === 'credit'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {transaction.type === 'credit' ? 'Receita' : 'Despesa'}
+                        {transaction.type === 'credit' ? 'Rec' : 'Desp'}
                       </span>
                     </td>
-                    <td className={`p-2 sm:p-3 lg:p-4 text-xs sm:text-sm lg:text-base font-medium whitespace-nowrap ${valueClass}`}>
-                      {isReceita ? '+' : '-'} {formatCurrency(Math.abs(transaction.amount))}
+                    <td className={`px-1 sm:px-2 py-2 text-xs sm:text-sm font-semibold text-right ${valueClass}`}>
+                      {isReceita ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                     </td>
                   </tr>
                 );
