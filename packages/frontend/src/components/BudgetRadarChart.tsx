@@ -12,6 +12,7 @@ import {
 import { budgetApi, transactionApi } from '../services/api';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { getCategoryColor } from '../utils/colors';
 
 interface RadarData {
   category: string;
@@ -19,6 +20,7 @@ interface RadarData {
   realizado: number;
   desvio: number;
   desvioPercentual: number;
+  color: string;
 }
 
 interface BudgetRadarChartProps {
@@ -90,7 +92,7 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
         ...Object.keys(expensesByCategory),
       ]);
 
-      allCategories.forEach((category) => {
+      allCategories.forEach((category, index) => {
         const orcado = budgets[category] || 0;
         const realizado = expensesByCategory[category] || 0;
 
@@ -98,6 +100,7 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
         if (orcado > 0) {
           const desvio = realizado - orcado;
           const desvioPercentual = orcado > 0 ? ((desvio / orcado) * 100) : 0;
+          const color = getCategoryColor(category, index);
 
           radarData.push({
             category,
@@ -105,6 +108,7 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
             realizado,
             desvio,
             desvioPercentual,
+            color,
           });
         }
       });
@@ -112,22 +116,19 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
       // Ordenar por maior orçamento (categorias mais relevantes primeiro)
       radarData.sort((a, b) => b.orcado - a.orcado);
 
-      // Limitar a 8 categorias para não poluir o radar
-      const limitedData = radarData.slice(0, 8);
+      console.log('📊 [RADAR] Dados do radar (todas as categorias):', radarData);
 
-      console.log('📊 [RADAR] Dados do radar (limitado a 8 categorias):', limitedData);
-
-      setData(limitedData);
+      setData(radarData);
 
       // 5. Calcular análise
-      if (limitedData.length > 0) {
+      if (radarData.length > 0) {
         // Encontrar categoria com maior desvio absoluto
-        const maxDesvio = limitedData.reduce((prev, current) =>
+        const maxDesvio = radarData.reduce((prev, current) =>
           Math.abs(current.desvio) > Math.abs(prev.desvio) ? current : prev
         );
 
-        const totalOrcado = limitedData.reduce((sum, item) => sum + item.orcado, 0);
-        const totalRealizado = limitedData.reduce((sum, item) => sum + item.realizado, 0);
+        const totalOrcado = radarData.reduce((sum, item) => sum + item.orcado, 0);
+        const totalRealizado = radarData.reduce((sum, item) => sum + item.realizado, 0);
         const desvioGeral = totalRealizado - totalOrcado;
 
         setAnalysis({
@@ -162,11 +163,17 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
       const data = payload[0].payload;
       return (
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{data.category}</p>
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="w-4 h-4 rounded"
+              style={{ backgroundColor: data.color }}
+            />
+            <p className="font-semibold text-gray-900">{data.category}</p>
+          </div>
           <p className="text-sm text-blue-600">
             Orçado: {formatCurrency(data.orcado)}
           </p>
-          <p className="text-sm text-green-600">
+          <p className="text-sm font-semibold" style={{ color: data.color }}>
             Realizado: {formatCurrency(data.realizado)}
           </p>
           <p className={`text-sm font-semibold ${data.desvio > 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -212,12 +219,29 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
       </h3>
 
       {/* Gráfico de Radar */}
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={500}>
         <RadarChart data={data}>
           <PolarGrid stroke="#e5e7eb" />
           <PolarAngleAxis
             dataKey="category"
-            tick={{ fill: '#6b7280', fontSize: 12 }}
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const item = data.find(d => d.category === payload.value);
+              const color = item?.color || '#6b7280';
+
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  textAnchor={x > 250 ? 'start' : 'end'}
+                  fill={color}
+                  fontSize={11}
+                  fontWeight="600"
+                >
+                  {payload.value}
+                </text>
+              );
+            }}
           />
           <PolarRadiusAxis
             angle={90}
@@ -229,15 +253,20 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
             dataKey="orcado"
             stroke="#3b82f6"
             fill="#3b82f6"
-            fillOpacity={0.3}
+            fillOpacity={0.2}
+            strokeWidth={2}
           />
-          <Radar
-            name="Realizado"
-            dataKey="realizado"
-            stroke="#10b981"
-            fill="#10b981"
-            fillOpacity={0.3}
-          />
+          {data.map((item, index) => (
+            <Radar
+              key={`realizado-${index}`}
+              name={item.category}
+              dataKey={(entry: RadarData) => entry.category === item.category ? entry.realizado : 0}
+              stroke={item.color}
+              fill={item.color}
+              fillOpacity={0.3}
+              strokeWidth={2}
+            />
+          ))}
           <Legend />
           <Tooltip content={<CustomTooltip />} />
         </RadarChart>
@@ -264,9 +293,15 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
                   <TrendingDown className="w-5 h-5 text-green-600 mt-0.5" />
                 )}
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    Maior Desvio: {analysis.maxDesvio.category}
-                  </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: analysis.maxDesvio.color }}
+                    />
+                    <p className="text-sm font-semibold text-gray-900">
+                      Maior Desvio: {analysis.maxDesvio.category}
+                    </p>
+                  </div>
                   <p className="text-sm text-gray-700 mt-1">
                     {analysis.maxDesvio.desvio > 0 ? (
                       <>
@@ -325,16 +360,34 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
             {/* Interpretação */}
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-600 leading-relaxed">
-                <span className="font-semibold">Interpretação:</span> O gráfico de radar permite visualizar rapidamente
+                <span className="font-semibold">Interpretação:</span> O gráfico de radar mostra cada categoria com sua cor específica,
+                permitindo identificar rapidamente quais categorias têm maior impacto no orçamento mensal.
                 {analysis.desvioGeral > 0 ? (
-                  <> em quais categorias houve <span className="font-semibold text-red-700">excesso de gastos</span> e
-                  onde há oportunidades de melhoria no controle financeiro.</>
+                  <> A linha <span className="font-semibold text-blue-600">azul</span> representa o orçamento planejado, e as linhas coloridas mostram os gastos reais.
+                  Há <span className="font-semibold text-red-700">excesso de gastos</span> em algumas categorias, indicando oportunidades de melhoria no controle financeiro.</>
                 ) : (
-                  <> que você manteve um <span className="font-semibold text-green-700">bom controle financeiro</span>,
+                  <> A linha <span className="font-semibold text-blue-600">azul</span> representa o orçamento planejado, e as linhas coloridas mostram os gastos reais.
+                  Você manteve um <span className="font-semibold text-green-700">bom controle financeiro</span>,
                   gastando dentro ou abaixo do orçado na maioria das categorias.</>
                 )}
-                {' '}Quanto mais próximas as duas linhas (azul e verde), melhor o controle do orçamento.
               </p>
+            </div>
+
+            {/* Legenda de Categorias com Top 5 */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs font-semibold text-gray-700 mb-2">Top 5 Categorias por Impacto:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {data.slice(0, 5).map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 text-xs">
+                    <span
+                      className="w-3 h-3 rounded flex-shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="font-medium text-gray-700 truncate">{item.category}</span>
+                    <span className="text-gray-500 ml-auto">{formatCurrency(item.realizado)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
