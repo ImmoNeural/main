@@ -224,6 +224,41 @@ export const BudgetRadarChart = () => {
 
       console.log(`\n📊 [STEP 6] CRIANDO DADOS DO RADAR:`);
 
+      // Lista de categorias que são RECEITAS e devem ser EXCLUÍDAS do radar de despesas
+      const CATEGORIAS_RECEITA = [
+        'Salário',
+        'Salário e Rendimentos',
+        'Receitas',
+        'Receita',
+        'PIX Recebido',
+        'Transferência',
+        'Transferências',
+        'Rendimentos de Investimentos',
+        'Investimentos - Rendimento',
+        'Freelance',
+        'Bonificação',
+        'Reembolso',
+        'TED/DOC',
+      ];
+
+      console.log(`\n⚠️ CATEGORIAS DE RECEITA (serão excluídas do radar):`);
+      console.log(CATEGORIAS_RECEITA);
+
+      // Calcular totais de budget (com e sem receitas)
+      const totalBudgetGeral = Object.values(budgets).reduce((sum, val) => sum + val, 0);
+      const totalBudgetDespesas = Object.entries(budgets)
+        .filter(([cat]) => !CATEGORIAS_RECEITA.includes(cat))
+        .reduce((sum, [, val]) => sum + val, 0);
+      const totalBudgetReceitas = Object.entries(budgets)
+        .filter(([cat]) => CATEGORIAS_RECEITA.includes(cat))
+        .reduce((sum, [, val]) => sum + val, 0);
+
+      console.log(`\n💰 ANÁLISE DOS BUDGETS:`);
+      console.log(`   Total Geral (todas categorias): R$ ${totalBudgetGeral.toFixed(2)}`);
+      console.log(`   Total Despesas (excluindo receitas): R$ ${totalBudgetDespesas.toFixed(2)}`);
+      console.log(`   Total Receitas (excluídas): R$ ${totalBudgetReceitas.toFixed(2)}`);
+      console.log(`   Diferença: R$ ${totalBudgetGeral.toFixed(2)} - R$ ${totalBudgetReceitas.toFixed(2)} = R$ ${totalBudgetDespesas.toFixed(2)}`);
+
       let includedCount = 0;
       let excludedCount = 0;
 
@@ -231,9 +266,16 @@ export const BudgetRadarChart = () => {
         const orcado = budgets[category] || 0;
         const realizado = expensesByCategory[category] || 0;
 
+        // Verificar se é categoria de receita
+        const isReceitaCategory = CATEGORIAS_RECEITA.includes(category);
+
         // Log de cada categoria sendo avaliada
-        // INCLUIR: Categorias com budget OU com despesas (exceto "Não categorizado")
-        const shouldInclude = (orcado > 0 || realizado > 0) && category !== 'Não categorizado' && category !== 'Sem Categoria';
+        // INCLUIR: Categorias com budget OU com despesas
+        // EXCLUIR: Não categorizado, Sem Categoria, e CATEGORIAS DE RECEITA
+        const shouldInclude = (orcado > 0 || realizado > 0)
+          && category !== 'Não categorizado'
+          && category !== 'Sem Categoria'
+          && !isReceitaCategory;
 
         if (shouldInclude) {
           const desvio = realizado - orcado;
@@ -268,7 +310,9 @@ export const BudgetRadarChart = () => {
           includedCount++;
         } else {
           excludedCount++;
-          const motivo = (orcado === 0 && realizado === 0)
+          const motivo = isReceitaCategory
+            ? '🏦 CATEGORIA DE RECEITA (não entra no radar de despesas)'
+            : (orcado === 0 && realizado === 0)
             ? 'sem budget e sem despesas'
             : (category === 'Não categorizado' || category === 'Sem Categoria')
             ? 'categoria de sistema excluída'
@@ -455,13 +499,14 @@ export const BudgetRadarChart = () => {
         {/* Conteúdo Principal - Gráfico */}
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Todas as Categorias - Orçamento vs Realizado
+            Categorias de Despesas - Orçamento vs Realizado
           </h3>
           <p className="text-sm text-gray-600 mb-4">
-            Mostrando {data.length} categorias com despesas em{' '}
+            Mostrando {data.length} categorias de despesas em{' '}
             <span className="font-semibold text-blue-600">
               {format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}
             </span>
+            {' '}(excluindo receitas como Salário e Transferências)
           </p>
 
       {/* Gráfico de Radar */}
@@ -615,7 +660,7 @@ export const BudgetRadarChart = () => {
                 <p>
                   <span className="font-semibold">Interpretação:</span> O gráfico de radar compara visualmente o{' '}
                   <span className="font-semibold text-blue-600">Orçamento Planejado (Azul)</span> com os{' '}
-                  <span className="font-semibold text-red-600">Gastos Reais (Vermelho)</span> nas 18 categorias de maior impacto financeiro.
+                  <span className="font-semibold text-red-600">Gastos Reais (Vermelho)</span> nas {data.length} categorias de despesas (excluindo receitas).
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
@@ -640,13 +685,13 @@ export const BudgetRadarChart = () => {
                   <p className="font-semibold text-gray-800 mb-1">Diagnóstico Financeiro:</p>
                   {analysis.desvioGeral > 0 ? (
                     <p>
-                      Há um <span className="font-semibold text-red-700">excesso de gastos de {formatCurrency(analysis.desvioGeral)}</span> nas top 18 categorias.
+                      Há um <span className="font-semibold text-red-700">excesso de gastos de {formatCurrency(analysis.desvioGeral)}</span> nas {data.length} categorias de despesas.
                       Categorias com maior extrapolação precisam de atenção para melhorar o controle financeiro.
                       Foque em ajustar os hábitos nas categorias onde o vermelho ultrapassa significativamente o azul.
                     </p>
                   ) : (
                     <p>
-                      Parabéns! Você teve uma <span className="font-semibold text-green-700">economia de {formatCurrency(Math.abs(analysis.desvioGeral))}</span> nas top 18 categorias.
+                      Parabéns! Você teve uma <span className="font-semibold text-green-700">economia de {formatCurrency(Math.abs(analysis.desvioGeral))}</span> nas {data.length} categorias de despesas.
                       O orçamento foi respeitado, e os gastos ficaram controlados. Continue monitorando para manter esse padrão positivo.
                     </p>
                   )}
