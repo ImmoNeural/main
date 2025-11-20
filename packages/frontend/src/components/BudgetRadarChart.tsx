@@ -96,8 +96,8 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
         const orcado = budgets[category] || 0;
         const realizado = expensesByCategory[category] || 0;
 
-        // Só incluir se tiver budget definido (não faz sentido mostrar sem budget)
-        if (orcado > 0) {
+        // Incluir apenas se tiver gasto realizado (despesa)
+        if (realizado > 0) {
           const desvio = realizado - orcado;
           const desvioPercentual = orcado > 0 ? ((desvio / orcado) * 100) : 0;
           const color = getCategoryColor(category, index);
@@ -113,14 +113,10 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
         }
       });
 
-      // Ordenar por maior média entre orçado e realizado (categorias mais relevantes primeiro)
-      radarData.sort((a, b) => {
-        const mediaA = (a.orcado + a.realizado) / 2;
-        const mediaB = (b.orcado + b.realizado) / 2;
-        return mediaB - mediaA;
-      });
+      // Ordenar por MAIOR DESPESA REALIZADA (gasto real)
+      radarData.sort((a, b) => b.realizado - a.realizado);
 
-      // Limitar às 10 categorias com maiores médias
+      // Limitar às 10 categorias com MAIORES DESPESAS
       const top10Data = radarData.slice(0, 10);
 
       console.log('📊 [RADAR] Top 10 categorias por média:', top10Data);
