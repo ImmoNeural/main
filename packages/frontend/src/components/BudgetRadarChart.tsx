@@ -255,7 +255,7 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
           />
           <PolarRadiusAxis
             angle={90}
-            domain={[0, (dataMax: number) => {
+            domain={[0, () => {
               // Calcular o maior valor entre orçado e realizado
               const maxValue = Math.max(...data.flatMap(item => [item.orcado, item.realizado]));
               // Arredondar para o próximo múltiplo de 500 para escala limpa
