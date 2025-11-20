@@ -782,19 +782,32 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       // 💰 DETECTAR LINHAS ESPECIAIS DE SALDO
       const descricaoLower = (trans.description || trans.descricao || '').toLowerCase();
 
+      // Função helper para parse de valores (definida no escopo do loop)
+      const parseNumberWithAutoDetectLocal = (numStr: string): number => {
+        let cleaned = numStr.trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
+        const lastComma = cleaned.lastIndexOf(',');
+        const lastDot = cleaned.lastIndexOf('.');
+
+        if (lastComma > -1 && lastDot > -1) {
+          if (lastComma > lastDot) {
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+          } else {
+            cleaned = cleaned.replace(/,/g, '');
+          }
+        } else if (lastComma > -1) {
+          cleaned = cleaned.replace(',', '.');
+        }
+
+        return parseFloat(cleaned);
+      };
+
       // 1. SALDO ANTERIOR (saldo inicial do período)
       if (descricaoLower.includes('saldo anterior')) {
         console.log(`💰 [Linha ${i + 1}] DETECTADO: Saldo Anterior`);
         if (trans.saldo !== undefined && trans.saldo !== null && trans.saldo !== '') {
           try {
             const saldoStr = typeof trans.saldo === 'string' ? trans.saldo : String(trans.saldo);
-            saldoAnterior = parseFloat(
-              saldoStr
-                .replace(/\s/g, '')
-                .replace(/\./g, '')
-                .replace(',', '.')
-                .replace(/[^\d.-]/g, '')
-            );
+            saldoAnterior = parseNumberWithAutoDetectLocal(saldoStr);
             console.log(`✅ [Linha ${i + 1}] Saldo Anterior capturado: R$ ${saldoAnterior.toFixed(2)}`);
           } catch (e) {
             console.log(`⚠️ [Linha ${i + 1}] Erro ao processar Saldo Anterior:`, e);
@@ -810,13 +823,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         if (trans.saldo !== undefined && trans.saldo !== null && trans.saldo !== '') {
           try {
             const saldoStr = typeof trans.saldo === 'string' ? trans.saldo : String(trans.saldo);
-            saldoContaCorrente = parseFloat(
-              saldoStr
-                .replace(/\s/g, '')
-                .replace(/\./g, '')
-                .replace(',', '.')
-                .replace(/[^\d.-]/g, '')
-            );
+            saldoContaCorrente = parseNumberWithAutoDetectLocal(saldoStr);
             console.log(`✅ [Linha ${i + 1}] Saldo de Conta Corrente capturado: R$ ${saldoContaCorrente.toFixed(2)}`);
           } catch (e) {
             console.log(`⚠️ [Linha ${i + 1}] Erro ao processar Saldo de Conta Corrente:`, e);
@@ -854,15 +861,16 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       const description = trans.description || trans.descricao || trans.merchant || trans.estabelecimento || trans.docto || 'Transação importada';
       console.log(`   📝 [Linha ${i + 1}] Descrição: "${description}"`)
 
-      // Converter data para timestamp - suporta DD/MM/YYYY e YYYY-MM-DD
+      // Converter data para timestamp - suporta DD/MM/YYYY, DD.MM.YYYY e YYYY-MM-DD
       let dateTimestamp: number;
       try {
         const dateStr = trans.date || trans.data;
         let dateObj: Date;
 
-        if (dateStr.includes('/')) {
-          // Formato brasileiro: DD/MM/YYYY
-          const parts = dateStr.split('/');
+        if (dateStr.includes('/') || dateStr.includes('.')) {
+          // Formato brasileiro/alemão: DD/MM/YYYY ou DD.MM.YYYY
+          const separator = dateStr.includes('/') ? '/' : '.';
+          const parts = dateStr.split(separator);
           if (parts.length === 3) {
             const day = parseInt(parts[0]);
             const month = parseInt(parts[1]) - 1; // Month is 0-indexed
@@ -891,42 +899,50 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         continue;
       }
 
-      // Converter amount para número - suporta formato brasileiro (vírgula decimal)
+      // Converter amount para número - auto-detecta formato (brasileiro vs anglo-saxão)
+      const parseNumberWithAutoDetect = (numStr: string): number => {
+        // Remove espaços e caracteres de moeda
+        let cleaned = numStr.trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
+
+        // Auto-detectar formato baseado na posição de vírgula e ponto
+        const lastComma = cleaned.lastIndexOf(',');
+        const lastDot = cleaned.lastIndexOf('.');
+
+        if (lastComma > -1 && lastDot > -1) {
+          // Tem ambos vírgula e ponto - verificar qual vem por último
+          if (lastComma > lastDot) {
+            // Formato brasileiro: 1.234,56 (vírgula é decimal)
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+          } else {
+            // Formato anglo-saxão: 1,234.56 (ponto é decimal)
+            cleaned = cleaned.replace(/,/g, '');
+          }
+        } else if (lastComma > -1) {
+          // Só tem vírgula - assumir formato brasileiro (vírgula é decimal)
+          cleaned = cleaned.replace(',', '.');
+        }
+        // Se só tem ponto, já está no formato correto
+
+        return parseFloat(cleaned);
+      };
+
       let amount: number;
       try {
         if (hasAmount) {
           // Formato padrão: amount pode ser positivo ou negativo
           const amountStr = typeof trans.amount === 'string' ? trans.amount : String(trans.amount);
-          amount = parseFloat(
-            amountStr
-              .replace(/\s/g, '') // Remove espaços
-              .replace(/\./g, '') // Remove pontos de milhar
-              .replace(',', '.') // Converte vírgula decimal para ponto
-              .replace(/[^\d.-]/g, '') // Remove caracteres não numéricos exceto - e .
-          );
+          amount = parseNumberWithAutoDetect(amountStr);
         } else {
           // Formato Santander: crédito (positivo) ou débito (negativo)
           if (hasCredito) {
             const creditoStr = typeof trans.credito === 'string' ? trans.credito : String(trans.credito);
-            amount = parseFloat(
-              creditoStr
-                .replace(/\s/g, '')
-                .replace(/\./g, '')
-                .replace(',', '.')
-                .replace(/[^\d.-]/g, '')
-            );
+            amount = parseNumberWithAutoDetect(creditoStr);
             // Crédito é sempre positivo
             amount = Math.abs(amount);
           } else {
             // hasDebito
             const debitoStr = typeof trans.debito === 'string' ? trans.debito : String(trans.debito);
-            amount = parseFloat(
-              debitoStr
-                .replace(/\s/g, '')
-                .replace(/\./g, '')
-                .replace(',', '.')
-                .replace(/[^\d.-]/g, '')
-            );
+            amount = parseNumberWithAutoDetect(debitoStr);
             // Débito é sempre negativo
             amount = -Math.abs(amount);
           }
@@ -965,13 +981,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         try {
           const saldoStr = typeof trans.saldo === 'string' ? trans.saldo : String(trans.saldo);
           console.log(`   💰 [Linha ${i + 1}] Processando saldo: "${trans.saldo}" → "${saldoStr}"`);
-          balanceAfter = parseFloat(
-            saldoStr
-              .replace(/\s/g, '')
-              .replace(/\./g, '')
-              .replace(',', '.')
-              .replace(/[^\d.-]/g, '')
-          );
+          balanceAfter = parseNumberWithAutoDetect(saldoStr);
           if (isNaN(balanceAfter)) {
             console.log(`   ⚠️ [Linha ${i + 1}] Saldo resultou em NaN, setando para null`);
             balanceAfter = null;
