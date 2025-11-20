@@ -197,7 +197,7 @@ router.post('/:id/find-similar', authMiddleware, async (req: Request, res: Respo
 router.patch('/:id/category', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { category } = req.body;
+    const { category, subcategory } = req.body;
 
     if (!category) {
       return res.status(400).json({ error: 'category is required' });
@@ -214,10 +214,15 @@ router.patch('/:id/category', authMiddleware, async (req: Request, res: Response
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
-    // Atualizar categoria
+    // Atualizar categoria e subcategoria
+    const updateData: any = { category, updated_at: toISOString(Date.now()) };
+    if (subcategory !== undefined) {
+      updateData.subcategory = subcategory;
+    }
+
     const { data: updated, error: updateError } = await supabase
       .from('transactions')
-      .update({ category, updated_at: toISOString(Date.now()) })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

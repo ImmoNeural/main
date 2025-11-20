@@ -127,8 +127,8 @@ export const transactionApi = {
   getTransaction: (id: string) =>
     api.get<Transaction>(`/transactions/${id}`),
 
-  updateCategory: (id: string, category: string) =>
-    api.patch(`/transactions/${id}/category`, { category }),
+  updateCategory: (id: string, category: string, subcategory?: string) =>
+    api.patch(`/transactions/${id}/category`, { category, subcategory }),
 
   getCategories: () =>
     api.get<Category[]>('/transactions/categories/list'),

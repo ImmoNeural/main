@@ -422,14 +422,17 @@ const Transactions = () => {
   const handleUpdateCategory = async (transactionId: string, categoryValue: string) => {
     try {
       // Se o valor contém "::", é uma subcategoria no formato "Categoria::Subcategoria"
-      // Extrair apenas a categoria principal para salvar no backend
       const newCategory = categoryValue.includes('::')
         ? categoryValue.split('::')[0]
         : categoryValue;
 
+      const newSubcategory = categoryValue.includes('::')
+        ? categoryValue.split('::')[1]
+        : undefined;
+
       console.log('🔄 Atualizando categoria da transação:', transactionId, 'para:', newCategory);
-      if (categoryValue.includes('::')) {
-        console.log('📋 Subcategoria selecionada:', categoryValue.split('::')[1]);
+      if (newSubcategory) {
+        console.log('📋 Subcategoria selecionada:', newSubcategory);
       }
 
       // Encontrar a transação sendo atualizada
@@ -441,12 +444,13 @@ const Transactions = () => {
 
       console.log('📋 Categoria anterior:', transaction.category);
       console.log('🏷️ Nova categoria:', newCategory);
+      console.log('🏷️ Nova subcategoria:', newSubcategory || 'nenhuma');
 
-      // Atualizar a transação atual
-      await transactionApi.updateCategory(transactionId, newCategory);
+      // Atualizar a transação atual com categoria e subcategoria
+      await transactionApi.updateCategory(transactionId, newCategory, newSubcategory);
       setTransactions((prev) =>
         prev.map((t) =>
-          t.id === transactionId ? { ...t, category: newCategory } : t
+          t.id === transactionId ? { ...t, category: newCategory, subcategory: newSubcategory } : t
         )
       );
 
@@ -1009,7 +1013,7 @@ const Transactions = () => {
                               <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
                             )}
                             <select
-                              value={transaction.category || ''}
+                              value={transaction.subcategory ? `${transaction.category}::${transaction.subcategory}` : transaction.category || ''}
                               onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
                               className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 flex-1 ${
                                 isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
@@ -1055,7 +1059,7 @@ const Transactions = () => {
                           <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
                         )}
                         <select
-                          value={transaction.category || ''}
+                          value={transaction.subcategory ? `${transaction.category}::${transaction.subcategory}` : transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
                           className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 w-full ${
                             isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'

@@ -24,6 +24,7 @@ export interface Transaction {
   description?: string;
   merchant?: string;
   category?: string;
+  subcategory?: string;
   type: 'debit' | 'credit';
   balance_after?: number;
   reference?: string;
