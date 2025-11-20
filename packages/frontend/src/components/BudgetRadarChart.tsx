@@ -87,10 +87,10 @@ export const BudgetRadarChart = ({ period = 30 }: BudgetRadarChartProps) => {
       const radarData: RadarData[] = [];
 
       // Pegar todas as categorias únicas (tanto com budget quanto com gasto)
-      const allCategories = new Set([
+      const allCategories = Array.from(new Set([
         ...Object.keys(budgets),
         ...Object.keys(expensesByCategory),
-      ]);
+      ]));
 
       allCategories.forEach((category, index) => {
         const orcado = budgets[category] || 0;
