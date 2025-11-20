@@ -1058,7 +1058,7 @@ const Dashboard = () => {
       </div>
 
       {/* Budget Radar Chart */}
-      <BudgetRadarChart period={period} />
+      <BudgetRadarChart />
 
       {/* Recent Transactions */}
       <div ref={transactionsRef} className="card">
