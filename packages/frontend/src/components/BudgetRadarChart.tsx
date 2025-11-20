@@ -225,20 +225,10 @@ export const BudgetRadarChart = () => {
       console.log(`\n📊 [STEP 6] CRIANDO DADOS DO RADAR:`);
 
       // Lista de categorias que são RECEITAS e devem ser EXCLUÍDAS do radar de despesas
+      // APENAS Salário e Receita são receitas verdadeiras
       const CATEGORIAS_RECEITA = [
         'Salário',
-        'Salário e Rendimentos',
-        'Receitas',
         'Receita',
-        'PIX Recebido',
-        'Transferência',
-        'Transferências',
-        'Rendimentos de Investimentos',
-        'Investimentos - Rendimento',
-        'Freelance',
-        'Bonificação',
-        'Reembolso',
-        'TED/DOC',
       ];
 
       console.log(`\n⚠️ CATEGORIAS DE RECEITA (serão excluídas do radar):`);
@@ -506,7 +496,7 @@ export const BudgetRadarChart = () => {
             <span className="font-semibold text-blue-600">
               {format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}
             </span>
-            {' '}(excluindo receitas como Salário e Transferências)
+            {' '}(excluindo apenas Salário e Receita)
           </p>
 
       {/* Gráfico de Radar */}
