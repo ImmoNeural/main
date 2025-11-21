@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
+import { syncBudgetsWithTransactions } from '../services/budget.service';
 import { authMiddleware } from '../middleware/auth.supabase.middleware';
 
 const router = Router();
@@ -255,7 +256,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       }
     }
 
-    console.log(`✅ [PREFERENCES] Preferências salvas e budgets sincronizados!\n`);
+    console.log(`✅ [PREFERENCES] Preferências salvas!\n`);
+
+    // 🔄 SINCRONIZAR BUDGETS com a função centralizada
+    try {
+      await syncBudgetsWithTransactions(user_id);
+    } catch (syncError) {
+      console.error('⚠️ [PREFERENCES] Erro ao sincronizar budgets (não crítico):', syncError);
+    }
 
     res.json({ success: true, hybridCategories });
   } catch (error) {

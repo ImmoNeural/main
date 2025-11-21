@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import categorizationService from '../services/categorization.service';
+import { syncBudgetsWithTransactions } from '../services/budget.service';
 import { authMiddleware } from '../middleware/auth.supabase.middleware';
 import { Transaction } from '../types';
 
@@ -1212,6 +1213,13 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
     const message = totalInserted === 0
       ? 'Nenhuma transação nova foi importada (todas já existiam)'
       : `${totalInserted} ${totalInserted === 1 ? 'transação importada' : 'transações importadas'} com sucesso!${duplicatesCount > 0 ? ` (${duplicatesCount} ${duplicatesCount === 1 ? 'duplicata ignorada' : 'duplicatas ignoradas'})` : ''}`;
+
+    // 🔄 SINCRONIZAR BUDGETS após importação de CSV
+    try {
+      await syncBudgetsWithTransactions(user_id);
+    } catch (syncError) {
+      console.error('⚠️ [Import] Erro ao sincronizar budgets (não crítico):', syncError);
+    }
 
     res.json({
       success: true,

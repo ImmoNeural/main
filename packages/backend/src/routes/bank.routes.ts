@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../config/supabase';
 import openBankingService from '../services/openBanking.service';
 import categorizationService from '../services/categorization.service';
+import { syncBudgetsWithTransactions } from '../services/budget.service';
 import { authMiddleware } from '../middleware/auth.supabase.middleware';
 import { createMockBankAccount } from '../services/providers/mock.service';
 import { BankAccount, Transaction } from '../types';
@@ -366,6 +367,13 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
       }
     }
 
+    // 🔄 SINCRONIZAR BUDGETS após importação via Open Banking
+    try {
+      await syncBudgetsWithTransactions(user_id);
+    } catch (syncError) {
+      console.error('⚠️ [Bank Callback] Erro ao sincronizar budgets (não crítico):', syncError);
+    }
+
     res.json({
       success: true,
       accounts: savedAccounts.map(acc => ({
@@ -440,6 +448,13 @@ router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, re
         updated_at: toISOString(Date.now())
       })
       .eq('id', accountId);
+
+    // 🔄 SINCRONIZAR BUDGETS após sync manual
+    try {
+      await syncBudgetsWithTransactions(account.user_id);
+    } catch (syncError) {
+      console.error('⚠️ [Bank Sync] Erro ao sincronizar budgets (não crítico):', syncError);
+    }
 
     res.json({
       success: true,
