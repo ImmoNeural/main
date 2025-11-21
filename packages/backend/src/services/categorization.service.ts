@@ -224,6 +224,20 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
+  // 🛡️ TRANSPORTE - Seguros de Veículos
+  {
+    category: 'Transporte',
+    subcategory: 'Seguros',
+    keywords: ['seguro auto', 'seguro carro', 'seguro moto', 'seguro veiculo', 'dpvat'],
+    brands: [
+      'porto seguro auto', 'bradesco auto', 'itau auto', 'liberty auto',
+      'azul auto', 'mapfre auto', 'hdi auto', 'allianz auto',
+    ],
+    icon: '🛡️',
+    color: '#3F51B5',
+    priority: 9,
+  },
+
   // 🛍️ COMPRAS ONLINE
   {
     category: 'Compras',
@@ -299,9 +313,9 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 7,
   },
 
-  // 💳 SERVIÇOS FINANCEIROS
+  // 🏦 BANCO E SEGURADORAS - Bancos e Fintechs
   {
-    category: 'Serviços Financeiros',
+    category: 'Banco e Seguradoras',
     subcategory: 'Bancos e Fintechs',
     keywords: ['banco', 'pagamento', 'tarifa', 'anuidade', 'cartao'],
     brands: [
@@ -309,9 +323,51 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       'itau', 'bradesco', 'santander', 'caixa', 'banco do brasil',
       'picpay', 'mercadopago', 'mercado pago', 'pagseguro', 'paypal',
     ],
-    icon: '💳',
+    icon: '🏦',
     color: '#673AB7',
     priority: 8,
+  },
+
+  // 🛡️ BANCO E SEGURADORAS - Seguradoras
+  {
+    category: 'Banco e Seguradoras',
+    subcategory: 'Seguradoras',
+    keywords: ['seguro', 'seguradora', 'sinistro', 'apolice', 'cobertura'],
+    brands: [
+      'porto seguro', 'bradesco seguros', 'sulamerica', 'itau seguros',
+      'azul seguros', 'liberty', 'mapfre', 'allianz', 'tokio marine',
+      'hdi', 'sompo', 'zurich', 'caixa seguradora',
+    ],
+    icon: '🛡️',
+    color: '#673AB7',
+    priority: 9,
+  },
+
+  // 💰 BANCO E SEGURADORAS - Empréstimos Bancários
+  {
+    category: 'Banco e Seguradoras',
+    subcategory: 'Empréstimos Bancários',
+    keywords: ['emprestimo', 'credito pessoal', 'consignado', 'financiamento pessoal'],
+    brands: [
+      'creditas', 'geru', 'simplic', 'bom pra credito', 'crefisa',
+    ],
+    icon: '💰',
+    color: '#673AB7',
+    priority: 9,
+  },
+
+  // 📋 BANCO E SEGURADORAS - Financiamentos
+  {
+    category: 'Banco e Seguradoras',
+    subcategory: 'Financiamentos',
+    keywords: ['financiamento', 'parcela', 'prestacao', 'carne'],
+    brands: [
+      'santander financiamentos', 'bradesco financiamentos', 'itau financiamentos',
+      'bn financeira', 'losango', 'portocred',
+    ],
+    icon: '📋',
+    color: '#673AB7',
+    priority: 9,
   },
 
   // 📱 TELEFONIA E INTERNET (Merge: Comunicação/Internet e Comunicação/Telefone)
@@ -408,18 +464,57 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 8,
   },
 
-  // 🐕 PET SHOPS
+  // 🐕 PET - Alimentação
   {
     category: 'Pet',
-    subcategory: 'Pet Shop e Veterinário',
-    keywords: ['pet', 'veterinario', 'racao', 'animal', 'cachorro', 'gato'],
+    subcategory: 'Alimentação',
+    keywords: ['pet', 'racao', 'petisco', 'alimento pet', 'comida cachorro', 'comida gato'],
     brands: [
       'petz', 'cobasi', 'petlove', 'pet shop', 'petshop', 'ponto natural',
-      'agropet', 'vetecare',
+      'agropet', 'royal canin', 'pedigree', 'whiskas', 'premier',
     ],
-    icon: '🐕',
+    icon: '🦴',
     color: '#FF9800',
     priority: 8,
+  },
+
+  // 🏥 PET - Médico
+  {
+    category: 'Pet',
+    subcategory: 'Médico',
+    keywords: ['veterinario', 'vet', 'clinica veterinaria', 'consulta pet'],
+    brands: [
+      'vetecare', 'pet care', 'hospital veterinario', 'clinica vet',
+    ],
+    icon: '🏥',
+    color: '#FF9800',
+    priority: 9,
+  },
+
+  // 💊 PET - Tratamentos
+  {
+    category: 'Pet',
+    subcategory: 'Tratamentos',
+    keywords: ['vacina pet', 'vermifugo', 'antipulgas', 'medicamento pet', 'cirurgia pet'],
+    brands: [
+      'frontline', 'nexgard', 'bravecto', 'seresto',
+    ],
+    icon: '💊',
+    color: '#FF9800',
+    priority: 9,
+  },
+
+  // 🛡️ PET - Seguradoras
+  {
+    category: 'Pet',
+    subcategory: 'Seguradoras',
+    keywords: ['seguro pet', 'plano pet', 'convenio pet'],
+    brands: [
+      'porto seguro pet', 'petlove saude', 'plano de saude pet',
+    ],
+    icon: '🛡️',
+    color: '#FF9800',
+    priority: 9,
   },
 
   // ✈️ VIAGENS
@@ -672,8 +767,8 @@ class CategorizationService {
         }
       }
 
-      // REGRA ESPECIAL: Serviços Financeiros requer TANTO brand quanto keyword
-      if (rule.category === 'Serviços Financeiros' && score > 0) {
+      // REGRA ESPECIAL: Banco e Seguradoras requer TANTO brand quanto keyword
+      if (rule.category === 'Banco e Seguradoras' && score > 0) {
         // Verificar se tem keyword match (mesmo se já deu match por brand)
         if (!hasKeywordMatch) {
           for (const keyword of rule.keywords) {
@@ -688,7 +783,7 @@ class CategorizationService {
         // Se não tiver AMBOS (brand E keyword), descartar este match
         if (!hasBrandMatch || !hasKeywordMatch) {
           score = 0; // Descartar match
-          matchedBy = `descartado - Serviços Financeiros requer brand E keyword (brand: ${hasBrandMatch ? brandMatched : 'não'}, keyword: ${hasKeywordMatch ? keywordMatched : 'não'})`;
+          matchedBy = `descartado - Banco e Seguradoras requer brand E keyword (brand: ${hasBrandMatch ? brandMatched : 'não'}, keyword: ${hasKeywordMatch ? keywordMatched : 'não'})`;
           continue; // Pular para próxima regra
         } else {
           // Tem ambos! Ajustar matchedBy para mostrar isso

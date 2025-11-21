@@ -23,6 +23,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'Internet': '#4f46e5', // Indigo escuro
   'Impostos e Taxas': '#64748b', // Cinza azulado
   'Investimentos': '#0ea5e9', // Azul claro
+  'Banco e Seguradoras': '#673AB7', // Roxo
   'Outros': '#94a3b8', // Cinza
 
   // Receitas
