@@ -2,15 +2,20 @@ import { supabase } from '../config/supabase';
 
 /**
  * Sincroniza budgets com transações
- * - Identifica categorias sem budget
- * - Calcula média do período
- * - Cria linhas de acordo com tipo_categoria (normal ou hibrido)
+ *
+ * LÓGICA:
+ * 1. Busca todas as categorias marcadas como 'hibrido' na tabela preferences
+ * 2. Para cada categoria híbrida:
+ *    - Se não existe em custom_budgets → cria 2 linhas (fixo + variavel)
+ *    - Se existe 1 linha → adiciona a linha faltante
+ *    - Se já existem 2 linhas → não faz nada
+ * 3. Para categorias normais com transações: cria 1 linha se não existir
  */
 export async function syncBudgetsWithTransactions(user_id: string): Promise<void> {
   console.log(`\n🔄 [SYNC BUDGETS] Iniciando sincronização para user ${user_id}`);
 
   try {
-    // 1. Buscar todas as transações do usuário (últimos 12 meses)
+    // 1. Buscar todas as transações do usuário (últimos 12 meses) para calcular médias
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
@@ -18,27 +23,23 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       .from('transactions')
       .select('category, amount, date')
       .eq('user_id', user_id)
-      .lt('amount', 0) // Apenas despesas
-      .gte('date', twelveMonthsAgo.toISOString().split('T')[0]);
+      .lt('amount', 0); // Apenas despesas
 
     if (txError) {
       console.error('❌ [SYNC] Erro ao buscar transações:', txError.message);
       return;
     }
 
-    if (!transactions || transactions.length === 0) {
-      console.log('ℹ️ [SYNC] Nenhuma transação encontrada');
-      return;
-    }
-
     // 2. Calcular média mensal por categoria
     const categoryTotals: Record<string, { total: number; months: Set<string> }> = {};
 
-    transactions.forEach(tx => {
+    (transactions || []).forEach(tx => {
       const category = tx.category;
       if (!category) return;
 
-      const month = tx.date.substring(0, 7); // yyyy-MM
+      const dateStr = typeof tx.date === 'number'
+        ? new Date(tx.date).toISOString().substring(0, 7)
+        : String(tx.date).substring(0, 7);
       const amount = Math.abs(tx.amount);
 
       if (!categoryTotals[category]) {
@@ -46,7 +47,7 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       }
 
       categoryTotals[category].total += amount;
-      categoryTotals[category].months.add(month);
+      categoryTotals[category].months.add(dateStr);
     });
 
     const categoryAverages: Record<string, number> = {};
@@ -77,7 +78,7 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       budgetsByCategory[b.category_name].push(b);
     });
 
-    // 4. Buscar preferências (tipo_categoria)
+    // 4. Buscar preferências - encontrar categorias HÍBRIDAS
     const { data: preferences, error: prefError } = await supabase
       .from('preferences')
       .select('category, subcategory, tipo_custo, tipo_categoria')
@@ -87,110 +88,158 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       console.log('⚠️ [SYNC] Tabela preferences não encontrada ou erro:', prefError.message);
     }
 
-    // Mapear tipo_categoria por categoria
-    const categoryTypes: Record<string, 'normal' | 'hibrido'> = {};
+    // Identificar categorias híbridas (onde tipo_categoria = 'hibrido')
+    const hybridCategories = new Set<string>();
     preferences?.forEach(p => {
-      // Se qualquer subcategoria da categoria tem tipo_categoria='hibrido', a categoria é híbrida
-      if (p.tipo_categoria === 'hibrido' || categoryTypes[p.category] === 'hibrido') {
-        categoryTypes[p.category] = 'hibrido';
-      } else {
-        categoryTypes[p.category] = p.tipo_categoria || 'normal';
+      if (p.tipo_categoria === 'hibrido') {
+        hybridCategories.add(p.category);
       }
     });
 
-    // 5. Processar cada categoria com transações
-    for (const [category, avgValue] of Object.entries(categoryAverages)) {
+    console.log(`🔀 [SYNC] Categorias híbridas encontradas: ${[...hybridCategories].join(', ') || 'nenhuma'}`);
+
+    // 5. PROCESSAR CATEGORIAS HÍBRIDAS
+    for (const category of hybridCategories) {
       const existingForCategory = budgetsByCategory[category] || [];
-      const tipoCategoria = categoryTypes[category] || 'normal';
+      const avgValue = categoryAverages[category] || 0;
+      const valuePerType = Math.round(avgValue / 2);
 
-      console.log(`\n📂 [SYNC] Processando: ${category}`);
-      console.log(`   Tipo: ${tipoCategoria}, Média: R$ ${avgValue.toFixed(2)}, Linhas existentes: ${existingForCategory.length}`);
+      console.log(`\n📂 [SYNC] Processando categoria HÍBRIDA: ${category}`);
+      console.log(`   Média: R$ ${avgValue.toFixed(2)}, Linhas existentes: ${existingForCategory.length}`);
 
-      if (tipoCategoria === 'hibrido') {
-        // Categoria híbrida: garantir 2 linhas (fixo + variavel)
-        const hasFixo = existingForCategory.some(b => b.tipo_custo === 'fixo');
-        const hasVariavel = existingForCategory.some(b => b.tipo_custo === 'variavel');
+      const hasFixo = existingForCategory.some(b => b.tipo_custo === 'fixo');
+      const hasVariavel = existingForCategory.some(b => b.tipo_custo === 'variavel');
 
-        // Se já tem ambas, verificar se têm valor
-        if (hasFixo && hasVariavel) {
-          // Atualizar apenas se budget_value é null ou 0
-          for (const budget of existingForCategory) {
-            if (!budget.budget_value || budget.budget_value === 0) {
-              const valuePerType = Math.round(avgValue / 2);
-              await supabase
-                .from('custom_budgets')
-                .update({ budget_value: valuePerType })
-                .eq('id', budget.id);
-              console.log(`   ✏️ Atualizado ${budget.tipo_custo}: R$ ${valuePerType.toFixed(2)}`);
-            }
-          }
-        } else {
-          // Criar linhas faltantes
-          const valuePerType = Math.round(avgValue / 2);
+      // Se não existe nenhuma linha → criar 2 (fixo + variavel)
+      if (existingForCategory.length === 0) {
+        console.log(`   ➕ Criando 2 linhas (categoria não existia)`);
 
-          if (!hasFixo) {
-            await supabase.from('custom_budgets').insert({
-              user_id,
-              category_name: category,
-              budget_value: valuePerType,
-              tipo_custo: 'fixo',
-            });
-            console.log(`   ➕ Criado FIXO: R$ ${valuePerType.toFixed(2)}`);
-          }
+        await supabase.from('custom_budgets').insert({
+          user_id,
+          category_name: category,
+          budget_value: valuePerType,
+          tipo_custo: 'variavel',
+        });
+        console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
 
-          if (!hasVariavel) {
-            await supabase.from('custom_budgets').insert({
-              user_id,
-              category_name: category,
-              budget_value: valuePerType,
-              tipo_custo: 'variavel',
-            });
-            console.log(`   ➕ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
-          }
-        }
+        await supabase.from('custom_budgets').insert({
+          user_id,
+          category_name: category,
+          budget_value: valuePerType,
+          tipo_custo: 'fixo',
+        });
+        console.log(`      ✅ Criado FIXO: R$ ${valuePerType.toFixed(2)}`);
 
-      } else {
-        // Categoria normal: garantir apenas 1 linha
-        if (existingForCategory.length === 0) {
-          // Criar linha
+      // Se existe 1 linha → adicionar a faltante
+      } else if (existingForCategory.length === 1) {
+        console.log(`   ➕ Adicionando linha faltante (existia apenas 1)`);
+
+        // Pegar o valor da linha existente para dividir
+        const existingValue = existingForCategory[0].budget_value || avgValue;
+        const newValuePerType = Math.round(existingValue / 2);
+
+        // Atualizar a linha existente com metade do valor
+        await supabase
+          .from('custom_budgets')
+          .update({ budget_value: newValuePerType })
+          .eq('id', existingForCategory[0].id);
+
+        // Criar a linha faltante
+        if (!hasFixo) {
           await supabase.from('custom_budgets').insert({
             user_id,
             category_name: category,
-            budget_value: avgValue,
+            budget_value: newValuePerType,
+            tipo_custo: 'fixo',
           });
-          console.log(`   ➕ Criado: R$ ${avgValue.toFixed(2)}`);
+          console.log(`      ✅ Criado FIXO: R$ ${newValuePerType.toFixed(2)}`);
+        }
 
-        } else if (existingForCategory.length === 1) {
-          // Atualizar se não tem valor
-          const budget = existingForCategory[0];
+        if (!hasVariavel) {
+          await supabase.from('custom_budgets').insert({
+            user_id,
+            category_name: category,
+            budget_value: newValuePerType,
+            tipo_custo: 'variavel',
+          });
+          console.log(`      ✅ Criado VARIÁVEL: R$ ${newValuePerType.toFixed(2)}`);
+        }
+
+      // Se já existem 2+ linhas com fixo E variavel → verificar se têm valor
+      } else if (hasFixo && hasVariavel) {
+        console.log(`   ✓ Já possui 2 linhas (fixo + variavel)`);
+
+        // Atualizar apenas se budget_value é null ou 0
+        for (const budget of existingForCategory) {
           if (!budget.budget_value || budget.budget_value === 0) {
             await supabase
               .from('custom_budgets')
-              .update({ budget_value: avgValue })
+              .update({ budget_value: valuePerType })
               .eq('id', budget.id);
-            console.log(`   ✏️ Atualizado: R$ ${avgValue.toFixed(2)}`);
+            console.log(`      ✏️ Atualizado ${budget.tipo_custo}: R$ ${valuePerType.toFixed(2)}`);
           }
+        }
 
-        } else {
-          // Tem mais de 1 linha - consolidar
-          const totalValue = existingForCategory.reduce((sum, b) => sum + (b.budget_value || 0), 0);
-          const finalValue = totalValue > 0 ? totalValue : avgValue;
+      // Se existem linhas mas falta fixo ou variavel
+      } else {
+        console.log(`   ➕ Completando linhas faltantes`);
 
-          // Deletar todas e criar uma única
-          await supabase
-            .from('custom_budgets')
-            .delete()
-            .eq('user_id', user_id)
-            .eq('category_name', category);
-
+        if (!hasFixo) {
           await supabase.from('custom_budgets').insert({
             user_id,
             category_name: category,
-            budget_value: finalValue,
+            budget_value: valuePerType,
+            tipo_custo: 'fixo',
           });
-          console.log(`   🔄 Consolidado ${existingForCategory.length} linhas em 1: R$ ${finalValue.toFixed(2)}`);
+          console.log(`      ✅ Criado FIXO: R$ ${valuePerType.toFixed(2)}`);
+        }
+
+        if (!hasVariavel) {
+          await supabase.from('custom_budgets').insert({
+            user_id,
+            category_name: category,
+            budget_value: valuePerType,
+            tipo_custo: 'variavel',
+          });
+          console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
         }
       }
+    }
+
+    // 6. PROCESSAR CATEGORIAS NORMAIS (não híbridas) que têm transações
+    for (const [category, avgValue] of Object.entries(categoryAverages)) {
+      // Pular se é categoria híbrida (já foi processada)
+      if (hybridCategories.has(category)) {
+        continue;
+      }
+
+      const existingForCategory = budgetsByCategory[category] || [];
+
+      // Se não existe nenhuma linha, criar uma
+      if (existingForCategory.length === 0) {
+        console.log(`\n📂 [SYNC] Processando categoria NORMAL: ${category}`);
+        console.log(`   ➕ Criando linha: R$ ${avgValue.toFixed(2)}`);
+
+        await supabase.from('custom_budgets').insert({
+          user_id,
+          category_name: category,
+          budget_value: avgValue,
+        });
+
+      // Se existe 1 linha sem valor, atualizar
+      } else if (existingForCategory.length === 1) {
+        const budget = existingForCategory[0];
+        if (!budget.budget_value || budget.budget_value === 0) {
+          console.log(`\n📂 [SYNC] Processando categoria NORMAL: ${category}`);
+          console.log(`   ✏️ Atualizando valor: R$ ${avgValue.toFixed(2)}`);
+
+          await supabase
+            .from('custom_budgets')
+            .update({ budget_value: avgValue })
+            .eq('id', budget.id);
+        }
+      }
+      // Se já tem valor, não mexer
     }
 
     console.log(`\n✅ [SYNC BUDGETS] Sincronização concluída!\n`);
