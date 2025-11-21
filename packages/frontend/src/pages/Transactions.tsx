@@ -723,7 +723,7 @@ const Transactions = () => {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8 lg:mb-10">
 
           {/* Painel Esquerdo: Distribuição de Despesas */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6">
               <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center flex-wrap">
                 <PieChart className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-blue-600 flex-shrink-0" />
@@ -733,9 +733,9 @@ const Transactions = () => {
 
               {expenseDistribution.data.length > 0 ? (
                 <div className="flex flex-col space-y-3">
-                  {expenseDistribution.data.slice(0, 5).map((item, index) => (
+                  {expenseDistribution.data.map((item, index) => (
                     <div key={index} className="flex items-center">
-                      <span className={`w-4 h-4 ${item.color} rounded-full mr-3 flex-shrink-0`}></span>
+                      <span className={`w-5 h-5 ${item.color} rounded-full mr-3 flex-shrink-0`}></span>
                       <div className="flex-grow text-sm text-gray-700">
                         {item.name}
                       </div>
@@ -747,11 +747,6 @@ const Transactions = () => {
                       </div>
                     </div>
                   ))}
-                  {expenseDistribution.data.length > 5 && (
-                    <div className="text-sm text-gray-500 mt-2">
-                      ... e {expenseDistribution.data.length - 5} {expenseDistribution.data.length - 5 === 1 ? 'outra categoria' : 'outras categorias'}
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 mt-2 text-center py-6">
@@ -762,7 +757,7 @@ const Transactions = () => {
           </div>
 
           {/* Painel Direito: Filtros e Navegação */}
-          <div className="flex flex-col gap-6">
+          <div className="lg:col-span-3 flex flex-col gap-6">
 
             {/* Seletor de Período */}
             <div className="p-4 bg-white rounded-xl shadow-md border border-gray-200">
@@ -799,7 +794,7 @@ const Transactions = () => {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Busca e Filtros</h3>
 
               {/* Campo de Busca por Texto */}
-              <div className="relative mb-3">
+              <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
@@ -830,61 +825,64 @@ const Transactions = () => {
                 </div>
               </div>
 
-              {/* Filtro de Tipo de Custo */}
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Custos</label>
-                <div className="relative">
-                  <select
-                    value={selectedCostType}
-                    onChange={(e) => setSelectedCostType(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
-                  >
-                    <option value="">Todos os tipos de custo</option>
-                    <option value="Fixos">🔧 Custos Fixos</option>
-                    <option value="Variáveis">🛒 Custos Variáveis</option>
-                    <option value="Investimentos">📈 Investimentos</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              {/* Grid com Tipo de Custo (esquerda) e Radio Buttons (direita) */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Filtro de Tipo de Custo - Lado Esquerdo */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Custo</label>
+                  <div className="relative">
+                    <select
+                      value={selectedCostType}
+                      onChange={(e) => setSelectedCostType(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                    >
+                      <option value="">Todos os tipos</option>
+                      <option value="Fixos">🔧 Fixos</option>
+                      <option value="Variáveis">🛒 Variáveis</option>
+                      <option value="Investimentos">📈 Investimentos</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
-              </div>
 
-              {/* Type Filter - Radio Buttons */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Transação</label>
-                <div className="space-y-2">
-                  <label className="flex items-center p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                    <input
-                      type="radio"
-                      name="transactionType"
-                      value=""
-                      checked={selectedType === ''}
-                      onChange={(e) => setSelectedType(e.target.value)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Todas</span>
-                  </label>
-                  <label className="flex items-center p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition">
-                    <input
-                      type="radio"
-                      name="transactionType"
-                      value="credit"
-                      checked={selectedType === 'credit'}
-                      onChange={(e) => setSelectedType(e.target.value)}
-                      className="w-4 h-4 text-green-600 focus:ring-green-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700 font-medium">💰 Receitas</span>
-                  </label>
-                  <label className="flex items-center p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-red-50 transition">
-                    <input
-                      type="radio"
-                      name="transactionType"
-                      value="debit"
-                      checked={selectedType === 'debit'}
-                      onChange={(e) => setSelectedType(e.target.value)}
-                      className="w-4 h-4 text-red-600 focus:ring-red-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700 font-medium">💸 Despesas</span>
-                  </label>
+                {/* Type Filter - Radio Buttons - Lado Direito */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Transação</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value=""
+                        checked={selectedType === ''}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-xs text-gray-700">Todas</span>
+                    </label>
+                    <label className="flex items-center p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value="credit"
+                        checked={selectedType === 'credit'}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="ml-2 text-xs text-gray-700 font-medium">💰 Receitas</span>
+                    </label>
+                    <label className="flex items-center p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-red-50 transition">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value="debit"
+                        checked={selectedType === 'debit'}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-4 h-4 text-red-600 focus:ring-red-500"
+                      />
+                      <span className="ml-2 text-xs text-gray-700 font-medium">💸 Despesas</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
