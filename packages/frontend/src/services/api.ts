@@ -241,17 +241,26 @@ export const dashboardApi = {
 
 // Budget APIs
 export const budgetApi = {
-  // Get all budgets for the current user
+  // Get all budgets for the current user (soma fixo + variável por categoria)
   getAllBudgets: () =>
     api.get<Record<string, number>>('/budgets'),
+
+  // Get all budgets with detailed info (tipo_custo, subcategory)
+  getDetailedBudgets: () =>
+    api.get<any[]>('/budgets/detailed'),
 
   // Get budget for a specific category
   getBudget: (categoryName: string) =>
     api.get<{ category_name: string; budget_value: number | null }>(`/budgets/${encodeURIComponent(categoryName)}`),
 
-  // Create or update a budget
-  saveBudget: (categoryName: string, budgetValue: number) =>
-    api.post('/budgets', { category_name: categoryName, budget_value: budgetValue }),
+  // Create or update a budget (with tipo_custo and subcategory support)
+  saveBudget: (data: {
+    category_name: string;
+    budget_value: number;
+    tipo_custo?: 'fixo' | 'variavel';
+    subcategory?: string;
+  }) =>
+    api.post('/budgets', data),
 
   // Update an existing budget
   updateBudget: (categoryName: string, budgetValue: number) =>

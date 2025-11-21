@@ -7,6 +7,7 @@ import Transactions from './pages/Transactions';
 import Accounts from './pages/Accounts';
 import Budgets from './pages/Budgets';
 import BudgetDetails from './pages/BudgetDetails';
+import Preferences from './pages/Preferences';
 import ConnectBank from './pages/ConnectBank';
 import Plans from './pages/Plans';
 import Login from './pages/Login';
@@ -58,6 +59,7 @@ function App() {
               <Route path="accounts" element={<Accounts />} />
               <Route path="budgets" element={<Budgets />} />
               <Route path="budgets/:categoryName" element={<BudgetDetails />} />
+              <Route path="preferences" element={<Preferences />} />
               <Route path="connect-bank" element={<ConnectBank />} />
               <Route path="planos" element={<Plans />} />
             </Route>

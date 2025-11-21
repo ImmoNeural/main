@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Wallet, PlusCircle, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Receipt, Wallet, PlusCircle, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useState } from 'react';
@@ -21,6 +21,7 @@ const Layout = () => {
     { name: 'Budgets', path: '/app/budgets', icon: Target },
     { name: 'Transações', path: '/app/transactions', icon: Receipt },
     { name: 'Contas', path: '/app/accounts', icon: Wallet },
+    { name: 'Preferências', path: '/app/preferences', icon: Settings },
     { name: 'Planos', path: '/app/planos', icon: CreditCard },
     { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
   ];

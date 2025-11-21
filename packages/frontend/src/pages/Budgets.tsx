@@ -4,7 +4,7 @@ import { transactionApi, budgetApi } from '../services/api';
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Wallet } from 'lucide-react';
+import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Wallet, Settings, Info } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -42,20 +42,27 @@ const ALL_CATEGORY_RULES: CategoryRule[] = [
   { type: 'Despesas Variáveis', category: 'Entretenimento', subcategory: 'Lazer e Diversão', icon: '🎮', color: '#9C27B0', note: 'Cinema, teatro, shows e parques (Playcenter, Hopi Hari).' },
   { type: 'Despesas Variáveis', category: 'Saúde', subcategory: 'Farmácias e Drogarias', icon: '💊', color: '#009688', note: 'Compra de remédios e itens em Drogasil, Raia, Panvel.' },
   { type: 'Despesas Variáveis', category: 'Saúde', subcategory: 'Academia e Fitness', icon: '🏋️', color: '#FF5722', note: 'Mensalidades de academias e estúdios (Smart Fit, Bodytech).' },
-  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Pet Shop e Veterinário', icon: '🐕', color: '#FF9800', note: 'Gastos com animais de estimação, ração e veterinário (Petz, Cobasi).' },
+  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Alimentação', icon: '🦴', color: '#FF9800', note: 'Ração e petiscos para pets.' },
+  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Médico', icon: '🏥', color: '#FF9800', note: 'Consultas veterinárias.' },
+  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Tratamentos', icon: '💊', color: '#FF9800', note: 'Vacinas e medicamentos.' },
   { type: 'Despesas Variáveis', category: 'Viagens', subcategory: 'Aéreo e Turismo', icon: '✈️', color: '#2196F3', note: 'Passagens, hotéis e pacotes (Decolar, Booking, Gol, Azul).' },
 
   // DESPESAS FIXAS (Recorrentes e Obrigatórias)
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Telefonia e Internet', icon: '📱', color: '#00BCD4', note: 'Planos de telefonia e internet fixa (Vivo, Claro, Oi).' },
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Energia e Água', icon: '⚡', color: '#FFC107', note: 'Contas de utilidade básica (Sabesp, Enel, Cemig).' },
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Boletos e Débitos', icon: '📄', color: '#607D8B', note: 'Identificação genérica de pagamento de boletos.' },
-  { type: 'Despesas Fixas', category: 'Serviços Financeiros', subcategory: 'Bancos e Fintechs', icon: '💳', color: '#673AB7', note: 'Tarifas e serviços bancários (Itaú, Nubank, PicPay).' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Bancos e Fintechs', icon: '🏦', color: '#673AB7', note: 'Tarifas e serviços bancários (Itaú, Nubank, PicPay).' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Seguradoras', icon: '🛡️', color: '#673AB7', note: 'Seguros diversos (vida, residencial, etc).' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Empréstimos Bancários', icon: '💰', color: '#673AB7', note: 'Parcelas de empréstimos bancários.' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Financiamentos', icon: '📋', color: '#673AB7', note: 'Parcelas de financiamentos (veículos, imóveis).' },
   { type: 'Despesas Fixas', category: 'Entretenimento', subcategory: 'Streaming e Assinaturas', icon: '📺', color: '#E91E63', note: 'Serviços digitais recorrentes (Netflix, Spotify, Disney+).' },
   { type: 'Despesas Fixas', category: 'Educação', subcategory: 'Cursos e Ensino', icon: '🎓', color: '#3F51B5', note: 'Matrículas, mensalidades e cursos livres.' },
   { type: 'Despesas Fixas', category: 'Educação', subcategory: 'Livrarias e Papelarias', icon: '📚', color: '#5C6BC0', note: 'Livros, artigos de papelaria e material didático.' },
   { type: 'Despesas Fixas', category: 'Impostos e Taxas', subcategory: 'IOF e Impostos', icon: '🏦', color: '#F44336', note: 'Cobrança de impostos e taxas específicas (IOF).' },
   { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Odontologia', icon: '🦷', color: '#00BCD4', note: 'Mensalidades ou pagamentos recorrentes a dentistas/clínicas.' },
   { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Médicos e Clínicas', icon: '⚕️', color: '#009688', note: 'Hospitais, exames e consultas médicas (inclui Plano de Saúde recorrente).' },
+  { type: 'Despesas Fixas', category: 'Transporte', subcategory: 'Seguros', icon: '🛡️', color: '#2196F3', note: 'Seguro auto, moto, veículo.' },
+  { type: 'Despesas Fixas', category: 'Pet', subcategory: 'Seguradoras', icon: '🛡️', color: '#FF9800', note: 'Plano de saúde pet.' },
 
   // MOVIMENTAÇÕES (Receitas, Transferências, Investimentos e Saques)
   { type: 'Movimentações', category: 'Salário', subcategory: 'Salário e Rendimentos', icon: '💰', color: '#4CAF50', note: 'Recebimento de salário, pró-labore ou depósitos de folha.' },
@@ -510,11 +517,20 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
   );
 };
 
+// Interface para os budgets detalhados da API
+interface DetailedBudget {
+  category_name: string;
+  subcategory?: string;
+  budget_value: number;
+  tipo_custo: 'fixo' | 'variavel';
+}
+
 export default function Budgets() {
   const [loading, setLoading] = useState(true);
   const [categoryData, setCategoryData] = useState<Record<string, Record<string, GroupedCategory>>>({});
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [customBudgets, setCustomBudgets] = useState<Record<string, number>>({});
+  const [detailedBudgets, setDetailedBudgets] = useState<DetailedBudget[]>([]);
   const [monthSummary, setMonthSummary] = useState<MonthSummary>({
     salary: 0,
     fixedBudget: 0,
@@ -535,12 +551,19 @@ export default function Budgets() {
 
   const loadBudgets = async () => {
     try {
+      // Carregar budgets agregados (para totais por categoria)
       const response = await budgetApi.getAllBudgets();
       setCustomBudgets(response.data);
       console.log(`📂 [BUDGETS] Budgets customizados carregados da API:`, response.data);
+
+      // Carregar budgets detalhados (com tipo_custo por subcategoria)
+      const detailedResponse = await budgetApi.getDetailedBudgets();
+      setDetailedBudgets(detailedResponse.data || []);
+      console.log(`📂 [BUDGETS] Budgets detalhados (tipo_custo) carregados:`, detailedResponse.data?.length || 0, 'registros');
     } catch (error) {
       console.error(`❌ [BUDGETS] Erro ao carregar budgets:`, error);
       setCustomBudgets({});
+      setDetailedBudgets([]);
     }
   };
 
@@ -587,19 +610,45 @@ export default function Budgets() {
     console.log(`📅 [BUDGETS] Mês selecionado: ${format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}`);
     console.log(`📊 [BUDGETS] Total de transações: ${txs.length}`);
 
+    // Helper: Buscar tipo_custo das preferências do usuário
+    const getTipoCusto = (category: string, subcategory: string, defaultType: string): 'fixo' | 'variavel' => {
+      // Procurar nas preferências do usuário
+      const userPref = detailedBudgets.find(
+        b => b.category_name === category && b.subcategory === subcategory
+      );
+
+      if (userPref?.tipo_custo) {
+        return userPref.tipo_custo;
+      }
+
+      // Fallback para o tipo padrão da regra
+      if (defaultType === 'Despesas Fixas') return 'fixo';
+      if (defaultType === 'Despesas Variáveis') return 'variavel';
+      return 'variavel'; // Default
+    };
+
+    // Helper: Determinar tipo efetivo baseado em tipo_custo
+    const getEffectiveType = (rule: CategoryRule): string => {
+      // Movimentações são tratadas separadamente (não usam tipo_custo)
+      if (rule.type === 'Movimentações') {
+        if (rule.category === 'Investimentos' || rule.category === 'Transferências' || rule.category === 'Saques') {
+          return 'Movimentações (Despesas)';
+        } else if (rule.category === 'Salário' || rule.category === 'Receitas') {
+          return 'Movimentações (Receitas)';
+        }
+        return rule.type;
+      }
+
+      // Para despesas, usar tipo_custo das preferências
+      const tipoCusto = getTipoCusto(rule.category, rule.subcategory, rule.type);
+      return tipoCusto === 'fixo' ? 'Despesas Fixas' : 'Despesas Variáveis';
+    };
+
     const grouped: Record<string, Record<string, GroupedCategory>> = {};
 
     // Inicializar estrutura com todas as categorias
     ALL_CATEGORY_RULES.forEach((rule) => {
-      // Separar Movimentações em Despesas e Receitas
-      let effectiveType = rule.type;
-      if (rule.type === 'Movimentações') {
-        if (rule.category === 'Investimentos' || rule.category === 'Transferências' || rule.category === 'Saques') {
-          effectiveType = 'Movimentações (Despesas)';
-        } else if (rule.category === 'Salário' || rule.category === 'Receitas') {
-          effectiveType = 'Movimentações (Receitas)';
-        }
-      }
+      const effectiveType = getEffectiveType(rule);
 
       if (!grouped[effectiveType]) {
         grouped[effectiveType] = {};
@@ -833,15 +882,8 @@ export default function Budgets() {
         ? monthlyValues.reduce((sum, val) => sum + val, 0) / monthsWithData
         : 0;
 
-      // Determinar tipo efetivo (separar Movimentações)
-      let effectiveType = data.rule.type;
-      if (data.rule.type === 'Movimentações') {
-        if (data.rule.category === 'Investimentos' || data.rule.category === 'Transferências' || data.rule.category === 'Saques') {
-          effectiveType = 'Movimentações (Despesas)';
-        } else if (data.rule.category === 'Salário' || data.rule.category === 'Receitas') {
-          effectiveType = 'Movimentações (Receitas)';
-        }
-      }
+      // Determinar tipo efetivo usando a mesma lógica (respeita tipo_custo das preferências)
+      const effectiveType = getEffectiveType(data.rule);
 
       const categoryData: CategoryData = {
         type: effectiveType,
@@ -1123,6 +1165,25 @@ export default function Budgets() {
   return (
     <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
       <header className="mb-4 sm:mb-6 lg:mb-8">
+        {/* Banner de Preferências */}
+        <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-blue-800">
+                <strong>Dica:</strong> Personalize quais categorias são <strong>custos fixos</strong> ou <strong>variáveis</strong> nas suas preferências.
+              </p>
+              <Link
+                to="/app/preferences"
+                className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 mt-1 transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Configurar Preferências
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Título e Botão Conectar Banco */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3 sm:mb-4">
           <div>
