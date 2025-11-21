@@ -77,6 +77,7 @@ export const BudgetRadarChart = () => {
       const transactionsResponse = await transactionApi.getTransactions({
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
+        limit: 1000, // Buscar TODAS as transações do mês (sem limite de 100)
       });
 
       const transactions = transactionsResponse.data.transactions;
