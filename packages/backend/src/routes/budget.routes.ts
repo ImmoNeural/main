@@ -134,24 +134,31 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     console.log(`💾 [BUDGET] tipo_custo recebido: ${tipo_custo || 'não informado'}`);
     console.log(`💾 [BUDGET] ============================================`);
 
-    // 1. Buscar preferências do usuário para esta categoria
-    const { data: preferences, error: prefError } = await supabase
-      .from('preferences')
-      .select('tipo_custo')
-      .eq('user_id', user_id)
-      .eq('category', category_name);
+    // 1. Buscar preferências do usuário para esta categoria (se tabela existir)
+    let preferences: any[] = [];
+    try {
+      const { data, error: prefError } = await supabase
+        .from('preferences')
+        .select('tipo_custo')
+        .eq('user_id', user_id)
+        .eq('category', category_name);
 
-    if (prefError) {
-      console.error('Error fetching preferences:', prefError);
+      if (prefError) {
+        console.log('⚠️ [BUDGET] Tabela preferences não encontrada ou erro:', prefError.message);
+      } else {
+        preferences = data || [];
+      }
+    } catch (e) {
+      console.log('⚠️ [BUDGET] Erro ao buscar preferences (ignorando):', e);
     }
 
     // 2. Determinar se categoria é híbrida
-    const tiposNaCategoria = new Set(preferences?.map(p => p.tipo_custo) || []);
+    const tiposNaCategoria = new Set(preferences.map(p => p.tipo_custo));
     const isHybrid = tiposNaCategoria.has('fixo') && tiposNaCategoria.has('variavel');
 
     console.log(`   Categoria ${category_name}: ${isHybrid ? 'HÍBRIDA' : 'NORMAL'} (tipos: ${[...tiposNaCategoria].join(', ') || 'nenhum definido'})`);
 
-    // 3. Salvar budget(s) de acordo com o tipo
+    // 3. Salvar budget - SIMPLIFICADO: apenas uma linha sem tipo_custo se não for híbrida
     if (isHybrid) {
       // Categoria híbrida: criar/atualizar DUAS linhas (50% cada)
       const valuePerType = budget_value / 2;
@@ -207,29 +214,31 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
       console.log(`   Criando 1 linha: ${finalTipoCusto.toUpperCase()} R$ ${budget_value.toFixed(2)}`);
 
-      // Primeiro, remover qualquer linha do outro tipo
-      const outroTipo = finalTipoCusto === 'fixo' ? 'variavel' : 'fixo';
-      await supabase
-        .from('custom_budgets')
-        .delete()
-        .eq('user_id', user_id)
-        .eq('category_name', category_name)
-        .eq('tipo_custo', outroTipo);
+      // Deletar todos os budgets existentes desta categoria e inserir novo
+      try {
+        await supabase
+          .from('custom_budgets')
+          .delete()
+          .eq('user_id', user_id)
+          .eq('category_name', category_name);
+      } catch (delErr) {
+        console.log('⚠️ [BUDGET] Erro ao deletar budgets existentes (ignorando):', delErr);
+      }
 
-      // Salvar a linha com o tipo correto
+      // Inserir novo budget
       const { error } = await supabase
         .from('custom_budgets')
-        .upsert({
+        .insert({
           user_id,
           category_name,
           budget_value,
           tipo_custo: finalTipoCusto,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,category_name,tipo_custo' });
+        });
 
       if (error) {
-        console.error('Error saving budget:', error);
-        throw error;
+        console.error('❌ [BUDGET] Error saving budget:', error);
+        console.error('❌ [BUDGET] Error details:', JSON.stringify(error));
+        return res.status(500).json({ error: `Failed to save budget: ${error.message}` });
       }
 
       console.log(`✅ Budget normal salvo para ${category_name}\n`);
