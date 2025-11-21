@@ -106,115 +106,150 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
 
       console.log(`\n📂 [SYNC] Processando categoria HÍBRIDA: ${category}`);
       console.log(`   Média: R$ ${avgValue.toFixed(2)}, Linhas existentes: ${existingForCategory.length}`);
+      console.log(`   Linhas encontradas:`, existingForCategory.map(b => ({ id: b.id, tipo_custo: b.tipo_custo, budget_value: b.budget_value })));
 
       const hasFixo = existingForCategory.some(b => b.tipo_custo === 'fixo');
       const hasVariavel = existingForCategory.some(b => b.tipo_custo === 'variavel');
+      console.log(`   hasFixo: ${hasFixo}, hasVariavel: ${hasVariavel}`);
 
       // CASO 1: Não existe nenhuma linha → criar 2 (fixo + variavel) com média/2
       if (existingForCategory.length === 0) {
-        console.log(`   ➕ Criando 2 linhas (categoria não existia)`);
+        console.log(`   ➕ CASO 1: Criando 2 linhas (categoria não existia)`);
 
-        await supabase.from('custom_budgets').insert({
+        const { error: err1 } = await supabase.from('custom_budgets').insert({
           user_id,
           category_name: category,
           budget_value: valuePerType,
           tipo_custo: 'fixo',
         });
-        console.log(`      ✅ Criado FIXO: R$ ${valuePerType.toFixed(2)}`);
+        if (err1) {
+          console.error(`      ❌ Erro ao criar FIXO:`, err1.message);
+        } else {
+          console.log(`      ✅ Criado FIXO: R$ ${valuePerType.toFixed(2)}`);
+        }
 
-        await supabase.from('custom_budgets').insert({
+        const { error: err2 } = await supabase.from('custom_budgets').insert({
           user_id,
           category_name: category,
           budget_value: valuePerType,
           tipo_custo: 'variavel',
         });
-        console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
+        if (err2) {
+          console.error(`      ❌ Erro ao criar VARIÁVEL:`, err2.message);
+        } else {
+          console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
+        }
 
       // CASO 2: Existe 1 linha
       } else if (existingForCategory.length === 1) {
         const existingBudget = existingForCategory[0];
         const existingValue = existingBudget.budget_value;
         const existingTipo = existingBudget.tipo_custo;
+        console.log(`   ➕ CASO 2: Existe 1 linha (tipo=${existingTipo}, valor=${existingValue})`);
 
         // Se valor = 0 ou null → atualizar com média/2 e criar outra linha
         if (!existingValue || existingValue === 0) {
-          console.log(`   ➕ Linha existente com valor 0 - atualizando e criando segunda`);
+          console.log(`      Valor é 0 - atualizando e criando segunda`);
 
           // Atualizar a existente
-          await supabase
+          const { error: errUpdate } = await supabase
             .from('custom_budgets')
             .update({
               budget_value: valuePerType,
-              tipo_custo: 'fixo'  // Garantir que primeira é fixo
+              tipo_custo: 'fixo'
             })
             .eq('id', existingBudget.id);
-          console.log(`      ✏️ Atualizado para FIXO: R$ ${valuePerType.toFixed(2)}`);
+          if (errUpdate) {
+            console.error(`      ❌ Erro ao atualizar:`, errUpdate.message);
+          } else {
+            console.log(`      ✏️ Atualizado para FIXO: R$ ${valuePerType.toFixed(2)}`);
+          }
 
           // Criar a segunda (variavel)
-          await supabase.from('custom_budgets').insert({
+          const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
             category_name: category,
             budget_value: valuePerType,
             tipo_custo: 'variavel',
           });
-          console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
+          if (errInsert) {
+            console.error(`      ❌ Erro ao criar VARIÁVEL:`, errInsert.message);
+          } else {
+            console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
+          }
 
         } else {
           // Se já tem valor → NÃO mexer no valor, criar outra com MESMO valor
-          console.log(`   ➕ Linha existente com valor - criando segunda com mesmo valor`);
+          console.log(`      Valor existe (${existingValue}) - criando segunda com mesmo valor`);
 
           // Determinar qual tipo falta
           const tipoFaltante = existingTipo === 'fixo' ? 'variavel' : 'fixo';
+          console.log(`      Tipo faltante: ${tipoFaltante}`);
 
-          await supabase.from('custom_budgets').insert({
+          const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
             category_name: category,
-            budget_value: existingValue,  // MESMO valor
+            budget_value: existingValue,
             tipo_custo: tipoFaltante,
           });
-          console.log(`      ✅ Criado ${tipoFaltante.toUpperCase()}: R$ ${existingValue.toFixed(2)} (mesmo valor)`);
+          if (errInsert) {
+            console.error(`      ❌ Erro ao criar ${tipoFaltante.toUpperCase()}:`, errInsert.message);
+          } else {
+            console.log(`      ✅ Criado ${tipoFaltante.toUpperCase()}: R$ ${existingValue.toFixed(2)} (mesmo valor)`);
+          }
         }
 
-      // CASO 3: Já existem 2+ linhas
+      // CASO 3: Já existem 2+ linhas com fixo E variavel
       } else if (hasFixo && hasVariavel) {
-        console.log(`   ✓ Já possui 2 linhas (fixo + variavel)`);
+        console.log(`   ✓ CASO 3: Já possui 2 linhas (fixo + variavel)`);
 
         // Atualizar apenas se budget_value é null ou 0
         for (const budget of existingForCategory) {
           if (!budget.budget_value || budget.budget_value === 0) {
-            await supabase
+            const { error: errUpdate } = await supabase
               .from('custom_budgets')
               .update({ budget_value: valuePerType })
               .eq('id', budget.id);
-            console.log(`      ✏️ Atualizado ${budget.tipo_custo}: R$ ${valuePerType.toFixed(2)}`);
+            if (errUpdate) {
+              console.error(`      ❌ Erro ao atualizar ${budget.tipo_custo}:`, errUpdate.message);
+            } else {
+              console.log(`      ✏️ Atualizado ${budget.tipo_custo}: R$ ${valuePerType.toFixed(2)}`);
+            }
           }
         }
 
       // CASO 4: Existem linhas mas falta fixo ou variavel
       } else {
-        console.log(`   ➕ Completando linhas faltantes`);
+        console.log(`   ➕ CASO 4: Completando linhas faltantes`);
 
-        // Pegar o valor de uma linha existente
         const existingValue = existingForCategory[0]?.budget_value || valuePerType;
 
         if (!hasFixo) {
-          await supabase.from('custom_budgets').insert({
+          const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
             category_name: category,
             budget_value: existingValue,
             tipo_custo: 'fixo',
           });
-          console.log(`      ✅ Criado FIXO: R$ ${existingValue.toFixed(2)}`);
+          if (errInsert) {
+            console.error(`      ❌ Erro ao criar FIXO:`, errInsert.message);
+          } else {
+            console.log(`      ✅ Criado FIXO: R$ ${existingValue.toFixed(2)}`);
+          }
         }
 
         if (!hasVariavel) {
-          await supabase.from('custom_budgets').insert({
+          const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
             category_name: category,
             budget_value: existingValue,
             tipo_custo: 'variavel',
           });
-          console.log(`      ✅ Criado VARIÁVEL: R$ ${existingValue.toFixed(2)}`);
+          if (errInsert) {
+            console.error(`      ❌ Erro ao criar VARIÁVEL:`, errInsert.message);
+          } else {
+            console.log(`      ✅ Criado VARIÁVEL: R$ ${existingValue.toFixed(2)}`);
+          }
         }
       }
     }
