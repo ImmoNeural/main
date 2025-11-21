@@ -813,10 +813,6 @@ export default function Budgets() {
     let skippedNoCategory = 0;
     let skippedNoRule = 0;
 
-    // Para debug detalhado de transferências e serviços financeiros
-    const transferencias: { description: string; amount: number }[] = [];
-    const servicosFinanceiros: { description: string; amount: number; category: string }[] = [];
-
     console.log(`💸 [BUDGETS] Processando despesas do mês ${currentMonth}...`);
 
     // Primeiro pass: coletar todas as categorias únicas para debug
@@ -837,28 +833,12 @@ export default function Budgets() {
     }
     console.log(``);
 
+    // Estrutura para rastrear transações GERAIS (sem subcategoria)
+    const generalCategorySpent: Record<string, { monthlyTotals: Record<string, number>; currentMonthSpent: number }> = {};
+
     txs.forEach((tx) => {
       if (!tx.category) {
         skippedNoCategory++;
-        return;
-      }
-
-      // Buscar a subcategoria correspondente nas regras
-      const matchingRule = ALL_CATEGORY_RULES.find(
-        rule => rule.category === tx.category
-      );
-
-      if (!matchingRule) {
-        if (skippedNoRule < 10) { // Mostrar as primeiras 10 para debug
-          console.log(`⚠️ [BUDGETS] Categoria não encontrada nas regras: "${tx.category}" - ${tx.description || tx.merchant} - R$ ${tx.amount.toFixed(2)}`);
-        }
-        skippedNoRule++;
-        return;
-      }
-
-      const key = `${matchingRule.category}::${matchingRule.subcategory}`;
-      if (!subcategoryMap[key]) {
-        console.error(`❌ [BUDGETS] ERRO: Key "${key}" não existe no subcategoryMap! Categoria: "${tx.category}"`);
         return;
       }
 
@@ -867,71 +847,77 @@ export default function Budgets() {
 
       // Somente despesas (valores negativos) para cálculo de budget
       if (tx.amount < 0) {
-        if (!subcategoryMap[key].monthlyTotals[month]) {
-          subcategoryMap[key].monthlyTotals[month] = 0;
+        // CASO 1: Transação TEM subcategoria - processar normalmente
+        if (tx.subcategory) {
+          // Buscar a regra que bate com category E subcategory
+          const matchingRule = ALL_CATEGORY_RULES.find(
+            rule => rule.category === tx.category && rule.subcategory === tx.subcategory
+          );
+
+          if (!matchingRule) {
+            if (skippedNoRule < 10) {
+              console.log(`⚠️ [BUDGETS] Subcategoria não encontrada nas regras: "${tx.category}" / "${tx.subcategory}" - ${tx.description || tx.merchant} - R$ ${amount.toFixed(2)}`);
+            }
+            skippedNoRule++;
+            return;
+          }
+
+          const key = `${matchingRule.category}::${matchingRule.subcategory}`;
+          if (!subcategoryMap[key]) {
+            console.error(`❌ [BUDGETS] ERRO: Key "${key}" não existe no subcategoryMap!`);
+            return;
+          }
+
+          if (!subcategoryMap[key].monthlyTotals[month]) {
+            subcategoryMap[key].monthlyTotals[month] = 0;
+          }
+          subcategoryMap[key].monthlyTotals[month] += amount;
+
+          // Gasto do mês selecionado
+          if (month === currentMonth) {
+            subcategoryMap[key].currentMonthSpent += amount;
+            processedExpenses++;
+
+            if (processedExpenses <= 10) {
+              console.log(`  📌 [${matchingRule.category}::${matchingRule.subcategory}] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
+            }
+          }
         }
-        subcategoryMap[key].monthlyTotals[month] += amount;
-
-        // Gasto do mês selecionado
-        if (month === currentMonth) {
-          subcategoryMap[key].currentMonthSpent += amount;
-          processedExpenses++;
-
-          // Coletar Serviços Financeiros para log detalhado
-          if (matchingRule.category === 'Serviços Financeiros') {
-            servicosFinanceiros.push({
-              description: tx.description || tx.merchant || 'Sem descrição',
-              amount,
-              category: tx.category || 'sem categoria'
-            });
+        // CASO 2: Transação SEM subcategoria - é uma transação GERAL da categoria
+        else {
+          // Inicializar estrutura se não existe
+          if (!generalCategorySpent[tx.category]) {
+            generalCategorySpent[tx.category] = {
+              monthlyTotals: {},
+              currentMonthSpent: 0,
+            };
           }
 
-          // Coletar transferências para log detalhado
-          if (matchingRule.category === 'Transferências' || matchingRule.category === 'PIX' || matchingRule.category === 'TED/DOC') {
-            transferencias.push({ description: tx.description || tx.merchant || 'Sem descrição', amount });
+          if (!generalCategorySpent[tx.category].monthlyTotals[month]) {
+            generalCategorySpent[tx.category].monthlyTotals[month] = 0;
           }
+          generalCategorySpent[tx.category].monthlyTotals[month] += amount;
 
-          if (processedExpenses <= 10) { // Mostrar as primeiras 10 despesas gerais
-            console.log(`  📌 [${matchingRule.category}] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
+          if (month === currentMonth) {
+            generalCategorySpent[tx.category].currentMonthSpent += amount;
+            console.log(`  💰 [${tx.category} - GERAL] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
           }
         }
       }
     });
 
     console.log(`\n📊 [BUDGETS] Resumo do processamento:`);
-    console.log(`  ✅ Despesas processadas: ${processedExpenses}`);
+    console.log(`  ✅ Despesas com subcategoria processadas: ${processedExpenses}`);
     console.log(`  ⚠️ Sem categoria: ${skippedNoCategory}`);
-    console.log(`  ⚠️ Categoria não mapeada: ${skippedNoRule}`);
+    console.log(`  ⚠️ Categoria/subcategoria não mapeada: ${skippedNoRule}`);
 
-    // Log detalhado de Serviços Financeiros
-    if (servicosFinanceiros.length > 0) {
-      console.log(`\n💳 [BUDGETS] DETALHAMENTO DE SERVIÇOS FINANCEIROS (${servicosFinanceiros.length} transações):`);
-      const totalServicosFinanceiros = servicosFinanceiros.reduce((sum, t) => sum + t.amount, 0);
-      servicosFinanceiros.forEach((t, idx) => {
-        console.log(`  ${idx + 1}. R$ ${t.amount.toFixed(2).padStart(12)} - ${t.description} (categoria: "${t.category}")`);
+    // Log de transações GERAIS (sem subcategoria)
+    if (Object.keys(generalCategorySpent).length > 0) {
+      console.log(`\n💰 [BUDGETS] TRANSAÇÕES GERAIS (sem subcategoria):`);
+      Object.entries(generalCategorySpent).forEach(([category, data]) => {
+        const isHybrid = hybridCategories.has(category);
+        console.log(`  • ${category}: R$ ${data.currentMonthSpent.toFixed(2)} ${isHybrid ? '(HÍBRIDA - será dividida 50/50)' : ''}`);
       });
-      console.log(`  ═══════════════════════════════════════════════════`);
-      console.log(`  📊 TOTAL SERVIÇOS FINANCEIROS: R$ ${totalServicosFinanceiros.toFixed(2)}`);
-      console.log(`  ⚠️ ESPERADO: R$ 2.287,25`);
-      if (Math.abs(totalServicosFinanceiros - 2287.25) > 0.01) {
-        console.error(`  ❌ ERRO: Total calculado (R$ ${totalServicosFinanceiros.toFixed(2)}) DIFERENTE do esperado (R$ 2.287,25)`);
-      } else {
-        console.log(`  ✅ Total calculado está correto!`);
-      }
-    } else {
-      console.error(`\n❌ [BUDGETS] NENHUMA transação de Serviços Financeiros encontrada no mês!`);
-      console.error(`  Isso pode indicar que as transações estão com outra categoria.`);
-    }
-
-    // Log detalhado de transferências
-    if (transferencias.length > 0) {
-      console.log(`\n💸 [BUDGETS] DETALHAMENTO DE TRANSFERÊNCIAS (${transferencias.length} transações):`);
-      const totalTransferencias = transferencias.reduce((sum, t) => sum + t.amount, 0);
-      transferencias.forEach((t, idx) => {
-        console.log(`  ${idx + 1}. R$ ${t.amount.toFixed(2).padStart(12)} - ${t.description}`);
-      });
-      console.log(`  ═══════════════════════════════════════════════════`);
-      console.log(`  📊 TOTAL TRANSFERÊNCIAS: R$ ${totalTransferencias.toFixed(2)}`);
     }
 
     console.log(``);
@@ -990,16 +976,6 @@ export default function Budgets() {
         monthsWithData,
       };
 
-      // Log específico para Serviços Financeiros
-      if (data.rule.category === 'Serviços Financeiros') {
-        console.log(`\n  💳 [Serviços Financeiros] Processando subcategoria:`);
-        console.log(`     Subcategoria: ${data.rule.subcategory}`);
-        console.log(`     Tipo: ${effectiveType}`);
-        console.log(`     Gasto atual: R$ ${data.currentMonthSpent.toFixed(2)}`);
-        console.log(`     Budget sugerido: R$ ${Math.round(avgMonthly).toFixed(2)}`);
-        console.log(`     Meses com dados: ${monthsWithData}`);
-      }
-
       // Acumular totais por categoria principal
       if (!categoryTotals[data.rule.category]) {
         categoryTotals[data.rule.category] = {
@@ -1028,6 +1004,61 @@ export default function Budgets() {
       } else {
         console.error(`❌ [BUDGETS] ERRO: grouped["${effectiveType}"]["${data.rule.category}"] não existe!`);
         console.error(`   Isso significa que a categoria não foi inicializada corretamente.`);
+      }
+    });
+
+    // Processar transações GERAIS (sem subcategoria) e adicionar aos cards apropriados
+    console.log(`\n💰 [BUDGETS] Processando transações gerais (sem subcategoria)...`);
+    Object.entries(generalCategorySpent).forEach(([category, data]) => {
+      const isHybrid = hybridCategories.has(category);
+      const currentSpent = data.currentMonthSpent;
+
+      console.log(`\n  📦 Categoria: ${category} (R$ ${currentSpent.toFixed(2)})`);
+
+      if (isHybrid) {
+        // Para categorias HÍBRIDAS: dividir 50/50 entre fixo e variável
+        const halfSpent = currentSpent / 2;
+
+        console.log(`     🔀 HÍBRIDA: Dividindo 50/50`);
+        console.log(`        • Fixo: +R$ ${halfSpent.toFixed(2)}`);
+        console.log(`        • Variável: +R$ ${halfSpent.toFixed(2)}`);
+
+        // Adicionar ao card FIXO
+        if (grouped['Despesas Fixas'] && grouped['Despesas Fixas'][category]) {
+          grouped['Despesas Fixas'][category].totalSpent += halfSpent;
+        } else {
+          console.error(`     ❌ ERRO: Card fixo não encontrado para categoria híbrida "${category}"`);
+        }
+
+        // Adicionar ao card VARIÁVEL
+        if (grouped['Despesas Variáveis'] && grouped['Despesas Variáveis'][category]) {
+          grouped['Despesas Variáveis'][category].totalSpent += halfSpent;
+        } else {
+          console.error(`     ❌ ERRO: Card variável não encontrado para categoria híbrida "${category}"`);
+        }
+      } else {
+        // Para categorias NÃO-HÍBRIDAS: verificar se é fixo ou variável
+        // Buscar a primeira regra desta categoria para determinar o tipo padrão
+        const firstRule = ALL_CATEGORY_RULES.find(rule => rule.category === category);
+
+        if (!firstRule) {
+          console.error(`     ❌ ERRO: Nenhuma regra encontrada para categoria "${category}"`);
+          return;
+        }
+
+        // Determinar o tipo usando a lógica de preferences
+        const tipoCusto = getSubcategoryTipoCusto(category, firstRule.subcategory, firstRule.type);
+        const effectiveType = tipoCusto === 'fixo' ? 'Despesas Fixas' : 'Despesas Variáveis';
+
+        console.log(`     ➡️ NÃO-HÍBRIDA: Adicionando 100% em "${effectiveType}"`);
+        console.log(`        • ${effectiveType}: +R$ ${currentSpent.toFixed(2)}`);
+
+        // Adicionar ao card apropriado
+        if (grouped[effectiveType] && grouped[effectiveType][category]) {
+          grouped[effectiveType][category].totalSpent += currentSpent;
+        } else {
+          console.error(`     ❌ ERRO: Card "${effectiveType}" não encontrado para categoria "${category}"`);
+        }
       }
     });
 
