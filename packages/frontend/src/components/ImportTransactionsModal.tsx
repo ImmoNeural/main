@@ -447,10 +447,14 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   <textarea
                     value={csvContent}
                     onChange={(e) => setCsvContent(e.target.value)}
-                    placeholder="date,amount,description,merchant
-2024-01-15,-45.90,Supermercado XYZ,Supermercado
-2024-01-16,-12.00,Uber,Uber"
-                    rows={7}
+                    placeholder="date,amount,description,merchant,category
+2024-01-05,5000.00,Salário Janeiro,Empresa ABC,Salário
+2024-01-08,-350.00,Supermercado Carrefour,Carrefour,Supermercado
+2024-01-10,-45.90,Padaria Santa Massa,Padaria Santa Massa,Alimentação
+2024-01-15,-120.00,Farmácia Drogasil,Drogasil,Saúde
+2024-01-20,-150.00,Energia Elétrica - Enel,Enel,Contas
+2024-01-25,-1200.00,Aluguel Apartamento,Imobiliária Lopes,Contas"
+                    rows={10}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-sm bg-gray-50 hover:bg-white"
                   />
                 </div>
