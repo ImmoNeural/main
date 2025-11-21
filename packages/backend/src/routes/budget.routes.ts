@@ -109,6 +109,9 @@ router.get('/:categoryName', authMiddleware, async (req: Request, res: Response)
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
+
+    console.log(`\n📥 [BUDGET POST] Body recebido:`, JSON.stringify(req.body));
+
     const { category_name, budget_value, tipo_custo } = req.body;
 
     // Validação
@@ -124,7 +127,12 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'budget_value must be non-negative' });
     }
 
-    console.log(`\n💾 [BUDGET] Salvando budget para ${category_name}: R$ ${budget_value.toFixed(2)}`);
+    console.log(`\n💾 [BUDGET] ============================================`);
+    console.log(`💾 [BUDGET] Salvando budget para ${category_name}`);
+    console.log(`💾 [BUDGET] Valor recebido: ${budget_value} (tipo: ${typeof budget_value})`);
+    console.log(`💾 [BUDGET] Valor formatado: R$ ${budget_value.toFixed(2)}`);
+    console.log(`💾 [BUDGET] tipo_custo recebido: ${tipo_custo || 'não informado'}`);
+    console.log(`💾 [BUDGET] ============================================`);
 
     // 1. Buscar preferências do usuário para esta categoria
     const { data: preferences, error: prefError } = await supabase

@@ -233,6 +233,25 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         }, { onConflict: 'user_id,category_name,tipo_custo' });
 
         console.log(`  🔄 ${category}: tipo atualizado para ${tipoCorreto} (R$ ${totalValue.toFixed(2)})`);
+      } else {
+        // NÃO tem budget existente - CRIAR com média mensal ou 0
+        const averageValue = categoryAverages[category] || 0;
+
+        if (averageValue > 0) {
+          console.log(`  ➕ Criando budget para ${category} (${tipoCorreto}): R$ ${averageValue.toFixed(2)} (média mensal)`);
+
+          const { error } = await supabase.from('custom_budgets').upsert({
+            user_id,
+            category_name: category,
+            tipo_custo: tipoCorreto,
+            budget_value: averageValue,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id,category_name,tipo_custo' });
+
+          if (error) console.error(`Error creating budget for ${category}:`, error);
+        } else {
+          console.log(`  ⚠️ ${category}: sem transações históricas, budget não criado`);
+        }
       }
     }
 

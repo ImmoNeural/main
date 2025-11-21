@@ -213,24 +213,43 @@ export default function BudgetDetails() {
   };
 
   const handleBudgetSave = async () => {
-    if (customBudget !== null && customBudget > 0) {
-      // Salvar na API
-      const categoryKey = decodeURIComponent(categoryName!);
+    // Validação robusta do valor
+    const budgetValue = customBudget;
 
-      try {
-        await budgetApi.saveBudget({ category_name: categoryKey, budget_value: customBudget });
-        console.log(`💾 [BUDGET DETAILS] Budget customizado salvo para ${categoryKey}: R$ ${customBudget.toFixed(2)}`);
+    console.log(`🔍 [BUDGET DETAILS] Tentando salvar budget:`, {
+      customBudget,
+      type: typeof customBudget,
+      isNull: customBudget === null,
+      isNaN: isNaN(customBudget || 0),
+    });
 
-        setSuggestedBudget(customBudget);
-        setIsCustomBudget(true);
-        // Atualizar budget em todos os meses
-        setMonthlyData(prev => prev.map(m => ({ ...m, budget: customBudget })));
-      } catch (error) {
-        console.error(`❌ [BUDGET DETAILS] Erro ao salvar budget para ${categoryKey}:`, error);
-        alert('Erro ao salvar budget. Por favor, tente novamente.');
-      }
+    if (budgetValue === null || budgetValue === undefined || isNaN(budgetValue) || budgetValue <= 0) {
+      alert('Por favor, insira um valor válido maior que zero.');
+      return;
     }
-    setIsEditingBudget(false);
+
+    // Salvar na API
+    const categoryKey = decodeURIComponent(categoryName!);
+
+    try {
+      console.log(`💾 [BUDGET DETAILS] Enviando para API:`, {
+        category_name: categoryKey,
+        budget_value: budgetValue,
+      });
+
+      await budgetApi.saveBudget({ category_name: categoryKey, budget_value: budgetValue });
+      console.log(`✅ [BUDGET DETAILS] Budget customizado salvo para ${categoryKey}: R$ ${budgetValue.toFixed(2)}`);
+
+      setSuggestedBudget(budgetValue);
+      setIsCustomBudget(true);
+      // Atualizar budget em todos os meses
+      setMonthlyData(prev => prev.map(m => ({ ...m, budget: budgetValue })));
+      setIsEditingBudget(false);
+    } catch (error: any) {
+      console.error(`❌ [BUDGET DETAILS] Erro ao salvar budget para ${categoryKey}:`, error);
+      console.error(`❌ [BUDGET DETAILS] Response:`, error.response?.data);
+      alert(`Erro ao salvar budget: ${error.response?.data?.error || error.message || 'Erro desconhecido'}`);
+    }
   };
 
   if (loading) {
