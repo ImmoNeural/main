@@ -112,7 +112,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
     console.log(`\n📥 [BUDGET POST] Body recebido:`, JSON.stringify(req.body));
 
-    const { category_name, budget_value, tipo_custo } = req.body;
+    const { category_name, budget_value } = req.body;
 
     // Validação
     if (!category_name || typeof category_name !== 'string') {
@@ -127,127 +127,42 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'budget_value must be non-negative' });
     }
 
-    console.log(`\n💾 [BUDGET] ============================================`);
-    console.log(`💾 [BUDGET] Salvando budget para ${category_name}`);
-    console.log(`💾 [BUDGET] Valor recebido: ${budget_value} (tipo: ${typeof budget_value})`);
-    console.log(`💾 [BUDGET] Valor formatado: R$ ${budget_value.toFixed(2)}`);
-    console.log(`💾 [BUDGET] tipo_custo recebido: ${tipo_custo || 'não informado'}`);
-    console.log(`💾 [BUDGET] ============================================`);
+    console.log(`💾 [BUDGET] Salvando budget para ${category_name}: R$ ${budget_value.toFixed(2)}`);
 
-    // 1. Buscar preferências do usuário para esta categoria (se tabela existir)
-    let preferences: any[] = [];
-    try {
-      const { data, error: prefError } = await supabase
-        .from('preferences')
-        .select('tipo_custo')
-        .eq('user_id', user_id)
-        .eq('category', category_name);
+    // SIMPLIFICADO: Delete + Insert básico
+    // 1. Deletar budgets existentes desta categoria
+    const { error: deleteError } = await supabase
+      .from('custom_budgets')
+      .delete()
+      .eq('user_id', user_id)
+      .eq('category_name', category_name);
 
-      if (prefError) {
-        console.log('⚠️ [BUDGET] Tabela preferences não encontrada ou erro:', prefError.message);
-      } else {
-        preferences = data || [];
-      }
-    } catch (e) {
-      console.log('⚠️ [BUDGET] Erro ao buscar preferences (ignorando):', e);
+    if (deleteError) {
+      console.log('⚠️ [BUDGET] Erro ao deletar (ignorando):', deleteError.message);
     }
 
-    // 2. Determinar se categoria é híbrida
-    const tiposNaCategoria = new Set(preferences.map(p => p.tipo_custo));
-    const isHybrid = tiposNaCategoria.has('fixo') && tiposNaCategoria.has('variavel');
+    // 2. Inserir novo budget (campos básicos apenas)
+    const { data, error } = await supabase
+      .from('custom_budgets')
+      .insert({
+        user_id,
+        category_name,
+        budget_value,
+      })
+      .select();
 
-    console.log(`   Categoria ${category_name}: ${isHybrid ? 'HÍBRIDA' : 'NORMAL'} (tipos: ${[...tiposNaCategoria].join(', ') || 'nenhum definido'})`);
-
-    // 3. Salvar budget - SIMPLIFICADO: apenas uma linha sem tipo_custo se não for híbrida
-    if (isHybrid) {
-      // Categoria híbrida: criar/atualizar DUAS linhas (50% cada)
-      const valuePerType = budget_value / 2;
-
-      console.log(`   Criando 2 linhas: FIXO R$ ${valuePerType.toFixed(2)} + VARIÁVEL R$ ${valuePerType.toFixed(2)}`);
-
-      // Salvar linha FIXO
-      const { error: errorFixo } = await supabase
-        .from('custom_budgets')
-        .upsert({
-          user_id,
-          category_name,
-          budget_value: valuePerType,
-          tipo_custo: 'fixo',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,category_name,tipo_custo' });
-
-      if (errorFixo) {
-        console.error('Error saving fixo budget:', errorFixo);
-        throw errorFixo;
-      }
-
-      // Salvar linha VARIÁVEL
-      const { error: errorVariavel } = await supabase
-        .from('custom_budgets')
-        .upsert({
-          user_id,
-          category_name,
-          budget_value: valuePerType,
-          tipo_custo: 'variavel',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,category_name,tipo_custo' });
-
-      if (errorVariavel) {
-        console.error('Error saving variavel budget:', errorVariavel);
-        throw errorVariavel;
-      }
-
-      console.log(`✅ Budget híbrido salvo para ${category_name}\n`);
-      res.json({ success: true, category_name, budget_value, isHybrid: true });
-
-    } else {
-      // Categoria normal: criar/atualizar UMA linha
-      // Determinar tipo_custo: usar o informado, ou o único tipo da categoria, ou 'variavel' como default
-      let finalTipoCusto = tipo_custo;
-      if (!finalTipoCusto) {
-        if (tiposNaCategoria.size === 1) {
-          finalTipoCusto = [...tiposNaCategoria][0];
-        } else {
-          finalTipoCusto = 'variavel';
-        }
-      }
-
-      console.log(`   Criando 1 linha: ${finalTipoCusto.toUpperCase()} R$ ${budget_value.toFixed(2)}`);
-
-      // Deletar todos os budgets existentes desta categoria e inserir novo
-      try {
-        await supabase
-          .from('custom_budgets')
-          .delete()
-          .eq('user_id', user_id)
-          .eq('category_name', category_name);
-      } catch (delErr) {
-        console.log('⚠️ [BUDGET] Erro ao deletar budgets existentes (ignorando):', delErr);
-      }
-
-      // Inserir novo budget
-      const { error } = await supabase
-        .from('custom_budgets')
-        .insert({
-          user_id,
-          category_name,
-          budget_value,
-          tipo_custo: finalTipoCusto,
-        });
-
-      if (error) {
-        console.error('❌ [BUDGET] Error saving budget:', error);
-        console.error('❌ [BUDGET] Error details:', JSON.stringify(error));
-        return res.status(500).json({ error: `Failed to save budget: ${error.message}` });
-      }
-
-      console.log(`✅ Budget normal salvo para ${category_name}\n`);
-      res.json({ success: true, category_name, budget_value, tipo_custo: finalTipoCusto });
+    if (error) {
+      console.error('❌ [BUDGET] Erro no insert:', error.message);
+      console.error('❌ [BUDGET] Detalhes:', JSON.stringify(error));
+      return res.status(500).json({ error: error.message });
     }
 
-  } catch (error) {
-    console.error('Error saving custom budget:', error);
-    res.status(500).json({ error: 'Failed to save custom budget' });
+    console.log(`✅ [BUDGET] Salvo com sucesso:`, data);
+    res.json({ success: true, category_name, budget_value, data });
+
+  } catch (error: any) {
+    console.error('❌ [BUDGET] Erro geral:', error.message || error);
+    res.status(500).json({ error: error.message || 'Failed to save custom budget' });
   }
 });
 
