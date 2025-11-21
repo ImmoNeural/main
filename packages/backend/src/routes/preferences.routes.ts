@@ -92,9 +92,13 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     });
 
     const hybridCategories: string[] = [];
+    const normalCategories: Map<string, 'fixo' | 'variavel'> = new Map();
+
     categoryTypes.forEach((tipos, category) => {
       if (tipos.has('fixo') && tipos.has('variavel')) {
         hybridCategories.push(category);
+      } else {
+        normalCategories.set(category, tipos.has('fixo') ? 'fixo' : 'variavel');
       }
     });
 
@@ -111,73 +115,128 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       throw budgetsError;
     }
 
-    // 5. Para categorias híbridas, garantir que existam duas linhas em custom_budgets
+    // 5. Buscar transações dos últimos 12 meses para calcular médias
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const { data: transactions, error: txError } = await supabase
+      .from('transactions')
+      .select('category, amount, date')
+      .eq('user_id', user_id)
+      .eq('type', 'debit')
+      .gte('date', twelveMonthsAgo.toISOString());
+
+    if (txError) {
+      console.error('Error fetching transactions:', txError);
+    }
+
+    // Calcular média mensal por categoria
+    const categoryMonthlyTotals: Record<string, Record<string, number>> = {};
+
+    transactions?.forEach(tx => {
+      if (!tx.category || tx.amount >= 0) return; // Apenas débitos (valores negativos)
+
+      const month = tx.date.substring(0, 7); // YYYY-MM
+      const amount = Math.abs(tx.amount);
+
+      if (!categoryMonthlyTotals[tx.category]) {
+        categoryMonthlyTotals[tx.category] = {};
+      }
+      if (!categoryMonthlyTotals[tx.category][month]) {
+        categoryMonthlyTotals[tx.category][month] = 0;
+      }
+      categoryMonthlyTotals[tx.category][month] += amount;
+    });
+
+    // Calcular média mensal
+    const categoryAverages: Record<string, number> = {};
+    Object.entries(categoryMonthlyTotals).forEach(([category, months]) => {
+      const values = Object.values(months);
+      if (values.length > 0) {
+        categoryAverages[category] = values.reduce((a, b) => a + b, 0) / values.length;
+      }
+    });
+
+    console.log(`📊 [PREFERENCES] Médias mensais calculadas para ${Object.keys(categoryAverages).length} categorias`);
+
+    // 6. Para categorias HÍBRIDAS, garantir que existam DUAS linhas em custom_budgets
     for (const category of hybridCategories) {
       const existingForCategory = existingBudgets?.filter(b => b.category_name === category) || [];
       const hasFixo = existingForCategory.some(b => b.tipo_custo === 'fixo');
       const hasVariavel = existingForCategory.some(b => b.tipo_custo === 'variavel');
 
-      // Se categoria tem budget mas não tem as duas linhas, criar a faltante
+      // Calcular valor base: usar budget existente ou média mensal
+      let baseValue = 0;
       if (existingForCategory.length > 0) {
-        const existingValue = existingForCategory[0].budget_value || 0;
+        // Soma os valores existentes
+        baseValue = existingForCategory.reduce((sum, b) => sum + (b.budget_value || 0), 0);
+      } else if (categoryAverages[category]) {
+        // Usar média mensal das transações
+        baseValue = categoryAverages[category];
+      }
+
+      // Se não tem as duas linhas, criar
+      if (!hasFixo || !hasVariavel) {
+        // Dividir o valor entre fixo e variável (50% cada)
+        const valuePerType = baseValue / 2;
 
         if (!hasFixo) {
-          console.log(`  ➕ Criando linha FIXO para ${category} (valor: R$ ${(existingValue / 2).toFixed(2)})`);
-          await supabase.from('custom_budgets').upsert({
+          console.log(`  ➕ Criando linha FIXO para ${category} (valor: R$ ${valuePerType.toFixed(2)})`);
+          const { error } = await supabase.from('custom_budgets').upsert({
             user_id,
             category_name: category,
             tipo_custo: 'fixo',
-            budget_value: existingValue / 2, // Dividir valor existente
+            budget_value: valuePerType,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id,category_name,tipo_custo' });
+          if (error) console.error(`Error creating fixo for ${category}:`, error);
         }
 
         if (!hasVariavel) {
-          console.log(`  ➕ Criando linha VARIÁVEL para ${category} (valor: R$ ${(existingValue / 2).toFixed(2)})`);
-          await supabase.from('custom_budgets').upsert({
+          console.log(`  ➕ Criando linha VARIÁVEL para ${category} (valor: R$ ${valuePerType.toFixed(2)})`);
+          const { error } = await supabase.from('custom_budgets').upsert({
             user_id,
             category_name: category,
             tipo_custo: 'variavel',
-            budget_value: existingValue / 2, // Dividir valor existente
+            budget_value: valuePerType,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id,category_name,tipo_custo' });
+          if (error) console.error(`Error creating variavel for ${category}:`, error);
         }
       }
-      // Se não tem budget ainda, será calculado pela média quando o usuário for na página de budgets
     }
 
-    // 6. Para categorias NÃO híbridas, garantir que só existe UMA linha com o tipo correto
-    for (const [category, tipos] of categoryTypes.entries()) {
-      if (hybridCategories.includes(category)) continue; // Pular híbridas
-
-      const tipoCorreto = tipos.has('fixo') ? 'fixo' : 'variavel';
+    // 7. Para categorias NÃO híbridas, garantir que só existe UMA linha com o tipo correto
+    for (const [category, tipoCorreto] of normalCategories.entries()) {
       const tipoErrado = tipoCorreto === 'fixo' ? 'variavel' : 'fixo';
+      const existingForCategory = existingBudgets?.filter(b => b.category_name === category) || [];
 
       // Remover linha com tipo errado se existir
-      const { error: deleteWrongError } = await supabase
+      await supabase
         .from('custom_budgets')
         .delete()
         .eq('user_id', user_id)
         .eq('category_name', category)
         .eq('tipo_custo', tipoErrado);
 
-      if (deleteWrongError) {
-        console.error(`Error removing wrong tipo for ${category}:`, deleteWrongError);
-      }
+      // Se tem budget existente, atualizar o tipo
+      if (existingForCategory.length > 0) {
+        // Mover o valor para o tipo correto
+        const totalValue = existingForCategory.reduce((sum, b) => sum + (b.budget_value || 0), 0);
 
-      // Atualizar tipo da linha existente se necessário
-      const { error: updateError } = await supabase
-        .from('custom_budgets')
-        .update({ tipo_custo: tipoCorreto, updated_at: new Date().toISOString() })
-        .eq('user_id', user_id)
-        .eq('category_name', category);
+        await supabase.from('custom_budgets').upsert({
+          user_id,
+          category_name: category,
+          tipo_custo: tipoCorreto,
+          budget_value: totalValue,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,category_name,tipo_custo' });
 
-      if (updateError && updateError.code !== 'PGRST116') {
-        console.error(`Error updating tipo for ${category}:`, updateError);
+        console.log(`  🔄 ${category}: tipo atualizado para ${tipoCorreto} (R$ ${totalValue.toFixed(2)})`);
       }
     }
 
-    console.log(`✅ [PREFERENCES] Preferências salvas com sucesso!\n`);
+    console.log(`✅ [PREFERENCES] Preferências salvas e budgets sincronizados!\n`);
 
     res.json({ success: true, hybridCategories });
   } catch (error) {
