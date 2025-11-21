@@ -805,29 +805,50 @@ const Transactions = () => {
                 />
               </div>
 
-              {/* Grid com Categorias (esquerda) e Tipo de Transação (direita) */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                {/* Filtro de Categorias - Lado Esquerdo */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Categorias</label>
-                  <div className="relative">
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
-                    >
-                      <option value="">Todas categorias</option>
-                      {categories.map((cat) => (
-                        <option key={cat.category} value={cat.category}>
-                          {cat.icon} {cat.category}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              {/* Grid com Filtros (esquerda) e Tipo de Transação (direita) */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Coluna Esquerda: Categorias e Tipo de Custo */}
+                <div className="space-y-4">
+                  {/* Filtro de Categorias */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Categorias</label>
+                    <div className="relative">
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                      >
+                        <option value="">Todas categorias</option>
+                        {categories.map((cat) => (
+                          <option key={cat.category} value={cat.category}>
+                            {cat.icon} {cat.category}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Filtro de Tipo de Custo */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Custo</label>
+                    <div className="relative">
+                      <select
+                        value={selectedCostType}
+                        onChange={(e) => setSelectedCostType(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                      >
+                        <option value="">Todos os tipos</option>
+                        <option value="Fixos">🔧 Fixos</option>
+                        <option value="Variáveis">🛒 Variáveis</option>
+                        <option value="Investimentos">📈 Investimentos</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 
-                {/* Type Filter - Radio Buttons - Lado Direito */}
+                {/* Coluna Direita: Tipo de Transação (Radio Buttons) */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Transação</label>
                   <div className="space-y-2">
@@ -865,24 +886,6 @@ const Transactions = () => {
                       <span className="ml-2 text-xs text-gray-700 font-medium">💸 Despesas</span>
                     </label>
                   </div>
-                </div>
-              </div>
-
-              {/* Filtro de Tipo de Custo - Full Width */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Custo</label>
-                <div className="relative">
-                  <select
-                    value={selectedCostType}
-                    onChange={(e) => setSelectedCostType(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
-                  >
-                    <option value="">Todos os tipos</option>
-                    <option value="Fixos">🔧 Fixos</option>
-                    <option value="Variáveis">🛒 Variáveis</option>
-                    <option value="Investimentos">📈 Investimentos</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
             </div>
