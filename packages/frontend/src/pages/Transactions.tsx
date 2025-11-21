@@ -724,7 +724,7 @@ const Transactions = () => {
 
           {/* Painel Esquerdo: Distribuição de Despesas */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6 h-full">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6">
               <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center flex-wrap">
                 <PieChart className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-blue-600 flex-shrink-0" />
                 <span className="break-words">Distribuição de Despesas</span>
@@ -829,18 +829,44 @@ const Transactions = () => {
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
 
-                {/* Type Filter */}
-                <div className="relative">
-                  <select
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
-                  >
-                    <option value="">Todos tipos</option>
-                    <option value="credit">Receitas</option>
-                    <option value="debit">Despesas</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                {/* Type Filter - Radio Buttons */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700">Tipo de Transação</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value=""
+                        checked={selectedType === ''}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Todas</span>
+                    </label>
+                    <label className="flex items-center p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value="credit"
+                        checked={selectedType === 'credit'}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 font-medium">💰 Receitas</span>
+                    </label>
+                    <label className="flex items-center p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-red-50 transition">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value="debit"
+                        checked={selectedType === 'debit'}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-4 h-4 text-red-600 focus:ring-red-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 font-medium">💸 Despesas</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 

@@ -2,127 +2,96 @@
 // Cada categoria terá uma cor distinta e consistente
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  // Despesas
-  'Alimentação': '#ef4444', // Vermelho
-  'Supermercado': '#f59e0b', // Laranja
-  'Restaurante': '#dc2626', // Vermelho escuro
-  'Transporte': '#3b82f6', // Azul
-  'Combustível': '#1d4ed8', // Azul escuro
-  'Saúde': '#ec4899', // Rosa
-  'Farmácia': '#db2777', // Rosa escuro
-  'Educação': '#8b5cf6', // Roxo
-  'Entretenimento': '#a855f7', // Roxo claro
-  'Streaming e Assinaturas': '#9333ea', // Roxo médio
-  'Compras': '#10b981', // Verde água
-  'Compras Online': '#059669', // Verde água escuro
-  'Moda e Vestuário': '#14b8a6', // Teal
-  'Eletrônicos': '#06b6d4', // Cyan
-  'Casa': '#f97316', // Laranja escuro
-  'Utilidades': '#ea580c', // Laranja queimado
-  'Telefone': '#6366f1', // Indigo
-  'Internet': '#4f46e5', // Indigo escuro
-  'Impostos e Taxas': '#64748b', // Cinza azulado
-  'Investimentos': '#0ea5e9', // Azul claro
-  'Banco e Seguradoras': '#673AB7', // Roxo
-  'Outros': '#94a3b8', // Cinza
+  // Despesas - TONS SUAVES
+  'Alimentação': '#fca5a5', // Vermelho suave
+  'Supermercado': '#fdba74', // Laranja suave
+  'Restaurante': '#f87171', // Vermelho médio suave
+  'Transporte': '#93c5fd', // Azul suave
+  'Combustível': '#60a5fa', // Azul médio suave
+  'Saúde': '#f9a8d4', // Rosa suave
+  'Farmácia': '#f472b6', // Rosa médio suave
+  'Educação': '#c4b5fd', // Roxo suave
+  'Entretenimento': '#d8b4fe', // Roxo claro suave
+  'Streaming e Assinaturas': '#c084fc', // Roxo médio suave
+  'Compras': '#6ee7b7', // Verde água suave
+  'Compras Online': '#5eead4', // Verde água médio suave
+  'Moda e Vestuário': '#5eead4', // Teal suave
+  'Eletrônicos': '#67e8f9', // Cyan suave
+  'Casa': '#fed7aa', // Laranja suave
+  'Utilidades': '#fdba74', // Laranja queimado suave
+  'Telefone': '#a5b4fc', // Indigo suave
+  'Internet': '#818cf8', // Indigo médio suave
+  'Impostos e Taxas': '#94a3b8', // Cinza azulado
+  'Investimentos': '#7dd3fc', // Azul claro suave
+  'Banco e Seguradoras': '#c4b5fd', // Roxo suave
+  'Outros': '#cbd5e1', // Cinza suave
 
-  // Receitas
-  'Salário': '#22c55e', // Verde
-  'Transferência': '#84cc16', // Lima
-  'Transferências': '#a3e635', // Lima mais claro (para evitar conflito)
-  'Investimentos - Rendimento': '#16a34a', // Verde médio
-  'PIX Recebido': '#15803d', // Verde escuro
-  'Freelance': '#65a30d', // Lima escuro
-  'Bonificação': '#4ade80', // Verde claro
-  'Reembolso': '#86efac', // Verde muito claro
+  // Receitas - TONS SUAVES
+  'Salário': '#86efac', // Verde suave
+  'Transferência': '#bef264', // Lima suave
+  'Transferências': '#d9f99d', // Lima mais claro suave
+  'Investimentos - Rendimento': '#6ee7b7', // Verde médio suave
+  'PIX Recebido': '#5eead4', // Verde/teal suave
+  'Freelance': '#a3e635', // Lima médio suave
+  'Bonificação': '#a7f3d0', // Verde claro suave
+  'Reembolso': '#bbf7d0', // Verde muito claro suave
 };
 
-// Paleta com MÁXIMA VARIEDADE de cores
+// Paleta com MÁXIMA VARIEDADE de cores - TONS SUAVES
 // Cores organizadas para ter diferenças visuais GRANDES entre as primeiras
 const FALLBACK_COLORS = [
-  // Primeira rodada: Cores MUITO diferentes (espectro completo)
-  '#ef4444', // Vermelho vibrante
-  '#3b82f6', // Azul vibrante
-  '#22c55e', // Verde vibrante
-  '#f59e0b', // Laranja vibrante
-  '#a855f7', // Roxo vibrante
-  '#14b8a6', // Teal vibrante
-  '#ec4899', // Rosa vibrante
-  '#eab308', // Amarelo vibrante
-  '#6366f1', // Índigo vibrante
-  '#84cc16', // Lima vibrante
-  '#06b6d4', // Ciano vibrante
-  '#f97316', // Laranja escuro
-  '#8b5cf6', // Violeta vibrante
-  '#10b981', // Esmeralda vibrante
-  '#d946ef', // Fuchsia vibrante
+  // Primeira rodada: Tons suaves e pastéis (espectro completo)
+  '#fca5a5', // Vermelho suave
+  '#93c5fd', // Azul suave
+  '#86efac', // Verde suave
+  '#fdba74', // Laranja suave
+  '#d8b4fe', // Roxo suave
+  '#5eead4', // Teal suave
+  '#f9a8d4', // Rosa suave
+  '#fde047', // Amarelo suave
+  '#a5b4fc', // Índigo suave
+  '#bef264', // Lima suave
+  '#67e8f9', // Ciano suave
+  '#fed7aa', // Laranja claro suave
+  '#c4b5fd', // Violeta suave
+  '#6ee7b7', // Esmeralda suave
+  '#f0abfc', // Fuchsia suave
 
-  // Segunda rodada: Tons médios variados
-  '#dc2626', // Vermelho médio
-  '#2563eb', // Azul médio
-  '#16a34a', // Verde médio
-  '#ea580c', // Laranja queimado
-  '#9333ea', // Roxo médio
-  '#0d9488', // Teal escuro
-  '#db2777', // Rosa escuro
-  '#ca8a04', // Amarelo escuro
-  '#4f46e5', // Índigo escuro
-  '#65a30d', // Lima escuro
-  '#0891b2', // Ciano escuro
-  '#c2410c', // Laranja muito escuro
-  '#7c3aed', // Violeta médio
-  '#059669', // Esmeralda escuro
-  '#c026d3', // Fuchsia escuro
+  // Segunda rodada: Tons médios suaves
+  '#f87171', // Vermelho médio suave
+  '#60a5fa', // Azul médio suave
+  '#4ade80', // Verde médio suave
+  '#fb923c', // Laranja médio suave
+  '#c084fc', // Roxo médio suave
+  '#2dd4bf', // Teal médio suave
+  '#f472b6', // Rosa médio suave
+  '#facc15', // Amarelo médio suave
+  '#818cf8', // Índigo médio suave
+  '#a3e635', // Lima médio suave
+  '#22d3ee', // Ciano médio suave
+  '#fbbf24', // Laranja/âmbar médio suave
+  '#a78bfa', // Violeta médio suave
+  '#34d399', // Esmeralda médio suave
+  '#e879f9', // Fuchsia médio suave
 
-  // Terceira rodada: Tons claros variados
-  '#fca5a5', // Vermelho claro
-  '#93c5fd', // Azul claro
-  '#86efac', // Verde claro
-  '#fdba74', // Laranja claro
-  '#d8b4fe', // Roxo claro
-  '#5eead4', // Teal claro
-  '#f9a8d4', // Rosa claro
-  '#fde047', // Amarelo claro
-  '#a5b4fc', // Índigo claro
-  '#bef264', // Lima claro
-  '#67e8f9', // Ciano claro
+  // Terceira rodada: Tons claros e pastéis extras
+  '#fecaca', // Vermelho muito claro
+  '#bfdbfe', // Azul muito claro
+  '#bbf7d0', // Verde muito claro
   '#fed7aa', // Laranja muito claro
-  '#c4b5fd', // Violeta claro
-  '#6ee7b7', // Esmeralda claro
-  '#f0abfc', // Fuchsia claro
+  '#e9d5ff', // Roxo muito claro
+  '#99f6e4', // Teal muito claro
+  '#fbcfe8', // Rosa muito claro
+  '#fef3c7', // Amarelo muito claro
+  '#c7d2fe', // Índigo muito claro
+  '#d9f99d', // Lima muito claro
+  '#a5f3fc', // Ciano muito claro
+  '#ffe4e6', // Laranja/rosa muito claro
+  '#ddd6fe', // Violeta muito claro
+  '#a7f3d0', // Esmeralda muito claro
+  '#f5d0fe', // Fuchsia muito claro
 
-  // Quarta rodada: Tons escuros variados
-  '#991b1b', // Vermelho escuro
-  '#1e40af', // Azul escuro
-  '#15803d', // Verde escuro
-  '#9a3412', // Laranja marrom
-  '#6b21a8', // Roxo escuro
-  '#115e59', // Teal muito escuro
-  '#9f1239', // Rosa escuro
-  '#854d0e', // Amarelo marrom
-  '#3730a3', // Índigo muito escuro
-  '#4d7c0f', // Lima marrom
-  '#155e75', // Ciano escuro
-  '#7c2d12', // Laranja marrom escuro
-  '#5b21b6', // Violeta escuro
-  '#065f46', // Esmeralda muito escuro
-  '#86198f', // Fuchsia escuro
-
-  // Marrons e terrosos (variedade)
-  '#b08968', // Marrom claro
-  '#8b5a3c', // Marrom médio
-  '#6d4530', // Marrom escuro
-  '#d6c6b8', // Bege
-  '#c4a793', // Areia
-
-  // Cinzas (apenas no final, se necessário)
-  '#6b7280', // Cinza médio
-  '#9ca3af', // Cinza claro
-  '#4b5563', // Cinza escuro
-  '#374151', // Cinza muito escuro
-  '#d1d5db', // Cinza muito claro
-
-  // Tons pastéis (variedade adicional)
+  // Quarta rodada: Tons pastéis adicionais
   '#fee2e2', // Rosa bebê
   '#dbeafe', // Azul bebê
   '#dcfce7', // Verde bebê
@@ -133,25 +102,25 @@ const FALLBACK_COLORS = [
   '#fef9c3', // Amarelo pastel
   '#e0e7ff', // Índigo pastel
   '#ecfccb', // Lima pastel
+  '#f0fdfa', // Teal bebê
+  '#fef2f2', // Vermelho bebê
+  '#eff6ff', // Azul bebê
+  '#f0fdf4', // Verde bebê
+  '#fffbeb', // Âmbar bebê
 
-  // Tons muito escuros (apenas se esgotar tudo)
-  '#7f1d1d', // Vermelho muito escuro
-  '#1e3a8a', // Azul muito escuro
-  '#14532d', // Verde muito escuro
-  '#431407', // Laranja muito escuro
-  '#581c87', // Roxo muito escuro
-  '#042f2e', // Teal muito escuro
-  '#831843', // Rosa muito escuro
-  '#713f12', // Amarelo muito escuro
-  '#312e81', // Índigo muito escuro
-  '#365314', // Lima muito escuro
+  // Quinta rodada: Tons bege/areia suaves
+  '#fef3c7', // Âmbar muito claro
+  '#fed7aa', // Pêssego claro
+  '#e7e5e4', // Bege neutro
+  '#fafaf9', // Cinza muito claro
+  '#f5f5f4', // Cinza suave
 
-  // Preto/branco (apenas último recurso)
-  '#000000', // Preto
-  '#111827', // Quase preto
-  '#1f2937', // Cinza muito escuro
-  '#e5e7eb', // Quase branco
+  // Sexta rodada: Cinzas claros e neutros
   '#f3f4f6', // Cinza muito claro
+  '#e5e7eb', // Cinza claro
+  '#d1d5db', // Cinza médio claro
+  '#cbd5e1', // Cinza azulado claro
+  '#e2e8f0', // Cinza azulado muito claro
 ];
 
 export function getCategoryColor(category: string, index: number = 0): string {
