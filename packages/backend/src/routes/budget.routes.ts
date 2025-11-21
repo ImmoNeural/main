@@ -7,6 +7,7 @@ const router = Router();
 /**
  * GET /api/budgets
  * Retorna todos os budgets customizados do usuário
+ * Agora agrupa por categoria e soma fixo + variável para o radar
  */
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -24,8 +25,11 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // Converter para o formato { [category_name]: budget_value }
+    // Se categoria tem fixo E variável, soma os dois para o total
     const budgetsMap = budgets?.reduce((acc, budget) => {
-      acc[budget.category_name] = budget.budget_value;
+      const categoryName = budget.category_name;
+      const currentValue = acc[categoryName] || 0;
+      acc[categoryName] = currentValue + (budget.budget_value || 0);
       return acc;
     }, {} as Record<string, number>) || {};
 
@@ -33,6 +37,32 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching custom budgets:', error);
     res.status(500).json({ error: 'Failed to fetch custom budgets' });
+  }
+});
+
+/**
+ * GET /api/budgets/detailed
+ * Retorna todos os budgets COM detalhes de tipo_custo (fixo/variável)
+ */
+router.get('/detailed', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+
+    const { data: budgets, error } = await supabase
+      .from('custom_budgets')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('category_name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching budgets:', error);
+      throw error;
+    }
+
+    res.json(budgets || []);
+  } catch (error) {
+    console.error('Error fetching detailed budgets:', error);
+    res.status(500).json({ error: 'Failed to fetch detailed budgets' });
   }
 });
 
@@ -71,12 +101,12 @@ router.get('/:categoryName', authMiddleware, async (req: Request, res: Response)
 /**
  * POST /api/budgets
  * Cria ou atualiza um budget customizado
- * Body: { category_name: string, budget_value: number }
+ * Body: { category_name: string, budget_value: number, tipo_custo?: 'fixo' | 'variavel', subcategory?: string }
  */
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
-    const { category_name, budget_value } = req.body;
+    const { category_name, budget_value, tipo_custo = 'variavel', subcategory } = req.body;
 
     // Validação
     if (!category_name || typeof category_name !== 'string') {
@@ -91,7 +121,12 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'budget_value must be non-negative' });
     }
 
+    if (tipo_custo && !['fixo', 'variavel'].includes(tipo_custo)) {
+      return res.status(400).json({ error: 'tipo_custo must be "fixo" or "variavel"' });
+    }
+
     // Upsert (inserir ou atualizar se já existir)
+    // Agora a chave única é: user_id + category_name + tipo_custo
     const { data, error } = await supabase
       .from('custom_budgets')
       .upsert(
@@ -99,10 +134,12 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
           user_id,
           category_name,
           budget_value,
+          tipo_custo: tipo_custo || 'variavel',
+          subcategory: subcategory || null,
           updated_at: new Date().toISOString(),
         },
         {
-          onConflict: 'user_id,category_name',
+          onConflict: 'user_id,category_name,tipo_custo',
         }
       )
       .select()
@@ -113,7 +150,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       throw error;
     }
 
-    console.log(`💾 Budget saved for user ${user_id.substring(0, 8)}..., category: ${category_name}, value: R$ ${budget_value.toFixed(2)}`);
+    console.log(`💾 Budget saved for user ${user_id.substring(0, 8)}..., category: ${category_name} (${tipo_custo}), value: R$ ${budget_value.toFixed(2)}`);
 
     res.json(data);
   } catch (error) {
