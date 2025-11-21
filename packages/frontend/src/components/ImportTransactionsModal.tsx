@@ -308,27 +308,15 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
   };
 
   const downloadTemplate = () => {
-    const template = `date,amount,description,merchant,category
-2024-01-05,5000.00,Salário Janeiro,Empresa ABC,Salário
-2024-01-08,-350.00,Supermercado Carrefour,Carrefour,Supermercado
-2024-01-10,-45.90,Padaria Santa Massa,Padaria Santa Massa,Alimentação
-2024-01-12,-25.00,Uber - Corrida Centro,Uber,Transporte
-2024-01-15,-120.00,Farmácia Drogasil,Drogasil,Saúde
-2024-01-17,-89.90,iFood Restaurante,iFood,Alimentação
-2024-01-20,-150.00,Energia Elétrica - Enel,Enel,Contas
-2024-01-22,-80.00,Água - Sabesp,Sabesp,Contas
-2024-01-25,-1200.00,Aluguel Apartamento,Imobiliária Lopes,Contas
-2024-01-26,-300.00,Condomínio Janeiro,Administradora Mix,Contas
-2024-01-28,-50.00,Academia Smart Fit,Smart Fit,Saúde
-2024-02-01,-199.90,Compras Amazon,Amazon,Compras
-2024-02-03,-15.00,Combustível - Shell,Shell,Transporte
-2024-02-05,5000.00,Salário Fevereiro,Empresa ABC,Salário
-2024-02-07,-75.00,Restaurante Outback,Outback,Alimentação
-2024-02-10,-500.00,Investimento Tesouro Direto,XP Investimentos,Investimentos
-2024-02-12,-39.90,Netflix Assinatura,Netflix,Entretenimento
-2024-02-15,-180.00,Supermercado Assaí,Assaí,Supermercado
-2024-02-18,-95.00,Dentista Consulta,Dental Plus,Saúde
-2024-02-20,-250.00,Compras Renner,Renner,Compras`;
+    const template = `Data,Descricao,Credito (R$),Debito (R$),Saldo (R$)
+10/11/2025,REMUNERACAO APLICACAO AUTOMATICA,0,01,,,2.411,72
+10/11/2025,PIX ENVIADO       HOSTGATOR BRASIL LTDA,,-39,99,2.411,71
+30/10/2025,REMUNERACAO APLICACAO AUTOMATICA,0,01,,,2.451,70
+30/10/2025,DEBITO AUT. TITULO CAPITALIZACAO  ICO4879731,,-53,51,2.451,69
+16/10/2025,REMUNERACAO APLICACAO AUTOMATICA,0,01,,,2.505,20
+16/10/2025,DEBITO AUTOM EMPRESAS COVINADAS  NETFLI,,-59,90,2.505,19
+13/10/2025,REMUNERACAO APLICACAO AUTOMATICA,0,04,,,2.565,09
+13/10/2025,PAGAMENTO DE BOLETO OUTROS BANCOS  CAROL,,-410,00,2.565,05`;
 
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -447,13 +435,15 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   <textarea
                     value={csvContent}
                     onChange={(e) => setCsvContent(e.target.value)}
-                    placeholder="date,amount,description,merchant,category
-2024-01-05,5000.00,Salário Janeiro,Empresa ABC,Salário
-2024-01-08,-350.00,Supermercado Carrefour,Carrefour,Supermercado
-2024-01-10,-45.90,Padaria Santa Massa,Padaria Santa Massa,Alimentação
-2024-01-15,-120.00,Farmácia Drogasil,Drogasil,Saúde
-2024-01-20,-150.00,Energia Elétrica - Enel,Enel,Contas
-2024-01-25,-1200.00,Aluguel Apartamento,Imobiliária Lopes,Contas"
+                    placeholder="Data,Descricao,Credito (R$),Debito (R$),Saldo (R$)
+10/11/2025,REMUNERACAO APLICACAO AUTOMATICA,0,01,,,2.411,72
+10/11/2025,PIX ENVIADO       HOSTGATOR BRASIL LTDA,,-39,99,2.411,71
+30/10/2025,REMUNERACAO APLICACAO AUTOMATICA,0,01,,,2.451,70
+30/10/2025,DEBITO AUT. TITULO CAPITALIZACAO  ICO4879731,,-53,51,2.451,69
+16/10/2025,REMUNERACAO APLICACAO AUTOMATICA,0,01,,,2.505,20
+16/10/2025,DEBITO AUTOM EMPRESAS COVINADAS  NETFLI,,-59,90,2.505,19
+13/10/2025,REMUNERACAO APLICACAO AUTOMATICA,0,04,,,2.565,09
+13/10/2025,PAGAMENTO DE BOLETO OUTROS BANCOS  CAROL,,-410,00,2.565,05"
                     rows={10}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-sm bg-gray-50 hover:bg-white"
                   />
