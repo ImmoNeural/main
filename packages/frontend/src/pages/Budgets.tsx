@@ -800,6 +800,19 @@ export default function Budgets() {
           console.log(`✅ [BUDGETS] Receita/Salário: ${tx.description || tx.merchant || 'Sem descrição'} - R$ ${tx.amount.toFixed(2)} - Categoria: ${tx.category || 'Sem categoria'}`);
           salary += tx.amount;
           salaryCount++;
+
+          // NOVO: Adicionar aos cards de Salário/Receitas
+          if (tx.category === 'Salário' || tx.category === 'Receitas') {
+            const key = `${tx.category}::${tx.subcategory || 'Salário e Rendimentos'}`;
+            if (subcategoryMap[key]) {
+              if (!subcategoryMap[key].monthlyTotals[month]) {
+                subcategoryMap[key].monthlyTotals[month] = 0;
+              }
+              subcategoryMap[key].monthlyTotals[month] += tx.amount;
+              subcategoryMap[key].currentMonthSpent += tx.amount;
+              console.log(`  💰 [${tx.category}] Adicionando R$ ${tx.amount.toFixed(2)} ao card`);
+            }
+          }
         } else {
           console.log(`⚠️ [BUDGETS] Transferência recebida IGNORADA (não conta como salário): ${tx.description || tx.merchant} - R$ ${tx.amount.toFixed(2)}`);
         }
@@ -885,6 +898,30 @@ export default function Budgets() {
         }
         // CASO 2: Transação SEM subcategoria - é uma transação GERAL da categoria
         else {
+          // CASO ESPECIAL: Para Investimentos, Transferências e Saques, tentar associar a subcategoria padrão
+          const isMovimentacao = tx.category === 'Investimentos' || tx.category === 'Transferências' || tx.category === 'Saques';
+
+          if (isMovimentacao) {
+            // Buscar a primeira regra desta categoria para usar como padrão
+            const defaultRule = ALL_CATEGORY_RULES.find(rule => rule.category === tx.category);
+
+            if (defaultRule) {
+              const key = `${defaultRule.category}::${defaultRule.subcategory}`;
+              if (subcategoryMap[key]) {
+                if (!subcategoryMap[key].monthlyTotals[month]) {
+                  subcategoryMap[key].monthlyTotals[month] = 0;
+                }
+                subcategoryMap[key].monthlyTotals[month] += amount;
+
+                if (month === currentMonth) {
+                  subcategoryMap[key].currentMonthSpent += amount;
+                  console.log(`  💸 [${tx.category} - DEFAULT] R$ ${amount.toFixed(2)} - ${tx.description || tx.merchant}`);
+                }
+                return;
+              }
+            }
+          }
+
           // Inicializar estrutura se não existe
           if (!generalCategorySpent[tx.category]) {
             generalCategorySpent[tx.category] = {
