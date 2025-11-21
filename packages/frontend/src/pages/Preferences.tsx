@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Settings, Save, AlertCircle, CheckCircle } from 'lucide-react';
-import { budgetApi } from '../services/api';
+import { preferencesApi, PreferenceItem } from '../services/api';
 
 // Definição de todas as subcategorias do sistema com sua classificação padrão
 interface SubcategoryConfig {
@@ -108,11 +108,11 @@ export const Preferences = () => {
   const loadPreferences = async () => {
     setLoading(true);
     try {
-      // Carregar budgets detalhados do backend
-      const response = await budgetApi.getDetailedBudgets();
-      const budgets = response.data;
+      // Carregar preferências do backend
+      const response = await preferencesApi.getAll();
+      const savedPrefs = response.data;
 
-      // Criar mapa de preferências baseado nos budgets existentes
+      // Criar mapa de preferências
       const prefs: PreferenceState = {};
 
       // Primeiro, definir valores padrão
@@ -122,19 +122,23 @@ export const Preferences = () => {
       });
 
       // Depois, sobrescrever com valores do banco se existirem
-      if (Array.isArray(budgets)) {
-        budgets.forEach((budget: any) => {
-          if (budget.tipo_custo && budget.subcategory) {
-            const key = `${budget.category_name}|${budget.subcategory}`;
-            prefs[key] = budget.tipo_custo;
-          }
+      if (Array.isArray(savedPrefs)) {
+        savedPrefs.forEach((pref) => {
+          const key = `${pref.category}|${pref.subcategory}`;
+          prefs[key] = pref.tipo_custo;
         });
       }
 
       setPreferences(prefs);
     } catch (err) {
       console.error('Erro ao carregar preferências:', err);
-      setError('Erro ao carregar preferências');
+      // Se erro, usar valores padrão
+      const prefs: PreferenceState = {};
+      SUBCATEGORIES_CONFIG.forEach((config) => {
+        const key = `${config.category}|${config.subcategory}`;
+        prefs[key] = config.defaultTipo;
+      });
+      setPreferences(prefs);
     } finally {
       setLoading(false);
     }
@@ -149,31 +153,40 @@ export const Preferences = () => {
     setSaveSuccess(false);
   };
 
+  // Calcular tipo_categoria para cada categoria
+  const getCategoryTipo = (category: string): 'hibrido' | 'normal' => {
+    const subcats = groupedSubcategories[category] || [];
+    const tipos = subcats.map((config) => {
+      const key = `${config.category}|${config.subcategory}`;
+      return preferences[key] || config.defaultTipo;
+    });
+    const hasFixo = tipos.includes('fixo');
+    const hasVariavel = tipos.includes('variavel');
+    return hasFixo && hasVariavel ? 'hibrido' : 'normal';
+  };
+
   const savePreferences = async () => {
     setSaving(true);
     setError(null);
     setSaveSuccess(false);
 
     try {
-      // Salvar cada preferência como budget
-      const promises = SUBCATEGORIES_CONFIG.map(async (config) => {
+      // Construir array de preferências para enviar
+      const prefsToSave: PreferenceItem[] = SUBCATEGORIES_CONFIG.map((config) => {
         const key = `${config.category}|${config.subcategory}`;
         const tipo = preferences[key] || config.defaultTipo;
+        const tipoCategoria = getCategoryTipo(config.category);
 
-        // Buscar budget atual para não perder o valor
-        try {
-          await budgetApi.saveBudget({
-            category_name: config.category,
-            budget_value: 0, // Valor será definido na página de Budgets
-            tipo_custo: tipo,
-            subcategory: config.subcategory,
-          });
-        } catch (err) {
-          console.error(`Erro ao salvar ${config.category}/${config.subcategory}:`, err);
-        }
+        return {
+          category: config.category,
+          subcategory: config.subcategory,
+          tipo_custo: tipo,
+          tipo_categoria: tipoCategoria,
+        };
       });
 
-      await Promise.all(promises);
+      await preferencesApi.saveAll(prefsToSave);
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
@@ -214,10 +227,8 @@ export const Preferences = () => {
             <ul className="list-disc list-inside space-y-1">
               <li><strong>Custo Fixo:</strong> Despesas recorrentes como mensalidades, assinaturas, planos de saúde</li>
               <li><strong>Custo Variável:</strong> Despesas que variam como compras, alimentação, lazer</li>
+              <li><strong>Categoria Híbrida:</strong> Quando uma categoria tem subcategorias fixas E variáveis, ela aparecerá nas duas seções na página de Budgets</li>
             </ul>
-            <p className="mt-2">
-              Essa classificação afeta como os cards aparecem na página de <strong>Budgets</strong> e os cálculos no <strong>Dashboard</strong>.
-            </p>
           </div>
         </div>
       </div>
@@ -248,7 +259,7 @@ export const Preferences = () => {
           });
           const hasFixo = tipos.includes('fixo');
           const hasVariavel = tipos.includes('variavel');
-          const categoryStatus = hasFixo && hasVariavel ? 'Fixo e Variável' : hasFixo ? 'Fixo' : 'Variável';
+          const categoryStatus = hasFixo && hasVariavel ? 'Híbrido' : hasFixo ? 'Fixo' : 'Variável';
           const statusColor = hasFixo && hasVariavel ? 'bg-purple-100 text-purple-800' : hasFixo ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';
 
           return (

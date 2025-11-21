@@ -245,20 +245,24 @@ export const budgetApi = {
   getAllBudgets: () =>
     api.get<Record<string, number>>('/budgets'),
 
-  // Get all budgets with detailed info (tipo_custo, subcategory)
+  // Get all budgets with detailed info (tipo_custo)
   getDetailedBudgets: () =>
-    api.get<any[]>('/budgets/detailed'),
+    api.get<Array<{
+      id: string;
+      category_name: string;
+      budget_value: number;
+      tipo_custo: 'fixo' | 'variavel';
+    }>>('/budgets/detailed'),
 
   // Get budget for a specific category
   getBudget: (categoryName: string) =>
     api.get<{ category_name: string; budget_value: number | null }>(`/budgets/${encodeURIComponent(categoryName)}`),
 
-  // Create or update a budget (with tipo_custo and subcategory support)
+  // Create or update a budget (with tipo_custo support)
   saveBudget: (data: {
     category_name: string;
     budget_value: number;
     tipo_custo?: 'fixo' | 'variavel';
-    subcategory?: string;
   }) =>
     api.post('/budgets', data),
 
@@ -269,6 +273,28 @@ export const budgetApi = {
   // Delete a budget (revert to default)
   deleteBudget: (categoryName: string) =>
     api.delete(`/budgets/${encodeURIComponent(categoryName)}`),
+};
+
+// Preferences APIs
+export interface PreferenceItem {
+  category: string;
+  subcategory: string;
+  tipo_custo: 'fixo' | 'variavel';
+  tipo_categoria: 'hibrido' | 'normal';
+}
+
+export const preferencesApi = {
+  // Get all preferences
+  getAll: () =>
+    api.get<PreferenceItem[]>('/preferences'),
+
+  // Save all preferences (and sync with custom_budgets)
+  saveAll: (preferences: PreferenceItem[]) =>
+    api.post<{ success: boolean; hybridCategories: string[] }>('/preferences', { preferences }),
+
+  // Get category types (hibrido or normal)
+  getCategoryTypes: () =>
+    api.get<Record<string, 'hibrido' | 'normal'>>('/preferences/categories'),
 };
 
 // Subscription APIs

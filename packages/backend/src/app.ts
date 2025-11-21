@@ -11,6 +11,7 @@ import bankRoutes from './routes/bank.routes';
 import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import budgetRoutes from './routes/budget.routes';
+import preferencesRoutes from './routes/preferences.routes';
 import subscriptionRoutes from './routes/subscription.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 import { checkSubscriptionStatus, requireActiveSubscription } from './middleware/subscription.middleware';
@@ -96,6 +97,7 @@ app.use('/api/bank', authMiddleware, checkSubscriptionStatus, requireActiveSubsc
 app.use('/api/transactions', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, transactionRoutes);
 app.use('/api/dashboard', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, dashboardRoutes);
 app.use('/api/budgets', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, budgetRoutes);
+app.use('/api/preferences', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, preferencesRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
