@@ -26,13 +26,13 @@ const Transactions = () => {
     'Alimentação': ['Restaurantes e Delivery'],
     'Saúde': ['Odontologia', 'Farmácias e Drogarias', 'Médicos e Clínicas', 'Academia e Fitness'],
     'Entretenimento': ['Lazer e Diversão', 'Streaming e Assinaturas'],
-    'Transporte': ['Apps de Transporte', 'Combustível e Pedágio', 'Transporte Público'],
+    'Transporte': ['Apps de Transporte', 'Combustível e Pedágio', 'Transporte Público', 'Seguros'],
     'Compras': ['E-commerce', 'Moda e Vestuário', 'Tecnologia'],
     'Casa': ['Construção e Reforma', 'Móveis e Decoração'],
-    'Serviços Financeiros': ['Bancos e Fintechs'],
+    'Banco e Seguradoras': ['Bancos e Fintechs', 'Seguradoras', 'Empréstimos Bancários', 'Financiamentos'],
     'Contas': ['Telefonia e Internet', 'Energia e Água', 'Boletos e Débitos'],
     'Educação': ['Livrarias e Papelarias', 'Cursos e Ensino'],
-    'Pet': ['Pet Shop e Veterinário'],
+    'Pet': ['Alimentação', 'Médico', 'Tratamentos', 'Seguradoras'],
     'Viagens': ['Aéreo e Turismo'],
     'Salário': ['Salário e Rendimentos'],
     'Saques': ['Saques em Dinheiro'],
@@ -220,7 +220,7 @@ const Transactions = () => {
   const costTypeMap: Record<string, string> = {
     // Despesas Fixas
     'Contas': 'Fixos',
-    'Serviços Financeiros': 'Fixos',
+    'Banco e Seguradoras': 'Fixos',
     'Entretenimento': 'Fixos', // Streaming e assinaturas
     'Educação': 'Fixos',
     'Impostos e Taxas': 'Fixos',

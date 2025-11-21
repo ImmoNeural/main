@@ -240,58 +240,73 @@ export const Preferences = () => {
 
       {/* Categories List */}
       <div className="space-y-6">
-        {Object.entries(groupedSubcategories).map(([category, subcategories]) => (
-          <div key={category} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            {/* Category Header */}
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">{category}</h2>
-            </div>
+        {Object.entries(groupedSubcategories).map(([category, subcategories]) => {
+          // Determinar o status geral da categoria
+          const tipos = subcategories.map((config) => {
+            const key = `${config.category}|${config.subcategory}`;
+            return preferences[key] || config.defaultTipo;
+          });
+          const hasFixo = tipos.includes('fixo');
+          const hasVariavel = tipos.includes('variavel');
+          const categoryStatus = hasFixo && hasVariavel ? 'Fixo e Variável' : hasFixo ? 'Fixo' : 'Variável';
+          const statusColor = hasFixo && hasVariavel ? 'bg-purple-100 text-purple-800' : hasFixo ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';
 
-            {/* Subcategories */}
-            <div className="divide-y divide-gray-100">
-              {subcategories.map((config) => {
-                const key = `${config.category}|${config.subcategory}`;
-                const currentTipo = preferences[key] || config.defaultTipo;
+          return (
+            <div key={category} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {/* Category Header */}
+              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">{category}</h2>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+                  {categoryStatus}
+                </span>
+              </div>
 
-                return (
-                  <div key={key} className="px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{config.icon}</span>
-                      <div>
-                        <p className="font-medium text-gray-900">{config.subcategory}</p>
-                        <p className="text-sm text-gray-500">{config.description}</p>
+              {/* Subcategories */}
+              <div className="divide-y divide-gray-100">
+                {subcategories.map((config) => {
+                  const key = `${config.category}|${config.subcategory}`;
+                  const currentTipo = preferences[key] || config.defaultTipo;
+
+                  return (
+                    <div key={key} className="px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{config.icon}</span>
+                        <div>
+                          <p className="font-medium text-gray-900">{config.subcategory}</p>
+                          <p className="text-sm text-gray-500">{config.description}</p>
+                        </div>
+                      </div>
+
+                      {/* Toggle Buttons */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleTipoChange(config.category, config.subcategory, 'fixo')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            currentTipo === 'fixo'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Fixo
+                        </button>
+                        <button
+                          onClick={() => handleTipoChange(config.category, config.subcategory, 'variavel')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            currentTipo === 'variavel'
+                              ? 'bg-orange-500 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Variável
+                        </button>
                       </div>
                     </div>
-
-                    {/* Toggle Buttons */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleTipoChange(config.category, config.subcategory, 'fixo')}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          currentTipo === 'fixo'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        Fixo
-                      </button>
-                      <button
-                        onClick={() => handleTipoChange(config.category, config.subcategory, 'variavel')}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          currentTipo === 'variavel'
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        Variável
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Save Button */}
