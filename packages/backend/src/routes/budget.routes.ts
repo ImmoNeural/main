@@ -7,7 +7,7 @@ const router = Router();
 /**
  * GET /api/budgets
  * Retorna todos os budgets customizados do usuário
- * Agora agrupa por categoria e soma fixo + variável para o radar
+ * Agrupa por categoria e soma fixo + variável para o radar
  */
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -68,30 +68,32 @@ router.get('/detailed', authMiddleware, async (req: Request, res: Response) => {
 
 /**
  * GET /api/budgets/:categoryName
- * Retorna o budget de uma categoria específica
+ * Retorna o budget de uma categoria específica (soma fixo + variável se houver)
  */
 router.get('/:categoryName', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { categoryName } = req.params;
 
-    const { data: budget, error } = await supabase
+    const { data: budgets, error } = await supabase
       .from('custom_budgets')
       .select('*')
       .eq('user_id', user_id)
-      .eq('category_name', categoryName)
-      .single();
+      .eq('category_name', categoryName);
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // Not found - retornar null
-        return res.json({ category_name: categoryName, budget_value: null });
-      }
       console.error('Error fetching budget:', error);
       throw error;
     }
 
-    res.json(budget);
+    if (!budgets || budgets.length === 0) {
+      return res.json({ category_name: categoryName, budget_value: null });
+    }
+
+    // Soma todos os budgets da categoria (fixo + variável)
+    const totalBudget = budgets.reduce((sum, b) => sum + (b.budget_value || 0), 0);
+
+    res.json({ category_name: categoryName, budget_value: totalBudget, budgets });
   } catch (error) {
     console.error('Error fetching budget for category:', error);
     res.status(500).json({ error: 'Failed to fetch budget' });
@@ -101,12 +103,13 @@ router.get('/:categoryName', authMiddleware, async (req: Request, res: Response)
 /**
  * POST /api/budgets
  * Cria ou atualiza um budget customizado
- * Body: { category_name: string, budget_value: number, tipo_custo?: 'fixo' | 'variavel', subcategory?: string }
+ * Verifica preferências para determinar se categoria é híbrida
+ * Body: { category_name: string, budget_value: number, tipo_custo?: 'fixo' | 'variavel' }
  */
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
-    const { category_name, budget_value, tipo_custo = 'variavel', subcategory } = req.body;
+    const { category_name, budget_value, tipo_custo } = req.body;
 
     // Validação
     if (!category_name || typeof category_name !== 'string') {
@@ -121,38 +124,112 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'budget_value must be non-negative' });
     }
 
-    if (tipo_custo && !['fixo', 'variavel'].includes(tipo_custo)) {
-      return res.status(400).json({ error: 'tipo_custo must be "fixo" or "variavel"' });
+    console.log(`\n💾 [BUDGET] Salvando budget para ${category_name}: R$ ${budget_value.toFixed(2)}`);
+
+    // 1. Buscar preferências do usuário para esta categoria
+    const { data: preferences, error: prefError } = await supabase
+      .from('preferences')
+      .select('tipo_custo')
+      .eq('user_id', user_id)
+      .eq('category', category_name);
+
+    if (prefError) {
+      console.error('Error fetching preferences:', prefError);
     }
 
-    // Upsert (inserir ou atualizar se já existir)
-    // Agora a chave única é: user_id + category_name + tipo_custo
-    const { data, error } = await supabase
-      .from('custom_budgets')
-      .upsert(
-        {
+    // 2. Determinar se categoria é híbrida
+    const tiposNaCategoria = new Set(preferences?.map(p => p.tipo_custo) || []);
+    const isHybrid = tiposNaCategoria.has('fixo') && tiposNaCategoria.has('variavel');
+
+    console.log(`   Categoria ${category_name}: ${isHybrid ? 'HÍBRIDA' : 'NORMAL'} (tipos: ${[...tiposNaCategoria].join(', ') || 'nenhum definido'})`);
+
+    // 3. Salvar budget(s) de acordo com o tipo
+    if (isHybrid) {
+      // Categoria híbrida: criar/atualizar DUAS linhas (50% cada)
+      const valuePerType = budget_value / 2;
+
+      console.log(`   Criando 2 linhas: FIXO R$ ${valuePerType.toFixed(2)} + VARIÁVEL R$ ${valuePerType.toFixed(2)}`);
+
+      // Salvar linha FIXO
+      const { error: errorFixo } = await supabase
+        .from('custom_budgets')
+        .upsert({
+          user_id,
+          category_name,
+          budget_value: valuePerType,
+          tipo_custo: 'fixo',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,category_name,tipo_custo' });
+
+      if (errorFixo) {
+        console.error('Error saving fixo budget:', errorFixo);
+        throw errorFixo;
+      }
+
+      // Salvar linha VARIÁVEL
+      const { error: errorVariavel } = await supabase
+        .from('custom_budgets')
+        .upsert({
+          user_id,
+          category_name,
+          budget_value: valuePerType,
+          tipo_custo: 'variavel',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,category_name,tipo_custo' });
+
+      if (errorVariavel) {
+        console.error('Error saving variavel budget:', errorVariavel);
+        throw errorVariavel;
+      }
+
+      console.log(`✅ Budget híbrido salvo para ${category_name}\n`);
+      res.json({ success: true, category_name, budget_value, isHybrid: true });
+
+    } else {
+      // Categoria normal: criar/atualizar UMA linha
+      // Determinar tipo_custo: usar o informado, ou o único tipo da categoria, ou 'variavel' como default
+      let finalTipoCusto = tipo_custo;
+      if (!finalTipoCusto) {
+        if (tiposNaCategoria.size === 1) {
+          finalTipoCusto = [...tiposNaCategoria][0];
+        } else {
+          finalTipoCusto = 'variavel';
+        }
+      }
+
+      console.log(`   Criando 1 linha: ${finalTipoCusto.toUpperCase()} R$ ${budget_value.toFixed(2)}`);
+
+      // Primeiro, remover qualquer linha do outro tipo
+      const outroTipo = finalTipoCusto === 'fixo' ? 'variavel' : 'fixo';
+      await supabase
+        .from('custom_budgets')
+        .delete()
+        .eq('user_id', user_id)
+        .eq('category_name', category_name)
+        .eq('tipo_custo', outroTipo);
+
+      // Salvar a linha com o tipo correto
+      const { data, error } = await supabase
+        .from('custom_budgets')
+        .upsert({
           user_id,
           category_name,
           budget_value,
-          tipo_custo: tipo_custo || 'variavel',
-          subcategory: subcategory || null,
+          tipo_custo: finalTipoCusto,
           updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id,category_name,tipo_custo',
-        }
-      )
-      .select()
-      .single();
+        }, { onConflict: 'user_id,category_name,tipo_custo' })
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error saving budget:', error);
-      throw error;
+      if (error) {
+        console.error('Error saving budget:', error);
+        throw error;
+      }
+
+      console.log(`✅ Budget normal salvo para ${category_name}\n`);
+      res.json(data);
     }
 
-    console.log(`💾 Budget saved for user ${user_id.substring(0, 8)}..., category: ${category_name} (${tipo_custo}), value: R$ ${budget_value.toFixed(2)}`);
-
-    res.json(data);
   } catch (error) {
     console.error('Error saving custom budget:', error);
     res.status(500).json({ error: 'Failed to save custom budget' });
@@ -161,7 +238,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
 /**
  * PUT /api/budgets/:categoryName
- * Atualiza um budget existente
+ * Atualiza budget(s) existente(s)
  * Body: { budget_value: number }
  */
 router.put('/:categoryName', authMiddleware, async (req: Request, res: Response) => {
@@ -179,28 +256,46 @@ router.put('/:categoryName', authMiddleware, async (req: Request, res: Response)
       return res.status(400).json({ error: 'budget_value must be non-negative' });
     }
 
-    const { data, error } = await supabase
+    // Buscar budgets existentes para esta categoria
+    const { data: existingBudgets, error: fetchError } = await supabase
       .from('custom_budgets')
-      .update({
-        budget_value,
-        updated_at: new Date().toISOString(),
-      })
+      .select('*')
       .eq('user_id', user_id)
-      .eq('category_name', categoryName)
-      .select()
-      .single();
+      .eq('category_name', categoryName);
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: 'Budget not found for this category' });
-      }
-      console.error('Error updating budget:', error);
-      throw error;
+    if (fetchError) {
+      console.error('Error fetching existing budgets:', fetchError);
+      throw fetchError;
     }
 
-    console.log(`💾 Budget updated for user ${user_id.substring(0, 8)}..., category: ${categoryName}, value: R$ ${budget_value.toFixed(2)}`);
+    if (!existingBudgets || existingBudgets.length === 0) {
+      return res.status(404).json({ error: 'Budget not found for this category' });
+    }
 
-    res.json(data);
+    // Se tem 2 linhas (híbrida), divide o valor
+    if (existingBudgets.length === 2) {
+      const valuePerType = budget_value / 2;
+
+      for (const budget of existingBudgets) {
+        await supabase
+          .from('custom_budgets')
+          .update({ budget_value: valuePerType, updated_at: new Date().toISOString() })
+          .eq('id', budget.id);
+      }
+
+      console.log(`💾 Budget híbrido atualizado para ${categoryName}: R$ ${budget_value.toFixed(2)} (${valuePerType.toFixed(2)} cada)`);
+    } else {
+      // Atualiza a única linha
+      await supabase
+        .from('custom_budgets')
+        .update({ budget_value, updated_at: new Date().toISOString() })
+        .eq('user_id', user_id)
+        .eq('category_name', categoryName);
+
+      console.log(`💾 Budget atualizado para ${categoryName}: R$ ${budget_value.toFixed(2)}`);
+    }
+
+    res.json({ success: true, category_name: categoryName, budget_value });
   } catch (error) {
     console.error('Error updating custom budget:', error);
     res.status(500).json({ error: 'Failed to update custom budget' });
@@ -209,7 +304,7 @@ router.put('/:categoryName', authMiddleware, async (req: Request, res: Response)
 
 /**
  * DELETE /api/budgets/:categoryName
- * Remove um budget customizado (volta para o budget padrão/sugerido)
+ * Remove todos os budgets de uma categoria
  */
 router.delete('/:categoryName', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -227,8 +322,7 @@ router.delete('/:categoryName', authMiddleware, async (req: Request, res: Respon
       throw error;
     }
 
-    console.log(`🗑️ Budget deleted for user ${user_id.substring(0, 8)}..., category: ${categoryName}`);
-
+    console.log(`🗑️ Budget(s) deletado(s) para ${categoryName}`);
     res.json({ message: 'Budget deleted successfully' });
   } catch (error) {
     console.error('Error deleting custom budget:', error);
