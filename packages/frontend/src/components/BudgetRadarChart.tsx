@@ -260,12 +260,20 @@ export const BudgetRadarChart = () => {
         // Verificar se é categoria de receita
         const isReceitaCategory = CATEGORIAS_RECEITA.includes(category);
 
+        // Verificar se é categoria "não categorizado" (várias formas de escrita)
+        const isNaoCategorizado =
+          category.toLowerCase().includes('não categorizado') ||
+          category.toLowerCase().includes('nao categorizado') ||
+          category.toLowerCase().includes('sem categoria') ||
+          category.toLowerCase().includes('uncategorized') ||
+          category.toLowerCase() === 'outros' ||
+          category.toLowerCase() === 'other';
+
         // Log de cada categoria sendo avaliada
         // INCLUIR: Categorias com budget OU com despesas
         // EXCLUIR: Não categorizado, Sem Categoria, e CATEGORIAS DE RECEITA
         const shouldInclude = (orcado > 0 || realizado > 0)
-          && category !== 'Não categorizado'
-          && category !== 'Sem Categoria'
+          && !isNaoCategorizado
           && !isReceitaCategory;
 
         if (shouldInclude) {
@@ -303,10 +311,10 @@ export const BudgetRadarChart = () => {
           excludedCount++;
           const motivo = isReceitaCategory
             ? '🏦 CATEGORIA DE RECEITA (não entra no radar de despesas)'
+            : isNaoCategorizado
+            ? '❓ NÃO CATEGORIZADO (excluído do radar)'
             : (orcado === 0 && realizado === 0)
             ? 'sem budget e sem despesas'
-            : (category === 'Não categorizado' || category === 'Sem Categoria')
-            ? 'categoria de sistema excluída'
             : 'outro motivo';
           console.log(`  ❌ Excluída: ${category} (orçado: R$ ${orcado.toFixed(2)}, realizado: R$ ${realizado.toFixed(2)}, motivo: ${motivo})`);
         }
