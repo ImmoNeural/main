@@ -218,7 +218,7 @@ export default function BudgetDetails() {
       const categoryKey = decodeURIComponent(categoryName!);
 
       try {
-        await budgetApi.saveBudget(categoryKey, customBudget);
+        await budgetApi.saveBudget({ category_name: categoryKey, budget_value: customBudget });
         console.log(`💾 [BUDGET DETAILS] Budget customizado salvo para ${categoryKey}: R$ ${customBudget.toFixed(2)}`);
 
         setSuggestedBudget(customBudget);
