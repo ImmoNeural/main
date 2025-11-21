@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { transactionApi, budgetApi } from '../services/api';
+import { transactionApi, budgetApi, preferencesApi, PreferenceItem } from '../services/api';
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -531,6 +531,7 @@ export default function Budgets() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [customBudgets, setCustomBudgets] = useState<Record<string, number>>({});
   const [detailedBudgets, setDetailedBudgets] = useState<DetailedBudget[]>([]);
+  const [preferences, setPreferences] = useState<PreferenceItem[]>([]);
   const [monthSummary, setMonthSummary] = useState<MonthSummary>({
     salary: 0,
     fixedBudget: 0,
@@ -547,7 +548,7 @@ export default function Budgets() {
 
   useEffect(() => {
     loadTransactions();
-  }, [selectedMonth, customBudgets]);
+  }, [selectedMonth, customBudgets, detailedBudgets, preferences]);
 
   const loadBudgets = async () => {
     try {
@@ -560,10 +561,16 @@ export default function Budgets() {
       const detailedResponse = await budgetApi.getDetailedBudgets();
       setDetailedBudgets(detailedResponse.data || []);
       console.log(`📂 [BUDGETS] Budgets detalhados (tipo_custo) carregados:`, detailedResponse.data?.length || 0, 'registros');
+
+      // Carregar preferências do usuário (para saber tipo_custo de cada subcategoria)
+      const prefsResponse = await preferencesApi.getAll();
+      setPreferences(prefsResponse.data || []);
+      console.log(`📂 [BUDGETS] Preferências carregadas:`, prefsResponse.data?.length || 0, 'registros');
     } catch (error) {
       console.error(`❌ [BUDGETS] Erro ao carregar budgets:`, error);
       setCustomBudgets({});
       setDetailedBudgets([]);
+      setPreferences([]);
     }
   };
 
@@ -610,11 +617,37 @@ export default function Budgets() {
     console.log(`📅 [BUDGETS] Mês selecionado: ${format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}`);
     console.log(`📊 [BUDGETS] Total de transações: ${txs.length}`);
 
-    // Helper: Buscar tipo_custo das preferências do usuário
-    const getTipoCusto = (category: string, subcategory: string, defaultType: string): 'fixo' | 'variavel' => {
+    // Identificar categorias HÍBRIDAS baseado na tabela custom_budgets
+    // Uma categoria é híbrida se tem AMBAS linhas: tipo_custo='fixo' E tipo_custo='variavel'
+    const hybridCategories = new Set<string>();
+    const budgetsByCategory: Record<string, { hasFixo: boolean; hasVariavel: boolean; fixoBudget: number; variavelBudget: number }> = {};
+
+    detailedBudgets.forEach(b => {
+      if (!budgetsByCategory[b.category_name]) {
+        budgetsByCategory[b.category_name] = { hasFixo: false, hasVariavel: false, fixoBudget: 0, variavelBudget: 0 };
+      }
+      if (b.tipo_custo === 'fixo') {
+        budgetsByCategory[b.category_name].hasFixo = true;
+        budgetsByCategory[b.category_name].fixoBudget = b.budget_value;
+      } else if (b.tipo_custo === 'variavel') {
+        budgetsByCategory[b.category_name].hasVariavel = true;
+        budgetsByCategory[b.category_name].variavelBudget = b.budget_value;
+      }
+    });
+
+    Object.entries(budgetsByCategory).forEach(([categoryName, data]) => {
+      if (data.hasFixo && data.hasVariavel) {
+        hybridCategories.add(categoryName);
+      }
+    });
+
+    console.log(`🔀 [BUDGETS] Categorias HÍBRIDAS identificadas (na custom_budgets):`, [...hybridCategories]);
+
+    // Helper: Buscar tipo_custo das preferências do usuário (tabela preferences)
+    const getSubcategoryTipoCusto = (category: string, subcategory: string, defaultType: string): 'fixo' | 'variavel' => {
       // Procurar nas preferências do usuário
-      const userPref = detailedBudgets.find(
-        b => b.category_name === category && b.subcategory === subcategory
+      const userPref = preferences.find(
+        p => p.category === category && p.subcategory === subcategory
       );
 
       if (userPref?.tipo_custo) {
@@ -628,6 +661,8 @@ export default function Budgets() {
     };
 
     // Helper: Determinar tipo efetivo baseado em tipo_custo
+    // Para categorias NÃO híbridas, retorna o tipo baseado nas preferências
+    // Para categorias HÍBRIDAS, não usamos isso - tratamos separadamente
     const getEffectiveType = (rule: CategoryRule): string => {
       // Movimentações são tratadas separadamente (não usam tipo_custo)
       if (rule.type === 'Movimentações') {
@@ -639,15 +674,73 @@ export default function Budgets() {
         return rule.type;
       }
 
-      // Para despesas, usar tipo_custo das preferências
-      const tipoCusto = getTipoCusto(rule.category, rule.subcategory, rule.type);
+      // Para categorias híbridas, retornar baseado no tipo_custo da subcategoria
+      // (serão duplicadas em ambas seções)
+      if (hybridCategories.has(rule.category)) {
+        const tipoCusto = getSubcategoryTipoCusto(rule.category, rule.subcategory, rule.type);
+        return tipoCusto === 'fixo' ? 'Despesas Fixas' : 'Despesas Variáveis';
+      }
+
+      // Para categorias não-híbridas, usar tipo_custo das preferências
+      const tipoCusto = getSubcategoryTipoCusto(rule.category, rule.subcategory, rule.type);
       return tipoCusto === 'fixo' ? 'Despesas Fixas' : 'Despesas Variáveis';
     };
 
     const grouped: Record<string, Record<string, GroupedCategory>> = {};
 
-    // Inicializar estrutura com todas as categorias
+    // Inicializar estrutura - para categorias híbridas, criar em AMBAS seções
     ALL_CATEGORY_RULES.forEach((rule) => {
+      // Movimentações: tratadas normalmente
+      if (rule.type === 'Movimentações') {
+        const effectiveType = getEffectiveType(rule);
+        if (!grouped[effectiveType]) {
+          grouped[effectiveType] = {};
+        }
+        if (!grouped[effectiveType][rule.category]) {
+          grouped[effectiveType][rule.category] = {
+            icon: rule.icon,
+            color: rule.color,
+            totalSpent: 0,
+            totalBudget: 0,
+            subcategories: [],
+          };
+        }
+        return;
+      }
+
+      // Para categorias híbridas: criar em AMBAS seções (Fixas e Variáveis)
+      if (hybridCategories.has(rule.category)) {
+        // Criar em Despesas Fixas
+        if (!grouped['Despesas Fixas']) {
+          grouped['Despesas Fixas'] = {};
+        }
+        if (!grouped['Despesas Fixas'][rule.category]) {
+          grouped['Despesas Fixas'][rule.category] = {
+            icon: rule.icon,
+            color: rule.color,
+            totalSpent: 0,
+            totalBudget: budgetsByCategory[rule.category]?.fixoBudget || 0,
+            subcategories: [],
+          };
+        }
+
+        // Criar em Despesas Variáveis
+        if (!grouped['Despesas Variáveis']) {
+          grouped['Despesas Variáveis'] = {};
+        }
+        if (!grouped['Despesas Variáveis'][rule.category]) {
+          grouped['Despesas Variáveis'][rule.category] = {
+            icon: rule.icon,
+            color: rule.color,
+            totalSpent: 0,
+            totalBudget: budgetsByCategory[rule.category]?.variavelBudget || 0,
+            subcategories: [],
+          };
+        }
+        return;
+      }
+
+      // Para categorias não-híbridas: criar apenas na seção apropriada
       const effectiveType = getEffectiveType(rule);
 
       if (!grouped[effectiveType]) {
@@ -943,24 +1036,42 @@ export default function Budgets() {
       Object.keys(grouped[type]).forEach((categoryName) => {
         const category = grouped[type][categoryName];
 
-        // Se existe budget customizado, usar ele. Senão, calcular média da categoria toda
-        const customBudget = customBudgets[categoryName];
+        // Para categorias HÍBRIDAS: budget já foi definido na inicialização (fixoBudget/variavelBudget)
+        // Não usar customBudgets soma porque cada card tem seu budget específico
+        const isHybrid = hybridCategories.has(categoryName);
         let categoryBudget: number;
 
-        if (customBudget) {
-          categoryBudget = customBudget;
+        if (isHybrid) {
+          // Budget já definido na inicialização - usar valor específico para fixo/variavel
+          categoryBudget = category.totalBudget; // Já tem o valor correto
+
+          // Se não tem budget definido, calcular média das subcategorias deste tipo
+          if (categoryBudget === 0) {
+            const allSubcategoriesBudgets = category.subcategories
+              .map(sub => sub.suggestedBudget)
+              .reduce((sum, val) => sum + val, 0);
+            categoryBudget = allSubcategoriesBudgets;
+            category.totalBudget = categoryBudget;
+          }
         } else {
-          // Calcular média de TODAS as subcategorias juntas
-          const allSubcategoriesBudgets = category.subcategories
-            .map(sub => sub.suggestedBudget)
-            .reduce((sum, val) => sum + val, 0);
-          categoryBudget = allSubcategoriesBudgets;
+          // Para categorias não-híbridas: usar budget customizado ou média
+          const customBudget = customBudgets[categoryName];
+
+          if (customBudget) {
+            categoryBudget = customBudget;
+          } else {
+            // Calcular média de TODAS as subcategorias juntas
+            const allSubcategoriesBudgets = category.subcategories
+              .map(sub => sub.suggestedBudget)
+              .reduce((sum, val) => sum + val, 0);
+            categoryBudget = allSubcategoriesBudgets;
+          }
+
+          category.totalBudget = categoryBudget;
         }
 
-        category.totalBudget = categoryBudget;
-
         // Log
-        const budgetSource = customBudget ? '✏️ CUSTOMIZADO' : 'média calculada';
+        const budgetSource = isHybrid ? '🔀 HÍBRIDO' : (customBudgets[categoryName] ? '✏️ CUSTOMIZADO' : 'média calculada');
         console.log(`  📊 [${type}] ${categoryName}: Gasto R$ ${category.totalSpent.toFixed(2)} | Budget R$ ${categoryBudget.toFixed(2)} (${budgetSource})`);
 
         // Acumular para resumo da Visão Geral
