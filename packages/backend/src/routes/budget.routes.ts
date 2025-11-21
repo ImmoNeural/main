@@ -217,7 +217,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         .eq('tipo_custo', outroTipo);
 
       // Salvar a linha com o tipo correto
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('custom_budgets')
         .upsert({
           user_id,
@@ -225,9 +225,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
           budget_value,
           tipo_custo: finalTipoCusto,
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,category_name,tipo_custo' })
-        .select()
-        .single();
+        }, { onConflict: 'user_id,category_name,tipo_custo' });
 
       if (error) {
         console.error('Error saving budget:', error);
@@ -235,7 +233,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       }
 
       console.log(`✅ Budget normal salvo para ${category_name}\n`);
-      res.json(data);
+      res.json({ success: true, category_name, budget_value, tipo_custo: finalTipoCusto });
     }
 
   } catch (error) {
