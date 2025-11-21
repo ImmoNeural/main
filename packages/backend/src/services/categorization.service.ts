@@ -73,12 +73,24 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
       'madero', 'madero container', 'outback', 'fogo de chao', 'barbecue', 'grill',
       // Cafeterias
       'starbucks', 'coffee', 'cafe', 'rei do mate', 'ofner', 'kopenhagen',
-      // Padarias
-      'padaria', 'panificadora', 'santa massa', 'bella paulista',
     ],
     icon: '🍕',
     color: '#FF5722',
     priority: 8, // Aumentar prioridade para evitar conflitos
+  },
+
+  // 🥖 PADARIA
+  {
+    category: 'Alimentação',
+    subcategory: 'Padaria',
+    keywords: ['padaria', 'panificadora', 'padoca', 'pao', 'confeitaria'],
+    brands: [
+      'padaria', 'panificadora', 'santa massa', 'bella paulista', 'panificação',
+      'pao quente', 'casa do pao', 'padoca', 'panificacao',
+    ],
+    icon: '🥖',
+    color: '#D2691E',
+    priority: 9, // Alta prioridade para separar de restaurantes
   },
 
   // 🏥 SAÚDE - ODONTOLOGIA
@@ -408,6 +420,48 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     icon: '⚡',
     color: '#FFC107',
     priority: 8,
+  },
+
+  // 🏢 CONTAS - CONDOMÍNIO
+  {
+    category: 'Contas',
+    subcategory: 'Condomínio',
+    keywords: ['condominio', 'condominial', 'taxa condominial', 'sindico', 'administradora'],
+    brands: [
+      'condominio', 'adm condominio', 'administradora', 'lello', 'superlógica',
+      'superlogica', 'mix', 'administração condominial',
+    ],
+    icon: '🏢',
+    color: '#795548',
+    priority: 9,
+  },
+
+  // 🔌 CONTAS - ALUGUEL DE ELETRODOMÉSTICOS
+  {
+    category: 'Contas',
+    subcategory: 'Aluguel de Eletrodomésticos',
+    keywords: ['aluguel eletrodomestico', 'locacao', 'rent', 'aluguel geladeira', 'aluguel maquina'],
+    brands: [
+      'resicolor', 'luiza aluga', 'magalu aluga', 'aluguel eletro',
+      'rental', 'aluguel lavadora', 'aluguel fogao',
+    ],
+    icon: '🔌',
+    color: '#9E9E9E',
+    priority: 9,
+  },
+
+  // 🏠 CONTAS - ALUGUEL DE IMÓVEL
+  {
+    category: 'Contas',
+    subcategory: 'Aluguel de Imóvel',
+    keywords: ['aluguel', 'aluguer', 'locacao imovel', 'inquilino', 'rent', 'imobiliaria'],
+    brands: [
+      'aluguel', 'imobiliaria', 'lopes', 'tecimob', 'chaveiro imoveis',
+      'credpago', 'pagaleve', 'quintoandar', 'quinto andar', 'housi',
+    ],
+    icon: '🏠',
+    color: '#8D6E63',
+    priority: 10, // Prioridade alta para evitar conflitos
   },
 
   // 📚 LIVRARIAS E PAPELARIAS (Merge: Educação/Livros)

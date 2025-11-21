@@ -345,6 +345,7 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
       );
 
       const newCategory = categorization.category;
+      const newSubcategory = categorization.subcategory; // NOVO: Priorizar subcategoria
       const confidence = categorization.confidence;
 
       // Contar estatísticas
@@ -356,10 +357,12 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
 
       // Atualizar SEMPRE, mesmo que seja a mesma categoria
       // Isso garante que transações antigas sejam reavaliadas com as novas regras
+      // IMPORTANTE: Agora também atualiza SUBCATEGORIA
       const { error: updateError } = await supabase
         .from('transactions')
         .update({
           category: newCategory,
+          subcategory: newSubcategory, // NOVO: Salvar subcategoria
           updated_at: toISOString(Date.now())
         })
         .eq('id', transaction.id);
@@ -367,7 +370,7 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
       if (!updateError) {
         if (oldCategory !== newCategory) {
           updated++;
-          console.log(`✅ [${confidence}%] ${transaction.description?.substring(0, 40)} | ${oldCategory || 'VAZIO'} → ${newCategory}`);
+          console.log(`✅ [${confidence}%] ${transaction.description?.substring(0, 40)} | ${oldCategory || 'VAZIO'} → ${newCategory} (${newSubcategory})`);
         } else {
           unchanged++;
         }

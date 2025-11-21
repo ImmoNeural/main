@@ -31,6 +31,7 @@ const ALL_CATEGORY_RULES: CategoryRule[] = [
   // DESPESAS VARIÁVEIS (Consumo e Lazer)
   { type: 'Despesas Variáveis', category: 'Supermercado', subcategory: 'Compras de Mercado', icon: '🛒', color: '#4CAF50', note: 'Grandes redes e atacados (Carrefour, Assaí, Zaffari).' },
   { type: 'Despesas Variáveis', category: 'Alimentação', subcategory: 'Restaurantes e Delivery', icon: '🍕', color: '#FF5722', note: 'Restaurantes, lanchonetes e apps (iFood, Uber Eats, Outback).' },
+  { type: 'Despesas Variáveis', category: 'Alimentação', subcategory: 'Padaria', icon: '🥖', color: '#D2691E', note: 'Padarias e panificadoras.' },
   { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Apps de Transporte', icon: '🚗', color: '#2196F3', note: 'Corridas de aplicativos (Uber, 99, Cabify).' },
   { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Combustível e Pedágio', icon: '⛽', color: '#FF9800', note: 'Postos de gasolina (Shell, Ipiranga) e tags de pedágio (Sem Parar).' },
   { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Transporte Público', icon: '🚌', color: '#3F51B5', note: 'Passagens de metrô, trem e ônibus.' },
@@ -51,6 +52,9 @@ const ALL_CATEGORY_RULES: CategoryRule[] = [
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Telefonia e Internet', icon: '📱', color: '#00BCD4', note: 'Planos de telefonia e internet fixa (Vivo, Claro, Oi).' },
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Energia e Água', icon: '⚡', color: '#FFC107', note: 'Contas de utilidade básica (Sabesp, Enel, Cemig).' },
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Boletos e Débitos', icon: '📄', color: '#607D8B', note: 'Identificação genérica de pagamento de boletos.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Condomínio', icon: '🏢', color: '#795548', note: 'Taxa condominial e administração.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Eletrodomésticos', icon: '🔌', color: '#9E9E9E', note: 'Locação de geladeira, máquina de lavar, etc.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Imóvel', icon: '🏠', color: '#8D6E63', note: 'Aluguel de casa, apartamento ou sala comercial.' },
   { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Bancos e Fintechs', icon: '🏦', color: '#673AB7', note: 'Tarifas e serviços bancários (Itaú, Nubank, PicPay).' },
   { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Seguradoras', icon: '🛡️', color: '#673AB7', note: 'Seguros diversos (vida, residencial, etc).' },
   { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Empréstimos Bancários', icon: '💰', color: '#673AB7', note: 'Parcelas de empréstimos bancários.' },

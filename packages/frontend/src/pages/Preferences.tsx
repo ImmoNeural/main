@@ -14,6 +14,7 @@ interface SubcategoryConfig {
 const SUBCATEGORIES_CONFIG: SubcategoryConfig[] = [
   // ALIMENTAÇÃO
   { category: 'Alimentação', subcategory: 'Restaurantes e Delivery', icon: '🍕', defaultTipo: 'variavel', description: 'Restaurantes, lanchonetes e apps de delivery' },
+  { category: 'Alimentação', subcategory: 'Padaria', icon: '🥖', defaultTipo: 'variavel', description: 'Padarias e panificadoras' },
 
   // SUPERMERCADO
   { category: 'Supermercado', subcategory: 'Compras de Mercado', icon: '🛒', defaultTipo: 'variavel', description: 'Grandes redes e atacados' },
@@ -51,6 +52,9 @@ const SUBCATEGORIES_CONFIG: SubcategoryConfig[] = [
   { category: 'Contas', subcategory: 'Telefonia e Internet', icon: '📱', defaultTipo: 'fixo', description: 'Planos de telefone e internet' },
   { category: 'Contas', subcategory: 'Energia e Água', icon: '⚡', defaultTipo: 'fixo', description: 'Contas de luz e água' },
   { category: 'Contas', subcategory: 'Boletos e Débitos', icon: '📄', defaultTipo: 'variavel', description: 'Boletos diversos' },
+  { category: 'Contas', subcategory: 'Condomínio', icon: '🏢', defaultTipo: 'fixo', description: 'Taxa condominial e administração' },
+  { category: 'Contas', subcategory: 'Aluguel de Eletrodomésticos', icon: '🔌', defaultTipo: 'fixo', description: 'Locação de geladeira, máquina de lavar, etc.' },
+  { category: 'Contas', subcategory: 'Aluguel de Imóvel', icon: '🏠', defaultTipo: 'fixo', description: 'Aluguel de casa, apartamento ou sala comercial' },
 
   // BANCO E SEGURADORAS
   { category: 'Banco e Seguradoras', subcategory: 'Bancos e Fintechs', icon: '🏦', defaultTipo: 'fixo', description: 'Tarifas bancárias' },

@@ -30,6 +30,7 @@ const ALL_CATEGORY_RULES: CategoryRule[] = [
   // DESPESAS VARIÁVEIS
   { type: 'Despesas Variáveis', category: 'Supermercado', subcategory: 'Compras de Mercado', icon: '🛒', color: '#4CAF50', note: 'Grandes redes e atacados.' },
   { type: 'Despesas Variáveis', category: 'Alimentação', subcategory: 'Restaurantes e Delivery', icon: '🍕', color: '#FF5722', note: 'Restaurantes e delivery.' },
+  { type: 'Despesas Variáveis', category: 'Alimentação', subcategory: 'Padaria', icon: '🥖', color: '#D2691E', note: 'Padarias e panificadoras.' },
   { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Apps de Transporte', icon: '🚗', color: '#2196F3', note: 'Apps de transporte.' },
   { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Combustível e Pedágio', icon: '⛽', color: '#FF9800', note: 'Combustível e pedágio.' },
   { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Transporte Público', icon: '🚌', color: '#3F51B5', note: 'Metrô, trem e ônibus.' },
@@ -48,6 +49,9 @@ const ALL_CATEGORY_RULES: CategoryRule[] = [
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Telefonia e Internet', icon: '📱', color: '#00BCD4', note: 'Telefone e internet.' },
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Energia e Água', icon: '⚡', color: '#FFC107', note: 'Energia e água.' },
   { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Boletos e Débitos', icon: '📄', color: '#607D8B', note: 'Boletos gerais.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Condomínio', icon: '🏢', color: '#795548', note: 'Taxa condominial.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Eletrodomésticos', icon: '🔌', color: '#9E9E9E', note: 'Locação de eletros.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Imóvel', icon: '🏠', color: '#8D6E63', note: 'Aluguel de imóvel.' },
   { type: 'Despesas Fixas', category: 'Serviços Financeiros', subcategory: 'Bancos e Fintechs', icon: '💳', color: '#673AB7', note: 'Tarifas bancárias.' },
   { type: 'Despesas Fixas', category: 'Entretenimento', subcategory: 'Streaming e Assinaturas', icon: '📺', color: '#E91E63', note: 'Streaming.' },
   { type: 'Despesas Fixas', category: 'Educação', subcategory: 'Cursos e Ensino', icon: '🎓', color: '#3F51B5', note: 'Cursos e ensino.' },
