@@ -4,7 +4,8 @@ import { transactionApi, budgetApi } from '../services/api';
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, Upload } from 'lucide-react';
+import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import {
   BarChart,
   Bar,
@@ -93,6 +94,7 @@ export default function BudgetDetails() {
   const [customBudget, setCustomBudget] = useState<number | null>(null);
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [isCustomBudget, setIsCustomBudget] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     if (categoryName) {
@@ -281,12 +283,23 @@ export default function BudgetDetails() {
     <div className="p-4 sm:p-6 bg-gray-50 min-h-screen pb-20 lg:pb-6">
       {/* Header */}
       <div className="max-w-6xl mx-auto mb-6">
-        <Link
-          to="/app/budgets"
-          className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 mb-4 text-sm font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" /> Voltar para Budgets
-        </Link>
+        <div className="flex justify-between items-start mb-4">
+          <Link
+            to="/app/budgets"
+            className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 text-sm font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" /> Voltar para Budgets
+          </Link>
+
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="btn-primary flex items-center space-x-2"
+            title="Importar transações CSV"
+          >
+            <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-sm sm:text-base">Importar CSV</span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-4 mb-2">
           <span className="text-5xl">{categoryInfo.icon}</span>
@@ -467,6 +480,17 @@ export default function BudgetDetails() {
           </div>
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <ImportTransactionsModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            setShowImportModal(false);
+            loadCategoryData();
+          }}
+        />
+      )}
     </div>
   );
 }

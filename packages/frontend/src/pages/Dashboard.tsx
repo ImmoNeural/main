@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3, Upload } from 'lucide-react';
 import { dashboardApi, transactionApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import { CategoryIcon } from '../components/CategoryIcons';
 import { BudgetRadarChart } from '../components/BudgetRadarChart';
+import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import {
   BarChart,
   Bar,
@@ -32,12 +33,13 @@ const EmptyChartState = ({ message = "Você ainda não tem dados" }: { message?:
     <p className="text-gray-500 text-sm text-center max-w-xs">
       {message}
     </p>
-    <Link
+    {/* OCULTO: Trial do Pluggy expirou */}
+    {/* <Link
       to="/app/connect-bank"
       className="mt-4 text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
     >
       Conectar banco <ArrowRight className="w-4 h-4" />
-    </Link>
+    </Link> */}
   </div>
 );
 
@@ -59,6 +61,7 @@ const Dashboard = () => {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [chartView, setChartView] = useState<'weekly' | 'monthly'>('weekly'); // Novo: controlar visualização
   const transactionsRef = useRef<HTMLDivElement>(null); // Ref para seção de transações
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<{
     type: 'week' | 'month' | null;
     weekNumber?: number;
@@ -605,10 +608,19 @@ const Dashboard = () => {
           <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 whitespace-nowrap">
+          {/* OCULTO: Trial do Pluggy expirou */}
+          {/* <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 whitespace-nowrap">
             <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
             <span className="text-sm sm:text-base">Conectar Banco</span>
-          </Link>
+          </Link> */}
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="btn-primary flex items-center space-x-2 whitespace-nowrap"
+            title="Importar transações CSV"
+          >
+            <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-sm sm:text-base">Importar CSV</span>
+          </button>
           <select
             value={period}
             onChange={(e) => setPeriod(Number(e.target.value))}
@@ -1108,6 +1120,17 @@ const Dashboard = () => {
         )}
       </div>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <ImportTransactionsModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            setShowImportModal(false);
+            loadDashboardData();
+          }}
+        />
+      )}
     </div>
   );
 };

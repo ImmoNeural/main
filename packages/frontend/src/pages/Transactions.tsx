@@ -649,8 +649,8 @@ const Transactions = () => {
             </div>
           </div>
 
-          {/* Botão Conectar Banco - lado direito */}
-          <div className="w-full sm:w-auto mt-3 sm:mt-0">
+          {/* OCULTO: Trial do Pluggy expirou */}
+          {/* <div className="w-full sm:w-auto mt-3 sm:mt-0">
             <button
               onClick={() => navigate('/app/connect-bank')}
               className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2"
@@ -658,7 +658,7 @@ const Transactions = () => {
               <PlusCircle className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
               <span>Conectar Banco</span>
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Resumo Financeiro (Cards) */}

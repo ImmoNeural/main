@@ -4,7 +4,8 @@ import { transactionApi, budgetApi, preferencesApi, PreferenceItem } from '../se
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Wallet, Settings, Info } from 'lucide-react';
+import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Wallet, Settings, Info, Upload } from 'lucide-react';
+import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import {
   BarChart,
   Bar,
@@ -545,6 +546,7 @@ export default function Budgets() {
     investmentsBudget: 0,
     investmentsSpent: 0,
   });
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     loadBudgets();
@@ -1377,10 +1379,19 @@ export default function Budgets() {
               Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
             </p>
           </div>
-          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
+          {/* OCULTO: Trial do Pluggy expirou */}
+          {/* <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
             <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
             <span className="text-sm sm:text-base">Conectar Banco</span>
-          </Link>
+          </Link> */}
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center"
+            title="Importar transações CSV"
+          >
+            <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-sm sm:text-base">Importar CSV</span>
+          </button>
         </div>
 
         {/* Seletor de Mês - Centralizado em mobile */}
@@ -1515,12 +1526,13 @@ export default function Budgets() {
               <p className="text-gray-500 mb-4">
                 Conecte sua conta bancária para começar a gerenciar seus budgets.
               </p>
-              <Link
+              {/* OCULTO: Trial do Pluggy expirou */}
+              {/* <Link
                 to="/app/connect-bank"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
               >
                 Conectar Banco <ArrowRight className="w-4 h-4" />
-              </Link>
+              </Link> */}
             </div>
           )}
         </main>
@@ -1529,6 +1541,17 @@ export default function Budgets() {
           <p>Budgets calculados automaticamente com base no histórico de transações.</p>
         </footer>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <ImportTransactionsModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            setShowImportModal(false);
+            loadBudgets();
+          }}
+        />
+      )}
     </div>
   );
 }

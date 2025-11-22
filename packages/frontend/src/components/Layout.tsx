@@ -23,7 +23,8 @@ const Layout = () => {
     { name: 'Contas', path: '/app/accounts', icon: Wallet },
     { name: 'Preferências', path: '/app/preferences', icon: Settings },
     { name: 'Planos', path: '/app/planos', icon: CreditCard },
-    { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
+    // OCULTO: Trial do Pluggy expirou
+    // { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
   ];
 
   return (
