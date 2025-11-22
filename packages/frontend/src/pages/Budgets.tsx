@@ -4,7 +4,7 @@ import { transactionApi, budgetApi, preferencesApi, PreferenceItem } from '../se
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Wallet, Settings, Info, Upload } from 'lucide-react';
+import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Settings, Info, Upload } from 'lucide-react';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import {
   BarChart,
