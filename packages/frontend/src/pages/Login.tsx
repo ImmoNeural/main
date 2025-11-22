@@ -21,20 +21,21 @@ const Login = () => {
     try {
       await login(email, password);
 
+      // OCULTO: Trial do Pluggy expirou - redirecionamento para conectar banco desabilitado
       // Verificar se é primeiro acesso (sem contas bancárias)
-      try {
-        const accountsResponse = await bankApi.getAccounts();
+      // try {
+      //   const accountsResponse = await bankApi.getAccounts();
+      //
+      //   if (!accountsResponse.data || accountsResponse.data.length === 0) {
+      //     // Primeiro acesso: redirecionar para conectar banco
+      //     navigate('/app/connect-bank');
+      //     return;
+      //   }
+      // } catch (accountsError) {
+      //   console.warn('Could not check accounts, redirecting to dashboard');
+      // }
 
-        if (!accountsResponse.data || accountsResponse.data.length === 0) {
-          // Primeiro acesso: redirecionar para conectar banco
-          navigate('/app/connect-bank');
-          return;
-        }
-      } catch (accountsError) {
-        console.warn('Could not check accounts, redirecting to dashboard');
-      }
-
-      // Usuário já tem contas: ir para dashboard
+      // Usuário sempre vai para dashboard
       navigate('/app/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
