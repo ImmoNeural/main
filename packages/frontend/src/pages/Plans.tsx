@@ -370,28 +370,18 @@ const Plans = () => {
                   {/* Preço */}
                   <div className="mb-6">
                     {plan.price === 0 ? (
-                      // Plano Grátis com preço riscado e badge
+                      // Plano Grátis
                       <div className="text-center">
-                        <div className="flex items-center justify-center gap-3 mb-3">
-                          <div className="text-3xl font-bold text-gray-400 line-through">
-                            R$ 166,90
-                          </div>
-                          <div className="relative">
-                            {/* Balão/Badge com vértices */}
-                            <div className="bg-gradient-to-br from-red-500 to-red-600 text-white px-6 py-3 rounded-lg shadow-2xl transform rotate-[-2deg] relative">
-                              <span className="text-3xl font-extrabold relative z-10">
-                                GRÁTIS
-                              </span>
-                              {/* Vértices do balão */}
-                              <div className="absolute -top-1 -left-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                              <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                            </div>
-                          </div>
+                        <div className="inline-block bg-gradient-to-r from-yellow-100 to-amber-100 px-6 py-3 rounded-xl border-2 border-yellow-400">
+                          <p className="text-4xl font-extrabold text-gray-900">
+                            R$ 0,00
+                          </p>
+                          <p className="text-sm text-gray-700 font-bold mt-1">
+                            100% Gratuito
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-600 font-semibold">
-                          Gratuito. Não perca! Por tempo limitado
+                        <p className="text-xs text-gray-600 font-semibold mt-3">
+                          🎉 Oferta por tempo limitado
                         </p>
                       </div>
                     ) : (

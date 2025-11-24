@@ -252,18 +252,61 @@ const LandingPage = () => {
 
         {/* Bancos Conectados Section */}
         <section className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
               Controle financeiro integrado: Abertura para o Open Finance
             </h2>
-            <div className="flex justify-center">
-              <img
-                src="/bancos.png"
-                alt="Bancos conectados via Open Finance"
-                className="max-w-full h-auto rounded-2xl shadow-xl"
-              />
+
+            {/* Badge Promocional + Imagem dos Bancos */}
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+              {/* Badge Promocional - Lado Esquerdo */}
+              <div className="flex-shrink-0 order-2 lg:order-1">
+                <div className="relative inline-block">
+                  {/* Badge Principal */}
+                  <div className="bg-gradient-to-br from-yellow-400 via-amber-400 to-yellow-500 p-8 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300 border-4 border-yellow-600">
+                    <div className="text-center space-y-3">
+                      {/* Preço Riscado */}
+                      <div className="text-2xl font-bold text-red-600 line-through">
+                        De R$ 166,90
+                      </div>
+
+                      {/* Badge GRÁTIS */}
+                      <div className="relative inline-block">
+                        <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-yellow-400 px-8 py-4 rounded-xl shadow-xl border-2 border-yellow-500">
+                          <span className="text-5xl font-black tracking-tight">
+                            GRÁTIS
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Texto Promocional */}
+                      <div className="space-y-1">
+                        <p className="text-gray-900 font-bold text-lg">
+                          🎉 Por Tempo Limitado!
+                        </p>
+                        <p className="text-gray-800 font-semibold text-sm">
+                          Não perca essa oportunidade
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Efeito de brilho/destaque */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-2xl blur-xl opacity-30 -z-10 animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* Imagem dos Bancos - Lado Direito */}
+              <div className="flex-1 order-1 lg:order-2">
+                <img
+                  src="/bancos.png"
+                  alt="Bancos conectados via Open Finance"
+                  className="max-w-full h-auto rounded-2xl shadow-xl"
+                />
+              </div>
             </div>
-            <p className="text-sm text-gray-500 mt-6">
+
+            <p className="text-sm text-gray-500 mt-8 text-center">
               Conexão segura via Open Finance com as maiores instituições do país.
             </p>
           </div>
@@ -302,29 +345,16 @@ const LandingPage = () => {
 
                   <div className="mb-6">
                     {plan.price === 0 ? (
-                      // Plano Grátis com preço riscado e badge
+                      // Plano Grátis
                       <div className="text-center py-4">
-                        <div className="flex items-center justify-center gap-3 mb-3">
-                          <div className="text-3xl font-bold text-gray-400 line-through">
-                            R$ 166,90
-                          </div>
-                          <div className="relative">
-                            {/* Balão/Badge com vértices */}
-                            <div className="bg-gradient-to-br from-red-500 to-red-600 text-white px-6 py-3 rounded-lg shadow-2xl transform rotate-[-2deg] relative">
-                              <span className="text-3xl font-extrabold relative z-10">
-                                GRÁTIS
-                              </span>
-                              {/* Vértices do balão */}
-                              <div className="absolute -top-1 -left-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                              <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-red-600 transform rotate-45"></div>
-                            </div>
-                          </div>
+                        <div className="inline-block bg-gradient-to-r from-yellow-100 to-amber-100 px-6 py-3 rounded-xl border-2 border-yellow-400">
+                          <p className="text-4xl font-extrabold text-gray-900">
+                            R$ 0,00
+                          </p>
+                          <p className="text-sm text-gray-700 font-bold mt-1">
+                            100% Gratuito
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-600 font-semibold">
-                          Gratuito. Não perca! Por tempo limitado
-                        </p>
                       </div>
                     ) : (
                       // Planos pagos
