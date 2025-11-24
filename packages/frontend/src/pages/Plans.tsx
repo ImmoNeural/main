@@ -42,63 +42,63 @@ const Plans = () => {
       id: 'manual',
       type: 'manual',
       name: 'Plano Manual',
-      description: 'Para quem gosta de controlar cada detalhe',
-      originalPrice: 166.90,
-      price: 133.90,
-      discount: 20,
-      monthlyPrice: 13.90,
+      description: 'Controle total das suas finanças',
+      originalPrice: 0,
+      price: 0,
+      discount: 0,
+      monthlyPrice: 0,
       maxAccounts: 0,
       icon: <Shield className="w-8 h-8" />,
       features: [
         'Sem Conexão Bancária',
         'Controle manual de contas e cartões',
-        'Categorias e subcategorias personalizadas',
-        'Limite de gastos ilimitados',
-        'Alerta de contas a pagar',
+        'Importação por CSV do Excel',
+        'Recategorização automática',
         'Relatórios completos e fáceis'
       ]
     },
-    {
-      id: 'conectado',
-      type: 'conectado',
-      name: 'Plano Conectado',
-      description: 'Ideal para agilidade com poucas contas',
-      originalPrice: 358.80,
-      price: 249.90,
-      discount: 30,
-      monthlyPrice: 29.90,
-      maxAccounts: 3,
-      popular: true,
-      icon: <Zap className="w-8 h-8" />,
-      features: [
-        'Tudo do Plano Manual',
-        'Até 3 contas/cartões conectados',
-        'Conexão via Open Finance',
-        'Importe lançamentos com 1 clique',
-        'Categorização automática',
-        'Mais agilidade na organização'
-      ]
-    },
-    {
-      id: 'conectado_plus',
-      type: 'conectado_plus',
-      name: 'Plano Conectado Plus',
-      description: 'Para quem tem múltiplas contas bancárias',
-      originalPrice: 502.90,
-      price: 352.90,
-      discount: 30,
-      monthlyPrice: 41.90,
-      maxAccounts: 10,
-      icon: <Crown className="w-8 h-8" />,
-      features: [
-        'Tudo do Plano Manual',
-        'Tudo do Plano Conectado',
-        'Até 10 contas/cartões conectados',
-        'Controle Multi-Empresas/Famílias',
-        'Relatórios Personalizados (PDF/Excel)',
-        'Suporte Dedicado 24h'
-      ]
-    }
+    // OCULTO: Trial do Pluggy expirou - Planos com conexão bancária temporariamente desabilitados
+    // {
+    //   id: 'conectado',
+    //   type: 'conectado',
+    //   name: 'Plano Conectado',
+    //   description: 'Ideal para agilidade com poucas contas',
+    //   originalPrice: 358.80,
+    //   price: 249.90,
+    //   discount: 30,
+    //   monthlyPrice: 29.90,
+    //   maxAccounts: 3,
+    //   popular: true,
+    //   icon: <Zap className="w-8 h-8" />,
+    //   features: [
+    //     'Tudo do Plano Manual',
+    //     'Até 3 contas/cartões conectados',
+    //     'Conexão via Open Finance',
+    //     'Importe lançamentos com 1 clique',
+    //     'Categorização automática',
+    //     'Mais agilidade na organização'
+    //   ]
+    // },
+    // {
+    //   id: 'conectado_plus',
+    //   type: 'conectado_plus',
+    //   name: 'Plano Conectado Plus',
+    //   description: 'Para quem tem múltiplas contas bancárias',
+    //   originalPrice: 502.90,
+    //   price: 352.90,
+    //   discount: 30,
+    //   monthlyPrice: 41.90,
+    //   maxAccounts: 10,
+    //   icon: <Crown className="w-8 h-8" />,
+    //   features: [
+    //     'Tudo do Plano Manual',
+    //     'Tudo do Plano Conectado',
+    //     'Até 10 contas/cartões conectados',
+    //     'Controle Multi-Empresas/Famílias',
+    //     'Relatórios Personalizados (PDF/Excel)',
+    //     'Suporte Dedicado 24h'
+    //   ]
+    // }
   ];
 
   useEffect(() => {
@@ -370,23 +370,41 @@ const Plans = () => {
 
                   {/* Preço */}
                   <div className="mb-6">
-                    <div className="flex items-baseline space-x-2 mb-2">
-                      <span className="text-sm text-gray-500 line-through">
-                        R$ {plan.originalPrice.toFixed(2)}
-                      </span>
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
-                        {plan.discount}% OFF
-                      </span>
-                    </div>
-                    <div className="flex items-baseline mb-1">
-                      <span className="text-4xl font-extrabold text-primary-600">
-                        R$ {plan.price.toFixed(2)}
-                      </span>
-                      <span className="ml-2 text-gray-600">/ano</span>
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      ou 12x de R$ {plan.monthlyPrice.toFixed(2)}/mês
-                    </p>
+                    {plan.price === 0 ? (
+                      // Plano Grátis com destaque vermelho
+                      <div className="text-center">
+                        <div className="inline-block relative">
+                          <span className="text-5xl font-extrabold text-red-600">
+                            GRÁTIS
+                          </span>
+                          <div className="absolute top-1/2 left-0 right-0 h-1 bg-red-500 transform -translate-y-1/2 rotate-[-5deg]"></div>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          100% gratuito para sempre
+                        </p>
+                      </div>
+                    ) : (
+                      // Planos pagos
+                      <>
+                        <div className="flex items-baseline space-x-2 mb-2">
+                          <span className="text-sm text-gray-500 line-through">
+                            R$ {plan.originalPrice.toFixed(2)}
+                          </span>
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
+                            {plan.discount}% OFF
+                          </span>
+                        </div>
+                        <div className="flex items-baseline mb-1">
+                          <span className="text-4xl font-extrabold text-primary-600">
+                            R$ {plan.price.toFixed(2)}
+                          </span>
+                          <span className="ml-2 text-gray-600">/ano</span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          ou 12x de R$ {plan.monthlyPrice.toFixed(2)}/mês
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   {/* Features */}

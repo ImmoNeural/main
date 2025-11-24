@@ -89,55 +89,55 @@ const LandingPage = () => {
   const plans = [
     {
       name: 'Plano Manual',
-      description: 'Para quem gosta de acompanhar cada detalhe',
-      originalPrice: 166.90,
-      price: 133.90,
-      discount: 20,
-      monthlyPrice: 13.90,
+      description: 'Controle total das suas finanças',
+      originalPrice: 0,
+      price: 0,
+      discount: 0,
+      monthlyPrice: 0,
       features: [
         'Sem Conexão Bancária',
         'Controle manual de contas e cartões',
-        'Categorias e subcategorias',
-        'Limite de gastos ilimitados',
-        'Alerta de contas a pagar',
+        'Importação por CSV do Excel',
+        'Recategorização automática',
         'Relatórios completos'
       ],
       icon: <Shield className="w-12 h-12" />
     },
-    {
-      name: 'Plano Conectado',
-      description: 'Ideal para quem quer agilidade',
-      originalPrice: 358.80,
-      price: 249.90,
-      discount: 30,
-      monthlyPrice: 29.90,
-      popular: true,
-      features: [
-        'Tudo do Plano Manual',
-        'Até 3 contas/cartões conectados',
-        'Conexão via Open Finance',
-        'Importe com 1 clique',
-        'Categorize automaticamente',
-        'Mais agilidade'
-      ],
-      icon: <Zap className="w-12 h-12" />
-    },
-    {
-      name: 'Plano Conectado Plus',
-      description: 'Para múltiplas contas bancárias',
-      originalPrice: 502.90,
-      price: 352.90,
-      discount: 30,
-      monthlyPrice: 41.90,
-      features: [
-        'Tudo do Plano Conectado',
-        'Até 10 contas/cartões',
-        'Multi-Empresas/Famílias',
-        'Relatórios PDF/Excel',
-        'Suporte Dedicado 24h'
-      ],
-      icon: <Crown className="w-12 h-12" />
-    }
+    // OCULTO: Trial do Pluggy expirou - Planos com conexão bancária temporariamente desabilitados
+    // {
+    //   name: 'Plano Conectado',
+    //   description: 'Ideal para quem quer agilidade',
+    //   originalPrice: 358.80,
+    //   price: 249.90,
+    //   discount: 30,
+    //   monthlyPrice: 29.90,
+    //   popular: true,
+    //   features: [
+    //     'Tudo do Plano Manual',
+    //     'Até 3 contas/cartões conectados',
+    //     'Conexão via Open Finance',
+    //     'Importe com 1 clique',
+    //     'Categorize automaticamente',
+    //     'Mais agilidade'
+    //   ],
+    //   icon: <Zap className="w-12 h-12" />
+    // },
+    // {
+    //   name: 'Plano Conectado Plus',
+    //   description: 'Para múltiplas contas bancárias',
+    //   originalPrice: 502.90,
+    //   price: 352.90,
+    //   discount: 30,
+    //   monthlyPrice: 41.90,
+    //   features: [
+    //     'Tudo do Plano Conectado',
+    //     'Até 10 contas/cartões',
+    //     'Multi-Empresas/Famílias',
+    //     'Relatórios PDF/Excel',
+    //     'Suporte Dedicado 24h'
+    //   ],
+    //   icon: <Crown className="w-12 h-12" />
+    // }
   ];
 
   const faqItems = [
@@ -301,19 +301,37 @@ const LandingPage = () => {
                   <p className="text-gray-500 mb-6 text-sm">{plan.description}</p>
 
                   <div className="mb-6">
-                    <p className="text-sm text-gray-500 line-through">
-                      Preço Regular: R$ {plan.originalPrice.toFixed(2)}
-                    </p>
-                    <p className="text-4xl font-extrabold text-primary-600 mb-1">
-                      R$ {plan.price.toFixed(2)}{' '}
-                      <span className="text-lg font-normal text-gray-600">à vista</span>
-                    </p>
-                    <p className="text-sm font-bold text-primary-600 mb-3">
-                      {plan.discount}% OFF na Anual
-                    </p>
-                    <p className="text-gray-500 text-sm mb-4">
-                      ou 12x de R$ {plan.monthlyPrice.toFixed(2)}/mês
-                    </p>
+                    {plan.price === 0 ? (
+                      // Plano Grátis com destaque vermelho
+                      <div className="text-center py-4">
+                        <div className="inline-block relative">
+                          <span className="text-5xl font-extrabold text-red-600">
+                            GRÁTIS
+                          </span>
+                          <div className="absolute top-1/2 left-0 right-0 h-1 bg-red-500 transform -translate-y-1/2 rotate-[-5deg]"></div>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-3">
+                          100% gratuito para sempre
+                        </p>
+                      </div>
+                    ) : (
+                      // Planos pagos
+                      <>
+                        <p className="text-sm text-gray-500 line-through">
+                          Preço Regular: R$ {plan.originalPrice.toFixed(2)}
+                        </p>
+                        <p className="text-4xl font-extrabold text-primary-600 mb-1">
+                          R$ {plan.price.toFixed(2)}{' '}
+                          <span className="text-lg font-normal text-gray-600">à vista</span>
+                        </p>
+                        <p className="text-sm font-bold text-primary-600 mb-3">
+                          {plan.discount}% OFF na Anual
+                        </p>
+                        <p className="text-gray-500 text-sm mb-4">
+                          ou 12x de R$ {plan.monthlyPrice.toFixed(2)}/mês
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <ul className="text-left space-y-3 mb-6">
