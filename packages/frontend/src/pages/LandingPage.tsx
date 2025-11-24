@@ -257,42 +257,72 @@ const LandingPage = () => {
               Controle financeiro integrado: Abertura para o Open Finance
             </h2>
 
-            {/* Badge Promocional + Imagem dos Bancos */}
+            {/* Card Plano + Imagem dos Bancos */}
             <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
-              {/* Badge Promocional - Lado Esquerdo */}
-              <div className="flex-shrink-0 order-2 lg:order-1">
-                <div className="relative inline-block">
-                  {/* Badge Principal */}
-                  <div className="bg-gradient-to-br from-yellow-400 via-amber-400 to-yellow-500 p-8 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300 border-4 border-yellow-600">
-                    <div className="text-center space-y-3">
-                      {/* Preço Riscado */}
-                      <div className="text-2xl font-bold text-red-600 line-through">
-                        De R$ 166,90
-                      </div>
-
-                      {/* Badge GRÁTIS */}
-                      <div className="relative inline-block">
-                        <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-yellow-400 px-8 py-4 rounded-xl shadow-xl border-2 border-yellow-500">
-                          <span className="text-5xl font-black tracking-tight">
-                            GRÁTIS
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Texto Promocional */}
-                      <div className="space-y-1">
-                        <p className="text-gray-900 font-bold text-lg">
-                          🎉 Por Tempo Limitado!
-                        </p>
-                        <p className="text-gray-800 font-semibold text-sm">
-                          Não perca essa oportunidade
-                        </p>
-                      </div>
+              {/* Card do Plano Manual - Lado Esquerdo */}
+              <div className="flex-shrink-0 order-2 lg:order-1 w-full max-w-sm">
+                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform hover:scale-105 transition-transform duration-300">
+                  {/* Ícone */}
+                  <div className="flex justify-center mb-4">
+                    <div className="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center">
+                      <Shield className="w-10 h-10 text-white" />
                     </div>
                   </div>
 
-                  {/* Efeito de brilho/destaque */}
-                  <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-2xl blur-xl opacity-30 -z-10 animate-pulse"></div>
+                  {/* Título */}
+                  <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
+                    Plano Manual
+                  </h3>
+                  <p className="text-gray-600 text-center text-sm mb-6">
+                    Controle total das suas finanças
+                  </p>
+
+                  {/* Preço */}
+                  <div className="text-center mb-6">
+                    <div className="relative inline-block">
+                      <div className="text-4xl font-bold text-red-600 line-through mb-2">
+                        R$ 166,90
+                      </div>
+                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl shadow-lg">
+                        <span className="text-3xl font-extrabold">GRÁTIS</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-green-600 font-bold mt-3">
+                      100% Gratuito
+                    </p>
+                  </div>
+
+                  {/* Features */}
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start space-x-2">
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm">Sem Conexão Bancária</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm">Controle manual de contas e cartões</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm">Importação por CSV do Excel</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm">Recategorização automática</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm">Relatórios completos</span>
+                    </li>
+                  </ul>
+
+                  {/* Botão */}
+                  <a
+                    href="#planos"
+                    className="block w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-lg font-semibold text-center hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg"
+                  >
+                    Assinar Plano Manual
+                  </a>
                 </div>
               </div>
 
