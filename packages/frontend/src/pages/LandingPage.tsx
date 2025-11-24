@@ -323,7 +323,7 @@ const LandingPage = () => {
                           </div>
                         </div>
                         <p className="text-sm text-gray-600 font-semibold">
-                          100% gratuito para sempre
+                          Gratuito. Não perca! Por tempo limitado
                         </p>
                       </div>
                     ) : (
