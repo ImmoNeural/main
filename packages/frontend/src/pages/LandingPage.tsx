@@ -317,12 +317,12 @@ const LandingPage = () => {
                   </ul>
 
                   {/* Botão */}
-                  <a
-                    href="#planos"
-                    className="block w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-lg font-semibold text-center hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg"
+                  <button
+                    onClick={handleSubscribeClick}
+                    className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-lg font-semibold text-center hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg"
                   >
                     Assinar Plano Manual
-                  </a>
+                  </button>
                 </div>
               </div>
 
@@ -342,8 +342,8 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Planos Section */}
-        <section id="planos" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        {/* OCULTO: Seção de Planos removida - Card do Plano Manual já aparece ao lado dos bancos */}
+        {/* <section id="planos" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
           <div className="max-w-7xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-12">
               Escolha o Plano Perfeito para Você
@@ -439,7 +439,7 @@ const LandingPage = () => {
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
-        </section>
+        </section> */}
 
         {/* Features Section */}
         <section id="recursos" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
