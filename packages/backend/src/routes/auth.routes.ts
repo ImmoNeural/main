@@ -102,7 +102,7 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     res.status(201).json({
-      message: 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.',
+      message: 'Usuário criado com sucesso! Você ganhou 62 dias grátis para testar.',
       token: data.session?.access_token,
       user: {
         id: data.user.id,

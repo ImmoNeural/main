@@ -116,7 +116,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     res.status(201).json({
       message: trialCreated
-        ? 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.'
+        ? 'Usuário criado com sucesso! Você ganhou 62 dias grátis para testar.'
         : 'Usuário criado com sucesso! Conecte seu banco para começar.',
       token: data.session?.access_token,
       user: {
@@ -126,8 +126,8 @@ router.post('/register', async (req: Request, res: Response) => {
       },
       trial: trialCreated ? {
         active: true,
-        days: 7,
-        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        days: 62,
+        end_date: new Date(Date.now() + 62 * 24 * 60 * 60 * 1000).toISOString()
       } : {
         active: false,
         message: 'Trial será criado ao conectar seu primeiro banco'
