@@ -597,4 +597,99 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/subscriptions/extend-trials
+ * Estende trials de 7 para 62 dias para usuários existentes
+ */
+router.post('/extend-trials', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    console.log('🔄 Extending trials from 7 to 62 days...');
+
+    // Buscar todas as assinaturas com trial ativo
+    const { data: trials, error: fetchError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .in('status', ['trial', 'pending']);
+
+    if (fetchError) {
+      console.error('❌ Error fetching trials:', fetchError);
+      return res.status(500).json({ error: 'Erro ao buscar trials' });
+    }
+
+    if (!trials || trials.length === 0) {
+      return res.json({ message: 'Nenhum trial ativo encontrado', updated: 0 });
+    }
+
+    console.log(`📊 Found ${trials.length} active trials`);
+
+    const updated = [];
+    const skipped = [];
+
+    for (const trial of trials) {
+      // Verificar se é trial de 7 dias
+      const metadata = trial.metadata || {};
+      const currentTrialDays = metadata.trial_days || 0;
+
+      if (currentTrialDays !== 7) {
+        skipped.push({
+          id: trial.id,
+          user_id: trial.user_id,
+          reason: `Trial já tem ${currentTrialDays} dias`
+        });
+        continue;
+      }
+
+      // Calcular nova data (adicionar 55 dias extras: 62 - 7 = 55)
+      const currentEndDate = new Date(trial.trial_end_date || trial.end_date);
+      const newEndDate = new Date(currentEndDate.getTime() + (55 * 24 * 60 * 60 * 1000));
+
+      // Atualizar trial
+      const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update({
+          trial_end_date: newEndDate.toISOString(),
+          end_date: newEndDate.toISOString(),
+          metadata: {
+            ...metadata,
+            trial_days: 62,
+            extended_from: 7,
+            extended_at: new Date().toISOString()
+          }
+        })
+        .eq('id', trial.id);
+
+      if (updateError) {
+        console.error(`❌ Error updating trial ${trial.id}:`, updateError);
+        skipped.push({
+          id: trial.id,
+          user_id: trial.user_id,
+          reason: 'Erro ao atualizar'
+        });
+      } else {
+        console.log(`✅ Extended trial ${trial.id} from 7 to 62 days`);
+        updated.push({
+          id: trial.id,
+          user_id: trial.user_id,
+          old_end_date: currentEndDate.toISOString(),
+          new_end_date: newEndDate.toISOString()
+        });
+      }
+    }
+
+    res.json({
+      message: `Trials estendidos com sucesso!`,
+      total: trials.length,
+      updated: updated.length,
+      skipped: skipped.length,
+      details: {
+        updated,
+        skipped
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Error extending trials:', error);
+    res.status(500).json({ error: 'Erro ao estender trials' });
+  }
+});
+
 export default router;
