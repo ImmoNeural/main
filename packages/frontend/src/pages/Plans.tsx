@@ -299,7 +299,7 @@ const Plans = () => {
             {!processingPayment && !initializing && !isActive && daysRemaining === 0 && trialEndDate && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-red-800 font-bold text-lg">
-                  ⏰ Seu trial de 7 dias expirou!
+                  ⏰ Seu trial de 62 dias expirou!
                 </p>
                 <p className="text-center text-red-700 text-base mt-2">
                   Para continuar aproveitando todas as funcionalidades, escolha um plano abaixo.

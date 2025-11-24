@@ -157,7 +157,7 @@ const Layout = () => {
           {isExpired && subscription?.trial_end_date && location.pathname !== '/app/planos' && (
             <div className="mb-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-lg animate-pulse">
               <p className="text-center text-red-800 font-bold text-base">
-                ⏰ Seu trial de 7 dias expirou!
+                ⏰ Seu trial de 62 dias expirou!
               </p>
               <p className="text-center text-red-700 text-sm mt-1">
                 <button
