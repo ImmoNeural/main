@@ -3,9 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   CreditCard,
   Check,
-  Crown,
   Star,
-  Zap,
   Shield,
   Loader2
 } from 'lucide-react';

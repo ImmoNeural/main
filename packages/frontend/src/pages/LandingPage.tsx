@@ -8,8 +8,7 @@ import {
   ArrowRight,
   Target,
   Star,
-  Check,
-  Crown
+  Check
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/SEO';
@@ -94,6 +93,7 @@ const LandingPage = () => {
       price: 0,
       discount: 0,
       monthlyPrice: 0,
+      popular: false,
       features: [
         'Sem Conexão Bancária',
         'Controle manual de contas e cartões',
