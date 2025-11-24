@@ -85,7 +85,7 @@ router.post('/register', async (req: Request, res: Response) => {
           max_connected_accounts: 0,
           auto_renew: false,
           metadata: {
-            trial_days: 7,
+            trial_days: 62,
             created_on_signup: true
           }
         });
