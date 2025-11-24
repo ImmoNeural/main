@@ -335,6 +335,86 @@ const Plans = () => {
             )}
           </div>
 
+          {/* Card Destaque - Plano Manual Gratuito */}
+          <div className="max-w-md mx-auto mb-12">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform hover:scale-105 transition-transform duration-300">
+              {/* Ícone */}
+              <div className="flex justify-center mb-4">
+                <div className="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center">
+                  <Shield className="w-10 h-10 text-white" />
+                </div>
+              </div>
+
+              {/* Título */}
+              <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
+                Plano Manual
+              </h3>
+              <p className="text-gray-600 text-center text-sm mb-6">
+                Controle total das suas finanças
+              </p>
+
+              {/* Preço */}
+              <div className="text-center mb-6">
+                <div className="relative inline-block">
+                  <div className="text-4xl font-bold text-red-600 line-through mb-2">
+                    R$ 166,90
+                  </div>
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl shadow-lg">
+                    <span className="text-3xl font-extrabold">GRÁTIS</span>
+                  </div>
+                </div>
+                <p className="text-sm text-green-600 font-bold mt-3">
+                  100% Gratuito
+                </p>
+              </div>
+
+              {/* Features */}
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start space-x-2">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700 text-sm">Sem Conexão Bancária</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700 text-sm">Controle manual de contas e cartões</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700 text-sm">Importação por CSV do Excel</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700 text-sm">Recategorização automática</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700 text-sm">Relatórios completos</span>
+                </li>
+              </ul>
+
+              {/* Botão */}
+              <button
+                onClick={() => handleSelectPlan(plans[0])}
+                disabled={loading || (isActive && currentPlan === 'manual')}
+                className={`
+                  w-full py-3 rounded-lg font-semibold transition-all shadow-lg
+                  ${(isActive && currentPlan === 'manual')
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800'
+                  }
+                `}
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (isActive && currentPlan === 'manual') ? (
+                  '✓ Plano Atual'
+                ) : (
+                  'Assinar Plano Manual'
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Cards de Planos */}
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {plans.map((plan, index) => (
