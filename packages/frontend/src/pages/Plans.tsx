@@ -5,7 +5,8 @@ import {
   Check,
   Star,
   Shield,
-  Loader2
+  Loader2,
+  Zap
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { subscriptionApi } from '../services/api';
