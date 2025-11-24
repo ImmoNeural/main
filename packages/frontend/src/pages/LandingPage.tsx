@@ -85,60 +85,61 @@ const LandingPage = () => {
     }
   ];
 
-  const plans = [
-    {
-      name: 'Plano Manual',
-      description: 'Controle total das suas finanças',
-      originalPrice: 0,
-      price: 0,
-      discount: 0,
-      monthlyPrice: 0,
-      popular: false,
-      features: [
-        'Sem Conexão Bancária',
-        'Controle manual de contas e cartões',
-        'Importação por CSV do Excel',
-        'Recategorização automática',
-        'Relatórios completos'
-      ],
-      icon: <Shield className="w-12 h-12" />
-    },
-    // OCULTO: Trial do Pluggy expirou - Planos com conexão bancária temporariamente desabilitados
-    // {
-    //   name: 'Plano Conectado',
-    //   description: 'Ideal para quem quer agilidade',
-    //   originalPrice: 358.80,
-    //   price: 249.90,
-    //   discount: 30,
-    //   monthlyPrice: 29.90,
-    //   popular: true,
-    //   features: [
-    //     'Tudo do Plano Manual',
-    //     'Até 3 contas/cartões conectados',
-    //     'Conexão via Open Finance',
-    //     'Importe com 1 clique',
-    //     'Categorize automaticamente',
-    //     'Mais agilidade'
-    //   ],
-    //   icon: <Zap className="w-12 h-12" />
-    // },
-    // {
-    //   name: 'Plano Conectado Plus',
-    //   description: 'Para múltiplas contas bancárias',
-    //   originalPrice: 502.90,
-    //   price: 352.90,
-    //   discount: 30,
-    //   monthlyPrice: 41.90,
-    //   features: [
-    //     'Tudo do Plano Conectado',
-    //     'Até 10 contas/cartões',
-    //     'Multi-Empresas/Famílias',
-    //     'Relatórios PDF/Excel',
-    //     'Suporte Dedicado 24h'
-    //   ],
-    //   icon: <Crown className="w-12 h-12" />
-    // }
-  ];
+  // OCULTO: Array de planos não utilizado após remover seção de planos
+  // const plans = [
+  //   {
+  //     name: 'Plano Manual',
+  //     description: 'Controle total das suas finanças',
+  //     originalPrice: 0,
+  //     price: 0,
+  //     discount: 0,
+  //     monthlyPrice: 0,
+  //     popular: false,
+  //     features: [
+  //       'Sem Conexão Bancária',
+  //       'Controle manual de contas e cartões',
+  //       'Importação por CSV do Excel',
+  //       'Recategorização automática',
+  //       'Relatórios completos'
+  //     ],
+  //     icon: <Shield className="w-12 h-12" />
+  //   },
+  //   // OCULTO: Trial do Pluggy expirou - Planos com conexão bancária temporariamente desabilitados
+  //   // {
+  //   //   name: 'Plano Conectado',
+  //   //   description: 'Ideal para quem quer agilidade',
+  //   //   originalPrice: 358.80,
+  //   //   price: 249.90,
+  //   //   discount: 30,
+  //   //   monthlyPrice: 29.90,
+  //   //   popular: true,
+  //   //   features: [
+  //   //     'Tudo do Plano Manual',
+  //   //     'Até 3 contas/cartões conectados',
+  //   //     'Conexão via Open Finance',
+  //   //     'Importe com 1 clique',
+  //   //     'Categorize automaticamente',
+  //   //     'Mais agilidade'
+  //   //   ],
+  //   //   icon: <Zap className="w-12 h-12" />
+  //   // },
+  //   // {
+  //   //   name: 'Plano Conectado Plus',
+  //   //   description: 'Para múltiplas contas bancárias',
+  //   //   originalPrice: 502.90,
+  //   //   price: 352.90,
+  //   //   discount: 30,
+  //   //   monthlyPrice: 41.90,
+  //   //   features: [
+  //   //     'Tudo do Plano Conectado',
+  //   //     'Até 10 contas/cartões',
+  //   //     'Multi-Empresas/Famílias',
+  //   //     'Relatórios PDF/Excel',
+  //   //     'Suporte Dedicado 24h'
+  //   //   ],
+  //   //   icon: <Crown className="w-12 h-12" />
+  //   // }
+  // ];
 
   const faqItems = [
     {
