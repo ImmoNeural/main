@@ -1,33 +1,45 @@
 -- Script para estender trials de 7 para 62 dias
--- Execute este script no Supabase SQL Editor (https://supabase.com/dashboard)
+-- Execute este script no Supabase SQL Editor
 
--- Atualizar todas as assinaturas com trial ativo de 7 dias
-UPDATE subscriptions
-SET
-  trial_end_date = trial_end_date + INTERVAL '55 days',
-  end_date = end_date + INTERVAL '55 days',
-  metadata = jsonb_set(
-    jsonb_set(
-      COALESCE(metadata, '{}'::jsonb),
-      '{trial_days}',
-      '62'::jsonb
-    ),
-    '{extended_from}',
-    '7'::jsonb
-  )
-WHERE
-  status IN ('trial', 'pending')
-  AND (metadata->>'trial_days')::int = 7;
-
--- Ver resultados após execução
+-- PASSO 1: Ver os dados ANTES da atualização
 SELECT
   id,
   user_id,
   status,
+  plan_type,
   trial_end_date,
   end_date,
-  metadata->>'trial_days' as trial_days,
-  metadata->>'extended_from' as extended_from
+  created_at,
+  EXTRACT(DAY FROM (trial_end_date - created_at)) as dias_totais,
+  metadata
+FROM subscriptions
+WHERE status IN ('trial', 'pending')
+ORDER BY created_at DESC;
+
+-- PASSO 2: Atualizar TODOS os trials ativos para 62 dias a partir da criação
+UPDATE subscriptions
+SET
+  trial_end_date = created_at + INTERVAL '62 days',
+  end_date = created_at + INTERVAL '62 days',
+  metadata = jsonb_set(
+    COALESCE(metadata, '{}'::jsonb),
+    '{trial_days}',
+    '62'::jsonb
+  )
+WHERE
+  status IN ('trial', 'pending');
+
+-- PASSO 3: Ver os dados DEPOIS da atualização
+SELECT
+  id,
+  user_id,
+  status,
+  plan_type,
+  trial_end_date,
+  end_date,
+  created_at,
+  EXTRACT(DAY FROM (trial_end_date - created_at)) as dias_totais,
+  metadata->>'trial_days' as trial_days_metadata
 FROM subscriptions
 WHERE status IN ('trial', 'pending')
 ORDER BY created_at DESC;
