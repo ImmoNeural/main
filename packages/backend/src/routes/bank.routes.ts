@@ -149,7 +149,7 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
         console.log('🎁 [Bank Callback] User has no subscription, creating trial now...');
 
         const trialEndDate = new Date();
-        trialEndDate.setDate(trialEndDate.getDate() + 7);
+        trialEndDate.setDate(trialEndDate.getDate() + 62); // 62 dias de trial
 
         const { error: trialError } = await supabase
           .from('subscriptions')

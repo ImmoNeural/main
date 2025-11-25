@@ -73,19 +73,25 @@ export const useSubscription = () => {
       const isTrialExpired = !!((sub.status === 'trial' || sub.status === 'pending') && dateToUse && now > dateToUse);
       const isSubscriptionExpired = !!(endDate && now > endDate);
 
+      // Trial ativo = acesso completo (igual a subscription ativa)
+      const isTrialActiveCalc = (sub.status === 'trial' || sub.status === 'pending') && !isTrialExpired;
+      // Subscription ativa = status 'active' OU trial ativo (ambos têm acesso completo)
+      const isSubscriptionActiveCalc = (sub.status === 'active' && !isSubscriptionExpired) || isTrialActiveCalc;
+      const isExpiredCalc = sub.status === 'expired' || sub.status === 'canceled' || isTrialExpired || isSubscriptionExpired;
+
       console.log('🎯 [useSubscription] Calculated state:', {
-        isTrialActive: (sub.status === 'trial' || sub.status === 'pending') && !isTrialExpired,
-        isSubscriptionActive: sub.status === 'active' && !isSubscriptionExpired,
-        isExpired: sub.status === 'expired' || sub.status === 'canceled' || isTrialExpired || isSubscriptionExpired,
+        isTrialActive: isTrialActiveCalc,
+        isSubscriptionActive: isSubscriptionActiveCalc,
+        isExpired: isExpiredCalc,
         daysRemaining
       });
 
       setData({
         subscription: sub,
         isLoading: false,
-        isTrialActive: (sub.status === 'trial' || sub.status === 'pending') && !isTrialExpired,
-        isSubscriptionActive: sub.status === 'active' && !isSubscriptionExpired,
-        isExpired: sub.status === 'expired' || sub.status === 'canceled' || isTrialExpired || isSubscriptionExpired,
+        isTrialActive: isTrialActiveCalc,
+        isSubscriptionActive: isSubscriptionActiveCalc,
+        isExpired: isExpiredCalc,
         daysRemaining,
         planType: sub.plan_type,
       });

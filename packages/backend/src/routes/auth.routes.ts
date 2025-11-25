@@ -64,10 +64,10 @@ router.post('/register', async (req: Request, res: Response) => {
 
     console.log('✅ User created:', data.user.id);
 
-    // Criar assinatura trial de 7 dias automaticamente
+    // Criar assinatura trial de 62 dias automaticamente
     try {
       const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
+      trialEndDate.setDate(trialEndDate.getDate() + 62); // 62 dias de trial
 
       const { error: subscriptionError } = await supabase
         .from('subscriptions')
