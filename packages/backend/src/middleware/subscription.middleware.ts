@@ -89,12 +89,12 @@ export const checkSubscriptionStatus = async (req: Request, res: Response, next:
 
     console.log(`\n🔍 [Subscription Check] User ID: ${userId}, Path: ${req.path}`);
 
-    // Buscar assinatura ativa ou trial
+    // Buscar assinatura ativa, trial ou pending
     const { data: subscription, error } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .in('status', ['active', 'trial'])
+      .in('status', ['active', 'trial', 'pending'])
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -157,8 +157,8 @@ export const checkSubscriptionStatus = async (req: Request, res: Response, next:
     // Adicionar ao request
     req.subscription = subscription;
     req.isTrialExpired = subscription.status === 'expired' || subscription.status === 'canceled';
-    // IMPORTANTE: Considerar trial válido como assinatura ativa para permitir acesso completo durante teste
-    req.isSubscriptionActive = subscription.status === 'active' || subscription.status === 'trial';
+    // IMPORTANTE: Considerar trial e pending como assinatura ativa para permitir acesso completo durante teste
+    req.isSubscriptionActive = subscription.status === 'active' || subscription.status === 'trial' || subscription.status === 'pending';
 
     console.log(`✅ [Subscription Check] Final status:`, {
       isTrialExpired: req.isTrialExpired,
