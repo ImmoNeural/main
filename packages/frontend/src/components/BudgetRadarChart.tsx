@@ -15,6 +15,85 @@ import { ptBR } from 'date-fns/locale';
 import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { getCategoryColor } from '../utils/colors';
 
+// 🗺️ MAPEAMENTO DE SUBCATEGORIAS → CATEGORIAS
+// Usado para corrigir transações que têm subcategoria no campo category
+const SUBCATEGORY_TO_CATEGORY_MAP: Record<string, string> = {
+  // Alimentação
+  'Compras de Mercado': 'Supermercado',
+  'Restaurantes e Delivery': 'Alimentação',
+  'Padaria': 'Alimentação',
+  // Saúde
+  'Odontologia': 'Saúde',
+  'Farmácias e Drogarias': 'Saúde',
+  'Médicos e Clínicas': 'Saúde',
+  'Academia e Fitness': 'Saúde',
+  // Entretenimento
+  'Lazer e Diversão': 'Entretenimento',
+  'Streaming e Assinaturas': 'Entretenimento',
+  // Transporte
+  'Apps de Transporte': 'Transporte',
+  'Combustível e Pedágio': 'Transporte',
+  'Transporte Público': 'Transporte',
+  'Seguros': 'Transporte',
+  // Compras
+  'E-commerce': 'Compras',
+  'Moda e Vestuário': 'Compras',
+  'Tecnologia': 'Compras',
+  // Casa
+  'Construção e Reforma': 'Casa',
+  'Móveis e Decoração': 'Casa',
+  // Banco e Seguradoras
+  'Bancos e Fintechs': 'Banco e Seguradoras',
+  'Seguradoras': 'Banco e Seguradoras',
+  'Empréstimos Bancários': 'Banco e Seguradoras',
+  'Financiamentos': 'Banco e Seguradoras',
+  // Contas
+  'Telefonia e Internet': 'Contas',
+  'Energia e Água': 'Contas',
+  'Condomínio': 'Contas',
+  'Aluguel de Eletrodomésticos': 'Contas',
+  'Aluguel de Imóvel': 'Contas',
+  'Boletos e Débitos': 'Contas',
+  // Educação
+  'Livrarias e Papelarias': 'Educação',
+  'Cursos e Ensino': 'Educação',
+  // Pet
+  'Alimentação Pet': 'Pet',
+  'Médico Pet': 'Pet',
+  'Tratamentos Pet': 'Pet',
+  'Seguradoras Pet': 'Pet',
+  // Viagens
+  'Aéreo e Turismo': 'Viagens',
+  // Investimentos
+  'Aplicações e Investimentos': 'Investimentos',
+  'Poupança e Capitalização': 'Investimentos',
+  'Corretoras e Fundos': 'Investimentos',
+  // Receitas
+  'Salário e Rendimentos': 'Salário',
+  'Rendimentos de Investimentos': 'Receitas',
+  // Transferências
+  'PIX': 'Transferências',
+  'TED/DOC': 'Transferências',
+  // Outros
+  'Saques em Dinheiro': 'Saques',
+  'IOF e Impostos': 'Impostos e Taxas',
+  'Requer Classificação Manual': 'Não Categorizado',
+};
+
+/**
+ * Converte subcategoria para categoria, se necessário
+ * Se o valor for uma subcategoria conhecida, retorna a categoria correspondente
+ * Caso contrário, retorna o valor original
+ */
+function normalizeCategory(categoryOrSubcategory: string): string {
+  // Verificar se é uma subcategoria conhecida
+  if (SUBCATEGORY_TO_CATEGORY_MAP[categoryOrSubcategory]) {
+    return SUBCATEGORY_TO_CATEGORY_MAP[categoryOrSubcategory];
+  }
+  // Retornar o valor original (já é uma categoria)
+  return categoryOrSubcategory;
+}
+
 interface RadarData {
   category: string;
   orcado: number;
@@ -138,8 +217,15 @@ export const BudgetRadarChart = () => {
           return;
         }
 
-        const category = t.category!;
+        // 🔄 NORMALIZAR: Se t.category contém uma subcategoria, converte para categoria
+        const rawCategory = t.category!;
+        const category = normalizeCategory(rawCategory);
         const amount = Math.abs(t.amount);
+
+        // Log se houve conversão de subcategoria → categoria
+        if (rawCategory !== category) {
+          console.log(`  🔄 Convertido: "${rawCategory}" → "${category}"`);
+        }
 
         // Inicializar se não existe
         if (!expensesByCategory[category]) {
