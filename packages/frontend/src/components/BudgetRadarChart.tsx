@@ -139,10 +139,23 @@ export const BudgetRadarChart = () => {
 
       // 1. Buscar budgets configurados
       const budgetsResponse = await budgetApi.getAllBudgets();
-      const budgets = budgetsResponse.data;
+      const rawBudgets = budgetsResponse.data;
+
+      // 🔄 NORMALIZAR BUDGETS: Se budget está configurado com subcategoria, converter para categoria
+      // Isso agrupa budgets de subcategorias na categoria pai
+      const budgets: Record<string, number> = {};
+      Object.entries(rawBudgets).forEach(([categoryName, value]) => {
+        const normalizedName = normalizeCategory(categoryName);
+        // Somar valores se a categoria já existe (várias subcategorias → mesma categoria)
+        budgets[normalizedName] = (budgets[normalizedName] || 0) + (value as number);
+
+        if (categoryName !== normalizedName) {
+          console.log(`  🔄 Budget normalizado: "${categoryName}" → "${normalizedName}"`);
+        }
+      });
 
       console.log('\n📊 [STEP 1] BUDGETS CARREGADOS:');
-      console.log('Total de categorias com budget:', Object.keys(budgets).length);
+      console.log('Total de categorias com budget (após normalização):', Object.keys(budgets).length);
       console.log('Detalhes:', JSON.stringify(budgets, null, 2));
 
       // 2. Buscar transações do mês selecionado
