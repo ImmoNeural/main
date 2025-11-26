@@ -16,37 +16,48 @@ import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { getCategoryColor } from '../utils/colors';
 
 // 🗺️ MAPEAMENTO DE SUBCATEGORIAS → CATEGORIAS
-// Usado para corrigir transações que têm subcategoria no campo category
+// Usado para corrigir transações/budgets que têm subcategoria no campo category
+// TODAS as subcategorias do sistema estão mapeadas aqui
 const SUBCATEGORY_TO_CATEGORY_MAP: Record<string, string> = {
-  // Alimentação
+  // Supermercado
   'Compras de Mercado': 'Supermercado',
+
+  // Alimentação
   'Restaurantes e Delivery': 'Alimentação',
   'Padaria': 'Alimentação',
+
   // Saúde
   'Odontologia': 'Saúde',
   'Farmácias e Drogarias': 'Saúde',
   'Médicos e Clínicas': 'Saúde',
   'Academia e Fitness': 'Saúde',
+
   // Entretenimento
   'Lazer e Diversão': 'Entretenimento',
   'Streaming e Assinaturas': 'Entretenimento',
+
   // Transporte
   'Apps de Transporte': 'Transporte',
   'Combustível e Pedágio': 'Transporte',
   'Transporte Público': 'Transporte',
-  'Seguros': 'Transporte',
+  'Seguros de Veículos': 'Transporte',
+
   // Compras
   'E-commerce': 'Compras',
   'Moda e Vestuário': 'Compras',
   'Tecnologia': 'Compras',
+
   // Casa
   'Construção e Reforma': 'Casa',
   'Móveis e Decoração': 'Casa',
+
   // Banco e Seguradoras
   'Bancos e Fintechs': 'Banco e Seguradoras',
   'Seguradoras': 'Banco e Seguradoras',
   'Empréstimos Bancários': 'Banco e Seguradoras',
   'Financiamentos': 'Banco e Seguradoras',
+  'Seguros': 'Banco e Seguradoras',
+
   // Contas
   'Telefonia e Internet': 'Contas',
   'Energia e Água': 'Contas',
@@ -54,26 +65,37 @@ const SUBCATEGORY_TO_CATEGORY_MAP: Record<string, string> = {
   'Aluguel de Eletrodomésticos': 'Contas',
   'Aluguel de Imóvel': 'Contas',
   'Boletos e Débitos': 'Contas',
+
   // Educação
   'Livrarias e Papelarias': 'Educação',
   'Cursos e Ensino': 'Educação',
+
   // Pet
   'Alimentação Pet': 'Pet',
   'Médico Pet': 'Pet',
   'Tratamentos Pet': 'Pet',
   'Seguradoras Pet': 'Pet',
+  // Subcategorias do Pet que podem vir sem sufixo
+  'Alimentação (Pet)': 'Pet',
+  'Médico (Pet)': 'Pet',
+  'Tratamentos (Pet)': 'Pet',
+
   // Viagens
   'Aéreo e Turismo': 'Viagens',
+
   // Investimentos
   'Aplicações e Investimentos': 'Investimentos',
   'Poupança e Capitalização': 'Investimentos',
   'Corretoras e Fundos': 'Investimentos',
-  // Receitas
+
+  // Salário/Receitas
   'Salário e Rendimentos': 'Salário',
   'Rendimentos de Investimentos': 'Receitas',
+
   // Transferências
   'PIX': 'Transferências',
   'TED/DOC': 'Transferências',
+
   // Outros
   'Saques em Dinheiro': 'Saques',
   'IOF e Impostos': 'Impostos e Taxas',
@@ -141,22 +163,43 @@ export const BudgetRadarChart = () => {
       const budgetsResponse = await budgetApi.getAllBudgets();
       const rawBudgets = budgetsResponse.data;
 
+      console.log('\n📊 [STEP 1a] BUDGETS BRUTOS (do banco - subcategorias):');
+      console.log('Total de entradas:', Object.keys(rawBudgets).length);
+      Object.entries(rawBudgets).forEach(([name, value]) => {
+        console.log(`  - "${name}": R$ ${(value as number).toFixed(2)}`);
+      });
+
       // 🔄 NORMALIZAR BUDGETS: Se budget está configurado com subcategoria, converter para categoria
       // Isso agrupa budgets de subcategorias na categoria pai
       const budgets: Record<string, number> = {};
-      Object.entries(rawBudgets).forEach(([categoryName, value]) => {
-        const normalizedName = normalizeCategory(categoryName);
-        // Somar valores se a categoria já existe (várias subcategorias → mesma categoria)
-        budgets[normalizedName] = (budgets[normalizedName] || 0) + (value as number);
+      const budgetDetails: Record<string, string[]> = {}; // Para rastrear quais subcategorias foram somadas
 
-        if (categoryName !== normalizedName) {
-          console.log(`  🔄 Budget normalizado: "${categoryName}" → "${normalizedName}"`);
+      Object.entries(rawBudgets).forEach(([subcategoryName, value]) => {
+        const categoryName = normalizeCategory(subcategoryName);
+        const numValue = value as number;
+
+        // Somar valores se a categoria já existe (várias subcategorias → mesma categoria)
+        budgets[categoryName] = (budgets[categoryName] || 0) + numValue;
+
+        // Rastrear a composição
+        if (!budgetDetails[categoryName]) {
+          budgetDetails[categoryName] = [];
+        }
+        budgetDetails[categoryName].push(`${subcategoryName}: R$ ${numValue.toFixed(2)}`);
+
+        if (subcategoryName !== categoryName) {
+          console.log(`  🔄 Convertendo: "${subcategoryName}" (R$ ${numValue.toFixed(2)}) → Categoria "${categoryName}"`);
         }
       });
 
-      console.log('\n📊 [STEP 1] BUDGETS CARREGADOS:');
-      console.log('Total de categorias com budget (após normalização):', Object.keys(budgets).length);
-      console.log('Detalhes:', JSON.stringify(budgets, null, 2));
+      console.log('\n📊 [STEP 1b] BUDGETS NORMALIZADOS (por categoria):');
+      console.log('Total de categorias:', Object.keys(budgets).length);
+      Object.entries(budgets).sort(([,a], [,b]) => b - a).forEach(([cat, total]) => {
+        console.log(`  📁 ${cat}: R$ ${total.toFixed(2)}`);
+        budgetDetails[cat]?.forEach(detail => {
+          console.log(`      ↳ ${detail}`);
+        });
+      });
 
       // 2. Buscar transações do mês selecionado
       const startDate = startOfMonth(selectedMonth);
