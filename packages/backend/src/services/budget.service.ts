@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { normalizeToCategory } from './categorization.service';
 
 /**
  * Sincroniza budgets com transações
@@ -30,12 +31,13 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       return;
     }
 
-    // 2. Calcular média mensal por categoria
+    // 2. Calcular média mensal por categoria (NORMALIZADA para evitar subcategorias)
     const categoryTotals: Record<string, { total: number; months: Set<string> }> = {};
 
     (transactions || []).forEach(tx => {
-      const category = tx.category;
-      if (!category) return;
+      // ⚠️ NORMALIZAR: converter subcategorias para categorias
+      const category = normalizeToCategory(tx.category);
+      if (!category || category === 'Não Categorizado') return;
 
       const dateStr = typeof tx.date === 'number'
         ? new Date(tx.date).toISOString().substring(0, 7)
@@ -69,13 +71,15 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       return;
     }
 
-    // Mapear budgets existentes por categoria
+    // Mapear budgets existentes por categoria (NORMALIZADA)
     const budgetsByCategory: Record<string, any[]> = {};
     existingBudgets?.forEach(b => {
-      if (!budgetsByCategory[b.category_name]) {
-        budgetsByCategory[b.category_name] = [];
+      // ⚠️ NORMALIZAR: converter subcategorias para categorias
+      const normalizedCategory = normalizeToCategory(b.category_name);
+      if (!budgetsByCategory[normalizedCategory]) {
+        budgetsByCategory[normalizedCategory] = [];
       }
-      budgetsByCategory[b.category_name].push(b);
+      budgetsByCategory[normalizedCategory].push(b);
     });
 
     // 4. Buscar preferências - encontrar categorias HÍBRIDAS
@@ -89,10 +93,11 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
     }
 
     // Identificar categorias híbridas (onde tipo_categoria = 'hibrido')
+    // ⚠️ NORMALIZAR: converter subcategorias para categorias
     const hybridCategories = new Set<string>();
     preferences?.forEach(p => {
       if (p.tipo_categoria === 'hibrido') {
-        hybridCategories.add(p.category);
+        hybridCategories.add(normalizeToCategory(p.category));
       }
     });
 
@@ -116,9 +121,12 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       if (existingForCategory.length === 0) {
         console.log(`   ➕ CASO 1: Criando 2 linhas (categoria não existia)`);
 
+        // ⚠️ SEMPRE usar categoria normalizada ao inserir
+        const normalizedCategory = normalizeToCategory(category);
+
         const { error: err1 } = await supabase.from('custom_budgets').insert({
           user_id,
-          category_name: category,
+          category_name: normalizedCategory,
           budget_value: valuePerType,
           tipo_custo: 'fixo',
         });
@@ -130,7 +138,7 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
 
         const { error: err2 } = await supabase.from('custom_budgets').insert({
           user_id,
-          category_name: category,
+          category_name: normalizedCategory,
           budget_value: valuePerType,
           tipo_custo: 'variavel',
         });
@@ -166,9 +174,11 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
           }
 
           // Criar a segunda (variavel)
+          // ⚠️ SEMPRE usar categoria normalizada ao inserir
+          const normalizedCategory = normalizeToCategory(category);
           const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
-            category_name: category,
+            category_name: normalizedCategory,
             budget_value: valuePerType,
             tipo_custo: 'variavel',
           });
@@ -186,9 +196,11 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
           const tipoFaltante = existingTipo === 'fixo' ? 'variavel' : 'fixo';
           console.log(`      Tipo faltante: ${tipoFaltante}`);
 
+          // ⚠️ SEMPRE usar categoria normalizada ao inserir
+          const normalizedCat = normalizeToCategory(category);
           const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
-            category_name: category,
+            category_name: normalizedCat,
             budget_value: existingValue,
             tipo_custo: tipoFaltante,
           });
@@ -223,11 +235,13 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
         console.log(`   ➕ CASO 4: Completando linhas faltantes`);
 
         const existingValue = existingForCategory[0]?.budget_value || valuePerType;
+        // ⚠️ SEMPRE usar categoria normalizada ao inserir
+        const normalizedCat = normalizeToCategory(category);
 
         if (!hasFixo) {
           const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
-            category_name: category,
+            category_name: normalizedCat,
             budget_value: existingValue,
             tipo_custo: 'fixo',
           });
@@ -241,7 +255,7 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
         if (!hasVariavel) {
           const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
-            category_name: category,
+            category_name: normalizedCat,
             budget_value: existingValue,
             tipo_custo: 'variavel',
           });
@@ -256,6 +270,7 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
 
     // 6. PROCESSAR CATEGORIAS NORMAIS (não híbridas) que têm transações
     for (const [category, avgValue] of Object.entries(categoryAverages)) {
+      // ⚠️ category já está normalizado porque categoryAverages foi construído com normalizeToCategory
       // Pular se é categoria híbrida (já foi processada)
       if (hybridCategories.has(category)) {
         continue;
@@ -268,9 +283,11 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
         console.log(`\n📂 [SYNC] Processando categoria NORMAL: ${category}`);
         console.log(`   ➕ Criando linha: R$ ${avgValue.toFixed(2)}`);
 
+        // ⚠️ SEMPRE usar categoria normalizada ao inserir (garantia extra)
+        const normalizedCat = normalizeToCategory(category);
         await supabase.from('custom_budgets').insert({
           user_id,
-          category_name: category,
+          category_name: normalizedCat,
           budget_value: avgValue,
         });
 

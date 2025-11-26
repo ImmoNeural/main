@@ -736,6 +736,141 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
 ];
 
 /**
+ * 🗺️ MAPEAMENTO SUBCATEGORIA → CATEGORIA
+ * Usado para normalizar nomes que são subcategorias para suas categorias correspondentes
+ */
+export const SUBCATEGORY_TO_CATEGORY_MAP: Record<string, string> = {
+  // Supermercado
+  'Compras de Mercado': 'Supermercado',
+
+  // Alimentação
+  'Restaurantes e Delivery': 'Alimentação',
+  'Padaria': 'Alimentação',
+
+  // Saúde
+  'Odontologia': 'Saúde',
+  'Farmácias e Drogarias': 'Saúde',
+  'Médicos e Clínicas': 'Saúde',
+  'Academia e Fitness': 'Saúde',
+
+  // Entretenimento
+  'Lazer e Diversão': 'Entretenimento',
+  'Streaming e Assinaturas': 'Entretenimento',
+
+  // Transporte
+  'Apps de Transporte': 'Transporte',
+  'Combustível e Pedágio': 'Transporte',
+  'Transporte Público': 'Transporte',
+  'Seguros': 'Transporte',
+
+  // Compras
+  'E-commerce': 'Compras',
+  'Moda e Vestuário': 'Compras',
+  'Tecnologia': 'Compras',
+
+  // Casa
+  'Construção e Reforma': 'Casa',
+  'Móveis e Decoração': 'Casa',
+
+  // Banco e Seguradoras
+  'Bancos e Fintechs': 'Banco e Seguradoras',
+  'Seguradoras': 'Banco e Seguradoras',
+  'Empréstimos Bancários': 'Banco e Seguradoras',
+  'Financiamentos': 'Banco e Seguradoras',
+
+  // Contas
+  'Telefonia e Internet': 'Contas',
+  'Energia e Água': 'Contas',
+  'Condomínio': 'Contas',
+  'Aluguel de Eletrodomésticos': 'Contas',
+  'Aluguel de Imóvel': 'Contas',
+  'Boletos e Débitos': 'Contas',
+
+  // Educação
+  'Livrarias e Papelarias': 'Educação',
+  'Cursos e Ensino': 'Educação',
+
+  // Pet
+  'Alimentação Pet': 'Pet',
+  'Médico Pet': 'Pet',
+  'Tratamentos Pet': 'Pet',
+  'Seguradoras Pet': 'Pet',
+
+  // Viagens
+  'Aéreo e Turismo': 'Viagens',
+
+  // Salário
+  'Salário e Rendimentos': 'Salário',
+
+  // Saques
+  'Saques em Dinheiro': 'Saques',
+
+  // Investimentos
+  'Aplicações e Investimentos': 'Investimentos',
+  'Poupança e Capitalização': 'Investimentos',
+  'Corretoras e Fundos': 'Investimentos',
+
+  // Receitas
+  'Rendimentos de Investimentos': 'Receitas',
+
+  // Transferências
+  'PIX': 'Transferências',
+  'TED/DOC': 'Transferências',
+
+  // Impostos e Taxas
+  'IOF e Impostos': 'Impostos e Taxas',
+};
+
+/**
+ * 🏷️ Lista de todas as CATEGORIAS válidas (não subcategorias)
+ */
+export const VALID_CATEGORIES = [
+  'Supermercado',
+  'Alimentação',
+  'Saúde',
+  'Entretenimento',
+  'Transporte',
+  'Compras',
+  'Casa',
+  'Banco e Seguradoras',
+  'Contas',
+  'Educação',
+  'Pet',
+  'Viagens',
+  'Salário',
+  'Saques',
+  'Investimentos',
+  'Receitas',
+  'Transferências',
+  'Impostos e Taxas',
+  'Não Categorizado',
+];
+
+/**
+ * 🔄 Normaliza um nome de categoria/subcategoria para sua CATEGORIA correspondente
+ *
+ * @param categoryOrSubcategory - Nome da categoria ou subcategoria
+ * @returns A categoria correspondente (ou o próprio valor se já for uma categoria válida)
+ */
+export function normalizeToCategory(categoryOrSubcategory: string): string {
+  if (!categoryOrSubcategory) return 'Não Categorizado';
+
+  // Se já é uma categoria válida, retornar como está
+  if (VALID_CATEGORIES.includes(categoryOrSubcategory)) {
+    return categoryOrSubcategory;
+  }
+
+  // Se é uma subcategoria conhecida, mapear para a categoria
+  if (SUBCATEGORY_TO_CATEGORY_MAP[categoryOrSubcategory]) {
+    return SUBCATEGORY_TO_CATEGORY_MAP[categoryOrSubcategory];
+  }
+
+  // Não é nem categoria nem subcategoria conhecida - retornar como está
+  // (pode ser uma categoria personalizada)
+  return categoryOrSubcategory;
+}
+
+/**
  * Serviço de Categorização Inteligente
  */
 class CategorizationService {

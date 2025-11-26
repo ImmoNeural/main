@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { syncBudgetsWithTransactions } from '../services/budget.service';
 import { authMiddleware } from '../middleware/auth.supabase.middleware';
+import { normalizeToCategory } from '../services/categorization.service';
 
 const router = Router();
 
@@ -84,12 +85,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // 3. Identificar categorias híbridas (tem subcategorias fixo E variavel)
+    // ⚠️ NORMALIZAR: sempre usar categoria, não subcategoria
     const categoryTypes = new Map<string, Set<string>>();
     preferences.forEach(pref => {
-      if (!categoryTypes.has(pref.category)) {
-        categoryTypes.set(pref.category, new Set());
+      const normalizedCategory = normalizeToCategory(pref.category);
+      if (!categoryTypes.has(normalizedCategory)) {
+        categoryTypes.set(normalizedCategory, new Set());
       }
-      categoryTypes.get(pref.category)!.add(pref.tipo_custo);
+      categoryTypes.get(normalizedCategory)!.add(pref.tipo_custo);
     });
 
     const hybridCategories: string[] = [];
@@ -131,22 +134,24 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       console.error('Error fetching transactions:', txError);
     }
 
-    // Calcular média mensal por categoria
+    // Calcular média mensal por categoria (NORMALIZADA)
     const categoryMonthlyTotals: Record<string, Record<string, number>> = {};
 
     transactions?.forEach(tx => {
       if (!tx.category || tx.amount >= 0) return; // Apenas débitos (valores negativos)
 
+      // ⚠️ NORMALIZAR: converter subcategorias para categorias
+      const normalizedCategory = normalizeToCategory(tx.category);
       const month = tx.date.substring(0, 7); // YYYY-MM
       const amount = Math.abs(tx.amount);
 
-      if (!categoryMonthlyTotals[tx.category]) {
-        categoryMonthlyTotals[tx.category] = {};
+      if (!categoryMonthlyTotals[normalizedCategory]) {
+        categoryMonthlyTotals[normalizedCategory] = {};
       }
-      if (!categoryMonthlyTotals[tx.category][month]) {
-        categoryMonthlyTotals[tx.category][month] = 0;
+      if (!categoryMonthlyTotals[normalizedCategory][month]) {
+        categoryMonthlyTotals[normalizedCategory][month] = 0;
       }
-      categoryMonthlyTotals[tx.category][month] += amount;
+      categoryMonthlyTotals[normalizedCategory][month] += amount;
     });
 
     // Calcular média mensal
@@ -162,7 +167,9 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
     // 6. Para categorias HÍBRIDAS, garantir que existam DUAS linhas em custom_budgets
     for (const category of hybridCategories) {
-      const existingForCategory = existingBudgets?.filter(b => b.category_name === category) || [];
+      // ⚠️ category já está normalizado porque hybridCategories foi construído com normalizeToCategory
+      // Filtrar budgets existentes que pertencem a esta categoria (normalizando também o category_name do budget)
+      const existingForCategory = existingBudgets?.filter(b => normalizeToCategory(b.category_name) === category) || [];
       const hasFixo = existingForCategory.some(b => b.tipo_custo === 'fixo');
       const hasVariavel = existingForCategory.some(b => b.tipo_custo === 'variavel');
 
@@ -172,7 +179,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         // Soma os valores existentes
         baseValue = existingForCategory.reduce((sum, b) => sum + (b.budget_value || 0), 0);
       } else if (categoryAverages[category]) {
-        // Usar média mensal das transações
+        // Usar média mensal das transações (já normalizada)
         baseValue = categoryAverages[category];
       }
 
@@ -183,9 +190,10 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
         if (!hasFixo) {
           console.log(`  ➕ Criando linha FIXO para ${category} (valor: R$ ${valuePerType.toFixed(2)})`);
+          // ⚠️ SEMPRE usar categoria normalizada ao inserir
           const { error } = await supabase.from('custom_budgets').upsert({
             user_id,
-            category_name: category,
+            category_name: category, // Já está normalizado
             tipo_custo: 'fixo',
             budget_value: valuePerType,
             updated_at: new Date().toISOString(),
@@ -195,9 +203,10 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
         if (!hasVariavel) {
           console.log(`  ➕ Criando linha VARIÁVEL para ${category} (valor: R$ ${valuePerType.toFixed(2)})`);
+          // ⚠️ SEMPRE usar categoria normalizada ao inserir
           const { error } = await supabase.from('custom_budgets').upsert({
             user_id,
-            category_name: category,
+            category_name: category, // Já está normalizado
             tipo_custo: 'variavel',
             budget_value: valuePerType,
             updated_at: new Date().toISOString(),
@@ -209,15 +218,17 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
     // 7. Para categorias NÃO híbridas, garantir que só existe UMA linha com o tipo correto
     for (const [category, tipoCorreto] of normalCategories.entries()) {
+      // ⚠️ category já está normalizado porque normalCategories foi construído com normalizeToCategory
       const tipoErrado = tipoCorreto === 'fixo' ? 'variavel' : 'fixo';
-      const existingForCategory = existingBudgets?.filter(b => b.category_name === category) || [];
+      // Filtrar budgets existentes que pertencem a esta categoria (normalizando também o category_name do budget)
+      const existingForCategory = existingBudgets?.filter(b => normalizeToCategory(b.category_name) === category) || [];
 
-      // Remover linha com tipo errado se existir
+      // Remover linha com tipo errado se existir (usa categoria normalizada)
       await supabase
         .from('custom_budgets')
         .delete()
         .eq('user_id', user_id)
-        .eq('category_name', category)
+        .eq('category_name', category) // Já está normalizado
         .eq('tipo_custo', tipoErrado);
 
       // Se tem budget existente, atualizar o tipo
@@ -225,9 +236,10 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         // Mover o valor para o tipo correto
         const totalValue = existingForCategory.reduce((sum, b) => sum + (b.budget_value || 0), 0);
 
+        // ⚠️ SEMPRE usar categoria normalizada ao inserir
         await supabase.from('custom_budgets').upsert({
           user_id,
-          category_name: category,
+          category_name: category, // Já está normalizado
           tipo_custo: tipoCorreto,
           budget_value: totalValue,
           updated_at: new Date().toISOString(),
@@ -241,9 +253,10 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         if (averageValue > 0) {
           console.log(`  ➕ Criando budget para ${category} (${tipoCorreto}): R$ ${averageValue.toFixed(2)} (média mensal)`);
 
+          // ⚠️ SEMPRE usar categoria normalizada ao inserir
           const { error } = await supabase.from('custom_budgets').upsert({
             user_id,
-            category_name: category,
+            category_name: category, // Já está normalizado
             tipo_custo: tipoCorreto,
             budget_value: averageValue,
             updated_at: new Date().toISOString(),
