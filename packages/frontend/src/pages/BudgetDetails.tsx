@@ -102,8 +102,6 @@ export default function BudgetDetails() {
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [isCustomBudget, setIsCustomBudget] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [preferences, setPreferences] = useState<PreferenceItem[]>([]);
-  const [subcategoriesForType, setSubcategoriesForType] = useState<string[]>([]);
 
   useEffect(() => {
     if (categoryName && tipoCusto) {
@@ -138,7 +136,6 @@ export default function BudgetDetails() {
       try {
         const prefsResponse = await preferencesApi.getAll();
         prefs = prefsResponse.data || [];
-        setPreferences(prefs);
       } catch (e) {
         console.log('Erro ao carregar preferências');
       }
@@ -158,7 +155,6 @@ export default function BudgetDetails() {
           .map(r => r.subcategory);
       }
 
-      setSubcategoriesForType(validSubcategories);
       console.log(`📂 [BUDGET DETAILS] Categoria: ${decodedCategory}, Tipo: ${costType}`);
       console.log(`📂 [BUDGET DETAILS] Subcategorias válidas para este tipo:`, validSubcategories);
 
