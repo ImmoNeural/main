@@ -171,6 +171,10 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
         else if (header === 'category' || header === 'categoria') {
           transaction.categoria = value;
         }
+        // Subcategoria - permite importar subcategorias já classificadas
+        else if (header === 'subcategory' || header === 'subcategoria') {
+          transaction.subcategoria = value;
+        }
         // Moeda
         else if (header === 'currency' || header === 'moeda') {
           transaction.currency = value;

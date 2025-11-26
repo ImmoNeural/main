@@ -975,10 +975,21 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       const merchant = trans.merchant || trans.estabelecimento || '';
 
       // Categorizar automaticamente se não foi fornecida categoria
+      // Também suporta subcategoria do CSV para não precisar reclassificar
       let category = trans.category || trans.categoria || '';
-      if (!category) {
+      let subcategory = trans.subcategory || trans.subcategoria || '';
+
+      // Se não tiver categoria OU subcategoria, classificar automaticamente
+      if (!category || !subcategory) {
         const categorization = categorizationService.categorizeTransaction(description, merchant);
-        category = categorization.category;
+        // Só usa a categoria automática se não tiver no CSV
+        if (!category) {
+          category = categorization.category;
+        }
+        // Só usa a subcategoria automática se não tiver no CSV
+        if (!subcategory) {
+          subcategory = categorization.subcategory || '';
+        }
       }
 
       // Determinar tipo (debit/credit)
@@ -1019,6 +1030,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
         description,
         merchant,
         category,
+        subcategory, // Subcategoria do CSV ou classificação automática
         type,
         balance_after: balanceAfter,
         status: trans.situacao || trans.status || 'completed',
@@ -1027,7 +1039,7 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       };
 
       transactionsToInsert.push(transactionToInsert);
-      console.log(`✅ [Linha ${i + 1}] ACEITA - Descrição: "${description}", Valor: R$ ${amount.toFixed(2)}, Categoria: ${category}`);
+      console.log(`✅ [Linha ${i + 1}] ACEITA - Descrição: "${description}", Valor: R$ ${amount.toFixed(2)}, Categoria: ${category}${subcategory ? ` > ${subcategory}` : ''}`);
     }
 
     console.log('\n═══════════════════════════════════════════════════════════════');
