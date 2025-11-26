@@ -1063,6 +1063,45 @@ class CategorizationService {
       average: data.total / data.count,
     }));
   }
+
+  /**
+   * 🔍 Busca a categoria correspondente a uma subcategoria
+   * Útil para importação de CSV que tem apenas subcategoria
+   *
+   * @param subcategory - A subcategoria a ser buscada
+   * @returns A categoria correspondente ou null se não encontrada
+   */
+  getCategoryFromSubcategory(subcategory: string): {
+    category: string;
+    subcategory: string;
+    icon: string;
+    color: string;
+  } | null {
+    if (!subcategory) return null;
+
+    const normalizedSubcategory = this.normalizeText(subcategory);
+
+    // Buscar nas regras a subcategoria correspondente
+    for (const rule of this.rules) {
+      if (rule.subcategory) {
+        const normalizedRuleSubcategory = this.normalizeText(rule.subcategory);
+
+        // Match exato ou parcial
+        if (normalizedRuleSubcategory === normalizedSubcategory ||
+            normalizedRuleSubcategory.includes(normalizedSubcategory) ||
+            normalizedSubcategory.includes(normalizedRuleSubcategory)) {
+          return {
+            category: rule.category,
+            subcategory: rule.subcategory,
+            icon: rule.icon,
+            color: rule.color,
+          };
+        }
+      }
+    }
+
+    return null;
+  }
 }
 
 export default new CategorizationService();

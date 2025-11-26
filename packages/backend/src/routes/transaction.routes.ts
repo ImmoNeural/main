@@ -979,10 +979,19 @@ router.post('/import', authMiddleware, async (req: Request, res: Response) => {
       let category = trans.category || trans.categoria || '';
       let subcategory = trans.subcategory || trans.subcategoria || '';
 
-      // Se não tiver categoria OU subcategoria, classificar automaticamente
+      // 🔍 CASO 1: Tem subcategoria mas NÃO tem categoria → inferir categoria da subcategoria
+      if (subcategory && !category) {
+        const categoryFromSubcat = categorizationService.getCategoryFromSubcategory(subcategory);
+        if (categoryFromSubcat) {
+          category = categoryFromSubcat.category;
+          console.log(`   🏷️ [Linha ${i + 1}] Categoria inferida da subcategoria: "${subcategory}" → "${category}"`);
+        }
+      }
+
+      // 🔍 CASO 2: Não tem categoria nem subcategoria → classificar automaticamente
       if (!category || !subcategory) {
         const categorization = categorizationService.categorizeTransaction(description, merchant);
-        // Só usa a categoria automática se não tiver no CSV
+        // Só usa a categoria automática se não tiver no CSV E não foi inferida
         if (!category) {
           category = categorization.category;
         }
