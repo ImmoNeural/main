@@ -58,7 +58,7 @@ function App() {
               <Route path="transactions" element={<Transactions />} />
               <Route path="accounts" element={<Accounts />} />
               <Route path="budgets" element={<Budgets />} />
-              <Route path="budgets/:categoryName" element={<BudgetDetails />} />
+              <Route path="budgets/:categoryName/:tipoCusto" element={<BudgetDetails />} />
               <Route path="preferences" element={<Preferences />} />
               <Route path="connect-bank" element={<ConnectBank />} />
               <Route path="planos" element={<Plans />} />

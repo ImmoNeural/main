@@ -173,15 +173,13 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       const hasFixo = existingForCategory.some(b => b.tipo_custo === 'fixo');
       const hasVariavel = existingForCategory.some(b => b.tipo_custo === 'variavel');
 
-      // Calcular valor base: usar budget existente ou média mensal
+      // Calcular valor base: usar budget existente ou ZERO (usuário define depois)
       let baseValue = 0;
       if (existingForCategory.length > 0) {
         // Soma os valores existentes
         baseValue = existingForCategory.reduce((sum, b) => sum + (b.budget_value || 0), 0);
-      } else if (categoryAverages[category]) {
-        // Usar média mensal das transações (já normalizada)
-        baseValue = categoryAverages[category];
       }
+      // ALTERADO: Não usar média mensal - deixar o usuário definir o budget
 
       // Se não tem as duas linhas, criar
       if (!hasFixo || !hasVariavel) {
@@ -247,25 +245,19 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
         console.log(`  🔄 ${category}: tipo atualizado para ${tipoCorreto} (R$ ${totalValue.toFixed(2)})`);
       } else {
-        // NÃO tem budget existente - CRIAR com média mensal ou 0
-        const averageValue = categoryAverages[category] || 0;
+        // NÃO tem budget existente - CRIAR com valor ZERO (usuário define depois)
+        console.log(`  ➕ Criando budget para ${category} (${tipoCorreto}): R$ 0.00 (usuário define o valor)`);
 
-        if (averageValue > 0) {
-          console.log(`  ➕ Criando budget para ${category} (${tipoCorreto}): R$ ${averageValue.toFixed(2)} (média mensal)`);
+        // ⚠️ SEMPRE usar categoria normalizada ao inserir
+        const { error } = await supabase.from('custom_budgets').upsert({
+          user_id,
+          category_name: category, // Já está normalizado
+          tipo_custo: tipoCorreto,
+          budget_value: 0, // ALTERADO: Usar 0 ao invés de média
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,category_name,tipo_custo' });
 
-          // ⚠️ SEMPRE usar categoria normalizada ao inserir
-          const { error } = await supabase.from('custom_budgets').upsert({
-            user_id,
-            category_name: category, // Já está normalizado
-            tipo_custo: tipoCorreto,
-            budget_value: averageValue,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id,category_name,tipo_custo' });
-
-          if (error) console.error(`Error creating budget for ${category}:`, error);
-        } else {
-          console.log(`  ⚠️ ${category}: sem transações históricas, budget não criado`);
-        }
+        if (error) console.error(`Error creating budget for ${category}:`, error);
       }
     }
 

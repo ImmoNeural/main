@@ -548,13 +548,21 @@ export default function Budgets() {
   });
   const [showImportModal, setShowImportModal] = useState(false);
 
+  // Flag para controlar carregamento inicial
+  const [budgetsLoaded, setBudgetsLoaded] = useState(false);
+
+  // Carregar budgets e preferências na inicialização
   useEffect(() => {
     loadBudgets();
   }, []);
 
+  // Carregar transações quando os budgets estiverem prontos ou o mês mudar
   useEffect(() => {
-    loadTransactions();
-  }, [selectedMonth, customBudgets, detailedBudgets, preferences]);
+    if (budgetsLoaded) {
+      loadTransactions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth, budgetsLoaded]);
 
   const loadBudgets = async () => {
     try {
@@ -572,11 +580,16 @@ export default function Budgets() {
       const prefsResponse = await preferencesApi.getAll();
       setPreferences(prefsResponse.data || []);
       console.log(`📂 [BUDGETS] Preferências carregadas:`, prefsResponse.data?.length || 0, 'registros');
+
+      // Marcar budgets como carregados para permitir processamento de transações
+      setBudgetsLoaded(true);
     } catch (error) {
       console.error(`❌ [BUDGETS] Erro ao carregar budgets:`, error);
       setCustomBudgets({});
       setDetailedBudgets([]);
       setPreferences([]);
+      // Mesmo com erro, marcar como carregado para não bloquear
+      setBudgetsLoaded(true);
     }
   };
 
@@ -1458,15 +1471,17 @@ export default function Budgets() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {Object.entries(categoryData[costType]).map(([categoryName, data]) => {
-                  const categoryPath = `/app/budgets/${encodeURIComponent(categoryName)}`;
+                  // Determinar o tipo de custo baseado no costType
+                  const tipoCusto = costType === 'Despesas Fixas' ? 'fixo' : costType === 'Despesas Variáveis' ? 'variavel' : 'outros';
+                  const categoryPath = `/app/budgets/${encodeURIComponent(categoryName)}/${tipoCusto}`;
                   return (
                     <Link
-                      key={categoryName}
+                      key={`${categoryName}-${tipoCusto}`}
                       to={categoryPath}
                       className="block bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 transform hover:scale-[1.02] transition duration-300 cursor-pointer hover:shadow-2xl"
                       style={{ borderTopColor: data.color }}
                       onClick={() => {
-                        console.log(`🖱️ [BUDGETS] Card clicado: ${categoryName} -> ${categoryPath}`);
+                        console.log(`🖱️ [BUDGETS] Card clicado: ${categoryName} (${tipoCusto}) -> ${categoryPath}`);
                       }}
                     >
                       <div className="flex items-center gap-2 sm:gap-3 mb-3">

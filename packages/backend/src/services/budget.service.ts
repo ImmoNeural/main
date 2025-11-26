@@ -117,9 +117,10 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
       const hasVariavel = existingForCategory.some(b => b.tipo_custo === 'variavel');
       console.log(`   hasFixo: ${hasFixo}, hasVariavel: ${hasVariavel}`);
 
-      // CASO 1: Não existe nenhuma linha → criar 2 (fixo + variavel) com média/2
+      // CASO 1: Não existe nenhuma linha → criar 2 (fixo + variavel) com valor ZERO
+      // ALTERADO: Não calcular média, usar 0 como valor inicial (usuário define depois)
       if (existingForCategory.length === 0) {
-        console.log(`   ➕ CASO 1: Criando 2 linhas (categoria não existia)`);
+        console.log(`   ➕ CASO 1: Criando 2 linhas (categoria não existia) com valor 0`);
 
         // ⚠️ SEMPRE usar categoria normalizada ao inserir
         const normalizedCategory = normalizeToCategory(category);
@@ -127,25 +128,25 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
         const { error: err1 } = await supabase.from('custom_budgets').insert({
           user_id,
           category_name: normalizedCategory,
-          budget_value: valuePerType,
+          budget_value: 0, // ALTERADO: Usar 0 ao invés de média
           tipo_custo: 'fixo',
         });
         if (err1) {
           console.error(`      ❌ Erro ao criar FIXO:`, err1.message);
         } else {
-          console.log(`      ✅ Criado FIXO: R$ ${valuePerType.toFixed(2)}`);
+          console.log(`      ✅ Criado FIXO: R$ 0.00`);
         }
 
         const { error: err2 } = await supabase.from('custom_budgets').insert({
           user_id,
           category_name: normalizedCategory,
-          budget_value: valuePerType,
+          budget_value: 0, // ALTERADO: Usar 0 ao invés de média
           tipo_custo: 'variavel',
         });
         if (err2) {
           console.error(`      ❌ Erro ao criar VARIÁVEL:`, err2.message);
         } else {
-          console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
+          console.log(`      ✅ Criado VARIÁVEL: R$ 0.00`);
         }
 
       // CASO 2: Existe 1 linha
@@ -155,37 +156,25 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
         const existingTipo = existingBudget.tipo_custo;
         console.log(`   ➕ CASO 2: Existe 1 linha (tipo=${existingTipo}, valor=${existingValue})`);
 
-        // Se valor = 0 ou null → atualizar com média/2 e criar outra linha
+        // Se valor = 0 ou null → manter 0 e criar outra linha com 0
+        // ALTERADO: Não calcular média, manter 0
         if (!existingValue || existingValue === 0) {
-          console.log(`      Valor é 0 - atualizando e criando segunda`);
+          console.log(`      Valor é 0 - mantendo 0 e criando segunda com 0`);
 
-          // Atualizar a existente
-          const { error: errUpdate } = await supabase
-            .from('custom_budgets')
-            .update({
-              budget_value: valuePerType,
-              tipo_custo: 'fixo'
-            })
-            .eq('id', existingBudget.id);
-          if (errUpdate) {
-            console.error(`      ❌ Erro ao atualizar:`, errUpdate.message);
-          } else {
-            console.log(`      ✏️ Atualizado para FIXO: R$ ${valuePerType.toFixed(2)}`);
-          }
-
-          // Criar a segunda (variavel)
+          // Criar a segunda (variavel) com valor 0
           // ⚠️ SEMPRE usar categoria normalizada ao inserir
           const normalizedCategory = normalizeToCategory(category);
+          const tipoFaltante = existingTipo === 'fixo' ? 'variavel' : 'fixo';
           const { error: errInsert } = await supabase.from('custom_budgets').insert({
             user_id,
             category_name: normalizedCategory,
-            budget_value: valuePerType,
-            tipo_custo: 'variavel',
+            budget_value: 0, // ALTERADO: Usar 0
+            tipo_custo: tipoFaltante,
           });
           if (errInsert) {
-            console.error(`      ❌ Erro ao criar VARIÁVEL:`, errInsert.message);
+            console.error(`      ❌ Erro ao criar ${tipoFaltante.toUpperCase()}:`, errInsert.message);
           } else {
-            console.log(`      ✅ Criado VARIÁVEL: R$ ${valuePerType.toFixed(2)}`);
+            console.log(`      ✅ Criado ${tipoFaltante.toUpperCase()}: R$ 0.00`);
           }
 
         } else {
@@ -278,30 +267,27 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
 
       const existingForCategory = budgetsByCategory[category] || [];
 
-      // Se não existe nenhuma linha, criar uma
+      // Se não existe nenhuma linha, criar uma com valor 0
+      // ALTERADO: Não calcular média, usar 0 (usuário define depois)
       if (existingForCategory.length === 0) {
         console.log(`\n📂 [SYNC] Processando categoria NORMAL: ${category}`);
-        console.log(`   ➕ Criando linha: R$ ${avgValue.toFixed(2)}`);
+        console.log(`   ➕ Criando linha com valor 0 (usuário define o budget)`);
 
         // ⚠️ SEMPRE usar categoria normalizada ao inserir (garantia extra)
         const normalizedCat = normalizeToCategory(category);
         await supabase.from('custom_budgets').insert({
           user_id,
           category_name: normalizedCat,
-          budget_value: avgValue,
+          budget_value: 0, // ALTERADO: Usar 0 ao invés de média
         });
 
-      // Se existe 1 linha sem valor, atualizar
+      // Se existe 1 linha sem valor, NÃO atualizar automaticamente
+      // ALTERADO: Deixar o usuário definir o budget
       } else if (existingForCategory.length === 1) {
         const budget = existingForCategory[0];
         if (!budget.budget_value || budget.budget_value === 0) {
-          console.log(`\n📂 [SYNC] Processando categoria NORMAL: ${category}`);
-          console.log(`   ✏️ Atualizando valor: R$ ${avgValue.toFixed(2)}`);
-
-          await supabase
-            .from('custom_budgets')
-            .update({ budget_value: avgValue })
-            .eq('id', budget.id);
+          console.log(`\n📂 [SYNC] Categoria NORMAL ${category} sem budget definido - aguardando usuário`);
+          // ALTERADO: Não atualizar automaticamente com média
         }
       }
       // Se já tem valor, não mexer

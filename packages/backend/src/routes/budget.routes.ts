@@ -68,6 +68,44 @@ router.get('/detailed', authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/budgets/:categoryName/:tipoCusto
+ * Retorna o budget de uma categoria específica para um tipo de custo específico (fixo ou variavel)
+ */
+router.get('/:categoryName/:tipoCusto', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { categoryName, tipoCusto } = req.params;
+
+    const { data: budget, error } = await supabase
+      .from('custom_budgets')
+      .select('*')
+      .eq('user_id', user_id)
+      .eq('category_name', categoryName)
+      .eq('tipo_custo', tipoCusto)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error fetching budget:', error);
+      throw error;
+    }
+
+    if (!budget) {
+      return res.json({ category_name: categoryName, budget_value: null, tipo_custo: tipoCusto });
+    }
+
+    res.json({
+      category_name: categoryName,
+      budget_value: budget.budget_value,
+      tipo_custo: budget.tipo_custo,
+      id: budget.id
+    });
+  } catch (error) {
+    console.error('Error fetching budget for category/tipo:', error);
+    res.status(500).json({ error: 'Failed to fetch budget' });
+  }
+});
+
+/**
  * GET /api/budgets/:categoryName
  * Retorna o budget de uma categoria específica (soma fixo + variável se houver)
  */

@@ -258,6 +258,10 @@ export const budgetApi = {
   getBudget: (categoryName: string) =>
     api.get<{ category_name: string; budget_value: number | null }>(`/budgets/${encodeURIComponent(categoryName)}`),
 
+  // Get budget for a specific category AND tipo_custo (fixo/variavel)
+  getBudgetByType: (categoryName: string, tipoCusto: string) =>
+    api.get<{ category_name: string; budget_value: number | null; tipo_custo: string }>(`/budgets/${encodeURIComponent(categoryName)}/${tipoCusto}`),
+
   // Create or update a budget (with tipo_custo support)
   saveBudget: (data: {
     category_name: string;

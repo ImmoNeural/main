@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { transactionApi, budgetApi } from '../services/api';
+import { transactionApi, budgetApi, preferencesApi, PreferenceItem } from '../services/api';
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,48 +28,55 @@ interface CategoryRule {
 }
 
 const ALL_CATEGORY_RULES: CategoryRule[] = [
-  // DESPESAS VARIÁVEIS
-  { type: 'Despesas Variáveis', category: 'Supermercado', subcategory: 'Compras de Mercado', icon: '🛒', color: '#4CAF50', note: 'Grandes redes e atacados.' },
-  { type: 'Despesas Variáveis', category: 'Alimentação', subcategory: 'Restaurantes e Delivery', icon: '🍕', color: '#FF5722', note: 'Restaurantes e delivery.' },
+  // DESPESAS VARIÁVEIS (Consumo e Lazer)
+  { type: 'Despesas Variáveis', category: 'Supermercado', subcategory: 'Compras de Mercado', icon: '🛒', color: '#4CAF50', note: 'Grandes redes e atacados (Carrefour, Assaí, Zaffari).' },
+  { type: 'Despesas Variáveis', category: 'Alimentação', subcategory: 'Restaurantes e Delivery', icon: '🍕', color: '#FF5722', note: 'Restaurantes, lanchonetes e apps (iFood, Uber Eats, Outback).' },
   { type: 'Despesas Variáveis', category: 'Alimentação', subcategory: 'Padaria', icon: '🥖', color: '#D2691E', note: 'Padarias e panificadoras.' },
-  { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Apps de Transporte', icon: '🚗', color: '#2196F3', note: 'Apps de transporte.' },
-  { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Combustível e Pedágio', icon: '⛽', color: '#FF9800', note: 'Combustível e pedágio.' },
-  { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Transporte Público', icon: '🚌', color: '#3F51B5', note: 'Metrô, trem e ônibus.' },
-  { type: 'Despesas Variáveis', category: 'Compras', subcategory: 'E-commerce', icon: '🛍️', color: '#E91E63', note: 'Compras online.' },
-  { type: 'Despesas Variáveis', category: 'Compras', subcategory: 'Moda e Vestuário', icon: '👕', color: '#FF4081', note: 'Roupas e calçados.' },
-  { type: 'Despesas Variáveis', category: 'Compras', subcategory: 'Tecnologia', icon: '📱', color: '#607D8B', note: 'Eletrônicos.' },
-  { type: 'Despesas Variáveis', category: 'Casa', subcategory: 'Construção e Reforma', icon: '🏠', color: '#795548', note: 'Materiais de construção.' },
-  { type: 'Despesas Variáveis', category: 'Casa', subcategory: 'Móveis e Decoração', icon: '🛋️', color: '#8D6E63', note: 'Móveis e decoração.' },
-  { type: 'Despesas Variáveis', category: 'Entretenimento', subcategory: 'Lazer e Diversão', icon: '🎮', color: '#9C27B0', note: 'Cinema, shows, parques.' },
-  { type: 'Despesas Variáveis', category: 'Saúde', subcategory: 'Farmácias e Drogarias', icon: '💊', color: '#009688', note: 'Farmácias.' },
-  { type: 'Despesas Variáveis', category: 'Saúde', subcategory: 'Academia e Fitness', icon: '🏋️', color: '#FF5722', note: 'Academias.' },
-  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Pet Shop e Veterinário', icon: '🐕', color: '#FF9800', note: 'Pet shop e veterinário.' },
-  { type: 'Despesas Variáveis', category: 'Viagens', subcategory: 'Aéreo e Turismo', icon: '✈️', color: '#2196F3', note: 'Viagens.' },
+  { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Apps de Transporte', icon: '🚗', color: '#2196F3', note: 'Corridas de aplicativos (Uber, 99, Cabify).' },
+  { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Combustível e Pedágio', icon: '⛽', color: '#FF9800', note: 'Postos de gasolina (Shell, Ipiranga) e tags de pedágio (Sem Parar).' },
+  { type: 'Despesas Variáveis', category: 'Transporte', subcategory: 'Transporte Público', icon: '🚌', color: '#3F51B5', note: 'Passagens de metrô, trem e ônibus.' },
+  { type: 'Despesas Variáveis', category: 'Compras', subcategory: 'E-commerce', icon: '🛍️', color: '#E91E63', note: 'Marketplaces e grandes varejistas online (ML, Amazon, Magalu).' },
+  { type: 'Despesas Variáveis', category: 'Compras', subcategory: 'Moda e Vestuário', icon: '👕', color: '#FF4081', note: 'Lojas de roupa e calçados (Renner, C&A, Dafiti).' },
+  { type: 'Despesas Variáveis', category: 'Compras', subcategory: 'Tecnologia', icon: '📱', color: '#607D8B', note: 'Eletrônicos, computadores e gadgets.' },
+  { type: 'Despesas Variáveis', category: 'Casa', subcategory: 'Construção e Reforma', icon: '🏠', color: '#795548', note: 'Materiais de construção e ferramentas (Leroy Merlin, Telhanorte).' },
+  { type: 'Despesas Variáveis', category: 'Casa', subcategory: 'Móveis e Decoração', icon: '🛋️', color: '#8D6E63', note: 'Móveis, estofados e artigos de decoração (Tok & Stok, Etna).' },
+  { type: 'Despesas Variáveis', category: 'Entretenimento', subcategory: 'Lazer e Diversão', icon: '🎮', color: '#9C27B0', note: 'Cinema, teatro, shows e parques (Playcenter, Hopi Hari).' },
+  { type: 'Despesas Variáveis', category: 'Saúde', subcategory: 'Farmácias e Drogarias', icon: '💊', color: '#009688', note: 'Compra de remédios e itens em Drogasil, Raia, Panvel.' },
+  { type: 'Despesas Variáveis', category: 'Saúde', subcategory: 'Academia e Fitness', icon: '🏋️', color: '#FF5722', note: 'Mensalidades de academias e estúdios (Smart Fit, Bodytech).' },
+  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Alimentação', icon: '🦴', color: '#FF9800', note: 'Ração e petiscos para pets.' },
+  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Médico', icon: '🏥', color: '#FF9800', note: 'Consultas veterinárias.' },
+  { type: 'Despesas Variáveis', category: 'Pet', subcategory: 'Tratamentos', icon: '💊', color: '#FF9800', note: 'Vacinas e medicamentos.' },
+  { type: 'Despesas Variáveis', category: 'Viagens', subcategory: 'Aéreo e Turismo', icon: '✈️', color: '#2196F3', note: 'Passagens, hotéis e pacotes (Decolar, Booking, Gol, Azul).' },
 
-  // DESPESAS FIXAS
-  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Telefonia e Internet', icon: '📱', color: '#00BCD4', note: 'Telefone e internet.' },
-  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Energia e Água', icon: '⚡', color: '#FFC107', note: 'Energia e água.' },
-  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Boletos e Débitos', icon: '📄', color: '#607D8B', note: 'Boletos gerais.' },
-  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Condomínio', icon: '🏢', color: '#795548', note: 'Taxa condominial.' },
-  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Eletrodomésticos', icon: '🔌', color: '#9E9E9E', note: 'Locação de eletros.' },
-  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Imóvel', icon: '🏠', color: '#8D6E63', note: 'Aluguel de imóvel.' },
-  { type: 'Despesas Fixas', category: 'Serviços Financeiros', subcategory: 'Bancos e Fintechs', icon: '💳', color: '#673AB7', note: 'Tarifas bancárias.' },
-  { type: 'Despesas Fixas', category: 'Entretenimento', subcategory: 'Streaming e Assinaturas', icon: '📺', color: '#E91E63', note: 'Streaming.' },
-  { type: 'Despesas Fixas', category: 'Educação', subcategory: 'Cursos e Ensino', icon: '🎓', color: '#3F51B5', note: 'Cursos e ensino.' },
-  { type: 'Despesas Fixas', category: 'Educação', subcategory: 'Livrarias e Papelarias', icon: '📚', color: '#5C6BC0', note: 'Livros e papelaria.' },
-  { type: 'Despesas Fixas', category: 'Impostos e Taxas', subcategory: 'IOF e Impostos', icon: '🏦', color: '#F44336', note: 'Impostos.' },
-  { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Odontologia', icon: '🦷', color: '#00BCD4', note: 'Dentistas.' },
-  { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Médicos e Clínicas', icon: '⚕️', color: '#009688', note: 'Médicos e clínicas.' },
+  // DESPESAS FIXAS (Recorrentes e Obrigatórias)
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Telefonia e Internet', icon: '📱', color: '#00BCD4', note: 'Planos de telefonia e internet fixa (Vivo, Claro, Oi).' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Energia e Água', icon: '⚡', color: '#FFC107', note: 'Contas de utilidade básica (Sabesp, Enel, Cemig).' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Boletos e Débitos', icon: '📄', color: '#607D8B', note: 'Identificação genérica de pagamento de boletos.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Condomínio', icon: '🏢', color: '#795548', note: 'Taxa condominial e administração.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Eletrodomésticos', icon: '🔌', color: '#9E9E9E', note: 'Locação de geladeira, máquina de lavar, etc.' },
+  { type: 'Despesas Fixas', category: 'Contas', subcategory: 'Aluguel de Imóvel', icon: '🏠', color: '#8D6E63', note: 'Aluguel de casa, apartamento ou sala comercial.' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Bancos e Fintechs', icon: '🏦', color: '#673AB7', note: 'Tarifas e serviços bancários (Itaú, Nubank, PicPay).' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Seguradoras', icon: '🛡️', color: '#673AB7', note: 'Seguros diversos (vida, residencial, etc).' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Empréstimos Bancários', icon: '💰', color: '#673AB7', note: 'Parcelas de empréstimos bancários.' },
+  { type: 'Despesas Fixas', category: 'Banco e Seguradoras', subcategory: 'Financiamentos', icon: '📋', color: '#673AB7', note: 'Parcelas de financiamentos (veículos, imóveis).' },
+  { type: 'Despesas Fixas', category: 'Entretenimento', subcategory: 'Streaming e Assinaturas', icon: '📺', color: '#E91E63', note: 'Serviços digitais recorrentes (Netflix, Spotify, Disney+).' },
+  { type: 'Despesas Fixas', category: 'Educação', subcategory: 'Cursos e Ensino', icon: '🎓', color: '#3F51B5', note: 'Matrículas, mensalidades e cursos livres.' },
+  { type: 'Despesas Fixas', category: 'Educação', subcategory: 'Livrarias e Papelarias', icon: '📚', color: '#5C6BC0', note: 'Livros, artigos de papelaria e material didático.' },
+  { type: 'Despesas Fixas', category: 'Impostos e Taxas', subcategory: 'IOF e Impostos', icon: '🏦', color: '#F44336', note: 'Cobrança de impostos e taxas específicas (IOF).' },
+  { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Odontologia', icon: '🦷', color: '#00BCD4', note: 'Mensalidades ou pagamentos recorrentes a dentistas/clínicas.' },
+  { type: 'Despesas Fixas', category: 'Saúde', subcategory: 'Médicos e Clínicas', icon: '⚕️', color: '#009688', note: 'Hospitais, exames e consultas médicas (inclui Plano de Saúde recorrente).' },
+  { type: 'Despesas Fixas', category: 'Transporte', subcategory: 'Seguros', icon: '🛡️', color: '#2196F3', note: 'Seguro auto, moto, veículo.' },
+  { type: 'Despesas Fixas', category: 'Pet', subcategory: 'Seguradoras', icon: '🛡️', color: '#FF9800', note: 'Plano de saúde pet.' },
 
   // MOVIMENTAÇÕES (Receitas, Transferências, Investimentos e Saques)
-  { type: 'Movimentações', category: 'Salário', subcategory: 'Salário e Rendimentos', icon: '💰', color: '#4CAF50', note: 'Recebimento de salário.' },
-  { type: 'Movimentações', category: 'Receitas', subcategory: 'Rendimentos de Investimentos', icon: '💹', color: '#4CAF50', note: 'Juros e dividendos.' },
-  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Aplicações e Investimentos', icon: '📈', color: '#2196F3', note: 'CDB, LCA, Tesouro.' },
-  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Poupança e Capitalização', icon: '💰', color: '#4CAF50', note: 'Poupança.' },
-  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Corretoras e Fundos', icon: '📈', color: '#2196F3', note: 'Corretoras e fundos.' },
-  { type: 'Movimentações', category: 'Transferências', subcategory: 'PIX', icon: '💸', color: '#00C853', note: 'PIX enviado/recebido.' },
-  { type: 'Movimentações', category: 'Transferências', subcategory: 'TED/DOC', icon: '💸', color: '#FF9800', note: 'TED/DOC.' },
-  { type: 'Movimentações', category: 'Saques', subcategory: 'Saques em Dinheiro', icon: '💵', color: '#9E9E9E', note: 'Saques ATM.' },
+  { type: 'Movimentações', category: 'Salário', subcategory: 'Salário e Rendimentos', icon: '💰', color: '#4CAF50', note: 'Recebimento de salário, pró-labore ou depósitos de folha.' },
+  { type: 'Movimentações', category: 'Receitas', subcategory: 'Rendimentos de Investimentos', icon: '💹', color: '#4CAF50', note: 'Recebimento de juros, dividendos e resgates de títulos.' },
+  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Aplicações e Investimentos', icon: '📈', color: '#2196F3', note: 'Aplicações de débito em CDB, LCA, LCI, Tesouro Direto.' },
+  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Poupança e Capitalização', icon: '💰', color: '#4CAF50', note: 'Movimentações de poupança e títulos de capitalização.' },
+  { type: 'Movimentações', category: 'Investimentos', subcategory: 'Corretoras e Fundos', icon: '📈', color: '#2196F3', note: 'Transações em corretoras (XP, Rico, Clear) e fundos.' },
+  { type: 'Movimentações', category: 'Transferências', subcategory: 'PIX', icon: '💸', color: '#00C853', note: 'Transações instantâneas enviadas ou recebidas.' },
+  { type: 'Movimentações', category: 'Transferências', subcategory: 'TED/DOC', icon: '💸', color: '#FF9800', note: 'Transferências tradicionais entre contas.' },
+  { type: 'Movimentações', category: 'Saques', subcategory: 'Saques em Dinheiro', icon: '💵', color: '#9E9E9E', note: 'Retiradas em caixas eletrônicos (ATM).' },
 ];
 
 interface MonthData {
@@ -81,7 +88,7 @@ interface MonthData {
 }
 
 export default function BudgetDetails() {
-  const { categoryName } = useParams<{ categoryName: string }>();
+  const { categoryName, tipoCusto } = useParams<{ categoryName: string; tipoCusto: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState<MonthData[]>([]);
@@ -95,28 +102,65 @@ export default function BudgetDetails() {
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [isCustomBudget, setIsCustomBudget] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [preferences, setPreferences] = useState<PreferenceItem[]>([]);
+  const [subcategoriesForType, setSubcategoriesForType] = useState<string[]>([]);
 
   useEffect(() => {
-    if (categoryName) {
+    if (categoryName && tipoCusto) {
       loadCategoryData();
     }
-  }, [categoryName]);
+  }, [categoryName, tipoCusto]);
 
   const loadCategoryData = async () => {
     setLoading(true);
     try {
+      const decodedCategory = decodeURIComponent(categoryName!);
+      const costType = tipoCusto || 'fixo';
+
       // Encontrar informações da categoria
-      const rulesForCategory = ALL_CATEGORY_RULES.filter(r => r.category === decodeURIComponent(categoryName!));
+      const rulesForCategory = ALL_CATEGORY_RULES.filter(r => r.category === decodedCategory);
       if (rulesForCategory.length === 0) {
         navigate('/app/budgets');
         return;
       }
 
+      // Definir tipo de custo baseado no parâmetro da URL
+      const typeLabel = costType === 'fixo' ? 'Custo Fixo' : costType === 'variavel' ? 'Custo Variável' : 'Movimentações';
+
       setCategoryInfo({
         icon: rulesForCategory[0].icon,
         color: rulesForCategory[0].color,
-        type: rulesForCategory[0].type,
+        type: typeLabel,
       });
+
+      // Carregar preferências para saber quais subcategorias são deste tipo de custo
+      let prefs: PreferenceItem[] = [];
+      try {
+        const prefsResponse = await preferencesApi.getAll();
+        prefs = prefsResponse.data || [];
+        setPreferences(prefs);
+      } catch (e) {
+        console.log('Erro ao carregar preferências');
+      }
+
+      // Filtrar subcategorias desta categoria que têm o tipo_custo correto
+      const subcatsForThisType = prefs
+        .filter(p => p.category === decodedCategory && p.tipo_custo === costType)
+        .map(p => p.subcategory);
+
+      // Se não encontrar nas preferências, usar as regras padrão baseadas no tipo da ALL_CATEGORY_RULES
+      let validSubcategories: string[] = subcatsForThisType;
+      if (validSubcategories.length === 0) {
+        // Fallback: usar ALL_CATEGORY_RULES para determinar subcategorias
+        const expectedType = costType === 'fixo' ? 'Despesas Fixas' : costType === 'variavel' ? 'Despesas Variáveis' : '';
+        validSubcategories = rulesForCategory
+          .filter(r => r.type === expectedType)
+          .map(r => r.subcategory);
+      }
+
+      setSubcategoriesForType(validSubcategories);
+      console.log(`📂 [BUDGET DETAILS] Categoria: ${decodedCategory}, Tipo: ${costType}`);
+      console.log(`📂 [BUDGET DETAILS] Subcategorias válidas para este tipo:`, validSubcategories);
 
       // Buscar transações dos últimos 12 meses
       const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
@@ -129,7 +173,6 @@ export default function BudgetDetails() {
 
       // Processar dados mensais
       const monthly: Record<string, MonthData> = {};
-      const subcategoryTotals: Record<string, number[]> = {};
 
       // Inicializar últimos 12 meses
       for (let i = 11; i >= 0; i--) {
@@ -146,56 +189,57 @@ export default function BudgetDetails() {
         };
       }
 
-      // Processar transações
+      // Processar transações - FILTRAR por categoria E subcategorias do tipo correto
       txs.forEach((tx: Transaction) => {
         // Filtrar apenas despesas da categoria
         if (tx.amount >= 0) return;
-        if (tx.category !== decodeURIComponent(categoryName!)) return;
+        if (tx.category !== decodedCategory) return;
+
+        // Se temos subcategorias específicas para filtrar, verificar subcategoria
+        // Se a transação tem subcategoria, verificar se está na lista
+        // Se não tem subcategoria (tx.subcategory é undefined), incluir apenas se tiver regra para a categoria geral
+        const txSubcategory = tx.subcategory || tx.category;
+        const shouldInclude = validSubcategories.length === 0 ||
+          validSubcategories.includes(txSubcategory) ||
+          validSubcategories.includes(tx.category);
+
+        if (!shouldInclude) {
+          return; // Não incluir esta transação
+        }
 
         const month = format(new Date(tx.date), 'yyyy-MM');
         const amount = Math.abs(tx.amount);
-        const subcat = tx.category; // Usar category como subcategory
 
         if (monthly[month]) {
           monthly[month].spent += amount;
 
           // Agrupar por subcategoria
+          const subcat = txSubcategory;
           if (!monthly[month].subcategories[subcat]) {
             monthly[month].subcategories[subcat] = 0;
           }
           monthly[month].subcategories[subcat] += amount;
-
-          // Coletar para cálculo de média por subcategoria
-          if (!subcategoryTotals[subcat]) {
-            subcategoryTotals[subcat] = [];
-          }
-          subcategoryTotals[subcat].push(amount);
         }
       });
 
-      // Calcular média geral (budget sugerido)
-      const monthlySpent = Object.values(monthly).map(m => m.spent).filter(s => s > 0);
-      const avgBudget = monthlySpent.length > 0
-        ? monthlySpent.reduce((sum, val) => sum + val, 0) / monthlySpent.length
-        : 0;
-
-      // Verificar se existe budget customizado salvo na API
-      const categoryKey = decodeURIComponent(categoryName!);
-      let finalBudget = Math.round(avgBudget);
+      // Buscar budget customizado para esta categoria E tipo_custo
+      const categoryKey = decodedCategory;
+      let finalBudget = 0; // Iniciar com 0, não calcular média
 
       try {
-        const budgetResponse = await budgetApi.getBudget(categoryKey);
-        if (budgetResponse.data.budget_value !== null) {
+        // Buscar budget específico para este tipo_custo
+        const budgetResponse = await budgetApi.getBudgetByType(categoryKey, costType);
+        if (budgetResponse.data && budgetResponse.data.budget_value !== null && budgetResponse.data.budget_value !== undefined) {
           finalBudget = budgetResponse.data.budget_value;
           setIsCustomBudget(true);
-          console.log(`📂 [BUDGET DETAILS] Budget customizado carregado para ${categoryKey}: R$ ${finalBudget.toFixed(2)} (média calculada: R$ ${Math.round(avgBudget).toFixed(2)})`);
+          console.log(`📂 [BUDGET DETAILS] Budget customizado carregado para ${categoryKey} (${costType}): R$ ${finalBudget.toFixed(2)}`);
         } else {
           setIsCustomBudget(false);
-          console.log(`📊 [BUDGET DETAILS] Usando média calculada para ${categoryKey}: R$ ${Math.round(avgBudget).toFixed(2)}`);
+          console.log(`📊 [BUDGET DETAILS] Nenhum budget definido para ${categoryKey} (${costType}), usando 0`);
         }
       } catch (error) {
         setIsCustomBudget(false);
-        console.log(`📊 [BUDGET DETAILS] Erro ao carregar budget, usando média calculada para ${categoryKey}: R$ ${Math.round(avgBudget).toFixed(2)}`);
+        console.log(`📊 [BUDGET DETAILS] Erro ao carregar budget para ${categoryKey} (${costType}), usando 0`);
       }
 
       setSuggestedBudget(finalBudget);
@@ -221,16 +265,18 @@ export default function BudgetDetails() {
   const handleBudgetSave = async () => {
     // Validação robusta do valor
     const budgetValue = customBudget;
+    const costType = tipoCusto || 'fixo';
 
     console.log(`🔍 [BUDGET DETAILS] Tentando salvar budget:`, {
       customBudget,
+      tipoCusto: costType,
       type: typeof customBudget,
       isNull: customBudget === null,
       isNaN: isNaN(customBudget || 0),
     });
 
-    if (budgetValue === null || budgetValue === undefined || isNaN(budgetValue) || budgetValue <= 0) {
-      alert('Por favor, insira um valor válido maior que zero.');
+    if (budgetValue === null || budgetValue === undefined || isNaN(budgetValue) || budgetValue < 0) {
+      alert('Por favor, insira um valor válido (zero ou maior).');
       return;
     }
 
@@ -241,10 +287,16 @@ export default function BudgetDetails() {
       console.log(`💾 [BUDGET DETAILS] Enviando para API:`, {
         category_name: categoryKey,
         budget_value: budgetValue,
+        tipo_custo: costType,
       });
 
-      await budgetApi.saveBudget({ category_name: categoryKey, budget_value: budgetValue });
-      console.log(`✅ [BUDGET DETAILS] Budget customizado salvo para ${categoryKey}: R$ ${budgetValue.toFixed(2)}`);
+      // Salvar com tipo_custo para garantir que vai para o registro correto
+      await budgetApi.saveBudget({
+        category_name: categoryKey,
+        budget_value: budgetValue,
+        tipo_custo: costType as 'fixo' | 'variavel',
+      });
+      console.log(`✅ [BUDGET DETAILS] Budget customizado salvo para ${categoryKey} (${costType}): R$ ${budgetValue.toFixed(2)}`);
 
       setSuggestedBudget(budgetValue);
       setIsCustomBudget(true);
@@ -252,7 +304,7 @@ export default function BudgetDetails() {
       setMonthlyData(prev => prev.map(m => ({ ...m, budget: budgetValue })));
       setIsEditingBudget(false);
     } catch (error: any) {
-      console.error(`❌ [BUDGET DETAILS] Erro ao salvar budget para ${categoryKey}:`, error);
+      console.error(`❌ [BUDGET DETAILS] Erro ao salvar budget para ${categoryKey} (${costType}):`, error);
       console.error(`❌ [BUDGET DETAILS] Response:`, error.response?.data);
       alert(`Erro ao salvar budget: ${error.response?.data?.error || error.message || 'Erro desconhecido'}`);
     }
