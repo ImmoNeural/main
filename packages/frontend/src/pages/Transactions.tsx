@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
@@ -9,6 +10,7 @@ import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { CategoryIconSmall } from '../components/CategoryIcons';
 
 const Transactions = () => {
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
