@@ -108,75 +108,100 @@ const ConnectBank = () => {
         const connectToken = response.data.state; // O backend retorna o token no state
 
         console.log('🔑 Connect Token:', connectToken);
+        console.log('🔍 Checking Pluggy SDK availability...');
+        console.log('   window.PluggyConnect:', typeof (window as any).PluggyConnect);
+        console.log('   window.Pluggy:', typeof (window as any).Pluggy);
 
-        // Verificar se o SDK do Pluggy está disponível
-        if (typeof (window as any).PluggyConnect !== 'undefined') {
+        // Verificar se o SDK do Pluggy está disponível (v2 pode estar em diferentes objetos)
+        const PluggyConnect = (window as any).PluggyConnect || (window as any).Pluggy?.PluggyConnect;
+
+        if (typeof PluggyConnect !== 'undefined') {
           console.log('✅ Pluggy SDK v2 loaded');
 
-          // Usar SDK v2 com a sintaxe correta
-          const pluggyConnect = new (window as any).PluggyConnect({
-            connectToken: connectToken,
-            includeSandbox: true,
-            onSuccess: async (itemData: any) => {
-              console.log('✅ Pluggy Connect Success!', itemData);
+          try {
+            // Usar SDK v2 com a sintaxe correta
+            const pluggyConnect = new PluggyConnect({
+              connectToken: connectToken,
+              includeSandbox: true,
+              onSuccess: async (itemData: any) => {
+                console.log('✅ Pluggy Connect Success!', itemData);
 
-              // Processar o callback com o itemId retornado
-              try {
-                await bankApi.handleCallback(
-                  itemData.item.id,
-                  connectToken,
-                  selectedBank.name
-                );
-                alert('✅ Conta conectada!');
+                // Processar o callback com o itemId retornado
+                try {
+                  await bankApi.handleCallback(
+                    itemData.item.id,
+                    connectToken,
+                    selectedBank.name
+                  );
+                  alert('✅ Conta conectada!');
 
-                // Navegar para dashboard
-                console.log('➡️ Navegando para /app/dashboard');
-                navigate('/app/dashboard');
-              } catch (error) {
-                console.error('❌ Error handling callback:', error);
-                alert('❌ Erro ao conectar.');
-                sessionStorage.removeItem('bank_connection_in_progress');
-              }
-            },
-            onError: async (error: any) => {
-              console.error('❌ Pluggy Connect Error:', error);
-
-              let errorMessage = 'Erro ao conectar com o banco.';
-
-              if (error?.message) {
-                errorMessage = error.message;
-              } else if (error?.code) {
-                switch (error.code) {
-                  case 'ITEM_NOT_SYNCED':
-                    errorMessage = 'Não foi possível sincronizar os dados. Tente novamente.';
-                    break;
-                  case 'LOGIN_ERROR':
-                    errorMessage = 'Erro no login. Verifique suas credenciais.';
-                    break;
-                  case 'INVALID_CREDENTIALS':
-                    errorMessage = 'Credenciais inválidas.';
-                    break;
-                  default:
-                    errorMessage = `Erro: ${error.code}`;
+                  // Navegar para dashboard
+                  console.log('➡️ Navegando para /app/dashboard');
+                  navigate('/app/dashboard');
+                } catch (error) {
+                  console.error('❌ Error handling callback:', error);
+                  alert('❌ Erro ao conectar.');
+                  sessionStorage.removeItem('bank_connection_in_progress');
                 }
-              }
+              },
+              onError: async (error: any) => {
+                console.error('❌ Pluggy Connect Error:', error);
 
-              alert('❌ ' + errorMessage);
-              sessionStorage.removeItem('bank_connection_in_progress');
-              setConnecting(false);
-            },
-            onExit: () => {
-              console.log('ℹ️ Pluggy Connect closed by user');
-              sessionStorage.removeItem('bank_connection_in_progress');
-              setConnecting(false);
-            },
-          });
+                let errorMessage = 'Erro ao conectar com o banco.';
 
-          // Abrir o widget
-          pluggyConnect.init();
+                if (error?.message) {
+                  errorMessage = error.message;
+                } else if (error?.code) {
+                  switch (error.code) {
+                    case 'ITEM_NOT_SYNCED':
+                      errorMessage = 'Não foi possível sincronizar os dados. Tente novamente.';
+                      break;
+                    case 'LOGIN_ERROR':
+                      errorMessage = 'Erro no login. Verifique suas credenciais.';
+                      break;
+                    case 'INVALID_CREDENTIALS':
+                      errorMessage = 'Credenciais inválidas.';
+                      break;
+                    default:
+                      errorMessage = `Erro: ${error.code}`;
+                  }
+                }
+
+                alert('❌ ' + errorMessage);
+                sessionStorage.removeItem('bank_connection_in_progress');
+                setConnecting(false);
+              },
+              onExit: () => {
+                console.log('ℹ️ Pluggy Connect closed by user');
+                sessionStorage.removeItem('bank_connection_in_progress');
+                setConnecting(false);
+              },
+              onOpen: () => {
+                console.log('📱 Pluggy Connect Widget opened');
+              },
+            });
+
+            // Abrir o widget - tentar diferentes métodos
+            console.log('🚀 Initializing Pluggy Connect Widget...');
+            if (typeof pluggyConnect.init === 'function') {
+              pluggyConnect.init();
+            } else if (typeof pluggyConnect.open === 'function') {
+              pluggyConnect.open();
+            } else {
+              console.error('❌ No init/open method found on PluggyConnect instance');
+              console.log('   Available methods:', Object.keys(pluggyConnect));
+              throw new Error('Pluggy SDK method not found');
+            }
+          } catch (sdkError) {
+            console.error('❌ Error initializing Pluggy SDK:', sdkError);
+            // Fallback: redirecionar via URL
+            console.warn('⚠️ Falling back to redirect method');
+            window.location.href = authUrl;
+          }
         } else {
           // Fallback: redirecionar via URL
           console.warn('⚠️ Pluggy SDK not loaded, using redirect fallback');
+          console.log('   authUrl:', authUrl);
           window.location.href = authUrl;
         }
       }
