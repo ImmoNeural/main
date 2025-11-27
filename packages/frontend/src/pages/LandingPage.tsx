@@ -317,6 +317,71 @@ const LandingPage = () => {
           </div>
         </section>
 
+        {/* Seção Como Funciona - Vídeo */}
+        <section className="py-20 bg-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Lado Esquerdo - Texto */}
+              <div>
+                {/* Título Principal */}
+                <h2 className="text-3xl sm:text-4xl font-bold mb-8 leading-tight">
+                  <span className="text-gray-900">Veja como é simples usar a</span><br />
+                  <span className="text-gray-400">Conexão Bancária</span><br />
+                  <span className="text-gray-900">do Guru do Dindin.</span>
+                </h2>
+
+                {/* Passos */}
+                <div className="space-y-8">
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-lg mb-2">
+                      1º Passo – Conecte seu banco ao Guru do Dindin
+                    </h4>
+                    <p className="text-gray-600">
+                      Integre sua conta bancária ao Guru do Dindin para começar a sincronizar seus dados automaticamente.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-lg mb-2">
+                      2º Passo – Importe seu histórico de transações
+                    </h4>
+                    <p className="text-gray-600">
+                      Traga as movimentações dos últimos dias e tenha tudo em um só lugar.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botão e Link */}
+                <div className="mt-10">
+                  <Link
+                    to="/register"
+                    className="inline-block border-2 border-purple-600 text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-purple-600 hover:text-white transition-all"
+                  >
+                    Experimente grátis
+                  </Link>
+                  <p className="mt-4 text-gray-600">
+                    Tem alguma dúvida? <a href="mailto:contato@gurudodindin.com.br" className="text-purple-600 font-semibold hover:underline">Fale com a gente!</a>
+                  </p>
+                </div>
+              </div>
+
+              {/* Lado Direito - Vídeo */}
+              <div className="flex justify-center">
+                <div className="bg-white rounded-2xl shadow-2xl p-4 max-w-md">
+                  <video
+                    src="https://www.pluggy.ai/showcase/pluggy-connect.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="rounded-xl w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* OCULTO: Seção de Planos removida - Card do Plano Manual já aparece ao lado dos bancos */}
         {/* <section id="planos" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
           <div className="max-w-7xl mx-auto text-center">
