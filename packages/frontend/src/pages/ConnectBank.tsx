@@ -38,7 +38,7 @@ const loadPluggySDK = (): Promise<void> => {
     } else {
       console.log('📦 Injetando script do Pluggy SDK...');
       const script = document.createElement('script');
-      script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js';
+      script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.8.2/pluggy-connect.js';
       script.async = true;
       document.head.appendChild(script);
     }
