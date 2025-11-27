@@ -53,7 +53,6 @@ const Plans = () => {
         'Sem Conexão Bancária',
         'Controle manual de contas e cartões',
         'Importação por CSV do Excel',
-        'Recategorização automática',
         'Relatórios completos'
       ]
     },
@@ -66,12 +65,12 @@ const Plans = () => {
       price: 249.90,
       discount: 30,
       monthlyPrice: 29.90,
-      maxAccounts: 3,
+      maxAccounts: 2,
       popular: true,
       icon: <Zap className="w-8 h-8" />,
       features: [
         'Tudo do Plano Manual',
-        'Até 3 contas/cartões conectados',
+        'Até 2 contas/cartões conectados',
         'Conexão via Open Finance',
         'Importe lançamentos com 1 clique',
         'Categorização automática',
@@ -87,12 +86,12 @@ const Plans = () => {
       price: 352.90,
       discount: 30,
       monthlyPrice: 41.90,
-      maxAccounts: 10,
+      maxAccounts: 4,
       icon: <Crown className="w-8 h-8" />,
       features: [
         'Tudo do Plano Manual',
         'Tudo do Plano Conectado',
-        'Até 10 contas/cartões conectados',
+        'Até 4 contas/cartões conectados',
         'Controle Multi-Empresas/Famílias',
         'Relatórios Personalizados (PDF/Excel)',
         'Suporte Dedicado 24h'
