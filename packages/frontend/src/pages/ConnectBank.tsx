@@ -103,11 +103,27 @@ const ConnectBank = () => {
       } else {
         // Modo de produção - Integrar com Pluggy Connect Widget
         console.log('✅ Opening Pluggy Connect Widget');
+        console.log('📦 Full response.data:', JSON.stringify(response.data, null, 2));
 
-        // Extrair o connect token da URL ou do response
-        const connectToken = response.data.state; // O backend retorna o token no state
+        // Extrair o connect token - pode estar em diferentes campos
+        const connectToken = response.data.state || response.data.connect_token || response.data.connectToken || response.data.access_token;
+        const authUrl = response.data.authorization_url || '';
 
         console.log('🔑 Connect Token:', connectToken);
+        console.log('🔑 Connect Token type:', typeof connectToken);
+        console.log('🔑 Connect Token length:', connectToken?.length);
+        console.log('🔗 Auth URL:', authUrl);
+
+        // Validar que temos um token válido
+        if (!connectToken || connectToken === 'undefined' || connectToken === 'null') {
+          console.error('❌ Connect token is missing or invalid!');
+          console.error('   response.data:', response.data);
+          alert('❌ Erro: Token de conexão não recebido do servidor. Tente novamente.');
+          sessionStorage.removeItem('bank_connection_in_progress');
+          setConnecting(false);
+          return;
+        }
+
         console.log('🔍 Checking Pluggy SDK availability...');
         console.log('   window.PluggyConnect:', typeof (window as any).PluggyConnect);
         console.log('   window.Pluggy:', typeof (window as any).Pluggy);
@@ -117,6 +133,7 @@ const ConnectBank = () => {
 
         if (typeof PluggyConnect !== 'undefined') {
           console.log('✅ Pluggy SDK v2 loaded');
+          console.log('🔑 Passing connectToken to widget:', connectToken.substring(0, 20) + '...');
 
           try {
             // Usar SDK v2 com a sintaxe correta

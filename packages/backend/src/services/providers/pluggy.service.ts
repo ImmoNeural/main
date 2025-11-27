@@ -158,6 +158,14 @@ export class PluggyService {
       // Criar um Connect Token no Pluggy
       // Este token será usado no Pluggy Connect Widget
       console.log(`[Pluggy] Creating connect token for connector ID: ${connectorId}`);
+      console.log(`[Pluggy] Request body:`, {
+        itemId: null,
+        options: {
+          connectorId: connectorId,
+          clientUserId: request.user_id || 'demo_user',
+        },
+      });
+
       const tokenResponse = await this.client.post(
         '/connect_token',
         {
@@ -174,9 +182,13 @@ export class PluggyService {
         }
       );
 
+      console.log(`[Pluggy] Token response data:`, JSON.stringify(tokenResponse.data, null, 2));
+
       const connectToken = tokenResponse.data.accessToken;
       console.log(`[Pluggy] ✅ Connect token created successfully!`);
       console.log(`[Pluggy] Connect token: ${connectToken}`);
+      console.log(`[Pluggy] Connect token type: ${typeof connectToken}`);
+      console.log(`[Pluggy] Connect token length: ${connectToken?.length}`);
 
       // Gerar URL de autenticação do Pluggy Connect Widget
       // Documentação: https://docs.pluggy.ai/docs/pluggy-connect
