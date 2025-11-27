@@ -252,8 +252,8 @@ const LandingPage = () => {
               <div className="order-2 lg:order-1">
                 {/* Header com badge */}
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="text-green-600 font-semibold text-lg">Conexão Bancária</span>
-                  <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="text-gray-900 font-semibold text-lg">Conexão Bancária</span>
+                  <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                     NOVO
                   </span>
                 </div>
@@ -272,7 +272,7 @@ const LandingPage = () => {
                 {/* Lista de Benefícios com barra lateral */}
                 <div className="space-y-6">
                   <div className="flex">
-                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
                     <div>
                       <h4 className="font-bold text-gray-900 text-lg mb-1">Menos trabalho, mais tempo livre</h4>
                       <p className="text-gray-600">Seus lançamentos chegam prontos direto do seu banco.</p>
@@ -280,7 +280,7 @@ const LandingPage = () => {
                   </div>
 
                   <div className="flex">
-                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
                     <div>
                       <h4 className="font-bold text-gray-900 text-lg mb-1">Seus gastos sob controle desde o primeiro dia</h4>
                       <p className="text-gray-600">Traga seu histórico de <strong>90 dias</strong> e não comece do zero.</p>
@@ -288,7 +288,7 @@ const LandingPage = () => {
                   </div>
 
                   <div className="flex">
-                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
                     <div>
                       <h4 className="font-bold text-gray-900 text-lg mb-1">Conecte contas PF e PJ sem dor de cabeça</h4>
                       <p className="text-gray-600">Finanças pessoais e do negócio organizadas no mesmo lugar.</p>
@@ -296,7 +296,7 @@ const LandingPage = () => {
                   </div>
 
                   <div className="flex">
-                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
                     <div>
                       <h4 className="font-bold text-gray-900 text-lg mb-1">Segurança em primeiro lugar</h4>
                       <p className="text-gray-600">Tecnologia do Banco Central para proteger seus dados e sua privacidade.</p>
