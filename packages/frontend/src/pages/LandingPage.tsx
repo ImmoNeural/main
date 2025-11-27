@@ -7,8 +7,7 @@ import {
   Zap,
   ArrowRight,
   Target,
-  Star,
-  Check
+  Star
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/SEO';
@@ -245,84 +244,76 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Bancos Conectados Section */}
-        <section className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-              Controle financeiro integrado: Abertura para o Open Finance
-            </h2>
+        {/* Open Finance Section - Design Limpo */}
+        <section className="py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+              {/* Lado Esquerdo - Texto */}
+              <div className="order-2 lg:order-1">
+                {/* Header com badge */}
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-green-600 font-semibold text-lg">Conexão Bancária</span>
+                  <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    NOVO
+                  </span>
+                </div>
 
-            {/* Card Open Finance + Imagem dos Bancos */}
-            <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
-              {/* Card Open Finance - Lado Esquerdo */}
-              <div className="flex-shrink-0 order-2 lg:order-1 w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform hover:scale-105 transition-transform duration-300">
-                  {/* Badge NOVO + Título */}
-                  <div className="flex items-center justify-center gap-3 mb-6">
-                    <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      NOVO
-                    </span>
-                    <h3 className="text-2xl font-bold text-primary-600">
-                      Open Finance
-                    </h3>
+                {/* Título Principal */}
+                <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                  Importe suas finanças<br />
+                  com um clique
+                </h2>
+
+                {/* Subtítulo */}
+                <p className="text-lg text-gray-600 mb-10">
+                  Conecte seus bancos e veja as suas movimentações bancárias centralizadas no Guru do Dindin com a <strong>tecnologia do Open Finance.</strong>
+                </p>
+
+                {/* Lista de Benefícios com barra lateral */}
+                <div className="space-y-6">
+                  <div className="flex">
+                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg mb-1">Menos trabalho, mais tempo livre</h4>
+                      <p className="text-gray-600">Seus lançamentos chegam prontos direto do seu banco.</p>
+                    </div>
                   </div>
 
-                  {/* Lista de benefícios */}
-                  <ul className="space-y-4">
-                    <li className="flex items-start space-x-3">
-                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-gray-900">Importe suas finanças de forma mais rápida e segura.</span>
-                        <span className="text-gray-600"> Ao conectar suas contas bancárias, você pode importar suas transações em segundos.</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-gray-900">Importação automática das transações dos últimos 90 dias.</span>
-                        <span className="text-gray-600"> Tenha acesso ao histórico recente das suas movimentações sem precisar digitar nada.</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-gray-900">Integração com contas pessoais e de negócios.</span>
-                        <span className="text-gray-600"> Conecte diferentes tipos de contas em um só lugar.</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-gray-900">100% seguro, regulamentado pelo Banco Central.</span>
-                        <span className="text-gray-600"> Suas informações são protegidas por criptografia e seguem todas as normas de segurança.</span>
-                      </div>
-                    </li>
-                  </ul>
+                  <div className="flex">
+                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg mb-1">Seus gastos sob controle desde o primeiro dia</h4>
+                      <p className="text-gray-600">Traga seu histórico de <strong>90 dias</strong> e não comece do zero.</p>
+                    </div>
+                  </div>
 
-                  {/* Botão */}
-                  <Link
-                    to="/register"
-                    className="mt-6 w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-lg font-semibold text-center hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg flex items-center justify-center space-x-2"
-                  >
-                    <span>Experimente grátis!</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
+                  <div className="flex">
+                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg mb-1">Conecte contas PF e PJ sem dor de cabeça</h4>
+                      <p className="text-gray-600">Finanças pessoais e do negócio organizadas no mesmo lugar.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex">
+                    <div className="w-1 bg-green-500 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg mb-1">Segurança em primeiro lugar</h4>
+                      <p className="text-gray-600">Tecnologia do Banco Central para proteger seus dados e sua privacidade.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Imagem dos Bancos - Lado Direito */}
-              <div className="flex-1 order-1 lg:order-2">
+              {/* Lado Direito - Imagem */}
+              <div className="order-1 lg:order-2 flex justify-center">
                 <img
                   src="/bancos.png"
                   alt="Bancos conectados via Open Finance"
-                  className="max-w-full h-auto rounded-2xl shadow-xl"
+                  className="max-w-full h-auto rounded-2xl shadow-2xl"
                 />
               </div>
             </div>
-
-            <p className="text-sm text-gray-500 mt-8 text-center">
-              Conexão segura via Open Finance com as maiores instituições do país.
-            </p>
           </div>
         </section>
 
