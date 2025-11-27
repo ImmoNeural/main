@@ -54,24 +54,7 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://gurudodindin.com.br/" />
 
-    <!-- Pluggy Connect SDK - versão 2 (mais recente) -->
-    <script src="https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js" crossorigin="anonymous"></script>
-    <script>
-      // Debug: verificar se o SDK carregou
-      window.addEventListener('load', function() {
-        console.log('🔍 [Pluggy SDK Check]');
-        console.log('   window.PluggyConnect:', typeof window.PluggyConnect);
-        console.log('   window.Pluggy:', typeof window.Pluggy);
-        if (window.PluggyConnect) {
-          console.log('   ✅ PluggyConnect available');
-        } else if (window.Pluggy) {
-          console.log('   ✅ Pluggy namespace available');
-          console.log('   Pluggy keys:', Object.keys(window.Pluggy));
-        } else {
-          console.warn('   ⚠️ Pluggy SDK not detected');
-        }
-      });
-    </script>
+    <!-- Pluggy Connect: Usando redirecionamento via URL (não precisa de SDK) -->
   </head>
   <body>
     <div id="root"></div>
