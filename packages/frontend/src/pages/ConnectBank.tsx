@@ -21,6 +21,34 @@ declare global {
   }
 }
 
+// Função para aguardar o SDK do Pluggy carregar com retry
+const waitForPluggySDK = (maxAttempts = 10, intervalMs = 300): Promise<boolean> => {
+  return new Promise((resolve) => {
+    let attempts = 0;
+
+    const check = () => {
+      attempts++;
+      console.log(`🔍 Verificando SDK Pluggy (tentativa ${attempts}/${maxAttempts})...`);
+
+      if (typeof window.PluggyConnect !== 'undefined') {
+        console.log('✅ SDK Pluggy carregado com sucesso!');
+        resolve(true);
+        return;
+      }
+
+      if (attempts >= maxAttempts) {
+        console.error('❌ SDK Pluggy não carregou após todas as tentativas');
+        resolve(false);
+        return;
+      }
+
+      setTimeout(check, intervalMs);
+    };
+
+    check();
+  });
+};
+
 const ConnectBank = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -124,10 +152,12 @@ const ConnectBank = () => {
 
         // Extrair o connect token
         const connectToken = response.data.state || response.data.connect_token || response.data.connectToken || response.data.access_token;
+        const authorizationUrl = response.data.authorization_url;
 
         console.log('🔑 Connect Token:', connectToken);
         console.log('🔑 Connect Token type:', typeof connectToken);
         console.log('🔑 Connect Token length:', connectToken?.length);
+        console.log('🔗 Authorization URL:', authorizationUrl);
 
         // Validar que temos um token válido
         if (!connectToken || connectToken === 'undefined' || connectToken === 'null') {
@@ -139,13 +169,53 @@ const ConnectBank = () => {
           return;
         }
 
-        // Verificar se o SDK do Pluggy está disponível
-        if (typeof window.PluggyConnect === 'undefined') {
-          console.error('❌ Pluggy Connect SDK not loaded!');
-          alert('❌ Erro: SDK do Pluggy não carregado. Recarregue a página e tente novamente.');
-          sessionStorage.removeItem('bank_connection_in_progress');
-          setConnecting(false);
-          return;
+        // Aguardar o SDK do Pluggy carregar (com retry)
+        console.log('⏳ Aguardando SDK do Pluggy carregar...');
+        const sdkLoaded = await waitForPluggySDK(15, 200); // 15 tentativas, 200ms cada = 3 segundos max
+
+        if (!sdkLoaded) {
+          console.warn('⚠️ SDK não carregou, tentando fallback via URL redirect...');
+
+          // Fallback: abrir via URL redirect se SDK não carregar
+          if (authorizationUrl && authorizationUrl.startsWith('http')) {
+            console.log('🔀 Usando fallback: URL redirect para', authorizationUrl);
+
+            // Salvar dados para recuperar após redirect
+            sessionStorage.setItem('pluggy_pending_connection', JSON.stringify({
+              bankName: selectedBank?.name,
+              connectToken: connectToken,
+              timestamp: Date.now()
+            }));
+
+            // Abrir em nova janela para evitar perder o estado
+            const popup = window.open(authorizationUrl, 'pluggy_connect', 'width=600,height=700,scrollbars=yes');
+
+            if (!popup) {
+              alert('❌ Popup bloqueado! Por favor, permita popups para este site e tente novamente.');
+              sessionStorage.removeItem('bank_connection_in_progress');
+              setConnecting(false);
+              return;
+            }
+
+            // Monitorar fechamento do popup
+            const checkPopup = setInterval(() => {
+              if (popup.closed) {
+                clearInterval(checkPopup);
+                console.log('🔒 Popup fechado');
+                sessionStorage.removeItem('bank_connection_in_progress');
+                setConnecting(false);
+                // Recarregar para verificar se houve sucesso
+                window.location.reload();
+              }
+            }, 500);
+
+            return;
+          } else {
+            alert('❌ Erro: SDK do Pluggy não carregou e URL de fallback não disponível. Recarregue a página e tente novamente.');
+            sessionStorage.removeItem('bank_connection_in_progress');
+            setConnecting(false);
+            return;
+          }
         }
 
         // Usar Pluggy Connect SDK v2 (embed) - mais confiável que URL redirect
