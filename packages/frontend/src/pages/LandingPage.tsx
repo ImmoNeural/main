@@ -325,30 +325,36 @@ const LandingPage = () => {
               <div>
                 {/* Título Principal - Estilo Pluggy */}
                 <h2 className="text-4xl sm:text-5xl font-extrabold mb-12 leading-tight tracking-tight">
-                  <span className="text-gray-900">Veja como é simples</span><br />
-                  <span className="text-gray-900">usar a </span>
+                  <span className="text-purple-600">Veja como é simples</span><br />
+                  <span className="text-purple-600">usar a </span>
                   <span className="text-gray-300">Conexão Bancária</span><br />
-                  <span className="text-gray-900">do Guru do Dindin.</span>
+                  <span className="text-purple-600">do Guru do Dindin.</span>
                 </h2>
 
                 {/* Passos */}
                 <div className="space-y-10">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-xl mb-3">
-                      1º Passo – Conecte seu banco ao Guru do Dindin
-                    </h4>
-                    <p className="text-gray-500 text-lg">
-                      Integre sua conta bancária ao Guru do Dindin para começar a sincronizar seus dados automaticamente.
-                    </p>
+                  <div className="flex">
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-xl mb-3">
+                        1º Passo – Conecte seu banco ao Guru do Dindin
+                      </h4>
+                      <p className="text-gray-500 text-lg">
+                        Integre sua conta bancária ao Guru do Dindin para começar a sincronizar seus dados automaticamente, usando nosso parceiro Pluggy.
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-xl mb-3">
-                      2º Passo – Importe seu histórico de transações
-                    </h4>
-                    <p className="text-gray-500 text-lg">
-                      Traga as movimentações dos últimos dias e tenha tudo em um só lugar.
-                    </p>
+                  <div className="flex">
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-xl mb-3">
+                        2º Passo – Importe seu histórico de transações
+                      </h4>
+                      <p className="text-gray-500 text-lg">
+                        Traga as movimentações dos últimos dias e tenha tudo em um só lugar.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
