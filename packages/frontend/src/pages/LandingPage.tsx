@@ -323,12 +323,20 @@ const LandingPage = () => {
             <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
               {/* Lado Esquerdo - Texto */}
               <div>
-                {/* Título Principal - Estilo Pluggy */}
+                {/* Header com badge */}
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-gray-900 font-semibold text-lg">Open Finance (parceiro Pluggy)</span>
+                  <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    NOVO
+                  </span>
+                </div>
+
+                {/* Título Principal */}
                 <h2 className="text-4xl sm:text-5xl font-extrabold mb-12 leading-tight tracking-tight">
-                  <span className="text-purple-600">Veja como é simples</span><br />
-                  <span className="text-purple-600">usar a </span>
-                  <span className="text-gray-300">Conexão Bancária</span><br />
-                  <span className="text-purple-600">do Guru do Dindin.</span>
+                  <span className="text-gray-900">Veja como é simples</span><br />
+                  <span className="text-gray-900">usar a </span>
+                  <span className="text-purple-600">Conexão Bancária</span><br />
+                  <span className="text-gray-900">do Guru do Dindin.</span>
                 </h2>
 
                 {/* Passos */}
@@ -356,19 +364,6 @@ const LandingPage = () => {
                       </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Botão e Link - Estilo Rosa/Vermelho */}
-                <div className="mt-12">
-                  <Link
-                    to="/register"
-                    className="inline-block border-2 border-rose-500 text-rose-500 px-10 py-4 rounded-full font-semibold text-lg hover:bg-rose-500 hover:text-white transition-all"
-                  >
-                    Experimente grátis
-                  </Link>
-                  <p className="mt-6 text-gray-500 text-lg">
-                    Tem alguma dúvida? <a href="mailto:contato@gurudodindin.com.br" className="text-rose-500 font-semibold hover:underline">Fale com a gente!</a>
-                  </p>
                 </div>
               </div>
 
