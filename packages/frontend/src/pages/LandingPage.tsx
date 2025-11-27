@@ -218,23 +218,17 @@ const LandingPage = () => {
                   <span className="text-yellow-300">que Você Precisa</span>
                 </h1>
                 <p className="text-xl sm:text-2xl mb-8 text-white/90">
-                  Comece 2025 com o mapa definitivo para suas finanças. Assine agora o Plano Anual e garanta condições exclusivas!
+                  Controle seus gastos com apenas um clique usando o Open Finance
                 </p>
-                <div className="bg-white text-primary-600 text-lg md:text-xl font-bold inline-block px-6 py-3 rounded-xl shadow-lg mb-8">
-                  DESCONTO EXCLUSIVO NA ASSINATURA ANUAL!
-                </div>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <a
-                    href="#planos"
+                  <Link
+                    to="/register"
                     className="bg-white text-primary-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl inline-flex items-center justify-center space-x-2"
                   >
-                    <span>Escolher Meu Plano Anual</span>
+                    <span>Experimente grátis!</span>
                     <ArrowRight className="w-5 h-5" />
-                  </a>
+                  </Link>
                 </div>
-                <p className="mt-6 text-sm text-white/80">
-                  Condições especiais por tempo limitado. Aproveite!
-                </p>
               </div>
 
               {/* Right side - Visual */}
@@ -258,72 +252,61 @@ const LandingPage = () => {
               Controle financeiro integrado: Abertura para o Open Finance
             </h2>
 
-            {/* Card Plano + Imagem dos Bancos */}
+            {/* Card Open Finance + Imagem dos Bancos */}
             <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
-              {/* Card do Plano Manual - Lado Esquerdo */}
-              <div className="flex-shrink-0 order-2 lg:order-1 w-full max-w-sm">
+              {/* Card Open Finance - Lado Esquerdo */}
+              <div className="flex-shrink-0 order-2 lg:order-1 w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 transform hover:scale-105 transition-transform duration-300">
-                  {/* Ícone */}
-                  <div className="flex justify-center mb-4">
-                    <div className="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center">
-                      <Shield className="w-10 h-10 text-white" />
-                    </div>
+                  {/* Badge NOVO + Título */}
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      NOVO
+                    </span>
+                    <h3 className="text-2xl font-bold text-primary-600">
+                      Open Finance
+                    </h3>
                   </div>
 
-                  {/* Título */}
-                  <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
-                    Plano Manual
-                  </h3>
-                  <p className="text-gray-600 text-center text-sm mb-6">
-                    Controle total das suas finanças
-                  </p>
-
-                  {/* Preço */}
-                  <div className="text-center mb-6">
-                    <div className="relative inline-block">
-                      <div className="text-4xl font-bold text-red-600 line-through mb-2">
-                        R$ 166,90
+                  {/* Lista de benefícios */}
+                  <ul className="space-y-4">
+                    <li className="flex items-start space-x-3">
+                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-gray-900">Importe suas finanças de forma mais rápida e segura.</span>
+                        <span className="text-gray-600"> Ao conectar suas contas bancárias, você pode importar suas transações em segundos.</span>
                       </div>
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl shadow-lg">
-                        <span className="text-3xl font-extrabold">GRÁTIS</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-gray-900">Importação automática das transações dos últimos 90 dias.</span>
+                        <span className="text-gray-600"> Tenha acesso ao histórico recente das suas movimentações sem precisar digitar nada.</span>
                       </div>
-                    </div>
-                    <p className="text-sm text-green-600 font-bold mt-3">
-                      100% Gratuito
-                    </p>
-                  </div>
-
-                  {/* Features */}
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-start space-x-2">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm">Sem Conexão Bancária</span>
                     </li>
-                    <li className="flex items-start space-x-2">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm">Controle manual de contas e cartões</span>
+                    <li className="flex items-start space-x-3">
+                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-gray-900">Integração com contas pessoais e de negócios.</span>
+                        <span className="text-gray-600"> Conecte diferentes tipos de contas em um só lugar.</span>
+                      </div>
                     </li>
-                    <li className="flex items-start space-x-2">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm">Importação por CSV do Excel</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm">Recategorização automática</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm">Relatórios completos</span>
+                    <li className="flex items-start space-x-3">
+                      <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-gray-900">100% seguro, regulamentado pelo Banco Central.</span>
+                        <span className="text-gray-600"> Suas informações são protegidas por criptografia e seguem todas as normas de segurança.</span>
+                      </div>
                     </li>
                   </ul>
 
                   {/* Botão */}
-                  <button
-                    onClick={handleSubscribeClick}
-                    className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-lg font-semibold text-center hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg"
+                  <Link
+                    to="/register"
+                    className="mt-6 w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 rounded-lg font-semibold text-center hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg flex items-center justify-center space-x-2"
                   >
-                    Assinar Plano Manual
-                  </button>
+                    <span>Experimente grátis!</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
                 </div>
               </div>
 
