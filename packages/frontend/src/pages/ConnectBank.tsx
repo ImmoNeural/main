@@ -111,7 +111,9 @@ const ConnectBank = () => {
 
         // Verificar se o SDK do Pluggy está disponível
         if (typeof (window as any).PluggyConnect !== 'undefined') {
-          // Usar 'new' para instanciar corretamente (sintaxe oficial da documentação)
+          console.log('✅ Pluggy SDK v2 loaded');
+
+          // Usar SDK v2 com a sintaxe correta
           const pluggyConnect = new (window as any).PluggyConnect({
             connectToken: connectToken,
             includeSandbox: true,
@@ -127,8 +129,8 @@ const ConnectBank = () => {
                 );
                 alert('✅ Conta conectada!');
 
-                // Navegar para dashboard - a flag será removida no componente Dashboard.tsx
-                console.log('➡️ Navegando para /app/dashboard (proteção ainda ativa)');
+                // Navegar para dashboard
+                console.log('➡️ Navegando para /app/dashboard');
                 navigate('/app/dashboard');
               } catch (error) {
                 console.error('❌ Error handling callback:', error);
@@ -138,78 +140,24 @@ const ConnectBank = () => {
             },
             onError: async (error: any) => {
               console.error('❌ Pluggy Connect Error:', error);
-              console.error('❌ Full error object:', JSON.stringify(error, null, 2));
 
-              // Verificar se temos acesso ao item
-              const itemId = error.data?.item?.id;
-              console.log('🔍 Item ID from error:', itemId);
+              let errorMessage = 'Erro ao conectar com o banco.';
 
-              let errorMessage = 'Erro desconhecido ao conectar com o banco.';
-
-              // Se temos itemId, buscar detalhes do item do backend
-              if (itemId) {
-                try {
-                  console.log('📡 Fetching item details from backend...');
-                  const response = await fetch(`/api/bank/item-status/${itemId}`, {
-                    headers: {
-                      'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                  });
-
-                  if (response.ok) {
-                    const itemDetails = await response.json();
-                    console.log('📦 Item details:', itemDetails);
-
-                    // Construir mensagem de erro baseada nos detalhes
-                    if (itemDetails.status === 'LOGIN_ERROR') {
-                      errorMessage = 'Erro no login do banco. Verifique suas credenciais e tente novamente.';
-                    } else if (itemDetails.executionStatus === 'CONNECTION_ERROR') {
-                      const bankName = itemDetails.connector?.name || 'o banco';
-                      errorMessage = `⚠️ Não foi possível conectar com ${bankName}\n\n` +
-                        `Isso NÃO é um problema com suas credenciais.\n\n` +
-                        `Possíveis causas:\n` +
-                        `• ${bankName} está temporariamente fora do ar\n` +
-                        `• A API do banco está com problemas\n` +
-                        `• O banco está em manutenção\n\n` +
-                        `💡 Recomendação: Aguarde alguns minutos e tente novamente.\n\n` +
-                        `Se o problema persistir, tente outro banco ou use o modo DEMO para testar o sistema.`;
-                    } else if (itemDetails.executionStatus === 'ERROR' || itemDetails.executionStatus === 'MERGE_ERROR') {
-                      const apiError = itemDetails.error?.message || 'Falha na sincronização';
-                      errorMessage = `Erro ao sincronizar dados do banco: ${apiError}.\n\nIsso pode acontecer se:\n- O banco está temporariamente fora do ar\n- Suas credenciais mudaram\n- O banco está bloqueando conexões via Open Banking`;
-                    } else {
-                      errorMessage = `Status: ${itemDetails.status}\nExecution: ${itemDetails.executionStatus}\n\n${itemDetails.error?.message || 'Erro desconhecido'}`;
-                    }
-                  }
-                } catch (fetchError) {
-                  console.error('❌ Error fetching item details:', fetchError);
-                }
-              }
-
-              // Fallback para mensagens baseadas no código/mensagem de erro
-              if (errorMessage === 'Erro desconhecido ao conectar com o banco.') {
-                if (error.message) {
-                  errorMessage = error.message;
-                } else if (error.code) {
-                  // Mapear códigos de erro comuns do Pluggy
-                  switch (error.code) {
-                    case 'ITEM_NOT_SYNCED':
-                      errorMessage = 'Não foi possível sincronizar os dados do banco. O banco pode estar fora do ar ou suas credenciais estão incorretas. Tente novamente mais tarde.';
-                      break;
-                    case 'LOGIN_ERROR':
-                      errorMessage = 'Erro no login do banco. Verifique suas credenciais e tente novamente.';
-                      break;
-                    case 'TIMEOUT':
-                      errorMessage = 'Tempo limite excedido ao conectar com o banco. Tente novamente.';
-                      break;
-                    case 'INVALID_CREDENTIALS':
-                      errorMessage = 'Credenciais inválidas. Verifique seu usuário e senha do banco.';
-                      break;
-                    case 'MFA_REQUIRED':
-                      errorMessage = 'Autenticação de dois fatores necessária. Complete o processo no app do seu banco e tente novamente.';
-                      break;
-                    default:
-                      errorMessage = `Erro ao conectar (${error.code}). Tente novamente.`;
-                  }
+              if (error?.message) {
+                errorMessage = error.message;
+              } else if (error?.code) {
+                switch (error.code) {
+                  case 'ITEM_NOT_SYNCED':
+                    errorMessage = 'Não foi possível sincronizar os dados. Tente novamente.';
+                    break;
+                  case 'LOGIN_ERROR':
+                    errorMessage = 'Erro no login. Verifique suas credenciais.';
+                    break;
+                  case 'INVALID_CREDENTIALS':
+                    errorMessage = 'Credenciais inválidas.';
+                    break;
+                  default:
+                    errorMessage = `Erro: ${error.code}`;
                 }
               }
 
@@ -217,7 +165,7 @@ const ConnectBank = () => {
               sessionStorage.removeItem('bank_connection_in_progress');
               setConnecting(false);
             },
-            onClose: () => {
+            onExit: () => {
               console.log('ℹ️ Pluggy Connect closed by user');
               sessionStorage.removeItem('bank_connection_in_progress');
               setConnecting(false);
@@ -227,7 +175,7 @@ const ConnectBank = () => {
           // Abrir o widget
           pluggyConnect.init();
         } else {
-          // Fallback: redirecionar via URL (método antigo)
+          // Fallback: redirecionar via URL
           console.warn('⚠️ Pluggy SDK not loaded, using redirect fallback');
           window.location.href = authUrl;
         }
