@@ -113,12 +113,15 @@ export default function BudgetDetails() {
     setLoading(true);
     try {
       const decodedCategory = decodeURIComponent(categoryName!);
-      // Normalizar tipoCusto: 'fixo' ou 'variavel' apenas (outros valores viram 'fixo')
-      const costType = (tipoCusto === 'fixo' || tipoCusto === 'variavel') ? tipoCusto : 'fixo';
+      // Normalizar tipoCusto: 'fixo' ou 'variavel' apenas (outros valores viram 'variavel')
+      const costType = (tipoCusto === 'fixo' || tipoCusto === 'variavel') ? tipoCusto : 'variavel';
+
+      console.log(`🔄 [BUDGET DETAILS LOAD] categoria: ${decodedCategory} | tipoCusto URL: ${tipoCusto} | costType usado: ${costType}`);
 
       // Encontrar informações da categoria
       const rulesForCategory = ALL_CATEGORY_RULES.filter(r => r.category === decodedCategory);
       if (rulesForCategory.length === 0) {
+        console.warn(`⚠️ [BUDGET DETAILS] Categoria não encontrada em ALL_CATEGORY_RULES: ${decodedCategory}`);
         navigate('/app/budgets');
         return;
       }
@@ -223,20 +226,25 @@ export default function BudgetDetails() {
       const categoryKey = decodedCategory;
       let finalBudget = 0; // Iniciar com 0, não calcular média
 
+      console.log(`🔍 [BUDGET API CALL] Buscando: GET /api/budgets/${encodeURIComponent(categoryKey)}/${costType}`);
+
       try {
         // Buscar budget específico para este tipo_custo
         const budgetResponse = await budgetApi.getBudgetByType(categoryKey, costType);
+
+        console.log(`📦 [BUDGET API RESPONSE] Response:`, JSON.stringify(budgetResponse.data));
+
         if (budgetResponse.data && budgetResponse.data.budget_value !== null && budgetResponse.data.budget_value !== undefined) {
           finalBudget = budgetResponse.data.budget_value;
           setIsCustomBudget(true);
-          console.log(`📂 [BUDGET DETAILS] Budget customizado carregado para ${categoryKey} (${costType}): R$ ${finalBudget.toFixed(2)}`);
+          console.log(`✅ [BUDGET FOUND] ${categoryKey} (${costType}): R$ ${finalBudget.toFixed(2)}`);
         } else {
           setIsCustomBudget(false);
-          console.log(`📊 [BUDGET DETAILS] Nenhum budget definido para ${categoryKey} (${costType}), usando 0`);
+          console.log(`⚠️ [BUDGET NOT FOUND] ${categoryKey} (${costType}) -> budget_value é null/undefined`);
         }
-      } catch (error) {
+      } catch (error: any) {
         setIsCustomBudget(false);
-        console.log(`📊 [BUDGET DETAILS] Erro ao carregar budget para ${categoryKey} (${costType}), usando 0`);
+        console.error(`❌ [BUDGET ERROR] ${categoryKey} (${costType}):`, error?.response?.data || error?.message || error);
       }
 
       setSuggestedBudget(finalBudget);

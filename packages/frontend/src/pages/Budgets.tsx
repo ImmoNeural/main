@@ -1471,9 +1471,12 @@ export default function Budgets() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {Object.entries(categoryData[costType]).map(([categoryName, data]) => {
                   // Determinar o tipo de custo baseado no costType
-                  // Para Movimentações, usar 'fixo' como padrão (não são híbridas)
-                  const tipoCusto = costType === 'Despesas Fixas' ? 'fixo' : costType === 'Despesas Variáveis' ? 'variavel' : 'fixo';
+                  // Para Movimentações (Receitas, Investimentos, etc), usar 'variavel'
+                  const tipoCusto = costType === 'Despesas Fixas' ? 'fixo' : 'variavel';
                   const categoryPath = `/app/budgets/${encodeURIComponent(categoryName)}/${tipoCusto}`;
+
+                  console.log(`🔍 [BUDGETS CARD] ${categoryName} | section: ${costType} | tipoCusto: ${tipoCusto} | budgetNoCard: R$ ${data.totalBudget?.toFixed(2) || '0.00'}`);
+
                   return (
                     <Link
                       key={`${categoryName}-${tipoCusto}`}
@@ -1481,7 +1484,7 @@ export default function Budgets() {
                       className="block bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 transform hover:scale-[1.02] transition duration-300 cursor-pointer hover:shadow-2xl"
                       style={{ borderTopColor: data.color }}
                       onClick={() => {
-                        console.log(`🖱️ [BUDGETS] Card clicado: ${categoryName} (${tipoCusto}) -> ${categoryPath}`);
+                        console.log(`🖱️ [BUDGETS CLICK] ${categoryName} (${tipoCusto}) -> ${categoryPath}`);
                       }}
                     >
                       <div className="flex items-center gap-2 sm:gap-3 mb-3">
