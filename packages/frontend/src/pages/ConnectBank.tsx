@@ -4,6 +4,23 @@ import { CheckCircle, Shield, Lock, RefreshCw } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { Bank } from '../types';
 
+// Declaração TypeScript para o Pluggy Connect SDK v2
+declare global {
+  interface Window {
+    PluggyConnect: new (config: {
+      connectToken: string;
+      includeSandbox?: boolean;
+      onSuccess?: (data: { item: { id: string } }) => void;
+      onError?: (error: { message: string; data?: unknown }) => void;
+      onClose?: () => void;
+      onEvent?: (event: { event: string; data?: unknown }) => void;
+    }) => {
+      init: () => void;
+      destroy: () => void;
+    };
+  }
+}
+
 const ConnectBank = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -101,18 +118,16 @@ const ConnectBank = () => {
           setConnecting(false);
         }
       } else {
-        // Modo de produção - Redirecionar para Pluggy Connect
-        console.log('✅ Opening Pluggy Connect');
+        // Modo de produção - Usar Pluggy Connect SDK v2 (embed)
+        console.log('✅ Opening Pluggy Connect via SDK v2');
         console.log('📦 Full response.data:', JSON.stringify(response.data, null, 2));
 
-        // Extrair o connect token e auth URL
+        // Extrair o connect token
         const connectToken = response.data.state || response.data.connect_token || response.data.connectToken || response.data.access_token;
-        const authUrl = response.data.authorization_url || '';
 
         console.log('🔑 Connect Token:', connectToken);
         console.log('🔑 Connect Token type:', typeof connectToken);
         console.log('🔑 Connect Token length:', connectToken?.length);
-        console.log('🔗 Auth URL:', authUrl);
 
         // Validar que temos um token válido
         if (!connectToken || connectToken === 'undefined' || connectToken === 'null') {
@@ -124,17 +139,62 @@ const ConnectBank = () => {
           return;
         }
 
-        // Usar redirecionamento via URL (mais confiável que o widget embed)
-        // A URL já inclui o connectToken
-        if (authUrl) {
-          console.log('🚀 Redirecting to Pluggy Connect URL...');
-          window.location.href = authUrl;
-        } else {
-          // Construir URL manualmente se não veio do backend
-          const pluggyUrl = `https://connect.pluggy.ai?connectToken=${encodeURIComponent(connectToken)}&includeSandbox=true`;
-          console.log('🚀 Redirecting to constructed Pluggy URL:', pluggyUrl);
-          window.location.href = pluggyUrl;
+        // Verificar se o SDK do Pluggy está disponível
+        if (typeof window.PluggyConnect === 'undefined') {
+          console.error('❌ Pluggy Connect SDK not loaded!');
+          alert('❌ Erro: SDK do Pluggy não carregado. Recarregue a página e tente novamente.');
+          sessionStorage.removeItem('bank_connection_in_progress');
+          setConnecting(false);
+          return;
         }
+
+        // Usar Pluggy Connect SDK v2 (embed) - mais confiável que URL redirect
+        console.log('🚀 Initializing Pluggy Connect SDK v2...');
+
+        const pluggyConnect = new window.PluggyConnect({
+          connectToken: connectToken,
+          includeSandbox: true,
+          onSuccess: async (data) => {
+            console.log('✅ Pluggy Connect success:', data);
+            try {
+              // O itemId é retornado diretamente pelo SDK
+              const itemId = data.item?.id;
+              console.log('📦 Item ID:', itemId);
+
+              // Chamar o callback com o itemId
+              await bankApi.handleCallback(
+                itemId || 'pluggy_sdk_' + Date.now(),
+                connectToken,
+                selectedBank?.name || 'Banco'
+              );
+
+              alert(`✅ Conta ${selectedBank?.name} conectada com sucesso!`);
+              sessionStorage.removeItem('bank_connection_in_progress');
+              navigate('/app/dashboard');
+            } catch (error) {
+              console.error('❌ Error processing Pluggy success:', error);
+              alert('❌ Erro ao processar conexão bancária.');
+              sessionStorage.removeItem('bank_connection_in_progress');
+            }
+            setConnecting(false);
+          },
+          onError: (error) => {
+            console.error('❌ Pluggy Connect error:', error);
+            alert(`❌ Erro na conexão: ${error.message || 'Erro desconhecido'}`);
+            sessionStorage.removeItem('bank_connection_in_progress');
+            setConnecting(false);
+          },
+          onClose: () => {
+            console.log('🔒 Pluggy Connect closed by user');
+            sessionStorage.removeItem('bank_connection_in_progress');
+            setConnecting(false);
+          },
+          onEvent: (event) => {
+            console.log('📡 Pluggy Connect event:', event);
+          }
+        });
+
+        pluggyConnect.init();
       }
     } catch (error) {
       console.error('❌ Error connecting bank:', error);
