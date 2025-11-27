@@ -21,24 +21,44 @@ declare global {
   }
 }
 
-// Função para aguardar o SDK do Pluggy carregar com retry
-const waitForPluggySDK = (maxAttempts = 10, intervalMs = 300): Promise<boolean> => {
-  return new Promise((resolve) => {
+// Função para carregar o SDK do Pluggy dinamicamente
+const loadPluggySDK = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    // Se já está carregado, resolver imediatamente
+    if (typeof window.PluggyConnect !== 'undefined') {
+      console.log('✅ SDK Pluggy já está carregado');
+      resolve();
+      return;
+    }
+
+    // Verificar se o script já está no DOM
+    const existingScript = document.querySelector('script[src*="pluggy-connect"]');
+    if (existingScript) {
+      console.log('🔄 Script do Pluggy encontrado no DOM, aguardando carregamento...');
+    } else {
+      console.log('📦 Injetando script do Pluggy SDK...');
+      const script = document.createElement('script');
+      script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+
+    // Aguardar o SDK estar disponível
     let attempts = 0;
+    const maxAttempts = 50; // 50 * 100ms = 5 segundos
+    const intervalMs = 100;
 
     const check = () => {
       attempts++;
-      console.log(`🔍 Verificando SDK Pluggy (tentativa ${attempts}/${maxAttempts})...`);
-
       if (typeof window.PluggyConnect !== 'undefined') {
-        console.log('✅ SDK Pluggy carregado com sucesso!');
-        resolve(true);
+        console.log(`✅ SDK Pluggy carregado com sucesso após ${attempts} verificações`);
+        resolve();
         return;
       }
 
       if (attempts >= maxAttempts) {
-        console.error('❌ SDK Pluggy não carregou após todas as tentativas');
-        resolve(false);
+        console.error('❌ SDK Pluggy não carregou após 5 segundos');
+        reject(new Error('SDK do Pluggy não carregou. Por favor, recarregue a página.'));
         return;
       }
 
@@ -169,57 +189,22 @@ const ConnectBank = () => {
           return;
         }
 
-        // Aguardar o SDK do Pluggy carregar (com retry)
-        console.log('⏳ Aguardando SDK do Pluggy carregar...');
-        const sdkLoaded = await waitForPluggySDK(15, 200); // 15 tentativas, 200ms cada = 3 segundos max
+        // Carregar e inicializar o SDK do Pluggy
+        console.log('⏳ Carregando SDK do Pluggy...');
 
-        if (!sdkLoaded) {
-          console.warn('⚠️ SDK não carregou, tentando fallback via URL redirect...');
-
-          // Fallback: abrir via URL redirect se SDK não carregar
-          if (authorizationUrl && authorizationUrl.startsWith('http')) {
-            console.log('🔀 Usando fallback: URL redirect para', authorizationUrl);
-
-            // Salvar dados para recuperar após redirect
-            sessionStorage.setItem('pluggy_pending_connection', JSON.stringify({
-              bankName: selectedBank?.name,
-              connectToken: connectToken,
-              timestamp: Date.now()
-            }));
-
-            // Abrir em nova janela para evitar perder o estado
-            const popup = window.open(authorizationUrl, 'pluggy_connect', 'width=600,height=700,scrollbars=yes');
-
-            if (!popup) {
-              alert('❌ Popup bloqueado! Por favor, permita popups para este site e tente novamente.');
-              sessionStorage.removeItem('bank_connection_in_progress');
-              setConnecting(false);
-              return;
-            }
-
-            // Monitorar fechamento do popup
-            const checkPopup = setInterval(() => {
-              if (popup.closed) {
-                clearInterval(checkPopup);
-                console.log('🔒 Popup fechado');
-                sessionStorage.removeItem('bank_connection_in_progress');
-                setConnecting(false);
-                // Recarregar para verificar se houve sucesso
-                window.location.reload();
-              }
-            }, 500);
-
-            return;
-          } else {
-            alert('❌ Erro: SDK do Pluggy não carregou e URL de fallback não disponível. Recarregue a página e tente novamente.');
-            sessionStorage.removeItem('bank_connection_in_progress');
-            setConnecting(false);
-            return;
-          }
+        try {
+          await loadPluggySDK();
+        } catch (sdkError) {
+          console.error('❌ Falha ao carregar SDK do Pluggy:', sdkError);
+          alert('❌ Não foi possível carregar o SDK do Pluggy. Por favor, recarregue a página e tente novamente.');
+          sessionStorage.removeItem('bank_connection_in_progress');
+          setConnecting(false);
+          return;
         }
 
-        // Usar Pluggy Connect SDK v2 (embed) - mais confiável que URL redirect
+        // Usar Pluggy Connect SDK v2 (embed)
         console.log('🚀 Initializing Pluggy Connect SDK v2...');
+        console.log('🔑 Token being used:', connectToken?.substring(0, 50) + '...');
 
         const pluggyConnect = new window.PluggyConnect({
           connectToken: connectToken,
