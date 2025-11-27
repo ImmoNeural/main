@@ -70,13 +70,17 @@ router.get('/detailed', authMiddleware, async (req: Request, res: Response) => {
 /**
  * GET /api/budgets/:categoryName/:tipoCusto
  * Retorna o budget de uma categoria específica para um tipo de custo específico (fixo ou variavel)
+ * Também busca registros antigos sem tipo_custo e os migra automaticamente
  */
 router.get('/:categoryName/:tipoCusto', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { categoryName, tipoCusto } = req.params;
 
-    const { data: budget, error } = await supabase
+    console.log(`📊 [BUDGET GET] Buscando budget: ${categoryName} (${tipoCusto})`);
+
+    // 1. Primeiro, buscar com tipo_custo específico
+    let { data: budget, error } = await supabase
       .from('custom_budgets')
       .select('*')
       .eq('user_id', user_id)
@@ -84,15 +88,47 @@ router.get('/:categoryName/:tipoCusto', authMiddleware, async (req: Request, res
       .eq('tipo_custo', tipoCusto)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+    if (error && error.code !== 'PGRST116') {
       console.error('Error fetching budget:', error);
       throw error;
     }
 
+    // 2. Se não encontrou, buscar registro antigo sem tipo_custo
     if (!budget) {
+      console.log(`📊 [BUDGET GET] Não encontrou com tipo_custo, buscando registro antigo...`);
+
+      const { data: oldBudget, error: oldError } = await supabase
+        .from('custom_budgets')
+        .select('*')
+        .eq('user_id', user_id)
+        .eq('category_name', categoryName)
+        .is('tipo_custo', null)
+        .single();
+
+      if (!oldError && oldBudget) {
+        console.log(`📊 [BUDGET GET] Encontrou registro antigo! Migrando para tipo_custo=${tipoCusto}`);
+
+        // Migrar: atualizar o registro antigo com o tipo_custo correto
+        const { data: updatedBudget, error: updateError } = await supabase
+          .from('custom_budgets')
+          .update({ tipo_custo: tipoCusto, updated_at: new Date().toISOString() })
+          .eq('id', oldBudget.id)
+          .select()
+          .single();
+
+        if (!updateError && updatedBudget) {
+          budget = updatedBudget;
+          console.log(`✅ [BUDGET GET] Registro migrado com sucesso!`);
+        }
+      }
+    }
+
+    if (!budget) {
+      console.log(`📊 [BUDGET GET] Nenhum budget encontrado para ${categoryName} (${tipoCusto})`);
       return res.json({ category_name: categoryName, budget_value: null, tipo_custo: tipoCusto });
     }
 
+    console.log(`✅ [BUDGET GET] Budget encontrado: R$ ${budget.budget_value}`);
     res.json({
       category_name: categoryName,
       budget_value: budget.budget_value,
