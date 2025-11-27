@@ -410,8 +410,8 @@ export default function BudgetDetails() {
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     {isCustomBudget
-                      ? '✏️ Personalizado por você'
-                      : 'Calculado: média dos últimos meses'}
+                      ? '✏️ Valor definido por você'
+                      : '📝 Clique no lápis para definir seu budget'}
                   </p>
                 </div>
                 <button

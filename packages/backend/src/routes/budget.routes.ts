@@ -151,7 +151,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 
     console.log(`\n📥 [BUDGET POST] Body recebido:`, JSON.stringify(req.body));
 
-    const { category_name, budget_value } = req.body;
+    const { category_name, budget_value, tipo_custo } = req.body;
 
     // Validação
     if (!category_name || typeof category_name !== 'string') {
@@ -166,38 +166,33 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'budget_value must be non-negative' });
     }
 
-    console.log(`💾 [BUDGET] Salvando budget para ${category_name}: R$ ${budget_value.toFixed(2)}`);
+    // tipo_custo é obrigatório agora
+    const finalTipoCusto = tipo_custo || 'fixo';
 
-    // SIMPLIFICADO: Delete + Insert básico
-    // 1. Deletar budgets existentes desta categoria
-    const { error: deleteError } = await supabase
-      .from('custom_budgets')
-      .delete()
-      .eq('user_id', user_id)
-      .eq('category_name', category_name);
+    console.log(`💾 [BUDGET] Salvando budget para ${category_name} (${finalTipoCusto}): R$ ${budget_value.toFixed(2)}`);
 
-    if (deleteError) {
-      console.log('⚠️ [BUDGET] Erro ao deletar (ignorando):', deleteError.message);
-    }
-
-    // 2. Inserir novo budget (campos básicos apenas)
+    // Usar UPSERT para atualizar ou inserir
     const { data, error } = await supabase
       .from('custom_budgets')
-      .insert({
+      .upsert({
         user_id,
         category_name,
         budget_value,
+        tipo_custo: finalTipoCusto,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,category_name,tipo_custo'
       })
       .select();
 
     if (error) {
-      console.error('❌ [BUDGET] Erro no insert:', error.message);
+      console.error('❌ [BUDGET] Erro no upsert:', error.message);
       console.error('❌ [BUDGET] Detalhes:', JSON.stringify(error));
       return res.status(500).json({ error: error.message });
     }
 
     console.log(`✅ [BUDGET] Salvo com sucesso:`, data);
-    res.json({ success: true, category_name, budget_value, data });
+    res.json({ success: true, category_name, budget_value, tipo_custo: finalTipoCusto, data });
 
   } catch (error: any) {
     console.error('❌ [BUDGET] Erro geral:', error.message || error);
