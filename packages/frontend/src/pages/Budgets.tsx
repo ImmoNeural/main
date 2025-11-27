@@ -1471,7 +1471,8 @@ export default function Budgets() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {Object.entries(categoryData[costType]).map(([categoryName, data]) => {
                   // Determinar o tipo de custo baseado no costType
-                  const tipoCusto = costType === 'Despesas Fixas' ? 'fixo' : costType === 'Despesas Variáveis' ? 'variavel' : 'outros';
+                  // Para Movimentações, usar 'fixo' como padrão (não são híbridas)
+                  const tipoCusto = costType === 'Despesas Fixas' ? 'fixo' : costType === 'Despesas Variáveis' ? 'variavel' : 'fixo';
                   const categoryPath = `/app/budgets/${encodeURIComponent(categoryName)}/${tipoCusto}`;
                   return (
                     <Link

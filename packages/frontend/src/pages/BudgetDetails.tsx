@@ -113,7 +113,8 @@ export default function BudgetDetails() {
     setLoading(true);
     try {
       const decodedCategory = decodeURIComponent(categoryName!);
-      const costType = tipoCusto || 'fixo';
+      // Normalizar tipoCusto: 'fixo' ou 'variavel' apenas (outros valores viram 'fixo')
+      const costType = (tipoCusto === 'fixo' || tipoCusto === 'variavel') ? tipoCusto : 'fixo';
 
       // Encontrar informações da categoria
       const rulesForCategory = ALL_CATEGORY_RULES.filter(r => r.category === decodedCategory);
@@ -123,7 +124,7 @@ export default function BudgetDetails() {
       }
 
       // Definir tipo de custo baseado no parâmetro da URL
-      const typeLabel = costType === 'fixo' ? 'Custo Fixo' : costType === 'variavel' ? 'Custo Variável' : 'Movimentações';
+      const typeLabel = costType === 'fixo' ? 'Custo Fixo' : 'Custo Variável';
 
       setCategoryInfo({
         icon: rulesForCategory[0].icon,
