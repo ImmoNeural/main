@@ -1392,14 +1392,13 @@ export default function Budgets() {
               Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
             </p>
           </div>
-          {/* OCULTO: Trial do Pluggy expirou */}
-          {/* <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
+          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
             <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
             <span className="text-sm sm:text-base">Conectar Banco</span>
-          </Link> */}
+          </Link>
           <button
             onClick={() => setShowImportModal(true)}
-            className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center"
+            className="btn-secondary flex items-center space-x-2 w-full sm:w-auto justify-center"
             title="Importar transações CSV"
           >
             <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
@@ -1541,13 +1540,12 @@ export default function Budgets() {
               <p className="text-gray-500 mb-4">
                 Conecte sua conta bancária para começar a gerenciar seus budgets.
               </p>
-              {/* OCULTO: Trial do Pluggy expirou */}
-              {/* <Link
+              <Link
                 to="/app/connect-bank"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
               >
                 Conectar Banco <ArrowRight className="w-4 h-4" />
-              </Link> */}
+              </Link>
             </div>
           )}
         </main>

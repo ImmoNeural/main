@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings } from 'lucide-react';
+import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings, PlusCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useState } from 'react';
@@ -23,8 +23,7 @@ const Layout = () => {
     { name: 'Contas', path: '/app/accounts', icon: Wallet },
     { name: 'Preferências', path: '/app/preferences', icon: Settings },
     { name: 'Planos', path: '/app/planos', icon: CreditCard },
-    // OCULTO: Trial do Pluggy expirou
-    // { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
+    { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
   ];
 
   return (
@@ -157,7 +156,7 @@ const Layout = () => {
           {isExpired && subscription?.trial_end_date && location.pathname !== '/app/planos' && (
             <div className="mb-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-lg animate-pulse">
               <p className="text-center text-red-800 font-bold text-base">
-                ⏰ Seu trial de 62 dias expirou!
+                ⏰ Seu trial de 7 dias expirou!
               </p>
               <p className="text-center text-red-700 text-sm mt-1">
                 <button

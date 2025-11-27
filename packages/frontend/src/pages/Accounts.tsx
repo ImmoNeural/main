@@ -167,11 +167,10 @@ const Accounts = () => {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Contas Bancárias</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Gerencie suas contas conectadas</p>
         </div>
-        {/* OCULTO: Trial do Pluggy expirou */}
-        {/* <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
+        <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
           <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
           <span className="text-sm sm:text-base">Conectar Banco</span>
-        </Link> */}
+        </Link>
       </div>
 
       {/* No accounts message */}

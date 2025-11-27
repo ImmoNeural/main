@@ -70,11 +70,11 @@ router.post('/register', async (req: Request, res: Response) => {
 
     // O profile é criado automaticamente via trigger no Supabase
 
-    // Criar assinatura trial de 62 dias automaticamente
+    // Criar assinatura trial de 7 dias automaticamente
     let trialCreated = false;
     try {
       const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 62); // 62 dias de trial
+      trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
 
       console.log('🎁 Creating trial subscription for user:', data.user.id);
 
@@ -94,7 +94,7 @@ router.post('/register', async (req: Request, res: Response) => {
           max_connected_accounts: 0,
           auto_renew: false,
           metadata: {
-            trial_days: 62,
+            trial_days: 7,
             created_on_signup: true
           }
         })
@@ -116,7 +116,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     res.status(201).json({
       message: trialCreated
-        ? 'Usuário criado com sucesso! Você ganhou 62 dias grátis para testar.'
+        ? 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.'
         : 'Usuário criado com sucesso! Conecte seu banco para começar.',
       token: data.session?.access_token,
       user: {
@@ -126,8 +126,8 @@ router.post('/register', async (req: Request, res: Response) => {
       },
       trial: trialCreated ? {
         active: true,
-        days: 62,
-        end_date: new Date(Date.now() + 62 * 24 * 60 * 60 * 1000).toISOString()
+        days: 7,
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       } : {
         active: false,
         message: 'Trial será criado ao conectar seu primeiro banco'

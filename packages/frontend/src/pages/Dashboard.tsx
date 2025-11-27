@@ -33,13 +33,12 @@ const EmptyChartState = ({ message = "Você ainda não tem dados" }: { message?:
     <p className="text-gray-500 text-sm text-center max-w-xs">
       {message}
     </p>
-    {/* OCULTO: Trial do Pluggy expirou */}
-    {/* <Link
+    <Link
       to="/app/connect-bank"
       className="mt-4 text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
     >
       Conectar banco <ArrowRight className="w-4 h-4" />
-    </Link> */}
+    </Link>
   </div>
 );
 
@@ -608,14 +607,13 @@ const Dashboard = () => {
           <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
         </div>
         <div className="flex items-center space-x-3">
-          {/* OCULTO: Trial do Pluggy expirou */}
-          {/* <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 whitespace-nowrap">
+          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 whitespace-nowrap">
             <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
             <span className="text-sm sm:text-base">Conectar Banco</span>
-          </Link> */}
+          </Link>
           <button
             onClick={() => setShowImportModal(true)}
-            className="btn-primary flex items-center space-x-2 whitespace-nowrap"
+            className="btn-secondary flex items-center space-x-2 whitespace-nowrap"
             title="Importar transações CSV"
           >
             <Upload className="w-4 sm:w-5 h-4 sm:h-5" />

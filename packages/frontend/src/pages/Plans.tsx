@@ -6,7 +6,8 @@ import {
   Star,
   Shield,
   Loader2,
-  Zap
+  Zap,
+  Crown
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { subscriptionApi } from '../services/api';
@@ -56,48 +57,47 @@ const Plans = () => {
         'Relatórios completos e fáceis'
       ]
     },
-    // OCULTO: Trial do Pluggy expirou - Planos com conexão bancária temporariamente desabilitados
-    // {
-    //   id: 'conectado',
-    //   type: 'conectado',
-    //   name: 'Plano Conectado',
-    //   description: 'Ideal para agilidade com poucas contas',
-    //   originalPrice: 358.80,
-    //   price: 249.90,
-    //   discount: 30,
-    //   monthlyPrice: 29.90,
-    //   maxAccounts: 3,
-    //   popular: true,
-    //   icon: <Zap className="w-8 h-8" />,
-    //   features: [
-    //     'Tudo do Plano Manual',
-    //     'Até 3 contas/cartões conectados',
-    //     'Conexão via Open Finance',
-    //     'Importe lançamentos com 1 clique',
-    //     'Categorização automática',
-    //     'Mais agilidade na organização'
-    //   ]
-    // },
-    // {
-    //   id: 'conectado_plus',
-    //   type: 'conectado_plus',
-    //   name: 'Plano Conectado Plus',
-    //   description: 'Para quem tem múltiplas contas bancárias',
-    //   originalPrice: 502.90,
-    //   price: 352.90,
-    //   discount: 30,
-    //   monthlyPrice: 41.90,
-    //   maxAccounts: 10,
-    //   icon: <Crown className="w-8 h-8" />,
-    //   features: [
-    //     'Tudo do Plano Manual',
-    //     'Tudo do Plano Conectado',
-    //     'Até 10 contas/cartões conectados',
-    //     'Controle Multi-Empresas/Famílias',
-    //     'Relatórios Personalizados (PDF/Excel)',
-    //     'Suporte Dedicado 24h'
-    //   ]
-    // }
+    {
+      id: 'conectado',
+      type: 'conectado',
+      name: 'Plano Conectado',
+      description: 'Ideal para agilidade com poucas contas',
+      originalPrice: 358.80,
+      price: 249.90,
+      discount: 30,
+      monthlyPrice: 29.90,
+      maxAccounts: 3,
+      popular: true,
+      icon: <Zap className="w-8 h-8" />,
+      features: [
+        'Tudo do Plano Manual',
+        'Até 3 contas/cartões conectados',
+        'Conexão via Open Finance',
+        'Importe lançamentos com 1 clique',
+        'Categorização automática',
+        'Mais agilidade na organização'
+      ]
+    },
+    {
+      id: 'conectado_plus',
+      type: 'conectado_plus',
+      name: 'Plano Conectado Plus',
+      description: 'Para quem tem múltiplas contas bancárias',
+      originalPrice: 502.90,
+      price: 352.90,
+      discount: 30,
+      monthlyPrice: 41.90,
+      maxAccounts: 10,
+      icon: <Crown className="w-8 h-8" />,
+      features: [
+        'Tudo do Plano Manual',
+        'Tudo do Plano Conectado',
+        'Até 10 contas/cartões conectados',
+        'Controle Multi-Empresas/Famílias',
+        'Relatórios Personalizados (PDF/Excel)',
+        'Suporte Dedicado 24h'
+      ]
+    }
   ];
 
   useEffect(() => {
@@ -299,7 +299,7 @@ const Plans = () => {
             {!processingPayment && !initializing && !isActive && daysRemaining === 0 && trialEndDate && (
               <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
                 <p className="text-center text-red-800 font-bold text-lg">
-                  ⏰ Seu trial de 62 dias expirou!
+                  ⏰ Seu trial de 7 dias expirou!
                 </p>
                 <p className="text-center text-red-700 text-base mt-2">
                   Para continuar aproveitando todas as funcionalidades, escolha um plano abaixo.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { bankApi } from '../services/api';
 import SEO from '../components/SEO';
 
 const Login = () => {
@@ -20,21 +21,20 @@ const Login = () => {
     try {
       await login(email, password);
 
-      // OCULTO: Trial do Pluggy expirou - redirecionamento para conectar banco desabilitado
       // Verificar se é primeiro acesso (sem contas bancárias)
-      // try {
-      //   const accountsResponse = await bankApi.getAccounts();
-      //
-      //   if (!accountsResponse.data || accountsResponse.data.length === 0) {
-      //     // Primeiro acesso: redirecionar para conectar banco
-      //     navigate('/app/connect-bank');
-      //     return;
-      //   }
-      // } catch (accountsError) {
-      //   console.warn('Could not check accounts, redirecting to dashboard');
-      // }
+      try {
+        const accountsResponse = await bankApi.getAccounts();
 
-      // Usuário sempre vai para dashboard
+        if (!accountsResponse.data || accountsResponse.data.length === 0) {
+          // Primeiro acesso: redirecionar para conectar banco
+          navigate('/app/connect-bank');
+          return;
+        }
+      } catch (accountsError) {
+        console.warn('Could not check accounts, redirecting to dashboard');
+      }
+
+      // Usuário com contas vai para dashboard
       navigate('/app/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);

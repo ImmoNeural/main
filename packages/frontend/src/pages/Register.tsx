@@ -42,7 +42,7 @@ const Register = () => {
       setSuccess(true);
 
       // Mostrar mensagem personalizada do backend (inclui info sobre trial)
-      const message = response?.data?.message || 'Conta criada com sucesso! Você ganhou 62 dias grátis para testar.';
+      const message = response?.data?.message || 'Conta criada com sucesso! Você ganhou 7 dias grátis para testar.';
       setSuccessMessage(message);
 
       // Redirecionar novo usuário para dashboard

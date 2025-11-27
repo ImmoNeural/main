@@ -149,7 +149,7 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
         console.log('🎁 [Bank Callback] User has no subscription, creating trial now...');
 
         const trialEndDate = new Date();
-        trialEndDate.setDate(trialEndDate.getDate() + 62); // 62 dias de trial
+        trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
 
         const { error: trialError } = await supabase
           .from('subscriptions')
@@ -167,7 +167,7 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
             max_connected_accounts: 0,
             auto_renew: false,
             metadata: {
-              trial_days: 62,
+              trial_days: 7,
               created_on_bank_connect: true
             }
           });
