@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3, Upload } from 'lucide-react';
-import { dashboardApi, transactionApi } from '../services/api';
+import { dashboardApi, transactionApi, bankApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import { CategoryIcon } from '../components/CategoryIcons';
 import { BudgetRadarChart } from '../components/BudgetRadarChart';
@@ -76,8 +76,48 @@ const Dashboard = () => {
   }>({ type: null });
 
   useEffect(() => {
-    // Marcar como inicializado após carregar do localStorage
-    setAccountInitialized(true);
+    // IMPORTANTE: Validar se o activeAccountId do localStorage existe para este usuário
+    // antes de carregar os dados. Isso evita mostrar dados vazios quando o ID é inválido.
+    const validateActiveAccount = async () => {
+      const savedAccountId = localStorage.getItem('activeAccountId');
+      console.log('🔍 Dashboard: Validando activeAccountId do localStorage:', savedAccountId);
+
+      if (savedAccountId) {
+        try {
+          // Buscar contas do usuário para validar
+          const response = await bankApi.getAccounts();
+          const accounts = response.data;
+          const accountExists = accounts.some((acc: any) => acc.id === savedAccountId);
+
+          if (accountExists) {
+            console.log('✅ Dashboard: Conta ativa válida:', savedAccountId);
+            setActiveAccountId(savedAccountId);
+          } else {
+            console.log('⚠️ Dashboard: Conta ativa inválida, limpando localStorage');
+            localStorage.removeItem('activeAccountId');
+            setActiveAccountId(null);
+
+            // Se há contas disponíveis, usar a primeira ativa
+            if (accounts.length > 0) {
+              const firstActive = accounts.find((acc: any) => acc.status === 'active') || accounts[0];
+              console.log('🔄 Dashboard: Definindo nova conta ativa:', firstActive.id);
+              localStorage.setItem('activeAccountId', firstActive.id);
+              setActiveAccountId(firstActive.id);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Dashboard: Erro ao validar conta:', error);
+          // Em caso de erro, limpar e continuar sem filtro
+          localStorage.removeItem('activeAccountId');
+          setActiveAccountId(null);
+        }
+      }
+
+      // Marcar como inicializado após validação
+      setAccountInitialized(true);
+    };
+
+    validateActiveAccount();
 
     // Limpar flag de proteção contra logout após conexão bancária
     // Esta flag é setada em ConnectBank.tsx para evitar logout durante o processo

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
-import { transactionApi } from '../services/api';
+import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
@@ -82,8 +82,42 @@ const Transactions = () => {
 
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
-    // Marcar como inicializado após carregar do localStorage
-    setAccountInitialized(true);
+    // IMPORTANTE: Validar se o activeAccountId do localStorage existe para este usuário
+    const validateActiveAccount = async () => {
+      const savedAccountId = localStorage.getItem('activeAccountId');
+      console.log('🔍 Transactions: Validando activeAccountId:', savedAccountId);
+
+      if (savedAccountId) {
+        try {
+          const response = await bankApi.getAccounts();
+          const accounts = response.data;
+          const accountExists = accounts.some((acc: any) => acc.id === savedAccountId);
+
+          if (accountExists) {
+            console.log('✅ Transactions: Conta ativa válida:', savedAccountId);
+            setActiveAccountId(savedAccountId);
+          } else {
+            console.log('⚠️ Transactions: Conta ativa inválida, limpando');
+            localStorage.removeItem('activeAccountId');
+            setActiveAccountId(null);
+
+            if (accounts.length > 0) {
+              const firstActive = accounts.find((acc: any) => acc.status === 'active') || accounts[0];
+              localStorage.setItem('activeAccountId', firstActive.id);
+              setActiveAccountId(firstActive.id);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Transactions: Erro ao validar conta:', error);
+          localStorage.removeItem('activeAccountId');
+          setActiveAccountId(null);
+        }
+      }
+
+      setAccountInitialized(true);
+    };
+
+    validateActiveAccount();
 
     // Listener para mudanças no banco ativo
     const handleActiveAccountChange = (event: any) => {
