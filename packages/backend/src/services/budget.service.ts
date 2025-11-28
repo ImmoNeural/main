@@ -202,28 +202,16 @@ export async function syncBudgetsWithTransactions(user_id: string): Promise<void
 
       // CASO 3: Já existem 2+ linhas com fixo E variavel
       } else if (hasFixo && hasVariavel) {
-        console.log(`   ✓ CASO 3: Já possui 2 linhas (fixo + variavel)`);
-
-        // Atualizar apenas se budget_value é null ou 0
-        for (const budget of existingForCategory) {
-          if (!budget.budget_value || budget.budget_value === 0) {
-            const { error: errUpdate } = await supabase
-              .from('custom_budgets')
-              .update({ budget_value: valuePerType })
-              .eq('id', budget.id);
-            if (errUpdate) {
-              console.error(`      ❌ Erro ao atualizar ${budget.tipo_custo}:`, errUpdate.message);
-            } else {
-              console.log(`      ✏️ Atualizado ${budget.tipo_custo}: R$ ${valuePerType.toFixed(2)}`);
-            }
-          }
-        }
+        console.log(`   ✓ CASO 3: Já possui 2 linhas (fixo + variavel) - nenhuma ação necessária`);
+        // ALTERADO: NÃO atualizar budgets com valor 0 automaticamente
+        // O usuário deve definir o budget manualmente
 
       // CASO 4: Existem linhas mas falta fixo ou variavel
       } else {
         console.log(`   ➕ CASO 4: Completando linhas faltantes`);
 
-        const existingValue = existingForCategory[0]?.budget_value || valuePerType;
+        // ALTERADO: Usar 0 como fallback ao invés de média - usuário define o budget
+        const existingValue = existingForCategory[0]?.budget_value || 0;
         // ⚠️ SEMPRE usar categoria normalizada ao inserir
         const normalizedCat = normalizeToCategory(category);
 

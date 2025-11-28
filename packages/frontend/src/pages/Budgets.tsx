@@ -1131,34 +1131,18 @@ export default function Budgets() {
         if (isHybrid) {
           // Budget já definido na inicialização - usar valor específico para fixo/variavel
           categoryBudget = category.totalBudget; // Já tem o valor correto
-
-          // Se não tem budget definido, calcular média das subcategorias deste tipo
-          if (categoryBudget === 0) {
-            const allSubcategoriesBudgets = category.subcategories
-              .map(sub => sub.suggestedBudget)
-              .reduce((sum, val) => sum + val, 0);
-            categoryBudget = allSubcategoriesBudgets;
-            category.totalBudget = categoryBudget;
-          }
+          // ALTERADO: Não usar média como fallback - se budget é 0, manter 0
+          // O usuário deve definir o budget manualmente
         } else {
-          // Para categorias não-híbridas: usar budget customizado ou média
+          // Para categorias não-híbridas: usar budget customizado da API
+          // ALTERADO: Não usar média como fallback - se não há budget customizado, manter 0
           const customBudget = customBudgets[categoryName];
-
-          if (customBudget) {
-            categoryBudget = customBudget;
-          } else {
-            // Calcular média de TODAS as subcategorias juntas
-            const allSubcategoriesBudgets = category.subcategories
-              .map(sub => sub.suggestedBudget)
-              .reduce((sum, val) => sum + val, 0);
-            categoryBudget = allSubcategoriesBudgets;
-          }
-
+          categoryBudget = customBudget || 0;
           category.totalBudget = categoryBudget;
         }
 
         // Log
-        const budgetSource = isHybrid ? '🔀 HÍBRIDO' : (customBudgets[categoryName] ? '✏️ CUSTOMIZADO' : 'média calculada');
+        const budgetSource = isHybrid ? '🔀 HÍBRIDO' : (customBudgets[categoryName] ? '✏️ CUSTOMIZADO' : '⚠️ SEM BUDGET DEFINIDO');
         console.log(`  📊 [${type}] ${categoryName}: Gasto R$ ${category.totalSpent.toFixed(2)} | Budget R$ ${categoryBudget.toFixed(2)} (${budgetSource})`);
 
         // Acumular para resumo da Visão Geral
