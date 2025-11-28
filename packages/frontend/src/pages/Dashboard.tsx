@@ -136,11 +136,13 @@ const Dashboard = () => {
       const accountFilter = activeAccountId ? activeAccountId : undefined;
       console.log(`📊 Loading dashboard data: period=${period} days, months=${months}, account=${accountFilter || 'ALL'}`);
 
+      // IMPORTANTE: Passar account_id para TODAS as APIs do dashboard
+      // Isso garante que apenas transações da conta ativa sejam mostradas
       const [statsRes, categoryRes, weeklyRes, monthlyRes, transactionsRes] = await Promise.all([
-        dashboardApi.getStats(period),
-        dashboardApi.getExpensesByCategory(period),
-        dashboardApi.getWeeklyStats(period), // Passa period em dias, não weeks
-        dashboardApi.getMonthlyStatsByCategory(months),
+        dashboardApi.getStats(period, accountFilter),
+        dashboardApi.getExpensesByCategory(period, accountFilter),
+        dashboardApi.getWeeklyStats(period, accountFilter),
+        dashboardApi.getMonthlyStatsByCategory(months, accountFilter),
         transactionApi.getTransactions({
           limit: 10,
           account_id: accountFilter

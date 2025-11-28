@@ -198,44 +198,44 @@ export const transactionApi = {
 
 // Dashboard APIs
 export const dashboardApi = {
-  getStats: (days?: number) =>
+  getStats: (days?: number, account_id?: string) =>
     api.get<DashboardStats>('/dashboard/stats', {
-      params: { days },
+      params: { days, account_id },
     }),
 
-  getExpensesByCategory: (days?: number) =>
+  getExpensesByCategory: (days?: number, account_id?: string) =>
     api.get<CategoryStats[]>('/dashboard/expenses-by-category', {
-      params: { days },
+      params: { days, account_id },
     }),
 
-  getDailyStats: (days?: number) =>
+  getDailyStats: (days?: number, account_id?: string) =>
     api.get<DailyStats[]>('/dashboard/daily-stats', {
-      params: { days },
+      params: { days, account_id },
     }),
 
-  getTopMerchants: (days?: number, limit?: number) =>
+  getTopMerchants: (days?: number, limit?: number, account_id?: string) =>
     api.get<TopMerchant[]>('/dashboard/top-merchants', {
-      params: { days, limit },
+      params: { days, limit, account_id },
     }),
 
-  getMonthlyComparison: (months?: number) =>
+  getMonthlyComparison: (months?: number, account_id?: string) =>
     api.get<MonthlyStats[]>('/dashboard/monthly-comparison', {
-      params: { months },
+      params: { months, account_id },
     }),
 
-  getWeeklyStats: (days?: number) =>
+  getWeeklyStats: (days?: number, account_id?: string) =>
     api.get<import('../types').WeeklyStats[]>('/dashboard/weekly-stats', {
-      params: { days },
+      params: { days, account_id },
     }),
 
-  getMonthlyStatsByCategory: (months?: number) =>
+  getMonthlyStatsByCategory: (months?: number, account_id?: string) =>
     api.get<Array<{
       month: string;
       monthLabel: string;
       expenses: { total: number; byCategory: Array<{ category: string; amount: number }> };
       income: { total: number; byCategory: Array<{ category: string; amount: number }> };
     }>>('/dashboard/monthly-stats-by-category', {
-      params: { months },
+      params: { months, account_id },
     }),
 };
 

@@ -19,6 +19,7 @@ const Transactions = () => {
   const [selectedCostType, setSelectedCostType] = useState(''); // Novo: Filtro de tipo de custo
   const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
 
   // Mapeamento de subcategorias por categoria
   const subcategoriesMap: Record<string, string[]> = {
@@ -75,17 +76,43 @@ const Transactions = () => {
     return months;
   }; */
 
+  // Carregar conta ativa do localStorage e ouvir mudanças
+  useEffect(() => {
+    // Carregar banco ativo do localStorage
+    const savedActiveAccount = localStorage.getItem('activeAccountId');
+    if (savedActiveAccount) {
+      setActiveAccountId(savedActiveAccount);
+    }
+
+    // Listener para mudanças no banco ativo
+    const handleActiveAccountChange = (event: any) => {
+      const { accountId } = event.detail;
+      console.log('🏦 Transactions: Conta ativa mudou para:', accountId);
+      setActiveAccountId(accountId);
+    };
+
+    window.addEventListener('activeAccountChanged', handleActiveAccountChange);
+    return () => {
+      window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
+    };
+  }, []);
+
   useEffect(() => {
     loadData();
-  }, [selectedCategory, selectedType]);
+  }, [selectedCategory, selectedType, activeAccountId]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
+      // IMPORTANTE: Filtrar transações pela conta ativa
+      const accountFilter = activeAccountId ? activeAccountId : undefined;
+      console.log(`📊 Loading transactions: account=${accountFilter || 'ALL'}`);
+
       const [transactionsRes, categoriesRes] = await Promise.all([
         transactionApi.getTransactions({
           category: selectedCategory || undefined,
           type: selectedType || undefined,
+          account_id: accountFilter, // Filtrar por conta ativa
           limit: 10000, // Buscar todas as transações
         }),
         transactionApi.getCategories(),

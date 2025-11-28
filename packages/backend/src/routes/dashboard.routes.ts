@@ -43,18 +43,27 @@ function getStartDateFromPeriod(days: number): number {
 router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
-    const { days = '365' } = req.query; // Padrão: 12 meses
+    const { days = '365', account_id } = req.query; // Padrão: 12 meses
 
     const daysNum = Number(days);
     const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
     const endDate = Date.now();
 
+    console.log(`📊 Dashboard stats: user=${user_id.substring(0, 8)}..., account_id=${account_id || 'ALL'}`);
+
     // Total de saldo de todas as contas + buscar saldo inicial
-    const { data: accounts, error: accountsError } = await supabase
+    let accountsQuery = supabase
       .from('bank_accounts')
-      .select('balance, initial_balance, initial_balance_date')
+      .select('id, balance, initial_balance, initial_balance_date')
       .eq('user_id', user_id)
       .eq('status', 'active');
+
+    // Se account_id for especificado, filtrar apenas essa conta
+    if (account_id) {
+      accountsQuery = accountsQuery.eq('id', account_id as string);
+    }
+
+    const { data: accounts, error: accountsError } = await accountsQuery;
 
     if (accountsError) throw accountsError;
 
@@ -75,32 +84,46 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // Buscar todas as transações no período
-    const { data: transactions, error: transactionsError } = await supabase
+    let transactionsQuery = supabase
       .from('transactions')
-      .select('amount, type, category, bank_accounts!inner(user_id)')
+      .select('amount, type, category, account_id, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate)
       .lte('date', endDate)
       .limit(10000); // Limite alto para garantir todos os dados
 
+    // Se account_id for especificado, filtrar apenas transações dessa conta
+    if (account_id) {
+      transactionsQuery = transactionsQuery.eq('account_id', account_id as string);
+    }
+
+    const { data: transactions, error: transactionsError } = await transactionsQuery;
+
     if (transactionsError) throw transactionsError;
 
     // 💰 Buscar saldo atual da conta (balance_after da transação mais recente)
-    const { data: mostRecentTransaction, error: recentError } = await supabase
+    let recentTransactionQuery = supabase
       .from('transactions')
-      .select('balance_after, date, bank_accounts!inner(user_id)')
+      .select('balance_after, date, account_id, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .not('balance_after', 'is', null)
       .order('date', { ascending: false }) // Ordena por data DESC para pegar a mais recente
       .limit(1);
+
+    // Se account_id for especificado, filtrar apenas transações dessa conta
+    if (account_id) {
+      recentTransactionQuery = recentTransactionQuery.eq('account_id', account_id as string);
+    }
+
+    const { data: mostRecentTransaction, error: recentError } = await recentTransactionQuery;
 
     // Atualizar saldo da conta com o saldo da transação mais recente
     if (mostRecentTransaction && mostRecentTransaction.length > 0) {
       const currentBalance = mostRecentTransaction[0].balance_after;
       console.log(`💰 Saldo atual encontrado na transação mais recente: R$ ${currentBalance.toFixed(2)} (data: ${format(mostRecentTransaction[0].date, 'dd/MM/yyyy HH:mm')})`);
 
-      // Atualizar todas as contas ativas do usuário com este saldo
-      const { error: updateBalanceError } = await supabase
+      // Atualizar a conta específica ou todas as contas ativas do usuário
+      let updateQuery = supabase
         .from('bank_accounts')
         .update({
           balance: currentBalance,
@@ -108,6 +131,13 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
         })
         .eq('user_id', user_id)
         .eq('status', 'active');
+
+      // Se account_id for especificado, atualizar apenas essa conta
+      if (account_id) {
+        updateQuery = updateQuery.eq('id', account_id as string);
+      }
+
+      const { error: updateBalanceError } = await updateQuery;
 
       if (updateBalanceError) {
         console.error('⚠️ Erro ao atualizar saldo das contas:', updateBalanceError);
@@ -161,20 +191,29 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
 router.get('/expenses-by-category', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
-    const { days = '365' } = req.query; // Padrão: 12 meses
+    const { days = '365', account_id } = req.query; // Padrão: 12 meses
 
     const daysNum = Number(days);
     const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
     const endDate = Date.now();
 
-    const { data: transactions, error } = await supabase
+    console.log(`📊 Expenses by category: user=${user_id.substring(0, 8)}..., account_id=${account_id || 'ALL'}`);
+
+    let query = supabase
       .from('transactions')
-      .select('category, amount, bank_accounts!inner(user_id)')
+      .select('category, amount, account_id, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .eq('type', 'debit')
       .gte('date', startDate)
       .lte('date', endDate)
       .limit(10000); // Limite alto para garantir todos os dados
+
+    // Se account_id for especificado, filtrar apenas transações dessa conta
+    if (account_id) {
+      query = query.eq('account_id', account_id as string);
+    }
+
+    const { data: transactions, error } = await query;
 
     if (error) throw error;
 
@@ -223,19 +262,26 @@ router.get('/expenses-by-category', authMiddleware, async (req: Request, res: Re
 router.get('/daily-stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
-    const { days = '30' } = req.query;
+    const { days = '30', account_id } = req.query;
 
     const daysNum = Number(days);
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
 
     // Buscar todas as transações no período
-    const { data: transactions, error } = await supabase
+    let query = supabase
       .from('transactions')
-      .select('date, amount, type, bank_accounts!inner(user_id)')
+      .select('date, amount, type, account_id, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate)
       .order('date', { ascending: true })
       .limit(10000); // Limite alto para garantir todos os dados
+
+    // Se account_id for especificado, filtrar apenas transações dessa conta
+    if (account_id) {
+      query = query.eq('account_id', account_id as string);
+    }
+
+    const { data: transactions, error } = await query;
 
     if (error) throw error;
 
@@ -288,15 +334,15 @@ router.get('/daily-stats', authMiddleware, async (req: Request, res: Response) =
 router.get('/top-merchants', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
-    const { days = '90', limit = '10' } = req.query;
+    const { days = '90', limit = '10', account_id } = req.query;
 
     const daysNum = Number(days);
     const startDate = startOfDay(subDays(new Date(), daysNum)).getTime();
     const endDate = Date.now();
 
-    const { data: transactions, error } = await supabase
+    let query = supabase
       .from('transactions')
-      .select('merchant, category, amount, bank_accounts!inner(user_id)')
+      .select('merchant, category, amount, account_id, bank_accounts!inner(user_id)')
       .eq('bank_accounts.user_id', user_id)
       .eq('type', 'debit')
       .not('merchant', 'is', null)
@@ -304,6 +350,13 @@ router.get('/top-merchants', authMiddleware, async (req: Request, res: Response)
       .gte('date', startDate)
       .lte('date', endDate)
       .limit(10000); // Limite alto para garantir todos os dados
+
+    // Se account_id for especificado, filtrar apenas transações dessa conta
+    if (account_id) {
+      query = query.eq('account_id', account_id as string);
+    }
+
+    const { data: transactions, error } = await query;
 
     if (error) throw error;
 
@@ -346,7 +399,7 @@ router.get('/top-merchants', authMiddleware, async (req: Request, res: Response)
 router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
-    const { months = '6' } = req.query;
+    const { months = '6', account_id } = req.query;
 
     const monthsNum = Number(months);
     const results: Array<{
@@ -365,13 +418,20 @@ router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Resp
       const startDate = new Date(year, month - 1, 1).getTime();
       const endDate = new Date(year, month, 0, 23, 59, 59).getTime();
 
-      const { data: transactions, error } = await supabase
+      let query = supabase
         .from('transactions')
-        .select('type, amount, bank_accounts!inner(user_id)')
+        .select('type, amount, account_id, bank_accounts!inner(user_id)')
         .eq('bank_accounts.user_id', user_id)
         .gte('date', startDate)
         .lte('date', endDate)
         .limit(10000); // Limite alto para garantir todos os dados
+
+      // Se account_id for especificado, filtrar apenas transações dessa conta
+      if (account_id) {
+        query = query.eq('account_id', account_id as string);
+      }
+
+      const { data: transactions, error } = await query;
 
       if (error) throw error;
 
@@ -411,13 +471,13 @@ router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Resp
 router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
-    const { days = '365' } = req.query; // Padrão: 365 dias (12 meses)
+    const { days = '365', account_id } = req.query; // Padrão: 365 dias (12 meses)
 
     const daysNum = Number(days);
     const endDate = Date.now();
     const startDate = getStartDateFromPeriod(daysNum); // Usa meses completos
 
-    console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., days=${daysNum}`);
+    console.log(`📊 Weekly stats request: user=${user_id.substring(0, 8)}..., days=${daysNum}, account_id=${account_id || 'ALL'}`);
     console.log(`📅 Date range: ${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`);
     console.log(`🔍 Start timestamp: ${startDate}, End timestamp: ${endDate}`);
 
@@ -431,14 +491,21 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
 
     // Buscar todas as transações no período
     // IMPORTANTE: Filtra por DATA desde início do mês
-    const { data: transactions, error, count } = await supabase
+    let query = supabase
       .from('transactions')
-      .select('date, amount, type, category, bank_accounts!inner(user_id)', { count: 'exact' })
+      .select('date, amount, type, category, account_id, bank_accounts!inner(user_id)', { count: 'exact' })
       .eq('bank_accounts.user_id', user_id)
       .gte('date', startDate)
       .lte('date', endDate)
       .order('date', { ascending: true })
       .limit(10000); // Limite alto para garantir que pegue todos os dados
+
+    // Se account_id for especificado, filtrar apenas transações dessa conta
+    if (account_id) {
+      query = query.eq('account_id', account_id as string);
+    }
+
+    const { data: transactions, error, count } = await query;
 
     console.log(`📊 Query returned ${transactions?.length || 0} transactions (count: ${count})`);
 
@@ -521,7 +588,7 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
 router.get('/monthly-stats-by-category', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
-    const { months = '12', category } = req.query;
+    const { months = '12', category, account_id } = req.query;
 
     const monthsNum = Number(months);
     const results: Array<{
@@ -531,7 +598,7 @@ router.get('/monthly-stats-by-category', authMiddleware, async (req: Request, re
       income: { total: number; byCategory: Array<{ category: string; amount: number }> };
     }> = [];
 
-    console.log(`📊 Monthly stats by category request: months=${monthsNum}, category=${category || 'all'}`);
+    console.log(`📊 Monthly stats by category request: months=${monthsNum}, category=${category || 'all'}, account_id=${account_id || 'ALL'}`);
 
     for (let i = monthsNum - 1; i >= 0; i--) {
       const date = new Date();
@@ -542,13 +609,20 @@ router.get('/monthly-stats-by-category', authMiddleware, async (req: Request, re
       const startDate = new Date(year, month - 1, 1).getTime();
       const endDate = new Date(year, month, 0, 23, 59, 59).getTime();
 
-      const { data: transactions, error } = await supabase
+      let query = supabase
         .from('transactions')
-        .select('type, amount, category, date, bank_accounts!inner(user_id)')
+        .select('type, amount, category, date, account_id, bank_accounts!inner(user_id)')
         .eq('bank_accounts.user_id', user_id)
         .gte('date', startDate)
         .lte('date', endDate)
         .limit(10000);
+
+      // Se account_id for especificado, filtrar apenas transações dessa conta
+      if (account_id) {
+        query = query.eq('account_id', account_id as string);
+      }
+
+      const { data: transactions, error } = await query;
 
       if (error) throw error;
 

@@ -102,12 +102,34 @@ export default function BudgetDetails() {
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [isCustomBudget, setIsCustomBudget] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+
+  // Carregar conta ativa do localStorage e ouvir mudanças
+  useEffect(() => {
+    // Carregar banco ativo do localStorage
+    const savedActiveAccount = localStorage.getItem('activeAccountId');
+    if (savedActiveAccount) {
+      setActiveAccountId(savedActiveAccount);
+    }
+
+    // Listener para mudanças no banco ativo
+    const handleActiveAccountChange = (event: any) => {
+      const { accountId } = event.detail;
+      console.log('🏦 BudgetDetails: Conta ativa mudou para:', accountId);
+      setActiveAccountId(accountId);
+    };
+
+    window.addEventListener('activeAccountChanged', handleActiveAccountChange);
+    return () => {
+      window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (categoryName && tipoCusto) {
       loadCategoryData();
     }
-  }, [categoryName, tipoCusto]);
+  }, [categoryName, tipoCusto, activeAccountId]);
 
   const loadCategoryData = async () => {
     setLoading(true);
@@ -162,10 +184,14 @@ export default function BudgetDetails() {
       console.log(`📂 [BUDGET DETAILS] Categoria: ${decodedCategory}, Tipo: ${costType}`);
       console.log(`📂 [BUDGET DETAILS] Subcategorias válidas para este tipo:`, validSubcategories);
 
+      // IMPORTANTE: Filtrar transações pela conta ativa
+      const accountFilter = activeAccountId ? activeAccountId : undefined;
+
       // Buscar transações dos últimos 12 meses
       const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
       const response = await transactionApi.getTransactions({
         start_date: format(twelveMonthsAgo, 'yyyy-MM-dd'),
+        account_id: accountFilter, // Filtrar por conta ativa
         limit: 10000,
       });
 

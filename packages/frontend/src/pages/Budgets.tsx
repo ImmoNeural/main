@@ -547,22 +547,44 @@ export default function Budgets() {
     investmentsSpent: 0,
   });
   const [showImportModal, setShowImportModal] = useState(false);
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
 
   // Flag para controlar carregamento inicial
   const [budgetsLoaded, setBudgetsLoaded] = useState(false);
+
+  // Carregar conta ativa do localStorage e ouvir mudanças
+  useEffect(() => {
+    // Carregar banco ativo do localStorage
+    const savedActiveAccount = localStorage.getItem('activeAccountId');
+    if (savedActiveAccount) {
+      setActiveAccountId(savedActiveAccount);
+    }
+
+    // Listener para mudanças no banco ativo
+    const handleActiveAccountChange = (event: any) => {
+      const { accountId } = event.detail;
+      console.log('🏦 Budgets: Conta ativa mudou para:', accountId);
+      setActiveAccountId(accountId);
+    };
+
+    window.addEventListener('activeAccountChanged', handleActiveAccountChange);
+    return () => {
+      window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
+    };
+  }, []);
 
   // Carregar budgets e preferências na inicialização
   useEffect(() => {
     loadBudgets();
   }, []);
 
-  // Carregar transações quando os budgets estiverem prontos ou o mês mudar
+  // Carregar transações quando os budgets estiverem prontos, o mês mudar ou a conta mudar
   useEffect(() => {
     if (budgetsLoaded) {
       loadTransactions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth, budgetsLoaded]);
+  }, [selectedMonth, budgetsLoaded, activeAccountId]);
 
   const loadBudgets = async () => {
     try {
@@ -600,13 +622,18 @@ export default function Budgets() {
       const twelveMonthsAgo = startOfMonth(subMonths(new Date(), 11));
       const startDate = format(twelveMonthsAgo, 'yyyy-MM-dd');
 
+      // IMPORTANTE: Filtrar transações pela conta ativa
+      const accountFilter = activeAccountId ? activeAccountId : undefined;
+
       console.log(`\n🔄 [BUDGETS] ═══════════════════════════════════════════════════`);
       console.log(`🔄 [BUDGETS] CARREGANDO TRANSAÇÕES DA API`);
       console.log(`🔄 [BUDGETS] Data início: ${startDate}`);
+      console.log(`🔄 [BUDGETS] Conta ativa: ${accountFilter || 'TODAS'}`);
       console.log(`🔄 [BUDGETS] ═══════════════════════════════════════════════════\n`);
 
       const response = await transactionApi.getTransactions({
         start_date: startDate,
+        account_id: accountFilter, // Filtrar por conta ativa
         limit: 10000,
       });
 

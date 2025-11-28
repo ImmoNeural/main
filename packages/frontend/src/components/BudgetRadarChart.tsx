@@ -129,6 +129,7 @@ export const BudgetRadarChart = () => {
   const [data, setData] = useState<RadarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<{
     maxDesvio: RadarData | null;
     totalOrcado: number;
@@ -150,9 +151,30 @@ export const BudgetRadarChart = () => {
     return months;
   };
 
+  // Carregar conta ativa do localStorage e ouvir mudanças
+  useEffect(() => {
+    // Carregar banco ativo do localStorage
+    const savedActiveAccount = localStorage.getItem('activeAccountId');
+    if (savedActiveAccount) {
+      setActiveAccountId(savedActiveAccount);
+    }
+
+    // Listener para mudanças no banco ativo
+    const handleActiveAccountChange = (event: any) => {
+      const { accountId } = event.detail;
+      console.log('🏦 BudgetRadarChart: Conta ativa mudou para:', accountId);
+      setActiveAccountId(accountId);
+    };
+
+    window.addEventListener('activeAccountChanged', handleActiveAccountChange);
+    return () => {
+      window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
+    };
+  }, []);
+
   useEffect(() => {
     loadRadarData();
-  }, [selectedMonth]);
+  }, [selectedMonth, activeAccountId]);
 
   const loadRadarData = async () => {
     setLoading(true);
@@ -205,13 +227,18 @@ export const BudgetRadarChart = () => {
       const startDate = startOfMonth(selectedMonth);
       const endDate = endOfMonth(selectedMonth);
 
+      // IMPORTANTE: Filtrar transações pela conta ativa
+      const accountFilter = activeAccountId ? activeAccountId : undefined;
+
       console.log(`\n📊 [STEP 2] PERÍODO SELECIONADO:`);
       console.log(`De: ${format(startDate, 'dd/MM/yyyy HH:mm:ss')}`);
       console.log(`Até: ${format(endDate, 'dd/MM/yyyy HH:mm:ss')}`);
+      console.log(`Conta ativa: ${accountFilter || 'TODAS'}`);
 
       const transactionsResponse = await transactionApi.getTransactions({
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
+        account_id: accountFilter, // Filtrar por conta ativa
         limit: 1000, // Buscar TODAS as transações do mês (sem limite de 100)
       });
 
