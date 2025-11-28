@@ -352,36 +352,31 @@ const ConnectBank = () => {
         </div>
       )}
 
-      {/* Banks Grid */}
+      {/* Banks Grid - Only Icons */}
       {!showConsent && !bankError && banks.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
           {banks.map((bank) => (
             <button
               key={bank.id}
               onClick={() => handleSelectBank(bank)}
-              className="card hover:shadow-lg transition-shadow text-left p-6"
+              className="card hover:shadow-lg hover:scale-105 transition-all p-3 flex items-center justify-center aspect-square"
+              title={bank.name}
             >
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 flex items-center justify-center flex-shrink-0">
-                  {bank.logo?.startsWith('http') || bank.logo?.startsWith('data:') ? (
-                    <img
-                      src={bank.logo}
-                      alt={bank.name}
-                      className="w-16 h-16 object-contain"
-                      onError={(e) => {
-                        // Fallback para emoji se a imagem falhar
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = '<span class="text-5xl">🏦</span>';
-                      }}
-                    />
-                  ) : (
-                    <span className="text-5xl">{bank.logo || '🏦'}</span>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{bank.name}</h3>
-                  <p className="text-sm text-gray-500">{bank.country}</p>
-                </div>
+              <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center">
+                {bank.logo?.startsWith('http') || bank.logo?.startsWith('data:') ? (
+                  <img
+                    src={bank.logo}
+                    alt={bank.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      // Fallback para emoji se a imagem falhar
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = '<span class="text-3xl sm:text-4xl">🏦</span>';
+                    }}
+                  />
+                ) : (
+                  <span className="text-3xl sm:text-4xl">{bank.logo || '🏦'}</span>
+                )}
               </div>
             </button>
           ))}
