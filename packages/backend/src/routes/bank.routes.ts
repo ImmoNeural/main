@@ -283,35 +283,83 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
       // e usar maybeSingle() para permitir 0 resultados sem erro
       let existingAccount = null;
 
+      console.log(`[Bank] Checking for existing account:`, {
+        provider_account_id: account.id,
+        iban: account.iban,
+        account_type: account.account_type,
+        user_id
+      });
+
       // Primeiro tentar encontrar por provider_account_id (mais confiável)
       if (account.id) {
-        const { data: byProviderId } = await supabase
+        const { data: byProviderId, error: providerError } = await supabase
           .from('bank_accounts')
-          .select('id, status, last_sync_at')
+          .select('id, status, last_sync_at, iban, provider_account_id')
           .eq('user_id', user_id)
           .eq('provider_account_id', account.id)
           .maybeSingle();
 
+        if (providerError) {
+          console.log(`[Bank] Error checking provider_account_id:`, providerError);
+        }
+
         if (byProviderId) {
           existingAccount = byProviderId;
-          console.log(`[Bank] Found existing account by provider_account_id: ${byProviderId.id}`);
+          console.log(`[Bank] ✅ Found existing account by provider_account_id: ${byProviderId.id}`);
         }
       }
 
       // Se não encontrou por provider_id, tentar por IBAN (se disponível)
       if (!existingAccount && account.iban) {
-        const { data: byIban } = await supabase
-          .from('bank_accounts')
-          .select('id, status, last_sync_at')
-          .eq('user_id', user_id)
-          .eq('iban', account.iban)
-          .maybeSingle();
+        // Normalizar IBAN para comparação (remover espaços, pontos, traços)
+        const normalizedIban = account.iban.replace(/[\s.\-]/g, '');
 
-        if (byIban) {
-          existingAccount = byIban;
-          console.log(`[Bank] Found existing account by IBAN: ${byIban.id}`);
+        const { data: allUserAccounts, error: ibanError } = await supabase
+          .from('bank_accounts')
+          .select('id, status, last_sync_at, iban, provider_account_id')
+          .eq('user_id', user_id);
+
+        if (ibanError) {
+          console.log(`[Bank] Error checking IBAN:`, ibanError);
+        }
+
+        // Comparar IBANs normalizados
+        const matchingAccount = (allUserAccounts || []).find(acc => {
+          if (!acc.iban) return false;
+          const existingNormalizedIban = acc.iban.replace(/[\s.\-]/g, '');
+          return existingNormalizedIban === normalizedIban;
+        });
+
+        if (matchingAccount) {
+          existingAccount = matchingAccount;
+          console.log(`[Bank] ✅ Found existing account by IBAN: ${matchingAccount.id}`);
         }
       }
+
+      // EXTRA: Verificar se já existe conta com mesmo bank_name E account_type para evitar duplicatas
+      // Isso previne criar múltiplas contas do mesmo banco/tipo quando reconecta
+      if (!existingAccount && bank_name && account.account_type) {
+        const { data: byBankType } = await supabase
+          .from('bank_accounts')
+          .select('id, status, last_sync_at, iban, provider_account_id, account_number')
+          .eq('user_id', user_id)
+          .eq('bank_name', bank_name)
+          .eq('account_type', account.account_type)
+          .maybeSingle();
+
+        if (byBankType) {
+          // Verificar se os últimos 4 dígitos da conta são iguais (se disponíveis)
+          const newAccountLast4 = account.iban?.slice(-4);
+          const existingLast4 = byBankType.account_number;
+
+          if (!newAccountLast4 || !existingLast4 || newAccountLast4 === existingLast4) {
+            existingAccount = byBankType;
+            console.log(`[Bank] ✅ Found existing account by bank_name + account_type: ${byBankType.id}`);
+          }
+        }
+      }
+
+      console.log(`[Bank] Existing account check result:`, existingAccount ? `Found: ${existingAccount.id}` : 'Not found, will create new');
 
       let accountId: string;
       let isReconnection = false;
@@ -352,10 +400,33 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
 
         console.log(`[Bank] Creating new account ${accountId}`);
 
+        // Construir nome da conta incluindo o tipo para distinguir múltiplas contas
+        let accountDisplayName = bank_name || 'Unknown Bank';
+        const accountTypeLabel: Record<string, string> = {
+          'checking': 'Conta Corrente',
+          'savings': 'Poupança',
+          'card': 'Cartão',
+          'investment': 'Investimento',
+        };
+        // Adicionar tipo de conta ao nome se disponível
+        if (account.account_type && accountTypeLabel[account.account_type]) {
+          // Verificar se já existe outra conta do mesmo banco para este usuário
+          const { data: otherAccountsCount } = await supabase
+            .from('bank_accounts')
+            .select('id')
+            .eq('user_id', user_id)
+            .ilike('bank_name', `${bank_name}%`);
+
+          // Se já existe outra conta do mesmo banco, adicionar o tipo ao nome
+          if (otherAccountsCount && otherAccountsCount.length > 0) {
+            accountDisplayName = `${bank_name} - ${accountTypeLabel[account.account_type]}`;
+          }
+        }
+
         const bankAccount: BankAccount = {
           id: accountId,
           user_id,
-          bank_name: bank_name || 'Unknown Bank',
+          bank_name: accountDisplayName,
           account_number: account.iban?.slice(-4),
           iban: account.iban,
           account_type: account.account_type,

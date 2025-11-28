@@ -149,8 +149,10 @@ export const transactionApi = {
       { transactionIds, newCategory }
     ),
 
-  deleteAll: () =>
-    api.delete<{ success: boolean; deleted: number; message: string }>('/transactions/all'),
+  deleteAll: (accountId?: string) =>
+    api.delete<{ success: boolean; deleted: number; message: string; account_id?: string }>('/transactions/all', {
+      params: accountId ? { account_id: accountId } : undefined,
+    }),
 
   debugCategorization: (params: { description?: string; merchant?: string; amount?: number; transactionId?: string }) =>
     api.post<{

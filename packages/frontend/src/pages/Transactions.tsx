@@ -154,17 +154,23 @@ const Transactions = () => {
   };
 
   const handleDeleteAll = async () => {
-    const confirmDelete = confirm('⚠️ Deletar TODAS as transações?\n\nEsta ação é irreversível.');
+    // Se tem conta ativa, deletar só dessa conta
+    // Se não tem, deletar de todas as contas
+    const message = activeAccountId
+      ? '⚠️ Deletar TODAS as transações desta conta?\n\nEsta ação é irreversível.'
+      : '⚠️ Deletar TODAS as transações de TODAS as contas?\n\nEsta ação é irreversível.';
+
+    const confirmDelete = confirm(message);
 
     if (!confirmDelete) return;
 
     setIsLoading(true);
     try {
-      console.log('🗑️ Deletando todas as transações...');
-      const response = await transactionApi.deleteAll();
+      console.log('🗑️ Deletando transações...', activeAccountId ? `(conta: ${activeAccountId})` : '(todas as contas)');
+      const response = await transactionApi.deleteAll(activeAccountId || undefined);
       console.log('✅ Transações deletadas:', response.data);
 
-      alert(`✅ ${response.data.deleted} transações deletadas!`);
+      alert(`✅ ${response.data.message}`);
 
       // Recarregar transações (deve estar vazio agora)
       await loadData();
@@ -672,10 +678,10 @@ const Transactions = () => {
                 onClick={handleDeleteAll}
                 className="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
                 disabled={isLoading}
-                title="Apagar TODAS as transações do banco de dados (IRREVERSÍVEL)"
+                title={activeAccountId ? "Apagar transações desta conta (IRREVERSÍVEL)" : "Apagar TODAS as transações (IRREVERSÍVEL)"}
               >
                 <Trash2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
-                <span className="hidden sm:inline">Apagar Todas</span>
+                <span className="hidden sm:inline">{activeAccountId ? 'Apagar Conta' : 'Apagar Todas'}</span>
                 <span className="sm:hidden">Apagar</span>
               </button>
             </div>

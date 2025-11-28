@@ -403,12 +403,56 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
 
 /**
  * DELETE /api/transactions/all
- * Apaga TODAS as transações do usuário (IRREVERSÍVEL)
+ * Apaga transações do usuário (IRREVERSÍVEL)
+ * Se account_id for fornecido via query param, apaga apenas dessa conta
+ * Se não, apaga TODAS as transações e contas do usuário
  */
 router.delete('/all', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
+    const { account_id } = req.query;
 
+    // Se account_id foi fornecido, deletar apenas transações dessa conta
+    if (account_id && typeof account_id === 'string') {
+      console.log(`🗑️ [Delete] Deletando transações da conta ${account_id} para user:`, user_id);
+
+      // Verificar se a conta pertence ao usuário
+      const { data: account, error: accountCheckError } = await supabase
+        .from('bank_accounts')
+        .select('id, bank_name')
+        .eq('id', account_id)
+        .eq('user_id', user_id)
+        .single();
+
+      if (accountCheckError || !account) {
+        return res.status(404).json({ error: 'Conta não encontrada ou não pertence ao usuário' });
+      }
+
+      // Deletar apenas transações desta conta
+      const { data: deleted, error: transError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('account_id', account_id)
+        .eq('user_id', user_id)
+        .select('id');
+
+      if (transError) {
+        console.error('❌ [Delete] Erro ao deletar transações:', transError);
+        throw transError;
+      }
+
+      const deletedCount = deleted?.length || 0;
+      console.log(`✅ [Delete] ${deletedCount} transações deletadas da conta ${account.bank_name}`);
+
+      return res.json({
+        success: true,
+        deleted: deletedCount,
+        account_id: account_id,
+        message: `${deletedCount} ${deletedCount === 1 ? 'transação deletada' : 'transações deletadas'} da conta ${account.bank_name}!`,
+      });
+    }
+
+    // Caso contrário, deletar TODAS as transações e contas do usuário
     console.log('🗑️ [Delete All] Iniciando deleção de todas as transações e contas bancárias para user:', user_id);
 
     // 1. Deletar todas as transações do usuário
