@@ -279,12 +279,39 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
 
       // RECONEXÃO INTELIGENTE: Verificar se já existe uma conta (ativa ou desconectada)
       // com o mesmo IBAN ou provider_account_id para este usuário
-      const { data: existingAccount } = await supabase
-        .from('bank_accounts')
-        .select('id, status, last_sync_at')
-        .eq('user_id', user_id)
-        .or(`iban.eq.${account.iban},provider_account_id.eq.${account.id}`)
-        .single();
+      // CORRIGIDO: Usar verificações separadas para evitar problemas com valores null
+      // e usar maybeSingle() para permitir 0 resultados sem erro
+      let existingAccount = null;
+
+      // Primeiro tentar encontrar por provider_account_id (mais confiável)
+      if (account.id) {
+        const { data: byProviderId } = await supabase
+          .from('bank_accounts')
+          .select('id, status, last_sync_at')
+          .eq('user_id', user_id)
+          .eq('provider_account_id', account.id)
+          .maybeSingle();
+
+        if (byProviderId) {
+          existingAccount = byProviderId;
+          console.log(`[Bank] Found existing account by provider_account_id: ${byProviderId.id}`);
+        }
+      }
+
+      // Se não encontrou por provider_id, tentar por IBAN (se disponível)
+      if (!existingAccount && account.iban) {
+        const { data: byIban } = await supabase
+          .from('bank_accounts')
+          .select('id, status, last_sync_at')
+          .eq('user_id', user_id)
+          .eq('iban', account.iban)
+          .maybeSingle();
+
+        if (byIban) {
+          existingAccount = byIban;
+          console.log(`[Bank] Found existing account by IBAN: ${byIban.id}`);
+        }
+      }
 
       let accountId: string;
       let isReconnection = false;

@@ -547,18 +547,19 @@ export default function Budgets() {
     investmentsSpent: 0,
   });
   const [showImportModal, setShowImportModal] = useState(false);
-  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  // CORRIGIDO: Inicializar com valor do localStorage para evitar carregar dados sem filtro
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(() => {
+    return localStorage.getItem('activeAccountId');
+  });
+  const [accountInitialized, setAccountInitialized] = useState(false);
 
   // Flag para controlar carregamento inicial
   const [budgetsLoaded, setBudgetsLoaded] = useState(false);
 
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
-    // Carregar banco ativo do localStorage
-    const savedActiveAccount = localStorage.getItem('activeAccountId');
-    if (savedActiveAccount) {
-      setActiveAccountId(savedActiveAccount);
-    }
+    // Marcar como inicializado após carregar do localStorage
+    setAccountInitialized(true);
 
     // Listener para mudanças no banco ativo
     const handleActiveAccountChange = (event: any) => {
@@ -580,11 +581,13 @@ export default function Budgets() {
 
   // Carregar transações quando os budgets estiverem prontos, o mês mudar ou a conta mudar
   useEffect(() => {
-    if (budgetsLoaded) {
+    // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
+    if (budgetsLoaded && accountInitialized) {
+      console.log(`🔄 Budgets: Carregando transações com conta=${activeAccountId || 'TODAS'}`);
       loadTransactions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth, budgetsLoaded, activeAccountId]);
+  }, [selectedMonth, budgetsLoaded, activeAccountId, accountInitialized]);
 
   const loadBudgets = async () => {
     try {

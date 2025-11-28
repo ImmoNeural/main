@@ -57,7 +57,11 @@ const Dashboard = () => {
   const [period, setPeriod] = useState(90); // Padrão: 3 meses
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [disabledCategories, setDisabledCategories] = useState<Set<string>>(new Set());
-  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  // CORRIGIDO: Inicializar com valor do localStorage para evitar carregar dados sem filtro
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(() => {
+    return localStorage.getItem('activeAccountId');
+  });
+  const [accountInitialized, setAccountInitialized] = useState(false);
   const [chartView, setChartView] = useState<'weekly' | 'monthly'>('weekly'); // Novo: controlar visualização
   const transactionsRef = useRef<HTMLDivElement>(null); // Ref para seção de transações
   const [showImportModal, setShowImportModal] = useState(false);
@@ -72,11 +76,8 @@ const Dashboard = () => {
   }>({ type: null });
 
   useEffect(() => {
-    // Carregar banco ativo do localStorage
-    const savedActiveAccount = localStorage.getItem('activeAccountId');
-    if (savedActiveAccount) {
-      setActiveAccountId(savedActiveAccount);
-    }
+    // Marcar como inicializado após carregar do localStorage
+    setAccountInitialized(true);
 
     // Limpar flag de proteção contra logout após conexão bancária
     // Esta flag é setada em ConnectBank.tsx para evitar logout durante o processo
@@ -93,6 +94,7 @@ const Dashboard = () => {
     // Listener para mudanças no banco ativo
     const handleActiveAccountChange = (event: any) => {
       const { accountId} = event.detail;
+      console.log('🏦 Dashboard: Conta ativa mudou para:', accountId);
       setActiveAccountId(accountId);
     };
 
@@ -103,10 +105,14 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    loadDashboardData();
-    // Resetar período selecionado quando mudar o período ou conta
-    setSelectedPeriod({ type: null });
-  }, [activeAccountId, period]);
+    // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
+    if (accountInitialized) {
+      console.log(`🔄 Dashboard: Carregando dados com conta=${activeAccountId || 'TODAS'}`);
+      loadDashboardData();
+      // Resetar período selecionado quando mudar o período ou conta
+      setSelectedPeriod({ type: null });
+    }
+  }, [activeAccountId, period, accountInitialized]);
 
   // Resetar período selecionado quando mudar visualização
   useEffect(() => {

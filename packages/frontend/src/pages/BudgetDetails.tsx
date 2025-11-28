@@ -102,15 +102,16 @@ export default function BudgetDetails() {
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [isCustomBudget, setIsCustomBudget] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  // CORRIGIDO: Inicializar com valor do localStorage para evitar carregar dados sem filtro
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(() => {
+    return localStorage.getItem('activeAccountId');
+  });
+  const [accountInitialized, setAccountInitialized] = useState(false);
 
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
-    // Carregar banco ativo do localStorage
-    const savedActiveAccount = localStorage.getItem('activeAccountId');
-    if (savedActiveAccount) {
-      setActiveAccountId(savedActiveAccount);
-    }
+    // Marcar como inicializado após carregar do localStorage
+    setAccountInitialized(true);
 
     // Listener para mudanças no banco ativo
     const handleActiveAccountChange = (event: any) => {
@@ -126,10 +127,12 @@ export default function BudgetDetails() {
   }, []);
 
   useEffect(() => {
-    if (categoryName && tipoCusto) {
+    // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
+    if (categoryName && tipoCusto && accountInitialized) {
+      console.log(`🔄 BudgetDetails: Carregando dados com conta=${activeAccountId || 'TODAS'}`);
       loadCategoryData();
     }
-  }, [categoryName, tipoCusto, activeAccountId]);
+  }, [categoryName, tipoCusto, activeAccountId, accountInitialized]);
 
   const loadCategoryData = async () => {
     setLoading(true);

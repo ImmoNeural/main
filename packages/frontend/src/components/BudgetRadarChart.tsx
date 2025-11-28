@@ -129,7 +129,11 @@ export const BudgetRadarChart = () => {
   const [data, setData] = useState<RadarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
-  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  // CORRIGIDO: Inicializar com valor do localStorage para evitar carregar dados sem filtro
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(() => {
+    return localStorage.getItem('activeAccountId');
+  });
+  const [accountInitialized, setAccountInitialized] = useState(false);
   const [analysis, setAnalysis] = useState<{
     maxDesvio: RadarData | null;
     totalOrcado: number;
@@ -153,11 +157,8 @@ export const BudgetRadarChart = () => {
 
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
-    // Carregar banco ativo do localStorage
-    const savedActiveAccount = localStorage.getItem('activeAccountId');
-    if (savedActiveAccount) {
-      setActiveAccountId(savedActiveAccount);
-    }
+    // Marcar como inicializado após carregar do localStorage
+    setAccountInitialized(true);
 
     // Listener para mudanças no banco ativo
     const handleActiveAccountChange = (event: any) => {
@@ -173,8 +174,12 @@ export const BudgetRadarChart = () => {
   }, []);
 
   useEffect(() => {
-    loadRadarData();
-  }, [selectedMonth, activeAccountId]);
+    // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
+    if (accountInitialized) {
+      console.log(`🔄 BudgetRadarChart: Carregando dados com conta=${activeAccountId || 'TODAS'}`);
+      loadRadarData();
+    }
+  }, [selectedMonth, activeAccountId, accountInitialized]);
 
   const loadRadarData = async () => {
     setLoading(true);

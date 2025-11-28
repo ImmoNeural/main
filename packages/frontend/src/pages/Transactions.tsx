@@ -19,7 +19,11 @@ const Transactions = () => {
   const [selectedCostType, setSelectedCostType] = useState(''); // Novo: Filtro de tipo de custo
   const [currentPeriod, setCurrentPeriod] = useState(new Date()); // Para navegação de mês/ano
   const [isLoading, setIsLoading] = useState(false);
-  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+  // CORRIGIDO: Inicializar com valor do localStorage para evitar carregar dados sem filtro
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(() => {
+    return localStorage.getItem('activeAccountId');
+  });
+  const [accountInitialized, setAccountInitialized] = useState(false);
 
   // Mapeamento de subcategorias por categoria
   const subcategoriesMap: Record<string, string[]> = {
@@ -78,11 +82,8 @@ const Transactions = () => {
 
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
-    // Carregar banco ativo do localStorage
-    const savedActiveAccount = localStorage.getItem('activeAccountId');
-    if (savedActiveAccount) {
-      setActiveAccountId(savedActiveAccount);
-    }
+    // Marcar como inicializado após carregar do localStorage
+    setAccountInitialized(true);
 
     // Listener para mudanças no banco ativo
     const handleActiveAccountChange = (event: any) => {
@@ -98,8 +99,12 @@ const Transactions = () => {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [selectedCategory, selectedType, activeAccountId]);
+    // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
+    if (accountInitialized) {
+      console.log(`🔄 Transactions: Carregando dados com conta=${activeAccountId || 'TODAS'}`);
+      loadData();
+    }
+  }, [selectedCategory, selectedType, activeAccountId, accountInitialized]);
 
   const loadData = async () => {
     setIsLoading(true);
