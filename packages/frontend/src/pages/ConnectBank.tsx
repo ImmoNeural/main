@@ -83,13 +83,21 @@ const ConnectBank = () => {
     handleCallback();
   }, []);
 
+  const [bankError, setBankError] = useState<string | null>(null);
+
   const loadBanks = async () => {
     setLoading(true);
+    setBankError(null);
     try {
       const response = await bankApi.getAvailableBanks();
       setBanks(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading banks:', error);
+      // Extrair mensagem de erro do response
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || 'Não foi possível carregar a lista de bancos. Por favor, tente novamente.';
+      setBankError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -251,9 +259,23 @@ const ConnectBank = () => {
 
         pluggyConnect.init();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error connecting bank:', error);
-      alert('❌ Erro ao conectar banco.');
+
+      // Extrair mensagem de erro do response
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || 'Erro ao conectar banco.';
+
+      const errorCode = error.response?.data?.code;
+
+      // Mostrar mensagem apropriada baseada no código de erro
+      if (errorCode === 'BANK_CONNECTION_UNAVAILABLE') {
+        alert(`⚠️ Serviço Temporariamente Indisponível\n\n${errorMessage}`);
+      } else {
+        alert(`❌ Erro ao conectar banco\n\n${errorMessage}`);
+      }
+
       sessionStorage.removeItem('bank_connection_in_progress');
       setConnecting(false);
     }
@@ -308,8 +330,30 @@ const ConnectBank = () => {
         </div>
       </div>
 
+      {/* Error Message */}
+      {bankError && !showConsent && (
+        <div className="card bg-red-50 border border-red-200">
+          <div className="flex items-start space-x-3">
+            <div className="text-red-600 text-2xl">⚠️</div>
+            <div>
+              <h3 className="font-semibold text-red-900 mb-2">
+                Erro ao carregar bancos
+              </h3>
+              <p className="text-sm text-red-800 mb-4">{bankError}</p>
+              <button
+                onClick={loadBanks}
+                className="btn-primary text-sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-2 inline" />
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banks Grid */}
-      {!showConsent && (
+      {!showConsent && !bankError && banks.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {banks.map((bank) => (
             <button

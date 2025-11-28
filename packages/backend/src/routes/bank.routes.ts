@@ -47,10 +47,33 @@ router.get('/available', async (req: Request, res: Response) => {
     console.log('🏦 ===============================================\n');
 
     res.json(banks);
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error fetching available banks:', error);
     console.log('🏦 ===============================================\n');
-    res.status(500).json({ error: 'Failed to fetch available banks' });
+
+    // Retornar erro informativo para o usuário
+    const errorMessage = error.message || 'Failed to fetch available banks';
+
+    // Verificar se é erro de configuração
+    if (errorMessage.includes('credentials') || errorMessage.includes('PLUGGY')) {
+      res.status(503).json({
+        error: 'Serviço bancário temporariamente indisponível',
+        message: 'O serviço de conexão bancária está temporariamente indisponível. Por favor, tente novamente mais tarde.',
+        code: 'BANK_SERVICE_UNAVAILABLE'
+      });
+    } else if (errorMessage.includes('No banking provider')) {
+      res.status(500).json({
+        error: 'Configuração incorreta',
+        message: 'O serviço de conexão bancária não está configurado corretamente. Entre em contato com o suporte.',
+        code: 'BANK_SERVICE_NOT_CONFIGURED'
+      });
+    } else {
+      res.status(500).json({
+        error: 'Erro ao carregar bancos',
+        message: 'Não foi possível carregar a lista de bancos. Por favor, tente novamente.',
+        code: 'BANK_FETCH_ERROR'
+      });
+    }
   }
 });
 
@@ -76,20 +99,36 @@ router.post('/connect', authMiddleware, async (req: Request, res: Response) => {
       });
 
       res.json(authResponse);
-    } catch (pluggyError) {
-      // Se falhar com Pluggy (credenciais expiradas, etc), usar modo demo
-      console.log('[Bank] ⚠️ Pluggy authentication failed, activating DEMO MODE');
-      console.log('[Bank] 🎭 Demo mode activated for bank_id:', bank_id);
+    } catch (pluggyError: any) {
+      // Verificar se modo demo está EXPLICITAMENTE habilitado
+      const demoModeEnabled = process.env.DEMO_MODE_ENABLED === 'true';
 
-      // Retornar URL de demonstração
-      const mockState = `DEMO_${bank_id}_${Date.now()}`;
-      res.json({
-        authorization_url: `demo-mode://connect/${bank_id}`,
-        state: mockState,
-        consent_id: mockState,
-        demo_mode: true,
-        bank_id: bank_id,
-      });
+      console.error('[Bank] ❌ Pluggy authentication failed:', pluggyError.message);
+
+      if (demoModeEnabled) {
+        // Modo demo só ativa se explicitamente habilitado via variável de ambiente
+        console.log('[Bank] 🎭 DEMO_MODE_ENABLED=true, activating demo mode for bank_id:', bank_id);
+
+        const mockState = `DEMO_${bank_id}_${Date.now()}`;
+        res.json({
+          authorization_url: `demo-mode://connect/${bank_id}`,
+          state: mockState,
+          consent_id: mockState,
+          demo_mode: true,
+          bank_id: bank_id,
+        });
+      } else {
+        // Em produção, retornar erro claro ao usuário
+        console.error('[Bank] ❌ Demo mode NOT enabled. Returning error to user.');
+        console.error('[Bank] ❌ To enable demo mode, set DEMO_MODE_ENABLED=true');
+
+        res.status(503).json({
+          error: 'Serviço de conexão bancária temporariamente indisponível',
+          message: 'Não foi possível conectar ao banco no momento. Por favor, tente novamente em alguns minutos.',
+          details: pluggyError.message,
+          code: 'BANK_CONNECTION_UNAVAILABLE'
+        });
+      }
     }
   } catch (error) {
     console.error('Error initiating bank connection:', error);

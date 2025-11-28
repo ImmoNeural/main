@@ -66,6 +66,9 @@ class OpenBankingService {
       const provider = this.getProvider();
       console.log(`   Provider instance:`, provider.constructor.name);
 
+      // Verificar se modo demo está habilitado
+      const demoModeEnabled = process.env.DEMO_MODE_ENABLED === 'true';
+
       // Pluggy (Brasil)
       if ('getConnectors' in provider) {
         console.log('   ✅ Provider has getConnectors (Pluggy detected)');
@@ -82,29 +85,40 @@ class OpenBankingService {
             return banks;
           }
 
-          console.log('');
-          console.log('   ⚠️⚠️⚠️ WARNING ⚠️⚠️⚠️');
-          console.log('   Pluggy returned 0 connectors!');
-          console.log('   This usually means:');
-          console.log('   1. PLUGGY_CLIENT_ID or PLUGGY_CLIENT_SECRET are missing');
-          console.log('   2. Credentials are invalid');
-          console.log('   3. Pluggy API is down');
-          console.log('');
-          console.log('   📋 Falling back to static bank list');
-          console.log('');
+          // Pluggy retornou 0 conectores - isso é um problema!
+          console.error('');
+          console.error('   ❌❌❌ CRITICAL ERROR ❌❌❌');
+          console.error('   Pluggy returned 0 connectors!');
+          console.error('   This usually means:');
+          console.error('   1. PLUGGY_CLIENT_ID or PLUGGY_CLIENT_SECRET are missing');
+          console.error('   2. Credentials are invalid');
+          console.error('   3. Pluggy API is down');
+          console.error('');
+
+          if (!demoModeEnabled) {
+            // Em produção, lançar erro ao invés de fallback silencioso
+            throw new Error('Pluggy API returned 0 connectors. Check PLUGGY credentials.');
+          }
+
+          console.log('   🎭 DEMO_MODE_ENABLED=true, falling back to static bank list');
         } catch (pluggyError: any) {
           console.error('');
           console.error('   ❌❌❌ PLUGGY ERROR ❌❌❌');
           console.error('   Error calling Pluggy getConnectors:');
           console.error('   Message:', pluggyError.message);
-          console.error('   Stack:', pluggyError.stack);
           if (pluggyError.response) {
             console.error('   HTTP Status:', pluggyError.response.status);
             console.error('   Response:', JSON.stringify(pluggyError.response.data, null, 2));
           }
           console.error('');
-          console.error('   📋 Falling back to static bank list due to Pluggy error');
-          console.error('');
+
+          if (!demoModeEnabled) {
+            // Em produção, propagar o erro ao invés de fallback silencioso
+            console.error('   ❌ Demo mode NOT enabled. Propagating error.');
+            throw pluggyError;
+          }
+
+          console.log('   🎭 DEMO_MODE_ENABLED=true, falling back to static bank list');
         }
       } else {
         console.log('   ℹ️ Provider does NOT have getConnectors');
@@ -135,19 +149,35 @@ class OpenBankingService {
         return this.mapProvidersToBanks(providers);
       }
 
-      // Fallback para lista estática
-      console.log('   📋 Using static bank list (no provider matched or empty response)');
-      const staticBanks = this.getStaticBankList(country);
-      console.log(`   📊 Static list has ${staticBanks.length} banks`);
-      return staticBanks;
-    } catch (error) {
+      // Fallback para lista estática - SÓ SE DEMO MODE HABILITADO
+      if (demoModeEnabled) {
+        console.log('   📋 Using static bank list (DEMO_MODE_ENABLED=true)');
+        const staticBanks = this.getStaticBankList(country);
+        console.log(`   📊 Static list has ${staticBanks.length} banks`);
+        return staticBanks;
+      }
+
+      // Em produção, se nenhum provider foi encontrado, isso é um erro de configuração
+      console.error('   ❌ No provider matched and demo mode is disabled!');
+      console.error('   ❌ Check OPEN_BANKING_PROVIDER configuration');
+      throw new Error('No banking provider configured. Set OPEN_BANKING_PROVIDER to pluggy, belvo, nordigen, or tink.');
+    } catch (error: any) {
       console.error('   ❌ CATCH: Error in getAvailableBanks:', error);
-      console.error('      Stack:', error);
-      // Em caso de erro, retorna lista estática
-      console.log('   📋 Falling back to static list due to CATCH error');
-      const staticBanks = this.getStaticBankList(country);
-      console.log(`   📊 Static list has ${staticBanks.length} banks`);
-      return staticBanks;
+
+      // Verificar se modo demo está habilitado
+      const demoModeEnabled = process.env.DEMO_MODE_ENABLED === 'true';
+
+      if (demoModeEnabled) {
+        // Em modo demo, retorna lista estática
+        console.log('   🎭 DEMO_MODE_ENABLED=true, falling back to static list');
+        const staticBanks = this.getStaticBankList(country);
+        console.log(`   📊 Static list has ${staticBanks.length} banks`);
+        return staticBanks;
+      }
+
+      // Em produção, propagar o erro
+      console.error('   ❌ Demo mode NOT enabled. Propagating error.');
+      throw error;
     } finally {
       console.log('📋 [OpenBanking] getAvailableBanks END\n');
     }
