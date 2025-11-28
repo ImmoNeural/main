@@ -352,36 +352,84 @@ const ConnectBank = () => {
         </div>
       )}
 
-      {/* Banks Grid - Only Icons */}
-      {!showConsent && !bankError && banks.length > 0 && (
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
-          {banks.map((bank) => (
-            <button
-              key={bank.id}
-              onClick={() => handleSelectBank(bank)}
-              className="card hover:shadow-lg hover:scale-105 transition-all p-3 flex items-center justify-center aspect-square"
-              title={bank.name}
-            >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center">
-                {bank.logo?.startsWith('http') || bank.logo?.startsWith('data:') ? (
-                  <img
-                    src={bank.logo}
-                    alt={bank.name}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      // Fallback para emoji se a imagem falhar
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = '<span class="text-3xl sm:text-4xl">🏦</span>';
-                    }}
-                  />
-                ) : (
-                  <span className="text-3xl sm:text-4xl">{bank.logo || '🏦'}</span>
-                )}
+      {/* Banks Grid - Separated by Type (PF/PJ) */}
+      {!showConsent && !bankError && banks.length > 0 && (() => {
+        // Separar bancos por tipo
+        const personalBanks = banks.filter(b => b.type === 'PERSONAL_BANK' || !b.type);
+        const businessBanks = banks.filter(b => b.type === 'BUSINESS_BANK');
+        const investmentBanks = banks.filter(b => b.type === 'INVESTMENT');
+
+        const BankIcon = ({ bank }: { bank: Bank }) => (
+          <button
+            key={bank.id}
+            onClick={() => handleSelectBank(bank)}
+            className="card hover:shadow-lg hover:scale-105 transition-all p-3 flex items-center justify-center aspect-square"
+            title={bank.name}
+          >
+            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center">
+              {bank.logo?.startsWith('http') || bank.logo?.startsWith('data:') ? (
+                <img
+                  src={bank.logo}
+                  alt={bank.name}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<span class="text-3xl sm:text-4xl">🏦</span>';
+                  }}
+                />
+              ) : (
+                <span className="text-3xl sm:text-4xl">{bank.logo || '🏦'}</span>
+              )}
+            </div>
+          </button>
+        );
+
+        return (
+          <div className="space-y-6">
+            {/* Pessoa Física */}
+            {personalBanks.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                  <span className="mr-2">👤</span> Pessoa Física
+                </h3>
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                  {personalBanks.map((bank) => (
+                    <BankIcon key={bank.id} bank={bank} />
+                  ))}
+                </div>
               </div>
-            </button>
-          ))}
-        </div>
-      )}
+            )}
+
+            {/* Pessoa Jurídica */}
+            {businessBanks.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                  <span className="mr-2">🏢</span> Pessoa Jurídica
+                </h3>
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                  {businessBanks.map((bank) => (
+                    <BankIcon key={bank.id} bank={bank} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Investimentos */}
+            {investmentBanks.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                  <span className="mr-2">📈</span> Investimentos
+                </h3>
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                  {investmentBanks.map((bank) => (
+                    <BankIcon key={bank.id} bank={bank} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Consent Screen */}
       {showConsent && selectedBank && (

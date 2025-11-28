@@ -235,11 +235,41 @@ class OpenBankingService {
     console.log(`   ✅ Open Finance connectors: ${openFinanceConnectors.length}`);
     console.log(`   ❌ Filtered out (non-Open Finance): ${connectors.length - openFinanceConnectors.length}`);
 
-    return openFinanceConnectors.map(connector => ({
+    // Remover duplicatas pelo nome base do banco (sem sufixos como PF/PJ)
+    // Manter preferência por conectores "regulado" se existirem
+    const uniqueBanks = new Map<string, any>();
+
+    for (const connector of openFinanceConnectors) {
+      // Extrair nome base removendo "(Open Finance)", "PF", "PJ", etc.
+      const baseName = connector.name
+        .replace(/\s*\(Open Finance\)\s*/gi, '')
+        .replace(/\s*-?\s*PF\s*$/gi, '')
+        .replace(/\s*-?\s*PJ\s*$/gi, '')
+        .replace(/\s*-?\s*Pessoa\s*(Física|Jurídica)\s*/gi, '')
+        .trim();
+
+      const key = `${baseName}_${connector.type || 'BANK'}`;
+      const existing = uniqueBanks.get(key);
+
+      // Preferir conector "regulado" se existir ou se não houver existente
+      const isRegulated = connector.name.toLowerCase().includes('regulado');
+      const existingIsRegulated = existing?.name?.toLowerCase().includes('regulado');
+
+      if (!existing || (isRegulated && !existingIsRegulated)) {
+        uniqueBanks.set(key, connector);
+      }
+    }
+
+    const filteredConnectors = Array.from(uniqueBanks.values());
+    console.log(`   🔄 After deduplication: ${filteredConnectors.length} unique banks`);
+
+    return filteredConnectors.map(connector => ({
       id: connector.id.toString(),
-      name: `${connector.name} (Open Finance)`,
+      name: connector.name.includes('Open Finance') ? connector.name : `${connector.name} (Open Finance)`,
       logo: connector.imageUrl || '🏦',
       country: connector.country || 'BR',
+      type: connector.type || 'PERSONAL_BANK', // PERSONAL_BANK, BUSINESS_BANK, INVESTMENT, etc.
+      isOpenFinance: connector.isOpenFinance || false,
     }));
   }
 

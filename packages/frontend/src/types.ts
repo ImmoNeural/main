@@ -38,6 +38,8 @@ export interface Bank {
   name: string;
   logo: string;
   country: string;
+  type?: 'PERSONAL_BANK' | 'BUSINESS_BANK' | 'INVESTMENT' | string; // Tipo do banco (PF/PJ)
+  isOpenFinance?: boolean;
 }
 
 export interface DashboardStats {
