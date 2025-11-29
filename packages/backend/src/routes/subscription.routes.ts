@@ -159,16 +159,29 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
       // ATUALIZAR assinatura existente
       console.log('🔄 Updating existing subscription for user:', userId);
 
-      // Salvar trial_end_date antigo se existir
+      // Salvar TODOS os dados do plano original nos metadata para restaurar em caso de cancelamento
       const metadata: any = {
         payment_cycle: paymentCycle,
         stripe_session_id: checkoutSession.id,
+        // Salvar estado original para restaurar se usuário cancelar checkout
+        original_status: existingSub.status,
+        original_plan_type: existingSub.plan_type,
+        original_plan_name: existingSub.plan_name,
+        original_plan_price: existingSub.plan_price,
+        original_end_date: existingSub.end_date,
+        original_max_connected_accounts: existingSub.max_connected_accounts,
       };
 
       if (existingSub.trial_end_date) {
         metadata.old_trial_end_date = existingSub.trial_end_date;
         console.log('💾 Saving old trial_end_date:', existingSub.trial_end_date);
       }
+
+      console.log('💾 Saving original subscription data:', {
+        status: existingSub.status,
+        plan_type: existingSub.plan_type,
+        end_date: existingSub.end_date
+      });
 
       const { data: updatedSub, error: updateError } = await supabase
         .from('subscriptions')
@@ -291,7 +304,7 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
 
 /**
  * POST /api/subscriptions/cancel-checkout
- * Usuário cancelou o checkout do Stripe - restaurar trial se ainda tiver dias
+ * Usuário cancelou o checkout do Stripe - restaurar estado original
  */
 router.post('/cancel-checkout', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -313,19 +326,103 @@ router.post('/cancel-checkout', authMiddleware, async (req: Request, res: Respon
       return res.json({ message: 'Checkout cancelado' });
     }
 
-    // Se estava pending e tinha trial_end_date nos metadata, restaurar
+    // Se estava pending, restaurar para o estado original
     if (subscription.status === 'pending') {
-      const oldTrialEndDate = subscription.metadata?.old_trial_end_date;
+      const metadata = subscription.metadata || {};
+      const originalStatus = metadata.original_status;
+      const originalPlanType = metadata.original_plan_type;
+      const originalPlanName = metadata.original_plan_name;
+      const originalPlanPrice = metadata.original_plan_price;
+      const originalEndDate = metadata.original_end_date;
+      const originalMaxAccounts = metadata.original_max_connected_accounts;
+      const oldTrialEndDate = metadata.old_trial_end_date;
 
+      console.log('🔄 Restoring original subscription state:', {
+        originalStatus,
+        originalPlanType,
+        originalEndDate
+      });
+
+      // Se temos dados originais, restaurar para o estado exato
+      if (originalStatus && originalPlanType) {
+        // Verificar se o plano original ainda é válido (não expirou)
+        const endDate = originalEndDate ? new Date(originalEndDate) : null;
+        const trialEnd = oldTrialEndDate ? new Date(oldTrialEndDate) : null;
+        const now = new Date();
+
+        // Se era trial e ainda está válido
+        if (originalStatus === 'trial' && trialEnd && trialEnd > now) {
+          console.log('🔄 Restoring to trial state');
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'trial',
+              plan_type: originalPlanType,
+              plan_name: originalPlanName || `Trial - ${originalPlanType}`,
+              plan_price: 0,
+              trial_end_date: oldTrialEndDate,
+              end_date: oldTrialEndDate,
+              max_connected_accounts: originalMaxAccounts || 0,
+              payment_method: null,
+              payment_processor: null,
+              payment_processor_subscription_id: null,
+              payment_processor_customer_id: null,
+              auto_renew: false,
+            })
+            .eq('id', subscription.id);
+
+          console.log('✅ Trial restored');
+          return res.json({ message: 'Trial restaurado', trialActive: true });
+        }
+        // Se era ativo e ainda está válido
+        else if (originalStatus === 'active' && endDate && endDate > now) {
+          console.log('🔄 Restoring to active subscription state');
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'active',
+              plan_type: originalPlanType,
+              plan_name: originalPlanName,
+              plan_price: originalPlanPrice || 0,
+              end_date: originalEndDate,
+              trial_end_date: null,
+              max_connected_accounts: originalMaxAccounts || 0,
+              payment_processor_subscription_id: null, // Limpar sessão pendente
+            })
+            .eq('id', subscription.id);
+
+          console.log('✅ Active subscription restored');
+          return res.json({ message: 'Assinatura restaurada', subscriptionActive: true });
+        }
+        // Se estava ativo mas não tinha end_date válida (plano anual sem data fim?)
+        else if (originalStatus === 'active') {
+          console.log('🔄 Restoring to active subscription (no end date check)');
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: 'active',
+              plan_type: originalPlanType,
+              plan_name: originalPlanName,
+              plan_price: originalPlanPrice || 0,
+              end_date: originalEndDate,
+              trial_end_date: null,
+              max_connected_accounts: originalMaxAccounts || 0,
+              payment_processor_subscription_id: null,
+            })
+            .eq('id', subscription.id);
+
+          console.log('✅ Active subscription restored');
+          return res.json({ message: 'Assinatura restaurada', subscriptionActive: true });
+        }
+      }
+
+      // Fallback: Se não temos dados originais mas tinha trial_end_date
       if (oldTrialEndDate) {
         const trialEnd = new Date(oldTrialEndDate);
         const now = new Date();
 
-        // Verificar se o trial ainda é válido
         if (trialEnd > now) {
-          console.log('🔄 Restoring trial for user:', userId);
-
-          // Restaurar para trial
+          console.log('🔄 Fallback: Restoring trial from old_trial_end_date');
           await supabase
             .from('subscriptions')
             .update({
@@ -343,10 +440,12 @@ router.post('/cancel-checkout', authMiddleware, async (req: Request, res: Respon
             })
             .eq('id', subscription.id);
 
-          console.log('✅ Trial restored');
+          console.log('✅ Trial restored (fallback)');
           return res.json({ message: 'Trial restaurado', trialActive: true });
         }
       }
+
+      console.log('⚠️ Could not restore - no valid original state found');
     }
 
     res.json({ message: 'Checkout cancelado' });
