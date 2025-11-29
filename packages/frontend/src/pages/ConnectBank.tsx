@@ -26,17 +26,13 @@ const loadPluggySDK = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Se já está carregado, resolver imediatamente
     if (typeof window.PluggyConnect !== 'undefined') {
-      console.log('✅ SDK Pluggy já está carregado');
       resolve();
       return;
     }
 
     // Verificar se o script já está no DOM
     const existingScript = document.querySelector('script[src*="pluggy-connect"]');
-    if (existingScript) {
-      console.log('🔄 Script do Pluggy encontrado no DOM, aguardando carregamento...');
-    } else {
-      console.log('📦 Injetando script do Pluggy SDK...');
+    if (!existingScript) {
       const script = document.createElement('script');
       script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.8.2/pluggy-connect.js';
       script.async = true;
@@ -51,13 +47,11 @@ const loadPluggySDK = (): Promise<void> => {
     const check = () => {
       attempts++;
       if (typeof window.PluggyConnect !== 'undefined') {
-        console.log(`✅ SDK Pluggy carregado com sucesso após ${attempts} verificações`);
         resolve();
         return;
       }
 
       if (attempts >= maxAttempts) {
-        console.error('❌ SDK Pluggy não carregou após 5 segundos');
         reject(new Error('SDK do Pluggy não carregou. Por favor, recarregue a página.'));
         return;
       }
@@ -132,23 +126,16 @@ const ConnectBank = () => {
 
     // Marcar início de conexão bancária para evitar logout automático
     sessionStorage.setItem('bank_connection_in_progress', 'true');
-    console.log('🔒 Proteção contra logout ativada durante conexão bancária');
 
     try {
       const response = await bankApi.connectBank(selectedBank.id);
-
-      console.log('🔗 Connect response:', response.data);
-      console.log('🔗 Authorization URL:', response.data.authorization_url);
 
       // Verificar se estamos em modo demo
       const authUrl = response.data.authorization_url || '';
       const isDemoMode = response.data.demo_mode === true || authUrl.startsWith('demo-mode://');
 
-      console.log('🔍 Is Demo Mode?', isDemoMode);
-
       if (isDemoMode) {
         // Modo de demonstração - simular conexão bancária
-        console.log('🎭 DEMO MODE activated for', selectedBank.name);
 
         const userConfirmed = confirm(
           `🎭 MODO DEMONSTRAÇÃO\n\n` +
@@ -166,8 +153,6 @@ const ConnectBank = () => {
           );
           alert(`✅ Conta ${selectedBank.name} conectada! (modo demonstração)`);
 
-          // Navegar para dashboard - a flag será removida no componente Dashboard.tsx
-          console.log('➡️ Navegando para /app/dashboard (proteção ainda ativa)');
           navigate('/app/dashboard');
         } else {
           sessionStorage.removeItem('bank_connection_in_progress');
@@ -175,35 +160,19 @@ const ConnectBank = () => {
         }
       } else {
         // Modo de produção - Usar Pluggy Connect SDK v2 (embed)
-        console.log('✅ Opening Pluggy Connect via SDK v2');
-        console.log('📦 Full response.data:', JSON.stringify(response.data, null, 2));
-
-        // Extrair o connect token
         const connectToken = response.data.state || response.data.connect_token || response.data.connectToken || response.data.access_token;
-        const authorizationUrl = response.data.authorization_url;
-
-        console.log('🔑 Connect Token:', connectToken);
-        console.log('🔑 Connect Token type:', typeof connectToken);
-        console.log('🔑 Connect Token length:', connectToken?.length);
-        console.log('🔗 Authorization URL:', authorizationUrl);
 
         // Validar que temos um token válido
         if (!connectToken || connectToken === 'undefined' || connectToken === 'null') {
-          console.error('❌ Connect token is missing or invalid!');
-          console.error('   response.data:', response.data);
           alert('❌ Erro: Token de conexão não recebido do servidor. Tente novamente.');
           sessionStorage.removeItem('bank_connection_in_progress');
           setConnecting(false);
           return;
         }
 
-        // Carregar e inicializar o SDK do Pluggy
-        console.log('⏳ Carregando SDK do Pluggy...');
-
         try {
           await loadPluggySDK();
         } catch (sdkError) {
-          console.error('❌ Falha ao carregar SDK do Pluggy:', sdkError);
           alert('❌ Não foi possível carregar o SDK do Pluggy. Por favor, recarregue a página e tente novamente.');
           sessionStorage.removeItem('bank_connection_in_progress');
           setConnecting(false);
@@ -211,18 +180,12 @@ const ConnectBank = () => {
         }
 
         // Usar Pluggy Connect SDK v2 (embed)
-        console.log('🚀 Initializing Pluggy Connect SDK v2...');
-        console.log('🔑 Token being used:', connectToken?.substring(0, 50) + '...');
-
         const pluggyConnect = new window.PluggyConnect({
           connectToken: connectToken,
-          includeSandbox: true,
           onSuccess: async (data) => {
-            console.log('✅ Pluggy Connect success:', data);
             try {
               // O itemId é retornado diretamente pelo SDK
               const itemId = data.item?.id;
-              console.log('📦 Item ID:', itemId);
 
               // Chamar o callback com o itemId
               await bankApi.handleCallback(
@@ -242,18 +205,13 @@ const ConnectBank = () => {
             setConnecting(false);
           },
           onError: (error) => {
-            console.error('❌ Pluggy Connect error:', error);
             alert(`❌ Erro na conexão: ${error.message || 'Erro desconhecido'}`);
             sessionStorage.removeItem('bank_connection_in_progress');
             setConnecting(false);
           },
           onClose: () => {
-            console.log('🔒 Pluggy Connect closed by user');
             sessionStorage.removeItem('bank_connection_in_progress');
             setConnecting(false);
-          },
-          onEvent: (event) => {
-            console.log('📡 Pluggy Connect event:', event);
           }
         });
 

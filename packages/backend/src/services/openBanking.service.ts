@@ -26,14 +26,7 @@ class OpenBankingService {
   private providerType: ProviderType;
 
   constructor() {
-    // LER SEMPRE DO AMBIENTE (não cachear no constructor)
-    console.log('🔧 [OpenBankingService] Constructor called');
-    console.log('   process.env.OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER);
-
     this.providerType = (process.env.OPEN_BANKING_PROVIDER || 'mock') as ProviderType;
-
-    console.log('   Using provider:', this.providerType);
-    console.log('');
   }
 
   /**
@@ -46,7 +39,6 @@ class OpenBankingService {
 
     // Se mudou, atualizar
     if (currentProvider !== this.providerType) {
-      console.log(`🔄 [OpenBankingService] Provider changed from ${this.providerType} to ${currentProvider}`);
       this.providerType = currentProvider;
     }
 
@@ -60,64 +52,37 @@ class OpenBankingService {
    * Se a API do Pluggy falhar, propaga o erro para o frontend mostrar mensagem apropriada
    */
   async getAvailableBanks(country: string = 'BR') {
-    console.log('\n📋 [OpenBanking] getAvailableBanks START');
-    console.log('   Country:', country);
-    console.log('   Provider type:', this.providerType);
-
     const provider = this.getProvider();
-    console.log(`   Provider instance:`, provider.constructor.name);
 
     // Pluggy (Brasil)
     if ('getConnectors' in provider) {
-      console.log('   ✅ Provider has getConnectors (Pluggy detected)');
-      console.log('   🔄 Calling provider.getConnectors with isOpenFinance=true...');
-
       const connectors = await (provider as any).getConnectors(country);
-      console.log(`   📊 Received ${connectors.length} Open Finance connectors from Pluggy API`);
 
       if (connectors.length > 0) {
-        console.log('   ✅ Mapping connectors to banks...');
-        const banks = this.mapConnectorsToBanks(connectors);
-        console.log(`   ✅ Returning ${banks.length} banks from Pluggy`);
-        console.log('📋 [OpenBanking] getAvailableBanks END\n');
-        return banks;
+        return this.mapConnectorsToBanks(connectors);
       }
 
-      // Pluggy retornou 0 conectores - isso é um erro
-      console.error('   ❌ Pluggy returned 0 Open Finance connectors');
-      console.log('📋 [OpenBanking] getAvailableBanks END\n');
       throw new Error('Nenhum banco disponível no momento. Por favor, tente novamente mais tarde.');
     }
 
     // Belvo (América Latina) ou Nordigen (Europa)
     if ('getInstitutions' in provider) {
       const providerName = provider.constructor.name;
-      console.log(`   Provider with getInstitutions: ${providerName}`);
-
       const institutions = await (provider as any).getInstitutions(country);
 
       if (providerName === 'BelvoService') {
-        console.log(`   Using Belvo institutions (${institutions.length} found)`);
-        console.log('📋 [OpenBanking] getAvailableBanks END\n');
         return this.mapBelvoInstitutionsToBanks(institutions);
       } else {
-        console.log(`   Using Nordigen institutions (${institutions.length} found)`);
-        console.log('📋 [OpenBanking] getAvailableBanks END\n');
         return this.mapInstitutionsToBanks(institutions);
       }
     }
 
     // Tink (Europa)
     if ('getProviders' in provider) {
-      console.log('   Using Tink providers');
       const providers = await (provider as any).getProviders(country);
-      console.log('📋 [OpenBanking] getAvailableBanks END\n');
       return this.mapProvidersToBanks(providers);
     }
 
-    // Nenhum provedor configurado
-    console.error('   ❌ No banking provider configured');
-    console.log('📋 [OpenBanking] getAvailableBanks END\n');
     throw new Error('Serviço de conexão bancária não configurado. Entre em contato com o suporte.');
   }
 
@@ -126,10 +91,7 @@ class OpenBankingService {
    * A filtragem por Open Finance já é feita na API (isOpenFinance=true)
    */
   private mapConnectorsToBanks(connectors: any[]) {
-    console.log(`   📊 Total Open Finance connectors from API: ${connectors.length}`);
-
     // Mapear diretamente sem filtro adicional (API já filtra por isOpenFinance=true)
-    // Mantemos o tipo (PF/PJ) separado para mostrar na UI
     return connectors.map(connector => ({
       id: connector.id.toString(),
       name: connector.name,
@@ -184,7 +146,6 @@ class OpenBankingService {
       const provider = this.getProvider();
       return await provider.initiateAuth(request);
     } catch (error) {
-      console.error('Error initiating auth:', error);
       throw new Error('Failed to initiate bank authorization');
     }
   }
@@ -197,7 +158,6 @@ class OpenBankingService {
       const provider = this.getProvider();
       return await provider.exchangeCodeForToken(code, state);
     } catch (error) {
-      console.error('Error exchanging code for token:', error);
       throw new Error('Failed to exchange authorization code');
     }
   }
@@ -215,7 +175,6 @@ class OpenBankingService {
 
       throw new Error('Provider does not support token refresh');
     } catch (error) {
-      console.error('Error refreshing token:', error);
       throw new Error('Failed to refresh access token');
     }
   }
@@ -228,7 +187,6 @@ class OpenBankingService {
       const provider = this.getProvider();
       return await provider.getAccounts(accessToken);
     } catch (error) {
-      console.error('Error fetching accounts:', error);
       throw new Error('Failed to fetch bank accounts');
     }
   }
@@ -245,7 +203,6 @@ class OpenBankingService {
       const provider = this.getProvider();
       return await provider.getTransactions(accessToken, accountId, days);
     } catch (error) {
-      console.error('Error fetching transactions:', error);
       throw new Error('Failed to fetch transactions');
     }
   }
@@ -258,7 +215,6 @@ class OpenBankingService {
       const provider = this.getProvider();
       await provider.revokeConsent(accessToken);
     } catch (error) {
-      console.error('Error revoking consent:', error);
       throw new Error('Failed to revoke bank consent');
     }
   }
@@ -277,7 +233,6 @@ class OpenBankingService {
 
       throw new Error('Provider does not support getItem');
     } catch (error) {
-      console.error('Error fetching item status:', error);
       throw error;
     }
   }

@@ -42,37 +42,10 @@ export class PluggyService {
       timeout: 30000,
     });
 
-    console.log('==================================================');
-    console.log('[Pluggy] Service initialized - DETAILED DEBUG');
-    console.log('==================================================');
-    console.log('   OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER);
-    console.log('   Base URL:', baseURL);
-    console.log('   Client ID (first 12 chars):', this.clientId.substring(0, 12) + '...');
-    console.log('   Client ID length:', this.clientId.length);
-    console.log('   Client ID exists?', !!this.clientId);
-    console.log('   Client Secret (first 8 chars):', this.clientSecret.substring(0, 8) + '...');
-    console.log('   Client Secret length:', this.clientSecret.length);
-    console.log('   Client Secret exists?', !!this.clientSecret);
-    console.log('==================================================');
+    console.log('[Pluggy] Service initialized');
 
     if (!this.clientId || !this.clientSecret) {
-      console.error('');
-      console.error('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
-      console.error('❌ PLUGGY CREDENTIALS MISSING!');
-      console.error('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
-      console.error('');
-      console.error('   PLUGGY_CLIENT_ID:', this.clientId ? 'SET ✅' : 'MISSING ❌');
-      console.error('   PLUGGY_CLIENT_SECRET:', this.clientSecret ? 'SET ✅' : 'MISSING ❌');
-      console.error('');
-      console.error('   Without these credentials, Pluggy will NOT work!');
-      console.error('   The app will fall back to STATIC/MOCK banks.');
-      console.error('');
-      console.error('   To fix: Add these environment variables in Render:');
-      console.error('   - PLUGGY_CLIENT_ID=your_client_id');
-      console.error('   - PLUGGY_CLIENT_SECRET=your_client_secret');
-      console.error('');
-      console.error('❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌');
-      console.error('');
+      console.error('[Pluggy] ❌ Credentials missing - check PLUGGY_CLIENT_ID and PLUGGY_CLIENT_SECRET');
     }
   }
 
@@ -87,7 +60,6 @@ export class PluggyService {
     }
 
     try {
-      console.log('[Pluggy] Authenticating with Client ID:', this.clientId.substring(0, 8) + '...');
       const response = await this.client.post('/auth', {
         clientId: this.clientId,
         clientSecret: this.clientSecret,
@@ -97,7 +69,6 @@ export class PluggyService {
       // API Key do Pluggy não expira, mas vamos renovar a cada 24h por segurança
       this.apiKeyExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
-      console.log('[Pluggy] ✅ Authentication successful!');
       return this.apiKey;
     } catch (error: any) {
       console.error('[Pluggy] ❌ Error obtaining API Key:', error.response?.data || error.message);
@@ -111,7 +82,6 @@ export class PluggyService {
    */
   async getConnectors(country: string = 'BR'): Promise<any[]> {
     try {
-      console.log(`[Pluggy] Fetching Open Finance connectors for country: ${country}`);
       const apiKey = await this.getApiKey();
 
       const response = await this.client.get('/connectors', {
@@ -124,22 +94,8 @@ export class PluggyService {
         },
       });
 
-      const connectors = response.data.results || [];
-      console.log(`[Pluggy] Found ${connectors.length} Open Finance connectors`);
-
-      // Log primeiro banco para debug
-      if (connectors.length > 0) {
-        console.log(`[Pluggy] Example connector:`, {
-          id: connectors[0].id,
-          name: connectors[0].name,
-          type: connectors[0].type,
-          isOpenFinance: connectors[0].isOpenFinance
-        });
-      }
-
-      return connectors;
+      return response.data.results || [];
     } catch (error: any) {
-      console.error('[Pluggy] Error fetching connectors:', error.response?.data || error.message);
       throw new Error('Failed to fetch available banks');
     }
   }
@@ -149,7 +105,6 @@ export class PluggyService {
    */
   async initiateAuth(request: OpenBankingAuthRequest): Promise<OpenBankingAuthResponse> {
     try {
-      console.log(`[Pluggy] Initiating auth for bank ID: ${request.bank_id}`);
       const apiKey = await this.getApiKey();
 
       // Validar se o connector ID é um número válido
@@ -160,15 +115,6 @@ export class PluggyService {
 
       // Criar um Connect Token no Pluggy
       // Este token será usado no Pluggy Connect Widget
-      console.log(`[Pluggy] Creating connect token for connector ID: ${connectorId}`);
-      console.log(`[Pluggy] Request body:`, {
-        itemId: null,
-        options: {
-          connectorId: connectorId,
-          clientUserId: request.user_id || 'demo_user',
-        },
-      });
-
       const tokenResponse = await this.client.post(
         '/connect_token',
         {
@@ -185,21 +131,10 @@ export class PluggyService {
         }
       );
 
-      console.log(`[Pluggy] Token response data:`, JSON.stringify(tokenResponse.data, null, 2));
-
       const connectToken = tokenResponse.data.accessToken;
-      console.log(`[Pluggy] ✅ Connect token created successfully!`);
-      console.log(`[Pluggy] Connect token: ${connectToken}`);
-      console.log(`[Pluggy] Connect token type: ${typeof connectToken}`);
-      console.log(`[Pluggy] Connect token length: ${connectToken?.length}`);
 
       // Gerar URL de autenticação do Pluggy Connect Widget
-      // Documentação: https://docs.pluggy.ai/docs/pluggy-connect
-      // O token deve ser passado diretamente na URL sem encoding
-      const authUrl = `https://connect.pluggy.ai?connectToken=${connectToken}&includeSandbox=true`;
-
-      console.log(`[Pluggy] Auth URL generated: ${authUrl.substring(0, 60)}...`);
-      console.log(`[Pluggy] User will be redirected to Pluggy Connect Widget`);
+      const authUrl = `https://connect.pluggy.ai?connectToken=${connectToken}`;
 
       return {
         authorization_url: authUrl,
@@ -207,14 +142,7 @@ export class PluggyService {
         consent_id: connectToken,
       };
     } catch (error: any) {
-      console.error('[Pluggy] ❌ Error initiating auth:');
-      console.error('[Pluggy]    Status:', error.response?.status);
-      console.error('[Pluggy]    Message:', error.response?.data?.message || error.message);
-
-      if (error.response?.data) {
-        console.error('[Pluggy]    Details:', JSON.stringify(error.response.data, null, 2));
-      }
-
+      console.error('[Pluggy] ❌ Error initiating auth');
       const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
       throw new Error('Failed to initiate bank authorization: ' + errorMessage);
     }
@@ -235,7 +163,6 @@ export class PluggyService {
 
       return response.data;
     } catch (error) {
-      console.error('Error fetching Pluggy item:', error);
       throw new Error('Failed to fetch item data');
     }
   }
@@ -249,7 +176,6 @@ export class PluggyService {
       const item = await this.waitForItemReady(itemId);
 
       if (item.status === 'LOGIN_ERROR') {
-        console.error('[Pluggy] Item has LOGIN_ERROR status');
         throw new Error('Login failed at bank. Please try again.');
       }
 
@@ -260,7 +186,6 @@ export class PluggyService {
         token_type: 'Bearer',
       };
     } catch (error) {
-      console.error('Error processing Pluggy item:', error);
       throw new Error('Failed to process authorization');
     }
   }
@@ -270,37 +195,28 @@ export class PluggyService {
    * O Pluggy precisa de alguns segundos para processar após o login
    */
   private async waitForItemReady(itemId: string, maxAttempts: number = 30): Promise<any> {
-    console.log(`[Pluggy] Waiting for item ${itemId} to be ready...`);
-
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const item = await this.getItem(itemId);
-        console.log(`[Pluggy] Attempt ${attempt}/${maxAttempts} - Status: ${item.status}`);
-        console.log(`[Pluggy]    executionStatus: ${item.executionStatus}`);
-        console.log(`[Pluggy]    error: ${item.error ? JSON.stringify(item.error) : 'none'}`);
 
         // Status finais (sucesso ou erro definitivo)
         if (item.status === 'UPDATED') {
-          console.log(`[Pluggy] ✅ Item ready with status: ${item.status}`);
           return item;
         }
 
         if (item.status === 'LOGIN_ERROR') {
-          console.error(`[Pluggy] ❌ Item has LOGIN_ERROR status`);
           const errorMessage = item.error?.message || 'Login failed at bank';
           throw new Error(`Erro no login do banco: ${errorMessage}. Verifique suas credenciais e tente novamente.`);
         }
 
         // Verificar se há erro na sincronização
         if (item.executionStatus === 'ERROR' || item.executionStatus === 'MERGE_ERROR') {
-          console.error(`[Pluggy] ❌ Item has ${item.executionStatus} status`);
           const errorMessage = item.error?.message || 'Falha na sincronização dos dados';
           throw new Error(`Erro ao sincronizar dados do banco: ${errorMessage}`);
         }
 
         // Status temporários que indicam processamento
         if (item.status === 'WAITING_USER_INPUT' || item.status === 'WAITING_USER_ACTION') {
-          console.warn(`[Pluggy] ⚠️ Item waiting for user action: ${item.status}`);
           // Continua aguardando
         }
 
@@ -309,7 +225,6 @@ export class PluggyService {
       } catch (error) {
         // Se for erro de rede/API, tentar novamente
         if (error instanceof Error && !error.message.startsWith('Erro')) {
-          console.error(`[Pluggy] ⚠️ Error checking item status (will retry):`, error.message);
           await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
         }
@@ -319,7 +234,6 @@ export class PluggyService {
     }
 
     // Timeout após todas as tentativas
-    console.error(`[Pluggy] ❌ Timeout waiting for item ${itemId} after ${maxAttempts * 2}s`);
     throw new Error(
       'Tempo limite excedido aguardando sincronização do banco. ' +
       'Isso pode acontecer se o banco estiver fora do ar ou com problemas. ' +
@@ -357,7 +271,6 @@ export class PluggyService {
         },
       }));
     } catch (error) {
-      console.error('Error fetching Pluggy accounts:', error);
       throw new Error('Failed to fetch bank accounts');
     }
   }
@@ -378,8 +291,6 @@ export class PluggyService {
       const dateFrom = new Date();
       dateFrom.setDate(dateFrom.getDate() - days);
 
-      console.log(`[Pluggy] Fetching transactions for account ${accountId} from ${dateFrom.toISOString().split('T')[0]} to ${dateTo.toISOString().split('T')[0]}`);
-
       // Buscar TODAS as transações com paginação automática
       let allTransactions: any[] = [];
       let page = 1;
@@ -387,8 +298,6 @@ export class PluggyService {
       const pageSize = 500; // Máximo por página no Pluggy
 
       while (hasMore) {
-        console.log(`[Pluggy] Fetching page ${page}...`);
-
         const response = await this.client.get('/transactions', {
           headers: {
             'X-API-KEY': apiKey,
@@ -405,8 +314,6 @@ export class PluggyService {
         const transactions = response.data.results || [];
         allTransactions = allTransactions.concat(transactions);
 
-        console.log(`[Pluggy] Page ${page}: ${transactions.length} transactions (total so far: ${allTransactions.length})`);
-
         // Verificar se há mais páginas
         const total = response.data.total || 0;
         hasMore = allTransactions.length < total;
@@ -414,12 +321,9 @@ export class PluggyService {
 
         // Segurança: limitar a 100 páginas (50.000 transações)
         if (page > 100) {
-          console.warn(`[Pluggy] ⚠️ Reached page limit of 100, stopping pagination`);
           break;
         }
       }
-
-      console.log(`[Pluggy] ✅ Fetched total of ${allTransactions.length} transactions`);
 
       return allTransactions
         .map((transaction: any) => this.mapTransaction(transaction))
@@ -427,7 +331,6 @@ export class PluggyService {
           new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime()
         );
     } catch (error) {
-      console.error('Error fetching Pluggy transactions:', error);
       throw new Error('Failed to fetch transactions');
     }
   }
@@ -445,7 +348,6 @@ export class PluggyService {
         },
       });
     } catch (error) {
-      console.error('Error revoking Pluggy consent:', error);
       throw new Error('Failed to revoke consent');
     }
   }
@@ -509,7 +411,6 @@ export class PluggyService {
         }
       );
     } catch (error) {
-      console.error('Error updating Pluggy item:', error);
       throw new Error('Failed to update item');
     }
   }
