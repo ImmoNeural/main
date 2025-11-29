@@ -101,7 +101,8 @@ router.get('/current', authMiddleware, async (req: Request, res: Response) => {
 
 /**
  * POST /api/subscriptions/create
- * Criar nova assinatura via Stripe Checkout
+ * Criar sessão de checkout do Stripe para mudança/upgrade de plano
+ * IMPORTANTE: NÃO altera a subscription atual - só o webhook faz isso após pagamento confirmado
  */
 router.post('/create', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -122,177 +123,25 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
     if (userError || !user) throw new Error('Usuário não encontrado');
 
     // Criar sessão de checkout do Stripe
+    // O webhook vai atualizar a subscription quando o pagamento for confirmado
     const checkoutSession = await stripeService.createCheckoutSession({
       planType: planType,
       planName: `${planConfig.name} - ${isYearly ? 'Anual' : 'Mensal'}`,
       planPrice: price,
       userId: userId,
       userEmail: user.email!,
-      paymentMode: isYearly ? 'payment' : 'subscription', // Anual = pagamento único, Mensal = recorrente
+      paymentMode: isYearly ? 'payment' : 'subscription',
     });
 
-    // Calcular data de término
-    const endDate = new Date();
-    if (isYearly) {
-      endDate.setFullYear(endDate.getFullYear() + 1);
-    } else {
-      endDate.setMonth(endDate.getMonth() + 1);
-    }
+    console.log('✅ Checkout session created:', checkoutSession.id);
+    console.log('📝 User will be redirected to Stripe. Subscription will be updated by webhook after payment.');
 
-    // Verificar se já existe subscription para este usuário
-    const { data: existingSub, error: fetchError } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error('❌ Error checking existing subscription:', fetchError);
-      throw fetchError;
-    }
-
-    let subscription;
-
-    if (existingSub) {
-      // ATUALIZAR assinatura existente
-      console.log('🔄 Updating existing subscription for user:', userId);
-
-      // Salvar TODOS os dados do plano original nos metadata para restaurar em caso de cancelamento
-      const metadata: any = {
-        payment_cycle: paymentCycle,
-        stripe_session_id: checkoutSession.id,
-        // Salvar estado original para restaurar se usuário cancelar checkout
-        original_status: existingSub.status,
-        original_plan_type: existingSub.plan_type,
-        original_plan_name: existingSub.plan_name,
-        original_plan_price: existingSub.plan_price,
-        original_end_date: existingSub.end_date,
-        original_max_connected_accounts: existingSub.max_connected_accounts,
-      };
-
-      if (existingSub.trial_end_date) {
-        metadata.old_trial_end_date = existingSub.trial_end_date;
-        console.log('💾 Saving old trial_end_date:', existingSub.trial_end_date);
-      }
-
-      console.log('💾 Saving original subscription data:', {
-        status: existingSub.status,
-        plan_type: existingSub.plan_type,
-        end_date: existingSub.end_date
-      });
-
-      const { data: updatedSub, error: updateError } = await supabase
-        .from('subscriptions')
-        .update({
-          plan_type: planType,
-          plan_name: planConfig.name,
-          plan_price: price,
-          status: 'pending',
-          end_date: endDate.toISOString(),
-          trial_end_date: null, // Remove trial quando muda para plano pago
-          payment_method: 'credit_card',
-          payment_processor: 'stripe',
-          payment_processor_subscription_id: checkoutSession.id,
-          payment_processor_customer_id: checkoutSession.customer as string,
-          max_connected_accounts: planConfig.maxAccounts,
-          auto_renew: !isYearly,
-          next_billing_date: isYearly ? endDate.toISOString() : new Date().toISOString(),
-          metadata: metadata
-        })
-        .eq('id', existingSub.id)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
-      subscription = updatedSub;
-      console.log('✅ Subscription updated:', subscription.id);
-    } else {
-      // CRIAR nova assinatura (caso raro - usuário sem subscription)
-      console.log('📝 Creating new subscription for user:', userId);
-      const { data: newSub, error: insertError } = await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: userId,
-          plan_type: planType,
-          plan_name: planConfig.name,
-          plan_price: price,
-          status: 'pending',
-          end_date: endDate.toISOString(),
-          payment_method: 'credit_card',
-          payment_processor: 'stripe',
-          payment_processor_subscription_id: checkoutSession.id,
-          payment_processor_customer_id: checkoutSession.customer as string,
-          max_connected_accounts: planConfig.maxAccounts,
-          auto_renew: !isYearly,
-          next_billing_date: isYearly ? endDate.toISOString() : new Date().toISOString(),
-          metadata: {
-            payment_cycle: paymentCycle,
-            stripe_session_id: checkoutSession.id,
-          }
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      subscription = newSub;
-      console.log('✅ Subscription created:', subscription.id);
-    }
-
-    // Registrar ou atualizar pagamento pendente
-    // Verificar se já existe payment para este usuário
-    const { data: existingPayment, error: paymentFetchError } = await supabase
-      .from('subscription_payments')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (paymentFetchError) {
-      console.error('❌ Error checking existing payment:', paymentFetchError);
-    }
-
-    if (existingPayment) {
-      // ATUALIZAR pagamento existente
-      console.log('🔄 Updating existing payment for user:', userId);
-      await supabase
-        .from('subscription_payments')
-        .update({
-          subscription_id: subscription.id,
-          amount: price,
-          payment_method: 'credit_card',
-          payment_status: 'pending',
-          payment_processor: 'stripe',
-          payment_processor_payment_id: checkoutSession.id,
-          payment_processor_invoice_url: checkoutSession.url,
-          due_date: new Date().toISOString()
-        })
-        .eq('id', existingPayment.id);
-      console.log('✅ Payment updated');
-    } else {
-      // CRIAR novo pagamento (caso raro - primeiro pagamento do usuário)
-      console.log('📝 Creating new payment for user:', userId);
-      await supabase
-        .from('subscription_payments')
-        .insert({
-          subscription_id: subscription.id,
-          user_id: userId,
-          amount: price,
-          payment_method: 'credit_card',
-          payment_status: 'pending',
-          payment_processor: 'stripe',
-          payment_processor_payment_id: checkoutSession.id,
-          payment_processor_invoice_url: checkoutSession.url,
-          due_date: new Date().toISOString()
-        });
-      console.log('✅ Payment created');
-    }
+    // NÃO alteramos a subscription aqui!
+    // A subscription só será atualizada pelo webhook quando o pagamento for confirmado
+    // Isso evita o problema de dados "sumirem" se o usuário cancelar o checkout
 
     // Retornar URL do Stripe Checkout
     res.json({
-      subscription,
       checkoutUrl: checkoutSession.url,
       message: 'Redirecionando para pagamento seguro do Stripe...'
     });
@@ -304,150 +153,16 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
 
 /**
  * POST /api/subscriptions/cancel-checkout
- * Usuário cancelou o checkout do Stripe - restaurar estado original
+ * Usuário cancelou o checkout do Stripe
+ * Como NÃO alteramos mais a subscription antes do pagamento, não precisa restaurar nada
  */
 router.post('/cancel-checkout', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.userId!;
-
     console.log('❌ User canceled checkout:', userId);
 
-    // Buscar subscription do usuário
-    const { data: subscription, error: fetchError } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (fetchError || !subscription) {
-      console.log('⚠️ No subscription found for user');
-      return res.json({ message: 'Checkout cancelado' });
-    }
-
-    // Se estava pending, restaurar para o estado original
-    if (subscription.status === 'pending') {
-      const metadata = subscription.metadata || {};
-      const originalStatus = metadata.original_status;
-      const originalPlanType = metadata.original_plan_type;
-      const originalPlanName = metadata.original_plan_name;
-      const originalPlanPrice = metadata.original_plan_price;
-      const originalEndDate = metadata.original_end_date;
-      const originalMaxAccounts = metadata.original_max_connected_accounts;
-      const oldTrialEndDate = metadata.old_trial_end_date;
-
-      console.log('🔄 Restoring original subscription state:', {
-        originalStatus,
-        originalPlanType,
-        originalEndDate
-      });
-
-      // Se temos dados originais, restaurar para o estado exato
-      if (originalStatus && originalPlanType) {
-        // Verificar se o plano original ainda é válido (não expirou)
-        const endDate = originalEndDate ? new Date(originalEndDate) : null;
-        const trialEnd = oldTrialEndDate ? new Date(oldTrialEndDate) : null;
-        const now = new Date();
-
-        // Se era trial e ainda está válido
-        if (originalStatus === 'trial' && trialEnd && trialEnd > now) {
-          console.log('🔄 Restoring to trial state');
-          await supabase
-            .from('subscriptions')
-            .update({
-              status: 'trial',
-              plan_type: originalPlanType,
-              plan_name: originalPlanName || `Trial - ${originalPlanType}`,
-              plan_price: 0,
-              trial_end_date: oldTrialEndDate,
-              end_date: oldTrialEndDate,
-              max_connected_accounts: originalMaxAccounts || 0,
-              payment_method: null,
-              payment_processor: null,
-              payment_processor_subscription_id: null,
-              payment_processor_customer_id: null,
-              auto_renew: false,
-            })
-            .eq('id', subscription.id);
-
-          console.log('✅ Trial restored');
-          return res.json({ message: 'Trial restaurado', trialActive: true });
-        }
-        // Se era ativo e ainda está válido
-        else if (originalStatus === 'active' && endDate && endDate > now) {
-          console.log('🔄 Restoring to active subscription state');
-          await supabase
-            .from('subscriptions')
-            .update({
-              status: 'active',
-              plan_type: originalPlanType,
-              plan_name: originalPlanName,
-              plan_price: originalPlanPrice || 0,
-              end_date: originalEndDate,
-              trial_end_date: null,
-              max_connected_accounts: originalMaxAccounts || 0,
-              payment_processor_subscription_id: null, // Limpar sessão pendente
-            })
-            .eq('id', subscription.id);
-
-          console.log('✅ Active subscription restored');
-          return res.json({ message: 'Assinatura restaurada', subscriptionActive: true });
-        }
-        // Se estava ativo mas não tinha end_date válida (plano anual sem data fim?)
-        else if (originalStatus === 'active') {
-          console.log('🔄 Restoring to active subscription (no end date check)');
-          await supabase
-            .from('subscriptions')
-            .update({
-              status: 'active',
-              plan_type: originalPlanType,
-              plan_name: originalPlanName,
-              plan_price: originalPlanPrice || 0,
-              end_date: originalEndDate,
-              trial_end_date: null,
-              max_connected_accounts: originalMaxAccounts || 0,
-              payment_processor_subscription_id: null,
-            })
-            .eq('id', subscription.id);
-
-          console.log('✅ Active subscription restored');
-          return res.json({ message: 'Assinatura restaurada', subscriptionActive: true });
-        }
-      }
-
-      // Fallback: Se não temos dados originais mas tinha trial_end_date
-      if (oldTrialEndDate) {
-        const trialEnd = new Date(oldTrialEndDate);
-        const now = new Date();
-
-        if (trialEnd > now) {
-          console.log('🔄 Fallback: Restoring trial from old_trial_end_date');
-          await supabase
-            .from('subscriptions')
-            .update({
-              status: 'trial',
-              plan_type: 'manual',
-              plan_name: 'Trial - Plano Manual',
-              plan_price: 0,
-              trial_end_date: oldTrialEndDate,
-              end_date: oldTrialEndDate,
-              payment_method: null,
-              payment_processor: null,
-              payment_processor_subscription_id: null,
-              payment_processor_customer_id: null,
-              auto_renew: false,
-            })
-            .eq('id', subscription.id);
-
-          console.log('✅ Trial restored (fallback)');
-          return res.json({ message: 'Trial restaurado', trialActive: true });
-        }
-      }
-
-      console.log('⚠️ Could not restore - no valid original state found');
-    }
-
+    // Não precisa fazer nada - a subscription não foi alterada
+    // Apenas loga e retorna sucesso
     res.json({ message: 'Checkout cancelado' });
   } catch (error: any) {
     console.error('Error handling canceled checkout:', error);
@@ -567,10 +282,12 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
       case 'checkout.session.completed': {
         const session = event.data.object as any;
         const userId = session.metadata?.user_id;
+        const planType = session.metadata?.plan_type as PlanType;
 
         console.log('📦 Checkout Session Completed:', {
           sessionId: session.id,
           userId: userId,
+          planType: planType,
           customerEmail: session.customer_email,
           paymentStatus: session.payment_status,
         });
@@ -579,6 +296,13 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
           console.warn('⚠️ User ID not found in session metadata');
           break;
         }
+
+        if (!planType || !PLAN_CONFIGS[planType]) {
+          console.warn('⚠️ Invalid plan type in session metadata:', planType);
+          break;
+        }
+
+        const planConfig = PLAN_CONFIGS[planType];
 
         // Buscar a subscription mais recente do usuário (independente do status)
         console.log('🔍 Searching subscription for user:', userId);
@@ -602,13 +326,25 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
         console.log('✅ Found subscription:', userSub.id, 'with status:', userSub.status);
 
-        // Atualizar a subscription do usuário para 'active'
-        console.log('📝 Updating subscription status to active...');
+        // Calcular data de término (1 ano a partir de agora)
+        const endDate = new Date();
+        endDate.setFullYear(endDate.getFullYear() + 1);
+
+        // Atualizar a subscription do usuário com o novo plano
+        console.log('📝 Updating subscription to active with plan:', planType);
         const { data: updated, error: updateError } = await supabase
           .from('subscriptions')
           .update({
             status: 'active',
+            plan_type: planType,
+            plan_name: planConfig.name,
+            plan_price: planConfig.yearlyPrice,
             start_date: new Date().toISOString(),
+            end_date: endDate.toISOString(),
+            trial_end_date: null, // Remove trial quando ativa plano pago
+            max_connected_accounts: planConfig.maxAccounts,
+            payment_method: 'credit_card',
+            payment_processor: 'stripe',
             payment_processor_subscription_id: session.subscription || session.id,
             payment_processor_customer_id: session.customer,
           })
@@ -620,7 +356,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
           throw updateError;
         }
 
-        console.log('✅ Subscription updated to active:', updated);
+        console.log('✅ Subscription updated to active with plan:', planType, updated);
 
         // Atualizar pagamento - buscar por user_id ao invés de subscription_id
         const { data: payment, error: paymentFetchError } = await supabase
