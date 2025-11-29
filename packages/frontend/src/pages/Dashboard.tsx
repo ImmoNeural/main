@@ -356,29 +356,6 @@ const Dashboard = () => {
   // Criar mapa de cores ÚNICO para todas as categorias
   const categoryColorMap = getAllCategoryColors(Array.from(allCategories));
 
-  // Preparar dados para o gráfico semanal
-  const weeklyChartData = weeklyStats.map((week, index) => {
-    const data: any = {
-      week: `S${week.weekNumber}`,
-      weekLabel: `Semana ${week.weekNumber}/${week.year}`,
-      dateRange: `${format(new Date(week.startDate), 'dd/MM')} - ${format(new Date(week.endDate), 'dd/MM')}`,
-      year: week.year,
-      index: index, // Para calcular posição do ano
-    };
-
-    // Adicionar despesas
-    week.expenses.byCategory.forEach((cat) => {
-      data[`expense_${cat.category}`] = cat.amount;
-    });
-
-    // Adicionar receitas
-    week.income.byCategory.forEach((cat) => {
-      data[`income_${cat.category}`] = cat.amount;
-    });
-
-    return data;
-  });
-
   // Preparar dados para o gráfico mensal
   const monthlyChartData = monthlyStats.map((month) => {
     const data: any = {
@@ -842,7 +819,7 @@ const Dashboard = () => {
                   align="right"
                   verticalAlign="middle"
                   wrapperStyle={{ paddingLeft: '20px' }}
-                  formatter={(value, entry: any) => {
+                  formatter={(value, _entry: any) => {
                     const item = categoryStats.find(cat => cat.category === value);
                     return (
                       <span className="text-sm text-gray-700">
