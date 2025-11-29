@@ -71,6 +71,7 @@ const ConnectBank = () => {
   const [connecting, setConnecting] = useState(false);
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [showConsent, setShowConsent] = useState(false);
+  const [showBankGrid, setShowBankGrid] = useState(false);
 
   useEffect(() => {
     loadBanks();
@@ -117,6 +118,73 @@ const ConnectBank = () => {
   const handleSelectBank = (bank: Bank) => {
     setSelectedBank(bank);
     setShowConsent(true);
+  };
+
+  /**
+   * Conexão direta - abre Pluggy widget sem pré-selecionar banco
+   * Fluxo simplificado: 1 clique apenas
+   */
+  const handleDirectConnect = async () => {
+    setConnecting(true);
+    sessionStorage.setItem('bank_connection_in_progress', 'true');
+
+    try {
+      const response = await bankApi.connectDirect();
+      const connectToken = response.data.connect_token;
+
+      if (!connectToken) {
+        alert('❌ Erro: Token de conexão não recebido do servidor. Tente novamente.');
+        sessionStorage.removeItem('bank_connection_in_progress');
+        setConnecting(false);
+        return;
+      }
+
+      try {
+        await loadPluggySDK();
+      } catch (sdkError) {
+        alert('❌ Não foi possível carregar o SDK do Pluggy. Por favor, recarregue a página e tente novamente.');
+        sessionStorage.removeItem('bank_connection_in_progress');
+        setConnecting(false);
+        return;
+      }
+
+      const pluggyConnect = new window.PluggyConnect({
+        connectToken: connectToken,
+        onSuccess: async (data) => {
+          try {
+            const itemId = data.item?.id;
+            await bankApi.handleCallback(
+              itemId || 'pluggy_sdk_' + Date.now(),
+              connectToken,
+              'Banco'
+            );
+            alert(`✅ Conta conectada com sucesso!`);
+            sessionStorage.removeItem('bank_connection_in_progress');
+            navigate('/app/dashboard');
+          } catch (error) {
+            alert('❌ Erro ao processar conexão bancária.');
+            sessionStorage.removeItem('bank_connection_in_progress');
+          }
+          setConnecting(false);
+        },
+        onError: (error) => {
+          alert(`❌ Erro na conexão: ${error.message || 'Erro desconhecido'}`);
+          sessionStorage.removeItem('bank_connection_in_progress');
+          setConnecting(false);
+        },
+        onClose: () => {
+          sessionStorage.removeItem('bank_connection_in_progress');
+          setConnecting(false);
+        }
+      });
+
+      pluggyConnect.init();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Erro ao conectar banco.';
+      alert(`❌ Erro ao conectar banco\n\n${errorMessage}`);
+      sessionStorage.removeItem('bank_connection_in_progress');
+      setConnecting(false);
+    }
   };
 
   const handleConnect = async () => {
@@ -288,6 +356,38 @@ const ConnectBank = () => {
         </div>
       </div>
 
+      {/* Botão Principal - Conexão Direta */}
+      {!showConsent && !bankError && (
+        <div className="card bg-gradient-to-r from-primary-50 to-primary-100 border-2 border-primary-200 max-w-2xl mx-auto text-center py-8">
+          <div className="w-20 h-20 mx-auto mb-4 bg-primary-600 rounded-full flex items-center justify-center">
+            <Shield className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Conecte seu banco
+          </h2>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            Clique no botão abaixo para selecionar seu banco e fazer login de forma segura.
+          </p>
+          <button
+            onClick={handleDirectConnect}
+            disabled={connecting}
+            className="btn-primary text-lg px-8 py-4 flex items-center justify-center mx-auto space-x-3"
+          >
+            {connecting ? (
+              <>
+                <RefreshCw className="w-6 h-6 animate-spin" />
+                <span>Conectando...</span>
+              </>
+            ) : (
+              <>
+                <Shield className="w-6 h-6" />
+                <span>Conectar Banco</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Error Message - Conexão não disponível */}
       {bankError && !showConsent && (
         <div className="card bg-gray-50 border border-gray-200 max-w-lg mx-auto text-center py-12">
@@ -300,17 +400,39 @@ const ConnectBank = () => {
             Por favor, tente novamente mais tarde.
           </p>
           <button
-            onClick={loadBanks}
+            onClick={handleDirectConnect}
+            disabled={connecting}
             className="btn-primary text-sm inline-flex items-center"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Tentar novamente
+            {connecting ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Conectando...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Tentar novamente
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Toggle para ver lista de bancos (opcional) */}
+      {!showConsent && !bankError && banks.length > 0 && (
+        <div className="text-center">
+          <button
+            onClick={() => setShowBankGrid(!showBankGrid)}
+            className="text-sm text-gray-500 hover:text-primary-600 transition-colors"
+          >
+            {showBankGrid ? '▲ Ocultar lista de bancos' : '▼ Ver lista de bancos disponíveis'}
           </button>
         </div>
       )}
 
       {/* Banks Grid - Separated by Type (PF/PJ) */}
-      {!showConsent && !bankError && banks.length > 0 && (() => {
+      {!showConsent && !bankError && banks.length > 0 && showBankGrid && (() => {
         // Separar bancos por tipo
         const personalBanks = banks.filter(b => b.type === 'PERSONAL_BANK' || !b.type);
         const businessBanks = banks.filter(b => b.type === 'BUSINESS_BANK');

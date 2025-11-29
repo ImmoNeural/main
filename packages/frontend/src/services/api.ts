@@ -21,15 +21,11 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      console.log(`🔑 API request with token: ${config.url} (token: ${token.substring(0, 20)}...)`);
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.log(`⚠️ API request without token: ${config.url}`);
     }
     return config;
   },
   (error) => {
-    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -90,6 +86,10 @@ export const bankApi = {
 
   connectBank: (bankId: string) =>
     api.post('/bank/connect', { bank_id: bankId }),
+
+  // Conexão direta - abre Pluggy widget sem pré-selecionar banco
+  connectDirect: () =>
+    api.post<{ connect_token: string; state: string }>('/bank/connect-direct'),
 
   handleCallback: (code: string, state: string, bankName: string) =>
     api.post('/bank/callback', { code, state, bank_name: bankName }),

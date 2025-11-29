@@ -149,6 +149,39 @@ export class PluggyService {
   }
 
   /**
+   * Cria um connect token sem pré-selecionar banco
+   * O widget do Pluggy mostrará a lista completa de bancos
+   */
+  async createDirectConnectToken(userId: string): Promise<{ connectToken: string }> {
+    try {
+      const apiKey = await this.getApiKey();
+
+      const tokenResponse = await this.client.post(
+        '/connect_token',
+        {
+          itemId: null,
+          options: {
+            clientUserId: userId,
+            // NÃO especificar connectorId - widget mostrará todos os bancos
+          },
+        },
+        {
+          headers: {
+            'X-API-KEY': apiKey,
+          },
+        }
+      );
+
+      return {
+        connectToken: tokenResponse.data.accessToken,
+      };
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      throw new Error('Failed to create connect token: ' + errorMessage);
+    }
+  }
+
+  /**
    * Obtém informações do Item após autorização
    */
   async getItem(itemId: string): Promise<any> {

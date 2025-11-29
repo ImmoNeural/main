@@ -23,34 +23,11 @@ function toISOString(timestamp: number | undefined): string | null {
  * Lista os bancos disponíveis para conexão
  */
 router.get('/available', async (req: Request, res: Response) => {
-  console.log('\n🏦 ===============================================');
-  console.log('🏦 GET /api/bank/available - LISTA DE BANCOS');
-  console.log('🏦 ===============================================');
-
   try {
-    const { country = 'BR' } = req.query; // Padrão BR para Brasil
-    console.log('🌍 Country:', country);
-    console.log('🔧 OPEN_BANKING_PROVIDER:', process.env.OPEN_BANKING_PROVIDER || 'NOT SET');
-    console.log('🔑 PLUGGY_CLIENT_ID:', process.env.PLUGGY_CLIENT_ID ? 'SET ✅' : 'NOT SET ❌');
-    console.log('🔑 PLUGGY_CLIENT_SECRET:', process.env.PLUGGY_CLIENT_SECRET ? 'SET ✅' : 'NOT SET ❌');
-
+    const { country = 'BR' } = req.query;
     const banks = await openBankingService.getAvailableBanks(country as string);
-
-    console.log(`\n✅ Retornando ${banks.length} bancos`);
-    if (banks.length > 0) {
-      console.log('   Primeiro banco:', {
-        id: banks[0].id,
-        name: banks[0].name,
-        country: banks[0].country
-      });
-    }
-    console.log('🏦 ===============================================\n');
-
     res.json(banks);
   } catch (error: any) {
-    console.error('❌ Error fetching available banks:', error);
-    console.log('🏦 ===============================================\n');
-
     // Retornar erro informativo para o usuário
     const errorMessage = error.message || 'Failed to fetch available banks';
 
@@ -78,8 +55,38 @@ router.get('/available', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/bank/connect-direct
+ * Inicia conexão direta com Pluggy (sem pré-selecionar banco)
+ * Abre o widget do Pluggy com a lista completa de bancos
+ */
+router.post('/connect-direct', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+
+    // Importar o serviço Pluggy diretamente para criar token sem connectorId
+    const { PluggyService } = await import('../services/providers/pluggy.service');
+    const pluggyService = new PluggyService();
+
+    // Criar connect token SEM especificar connectorId
+    const tokenResponse = await (pluggyService as any).createDirectConnectToken(user_id);
+
+    res.json({
+      connect_token: tokenResponse.connectToken,
+      state: tokenResponse.connectToken,
+    });
+  } catch (error: any) {
+    console.error('[Bank] ❌ Error creating direct connect token:', error.message);
+    res.status(503).json({
+      error: 'Serviço de conexão bancária temporariamente indisponível',
+      message: 'Não foi possível iniciar a conexão. Por favor, tente novamente em alguns minutos.',
+      code: 'BANK_CONNECTION_UNAVAILABLE'
+    });
+  }
+});
+
+/**
  * POST /api/bank/connect
- * Inicia o processo de conexão com um banco
+ * Inicia o processo de conexão com um banco específico
  */
 router.post('/connect', authMiddleware, async (req: Request, res: Response) => {
   try {
