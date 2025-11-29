@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3, Upload } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3, Upload, PieChart as PieChartIcon, TrendingUp as ChartIcon, Trophy, List } from 'lucide-react';
 import { dashboardApi, transactionApi, bankApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import { CategoryIcon } from '../components/CategoryIcons';
@@ -17,6 +17,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
@@ -62,7 +63,6 @@ const Dashboard = () => {
     return localStorage.getItem('activeAccountId');
   });
   const [accountInitialized, setAccountInitialized] = useState(false);
-  const [chartView, setChartView] = useState<'weekly' | 'monthly'>('weekly'); // Novo: controlar visualização
   const transactionsRef = useRef<HTMLDivElement>(null); // Ref para seção de transações
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<{
@@ -153,11 +153,6 @@ const Dashboard = () => {
       setSelectedPeriod({ type: null });
     }
   }, [activeAccountId, period, accountInitialized]);
-
-  // Resetar período selecionado quando mudar visualização
-  useEffect(() => {
-    setSelectedPeriod({ type: null });
-  }, [chartView]);
 
   // Inicializar categoria selecionada com a de maior gasto
   useEffect(() => {
@@ -273,7 +268,7 @@ const Dashboard = () => {
     }
   };
 
-  // Handler para clique no gráfico
+  // Handler para clique no gráfico mensal
   const handleChartClick = (data: any) => {
     console.log('🖱️ Chart clicked, full data:', data);
 
@@ -282,9 +277,6 @@ const Dashboard = () => {
       return;
     }
 
-    // Recharts pode passar dados de duas formas:
-    // 1. Diretamente quando clica na barra (tem week/monthKey)
-    // 2. Via activePayload quando clica no container (precisa extrair)
     let clickedData = data;
 
     // Se tiver activePayload, usar o primeiro item
@@ -294,96 +286,42 @@ const Dashboard = () => {
     }
 
     console.log('📊 Clicked data:', clickedData);
-    console.log('🔍 Available keys:', Object.keys(clickedData));
 
-    if (chartView === 'weekly') {
-      // Visualização semanal
-      // Extrair número da semana do formato 'S37' -> 37
-      const weekString = clickedData.week; // ex: 'S37'
+    // Visualização mensal
+    const monthKey = clickedData.monthKey; // ex: '2025-09'
 
-      if (!weekString) {
-        console.log('❌ No week property found');
-        return;
-      }
+    if (!monthKey) {
+      console.log('❌ No monthKey property found');
+      return;
+    }
 
-      const weekNumber = parseInt(weekString.replace('S', '')); // 37
-      const year = clickedData.year;
+    console.log('📅 Searching for monthKey:', monthKey);
 
-      console.log('📅 Weekly view - extracted week number:', weekNumber, 'year:', year);
-      console.log('📅 Searching in weeklyStats:', weeklyStats.length, 'items');
+    const monthData = monthlyStats.find(m => m.month === monthKey);
 
-      const weekData = weeklyStats.find(w => {
-        console.log(`  Comparing: w.weekNumber=${w.weekNumber}, w.year=${w.year} vs target=${weekNumber}, ${year}`);
-        return w.weekNumber === weekNumber && w.year === year;
+    if (monthData) {
+      const [year, month] = monthData.month.split('-');
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+
+      setSelectedPeriod({
+        type: 'month',
+        month: monthData.month,
+        monthLabel: monthData.monthLabel,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       });
-
-      console.log('🔍 Found week data:', weekData);
-
-      if (weekData) {
-        console.log(`✅ Loading transactions from ${weekData.startDate} to ${weekData.endDate}`);
-        setSelectedPeriod({
-          type: 'week',
-          weekNumber: weekData.weekNumber,
-          year: weekData.year,
-          startDate: weekData.startDate,
-          endDate: weekData.endDate
-        });
-        loadFilteredTransactions(weekData.startDate, weekData.endDate);
-        scrollToTransactions();
-      } else {
-        console.log('❌ Week data not found in weeklyStats');
-      }
-    } else {
-      // Visualização mensal
-      // Usar monthKey ao invés de month (monthKey = '2025-09', month = 'Sep')
-      const monthKey = clickedData.monthKey; // ex: '2025-09'
-
-      if (!monthKey) {
-        console.log('❌ No monthKey property found');
-        return;
-      }
-
-      console.log('📅 Monthly view - searching for monthKey:', monthKey);
-      console.log('📅 Searching in monthlyStats:', monthlyStats.length, 'items');
-
-      const monthData = monthlyStats.find(m => {
-        console.log(`  Comparing: m.month=${m.month} vs target=${monthKey}`);
-        return m.month === monthKey;
-      });
-
-      console.log('🔍 Found month data:', monthData);
-
-      if (monthData) {
-        // Calcular startDate e endDate do mês
-        const [year, month] = monthData.month.split('-');
-        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
-
-        console.log(`✅ Loading transactions from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-
-        setSelectedPeriod({
-          type: 'month',
-          month: monthData.month,
-          monthLabel: monthData.monthLabel,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString()
-        });
-        loadFilteredTransactions(startDate.toISOString(), endDate.toISOString());
-        scrollToTransactions();
-      } else {
-        console.log('❌ Month data not found in monthlyStats');
-      }
+      loadFilteredTransactions(startDate.toISOString(), endDate.toISOString());
+      scrollToTransactions();
     }
   };
 
   // Gerar título dinâmico para transações
   const getTransactionsTitle = () => {
-    if (selectedPeriod.type === 'week') {
-      return `💳 Transações semana ${selectedPeriod.weekNumber}`;
-    } else if (selectedPeriod.type === 'month') {
-      return `💳 Transações ${selectedPeriod.monthLabel}`;
+    if (selectedPeriod.type === 'month') {
+      return `Transações ${selectedPeriod.monthLabel}`;
     }
-    return '💳 Transações Recentes';
+    return 'Transações Recentes';
   };
 
   // Toggle de categoria na legenda
@@ -474,18 +412,15 @@ const Dashboard = () => {
   // Função para mostrar anos centralizados no eixo X
   const renderYearTick = (props: any) => {
     const { x, y, payload } = props;
-    const currentData = chartView === 'weekly' ? weeklyChartData : monthlyChartData;
-    const currentIndex = currentData.findIndex((d: any) =>
-      chartView === 'weekly' ? d.week === payload.value : d.month === payload.value
-    );
+    const currentIndex = monthlyChartData.findIndex((d: any) => d.month === payload.value);
 
     if (currentIndex === -1) return <></>;
 
-    const currentYear = currentData[currentIndex].year;
+    const currentYear = monthlyChartData[currentIndex].year;
 
     // Mostrar ano apenas no meio do grupo de dados do mesmo ano
-    const yearGroup = currentData.filter((d: any) => d.year === currentYear);
-    const firstIndexOfYear = currentData.findIndex((d: any) => d.year === currentYear);
+    const yearGroup = monthlyChartData.filter((d: any) => d.year === currentYear);
+    const firstIndexOfYear = monthlyChartData.findIndex((d: any) => d.year === currentYear);
     const middleIndexOfYear = firstIndexOfYear + Math.floor(yearGroup.length / 2);
 
     if (currentIndex === middleIndexOfYear) {
@@ -530,13 +465,10 @@ const Dashboard = () => {
     return result;
   };
 
-  // Tooltip customizado para o gráfico semanal/mensal
-  const CustomWeeklyTooltip = ({ active, payload, label }: any) => {
+  // Tooltip customizado para o gráfico mensal
+  const CustomMonthlyTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      // Procurar dados dependendo da visualização
-      const data = chartView === 'weekly'
-        ? weeklyChartData.find((d) => d.week === label)
-        : monthlyChartData.find((d) => d.month === label);
+      const data = monthlyChartData.find((d) => d.month === label);
 
       // Calcular subtotais
       const expenseItems = payload.filter((p: any) => p.dataKey.startsWith('expense_'));
@@ -546,62 +478,55 @@ const Dashboard = () => {
       const totalIncome = incomeItems.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
 
       return (
-        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl">
-          {chartView === 'weekly' ? (
-            <>
-              <p className="font-bold text-gray-900 text-base">{data?.weekLabel}</p>
-              <p className="text-sm text-gray-600 mb-3">{data?.dateRange}</p>
-            </>
-          ) : (
-            <p className="font-bold text-gray-900 text-base">{data?.monthFull}</p>
-          )}
+        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl max-h-[400px] overflow-y-auto">
+          <p className="font-bold text-gray-900 text-base mb-3">{data?.monthFull}</p>
 
           {expenseItems.length > 0 && (
             <>
-              <p className="font-bold text-red-600 mt-2 mb-1">💸 Despesas:</p>
+              <p className="font-bold text-red-600 mb-1">Despesas:</p>
               {expenseItems.map((entry: any, index: number) => {
                 const category = entry.dataKey.replace('expense_', '');
                 return (
                   <div key={index} className="flex justify-between items-center gap-6 py-1">
                     <span className="flex items-center gap-2">
                       <span
-                        className="w-4 h-4 rounded"
+                        className="w-3 h-3 rounded"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="text-sm">{category}</span>
+                      <span className="text-xs">{category}</span>
                     </span>
-                    <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
+                    <span className="font-semibold text-xs">{formatCurrency(entry.value)}</span>
                   </div>
                 );
               })}
               <div className="flex justify-between items-center gap-6 py-1 mt-2 pt-2 border-t border-gray-200">
-                <span className="text-sm font-bold text-red-600">Subtotal Despesas:</span>
-                <span className="font-bold text-sm text-red-600">{formatCurrency(totalExpenses)}</span>
+                <span className="text-xs font-bold text-red-600">Subtotal:</span>
+                <span className="font-bold text-xs text-red-600">{formatCurrency(totalExpenses)}</span>
               </div>
             </>
           )}
 
           {incomeItems.length > 0 && (
             <>
-              <p className="font-bold text-green-600 mt-3 mb-1">💰 Receitas:</p>
+              <p className="font-bold text-green-600 mt-3 mb-1">Receitas:</p>
               {incomeItems.map((entry: any, index: number) => {
                 const category = entry.dataKey.replace('income_', '');
                 return (
                   <div key={index} className="flex justify-between items-center gap-6 py-1">
                     <span className="flex items-center gap-2">
                       <span
-                        className="w-4 h-4 rounded"
+                        className="w-3 h-3 rounded"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="text-sm">{category}</span>
+                      <span className="text-xs">{category}</span>
                     </span>
-                    <span className="font-semibold text-sm">{formatCurrency(entry.value)}</span>
+                    <span className="font-semibold text-xs">{formatCurrency(entry.value)}</span>
                   </div>
                 );
               })}
               <div className="flex justify-between items-center gap-6 py-1 mt-2 pt-2 border-t border-gray-200">
-                <span className="text-sm font-bold text-green-600">Subtotal Receitas:</span>
-                <span className="font-bold text-sm text-green-600">{formatCurrency(totalIncome)}</span>
+                <span className="text-xs font-bold text-green-600">Subtotal:</span>
+                <span className="font-bold text-xs text-green-600">{formatCurrency(totalIncome)}</span>
               </div>
             </>
           )}
@@ -763,8 +688,11 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Unified Legend */}
         <div className="xl:col-span-1 order-2 xl:order-1">
-          <div className="card h-full">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">📊 Legenda</h3>
+          <div className="card h-full max-h-[500px] overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+              <List className="w-5 h-5 text-primary-600" />
+              Legenda
+            </h3>
             <p className="text-xs text-gray-500 mb-2 sm:mb-3">Clique para habilitar/desabilitar</p>
             <div className="space-y-1 sm:space-y-2">
               {Array.from(allCategories).map((category) => {
@@ -800,56 +728,34 @@ const Dashboard = () => {
 
         {/* Charts */}
         <div className="xl:col-span-3 space-y-6 order-1 xl:order-2">
-          {/* Weekly/Monthly Bar Chart */}
+          {/* Monthly Bar Chart */}
           <div className="card overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-              <h2 className="text-base sm:text-lg font-bold text-gray-900">
-                📊 Receitas vs Despesas {chartView === 'weekly' ? 'Semanal' : 'Mensal'} (em Reais R$)
-              </h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setChartView('weekly')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    chartView === 'weekly'
-                      ? 'bg-primary-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Semanal
-                </button>
-                <button
-                  onClick={() => setChartView('monthly')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    chartView === 'monthly'
-                      ? 'bg-primary-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Mensal
-                </button>
-              </div>
-            </div>
-            {(chartView === 'weekly' ? weeklyChartData : monthlyChartData).length === 0 ? (
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary-600" />
+              Receitas vs Despesas Mensal (em Reais R$)
+            </h2>
+            {monthlyChartData.length === 0 ? (
               <EmptyChartState />
             ) : (
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="min-w-[600px] px-4 sm:px-0">
-                <ResponsiveContainer width="100%" height={450}>
+                <ResponsiveContainer width="100%" height={520}>
                   <BarChart
-                    data={chartView === 'weekly' ? weeklyChartData : monthlyChartData}
+                    data={monthlyChartData}
                     margin={{ bottom: 40 }}
                     onClick={handleChartClick}
                     style={{ cursor: 'pointer' }}
+                    barSize={20}
                   >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
-                  dataKey={chartView === 'weekly' ? 'week' : 'month'}
+                  dataKey="month"
                   tick={{ fontSize: 12 }}
                   stroke="#888"
                   height={60}
                 />
                 <XAxis
-                  dataKey={chartView === 'weekly' ? 'week' : 'month'}
+                  dataKey="month"
                   xAxisId="year"
                   orientation="bottom"
                   tick={renderYearTick}
@@ -862,7 +768,7 @@ const Dashboard = () => {
                   tick={{ fontSize: 12 }}
                   stroke="#888"
                 />
-                <Tooltip content={<CustomWeeklyTooltip />} />
+                <Tooltip content={<CustomMonthlyTooltip />} />
 
                 {/* Barras de despesas */}
                 {expenseCategories.map((category) => (
@@ -900,23 +806,24 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Pie Chart */}
+          {/* Pie Chart with Legend */}
           <div className="card overflow-hidden">
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">
-              🍰 Despesas por Categoria em %
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <PieChartIcon className="w-5 h-5 text-primary-600" />
+              Despesas por Categoria em %
             </h2>
             {categoryStats.length === 0 ? (
               <EmptyChartState />
             ) : (
-            <ResponsiveContainer width="100%" height={300} className="sm:h-[350px]">
+            <ResponsiveContainer width="100%" height={400}>
               <PieChart>
                 <Pie
                   data={categoryStats.filter(cat => !disabledCategories.has(cat.category))}
                   dataKey="total"
                   nameKey="category"
-                  cx="50%"
+                  cx="35%"
                   cy="50%"
-                  outerRadius={120}
+                  outerRadius={130}
                   label={false}
                   isAnimationActive={true}
                   animationDuration={800}
@@ -930,6 +837,20 @@ const Dashboard = () => {
                   ))}
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />
+                <Legend
+                  layout="vertical"
+                  align="right"
+                  verticalAlign="middle"
+                  wrapperStyle={{ paddingLeft: '20px' }}
+                  formatter={(value, entry: any) => {
+                    const item = categoryStats.find(cat => cat.category === value);
+                    return (
+                      <span className="text-sm text-gray-700">
+                        {value} ({item?.percentage.toFixed(1)}%)
+                      </span>
+                    );
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
             )}
@@ -941,8 +862,9 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Top Categories */}
         <div className="card overflow-hidden">
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-            🏆 Top Categorias de Gastos (em Reais R$)
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            Top Categorias de Gastos (em Reais R$)
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 mb-2">
             Média mensal dos últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
@@ -1013,11 +935,12 @@ const Dashboard = () => {
               <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+                <ChartIcon className="w-5 h-5 text-primary-600" />
                 <span
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded flex-shrink-0"
+                  className="w-4 h-4 rounded flex-shrink-0"
                   style={{ backgroundColor: categoryColorMap.get(selectedCategory) }}
                 />
-                <span className="truncate">📈 {selectedCategory} (em Reais R$)</span>
+                <span className="truncate">{selectedCategory} (em Reais R$)</span>
               </h2>
               <p className="text-xs sm:text-sm text-gray-600 mt-1 mb-3">
                 Últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
@@ -1099,8 +1022,9 @@ const Dashboard = () => {
             </>
           ) : categoryStats.length === 0 ? (
             <>
-              <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">
-                📈 Detalhamento da categoria por mês
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <ChartIcon className="w-5 h-5 text-primary-600" />
+                Detalhamento da categoria por mês
               </h2>
               <EmptyChartState />
             </>
@@ -1121,7 +1045,10 @@ const Dashboard = () => {
       {/* Recent Transactions */}
       <div ref={transactionsRef} className="card">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-gray-900">{getTransactionsTitle()}</h2>
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-primary-600" />
+            {getTransactionsTitle()}
+          </h2>
           <Link
             to="/app/transactions"
             className="text-primary-600 hover:text-primary-700 flex items-center text-sm font-semibold"
