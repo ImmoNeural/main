@@ -191,25 +191,21 @@ const ConnectBank = () => {
               }} />
 
               <div className="relative text-center">
+                {/* Imagem hero com banco e logos */}
+                <div className="mb-6">
+                  <img
+                    src="/bancos_arq.png"
+                    alt="Banco com logos dos principais bancos brasileiros"
+                    className="w-48 sm:w-56 md:w-64 h-auto mx-auto drop-shadow-lg"
+                  />
+                </div>
+
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                   Conectar Banco
                 </h2>
-                <p className="text-gray-600 mb-6 max-w-sm mx-auto leading-relaxed">
+                <p className="text-gray-600 mb-8 max-w-sm mx-auto leading-relaxed">
                   Importe suas transações automaticamente via Open Finance do Banco Central.
                 </p>
-
-                {/* Bancos compatíveis */}
-                <div className="mb-8">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-3 font-medium">Bancos compatíveis</p>
-                  <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 inline-block shadow-sm border border-gray-100/50">
-                    <img
-                      src="/bancos.png"
-                      alt="Nubank, Itaú, Bradesco, Caixa, Banco do Brasil, Santander e outros"
-                      className="h-12 sm:h-14 w-auto mx-auto opacity-90"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">+ 200 instituições financeiras</p>
-                </div>
                 <button
                   onClick={handleDirectConnect}
                   disabled={connecting}
