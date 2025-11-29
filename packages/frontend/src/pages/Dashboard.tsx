@@ -664,8 +664,8 @@ const Dashboard = () => {
       {/* Charts Section with Unified Legend */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Unified Legend */}
-        <div className="xl:col-span-1 order-2 xl:order-1">
-          <div className="card h-full max-h-[500px] overflow-y-auto">
+        <div className="xl:col-span-1 order-2 xl:order-1 self-stretch">
+          <div className="card h-full">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
               <List className="w-5 h-5 text-primary-600" />
               Legenda
