@@ -122,6 +122,8 @@ const ConnectBank = () => {
         onSuccess: async (data) => {
           try {
             const itemId = data.item?.id;
+            console.log('[ConnectBank] Pluggy onSuccess - itemId:', itemId);
+
             await bankApi.handleCallback(
               itemId || 'pluggy_sdk_' + Date.now(),
               connectToken,
@@ -130,8 +132,13 @@ const ConnectBank = () => {
             alert(`✅ Conta conectada com sucesso!`);
             sessionStorage.removeItem('bank_connection_in_progress');
             navigate('/app/dashboard');
-          } catch (error) {
-            alert('❌ Erro ao processar conexão bancária.');
+          } catch (error: any) {
+            console.error('[ConnectBank] Erro no callback:', error);
+            const errorMessage = error.response?.data?.error
+              || error.response?.data?.message
+              || error.message
+              || 'Erro ao processar conexão bancária.';
+            alert(`❌ Erro ao conectar banco:\n\n${errorMessage}`);
             sessionStorage.removeItem('bank_connection_in_progress');
           }
           setConnecting(false);

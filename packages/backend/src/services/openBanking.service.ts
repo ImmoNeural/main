@@ -157,8 +157,11 @@ class OpenBankingService {
     try {
       const provider = this.getProvider();
       return await provider.exchangeCodeForToken(code, state);
-    } catch (error) {
-      throw new Error('Failed to exchange authorization code');
+    } catch (error: any) {
+      // Repassar a mensagem de erro original se disponível
+      const errorMessage = error.message || 'Failed to exchange authorization code';
+      console.error('[OpenBanking] ❌ exchangeCodeForToken error:', errorMessage);
+      throw new Error(errorMessage);
     }
   }
 

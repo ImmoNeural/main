@@ -205,12 +205,16 @@ export class PluggyService {
    */
   async exchangeCodeForToken(itemId: string): Promise<OpenBankingTokenResponse> {
     try {
+      console.log(`[Pluggy] Aguardando item ${itemId} ficar pronto...`);
+
       // Aguardar o item ficar pronto (Pluggy precisa sincronizar após login)
       const item = await this.waitForItemReady(itemId);
 
       if (item.status === 'LOGIN_ERROR') {
-        throw new Error('Login failed at bank. Please try again.');
+        throw new Error('Login falhou no banco. Por favor, tente novamente.');
       }
+
+      console.log(`[Pluggy] ✅ Item ${itemId} pronto! Status: ${item.status}`);
 
       return {
         access_token: itemId, // Usamos o itemId como token
@@ -218,27 +222,33 @@ export class PluggyService {
         expires_in: 7776000, // 90 dias
         token_type: 'Bearer',
       };
-    } catch (error) {
-      throw new Error('Failed to process authorization');
+    } catch (error: any) {
+      console.error(`[Pluggy] ❌ Erro ao processar item ${itemId}:`, error.message);
+      // Repassar a mensagem de erro original
+      throw error;
     }
   }
 
   /**
    * Aguarda o Item do Pluggy ficar pronto para uso
    * O Pluggy precisa de alguns segundos para processar após o login
+   * Timeout aumentado para 120s para bancos mais lentos como Santander
    */
-  private async waitForItemReady(itemId: string, maxAttempts: number = 30): Promise<any> {
+  private async waitForItemReady(itemId: string, maxAttempts: number = 60): Promise<any> {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const item = await this.getItem(itemId);
 
+        console.log(`[Pluggy] Item ${itemId} - Tentativa ${attempt}/${maxAttempts} - Status: ${item.status}, ExecutionStatus: ${item.executionStatus || 'N/A'}`);
+
         // Status finais (sucesso ou erro definitivo)
         if (item.status === 'UPDATED') {
+          console.log(`[Pluggy] ✅ Item ${itemId} sincronizado com sucesso!`);
           return item;
         }
 
         if (item.status === 'LOGIN_ERROR') {
-          const errorMessage = item.error?.message || 'Login failed at bank';
+          const errorMessage = item.error?.message || 'Login falhou no banco';
           throw new Error(`Erro no login do banco: ${errorMessage}. Verifique suas credenciais e tente novamente.`);
         }
 
@@ -248,16 +258,21 @@ export class PluggyService {
           throw new Error(`Erro ao sincronizar dados do banco: ${errorMessage}`);
         }
 
-        // Status temporários que indicam processamento
-        if (item.status === 'WAITING_USER_INPUT' || item.status === 'WAITING_USER_ACTION') {
-          // Continua aguardando
+        // OUTDATED também é um status final válido (item foi sincronizado antes mas precisa atualização)
+        if (item.status === 'OUTDATED') {
+          console.log(`[Pluggy] ⚠️ Item ${itemId} está desatualizado, mas podemos usar`);
+          return item;
         }
+
+        // Status temporários que indicam processamento
+        // UPDATING, WAITING_USER_INPUT, WAITING_USER_ACTION, etc.
 
         // Aguardar 2 segundos antes de tentar novamente
         await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (error) {
-        // Se for erro de rede/API, tentar novamente
-        if (error instanceof Error && !error.message.startsWith('Erro')) {
+      } catch (error: any) {
+        // Se for erro de rede/API (não de negócio), tentar novamente
+        if (!error.message?.startsWith('Erro')) {
+          console.log(`[Pluggy] ⚠️ Erro temporário na tentativa ${attempt}, tentando novamente...`);
           await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
         }
@@ -266,11 +281,11 @@ export class PluggyService {
       }
     }
 
-    // Timeout após todas as tentativas
+    // Timeout após todas as tentativas (2 min)
     throw new Error(
-      'Tempo limite excedido aguardando sincronização do banco. ' +
-      'Isso pode acontecer se o banco estiver fora do ar ou com problemas. ' +
-      'Tente novamente mais tarde.'
+      'Tempo limite excedido (2 min) aguardando sincronização do banco. ' +
+      'Alguns bancos como Santander podem demorar mais. ' +
+      'Verifique se o banco confirmou a conexão e tente sincronizar novamente na página Contas.'
     );
   }
 

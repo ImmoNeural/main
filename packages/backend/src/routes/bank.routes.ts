@@ -528,9 +528,14 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
         currency: acc.currency,
       })),
     });
-  } catch (error) {
-    console.error('Error processing callback:', error);
-    res.status(500).json({ error: 'Failed to process bank callback' });
+  } catch (error: any) {
+    console.error('[Bank Callback] ❌ Error:', error.message || error);
+    const errorMessage = error.message || 'Failed to process bank callback';
+    res.status(500).json({
+      error: errorMessage,
+      message: errorMessage,
+      code: 'BANK_CALLBACK_ERROR'
+    });
   }
 });
 
