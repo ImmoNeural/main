@@ -17,7 +17,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
@@ -455,7 +454,7 @@ const Dashboard = () => {
       const totalIncome = incomeItems.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
 
       return (
-        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl max-h-[400px] overflow-y-auto">
+        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl max-h-[520px] overflow-y-auto">
           <p className="font-bold text-gray-900 text-base mb-3">{data?.monthFull}</p>
 
           {expenseItems.length > 0 && (
@@ -707,16 +706,18 @@ const Dashboard = () => {
         <div className="xl:col-span-3 space-y-6 order-1 xl:order-2">
           {/* Monthly Bar Chart */}
           <div className="card overflow-hidden">
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary-600" />
               Receitas vs Despesas Mensal (em Reais R$)
             </h2>
+            <p className="text-xs sm:text-sm text-gray-600 mb-4">
+              Últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
+            </p>
             {monthlyChartData.length === 0 ? (
               <EmptyChartState />
             ) : (
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="min-w-[600px] px-4 sm:px-0">
-                <ResponsiveContainer width="100%" height={520}>
+            <div className="w-full">
+              <ResponsiveContainer width="100%" height={400}>
                   <BarChart
                     data={monthlyChartData}
                     margin={{ bottom: 40 }}
@@ -778,58 +779,63 @@ const Dashboard = () => {
                 ))}
               </BarChart>
             </ResponsiveContainer>
-              </div>
             </div>
             )}
           </div>
 
           {/* Pie Chart with Legend */}
           <div className="card overflow-hidden">
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
               <PieChartIcon className="w-5 h-5 text-primary-600" />
               Despesas por Categoria em %
             </h2>
+            <p className="text-xs sm:text-sm text-gray-600 mb-4">
+              Últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
+            </p>
             {categoryStats.length === 0 ? (
               <EmptyChartState />
             ) : (
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Pie
-                  data={categoryStats.filter(cat => !disabledCategories.has(cat.category))}
-                  dataKey="total"
-                  nameKey="category"
-                  cx="35%"
-                  cy="50%"
-                  outerRadius={130}
-                  label={false}
-                  isAnimationActive={true}
-                  animationDuration={800}
-                  animationBegin={0}
-                >
-                  {categoryStats.filter(cat => !disabledCategories.has(cat.category)).map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={categoryColorMap.get(entry.category) || '#94a3b8'}
+            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4">
+              <div className="w-full lg:w-1/2">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={categoryStats.filter(cat => !disabledCategories.has(cat.category))}
+                      dataKey="total"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={false}
+                      isAnimationActive={true}
+                      animationDuration={800}
+                      animationBegin={0}
+                    >
+                      {categoryStats.filter(cat => !disabledCategories.has(cat.category)).map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={categoryColorMap.get(entry.category) || '#94a3b8'}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomPieTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-full lg:w-1/2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2">
+                {categoryStats.filter(cat => !disabledCategories.has(cat.category)).map((item) => (
+                  <div key={item.category} className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded flex-shrink-0"
+                      style={{ backgroundColor: categoryColorMap.get(item.category) || '#94a3b8' }}
                     />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomPieTooltip />} />
-                <Legend
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
-                  wrapperStyle={{ paddingLeft: '20px' }}
-                  formatter={(value, _entry: any) => {
-                    const item = categoryStats.find(cat => cat.category === value);
-                    return (
-                      <span className="text-sm text-gray-700">
-                        {value} ({item?.percentage.toFixed(1)}%)
-                      </span>
-                    );
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                    <span className="text-xs sm:text-sm text-gray-700 truncate">
+                      {item.category} ({item.percentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
             )}
           </div>
         </div>
