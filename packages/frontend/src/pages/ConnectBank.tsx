@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Shield, Lock, RefreshCw, AlertTriangle, Landmark, CreditCard, Wallet, PiggyBank } from 'lucide-react';
+import { CheckCircle, Shield, Lock, RefreshCw, Landmark, CreditCard, Wallet, PiggyBank } from 'lucide-react';
 import { bankApi } from '../services/api';
-import type { Bank } from '../types';
 
 // Declaração TypeScript para o Pluggy Connect SDK v2
 declare global {
@@ -70,33 +69,13 @@ const FloatingIcon = ({ icon: Icon, className }: { icon: any; className: string 
 const ConnectBank = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [_banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
-  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
-  const [showConsent, setShowConsent] = useState(false);
-  const [bankError, setBankError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadBanks();
     handleCallback();
+    setLoading(false);
   }, []);
-
-  const loadBanks = async () => {
-    setLoading(true);
-    setBankError(null);
-    try {
-      const response = await bankApi.getAvailableBanks();
-      setBanks(response.data);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message
-        || error.response?.data?.error
-        || 'Não foi possível carregar a lista de bancos. Por favor, tente novamente.';
-      setBankError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCallback = async () => {
     const code = searchParams.get('code');
@@ -177,105 +156,6 @@ const ConnectBank = () => {
     }
   };
 
-  const handleConnect = async () => {
-    if (!selectedBank) return;
-
-    setConnecting(true);
-    sessionStorage.setItem('bank_connection_in_progress', 'true');
-
-    try {
-      const response = await bankApi.connectBank(selectedBank.id);
-      const authUrl = response.data.authorization_url || '';
-      const isDemoMode = response.data.demo_mode === true || authUrl.startsWith('demo-mode://');
-
-      if (isDemoMode) {
-        const userConfirmed = confirm(
-          `🎭 MODO DEMONSTRAÇÃO\n\n` +
-          `Você está conectando ao ${selectedBank.name} em modo de demonstração.\n\n` +
-          `Serão geradas transações fictícias realistas brasileiras para você explorar o app.\n\n` +
-          `Deseja continuar?`
-        );
-
-        if (userConfirmed) {
-          await bankApi.handleCallback(
-            'DEMO_' + Date.now(),
-            response.data.state,
-            selectedBank.name
-          );
-          alert(`✅ Conta ${selectedBank.name} conectada! (modo demonstração)`);
-          navigate('/app/dashboard');
-        } else {
-          sessionStorage.removeItem('bank_connection_in_progress');
-          setConnecting(false);
-        }
-      } else {
-        const connectToken = response.data.state || response.data.connect_token || response.data.connectToken || response.data.access_token;
-
-        if (!connectToken || connectToken === 'undefined' || connectToken === 'null') {
-          alert('❌ Erro: Token de conexão não recebido do servidor. Tente novamente.');
-          sessionStorage.removeItem('bank_connection_in_progress');
-          setConnecting(false);
-          return;
-        }
-
-        try {
-          await loadPluggySDK();
-        } catch (sdkError) {
-          alert('❌ Não foi possível carregar o SDK do Pluggy. Por favor, recarregue a página e tente novamente.');
-          sessionStorage.removeItem('bank_connection_in_progress');
-          setConnecting(false);
-          return;
-        }
-
-        const pluggyConnect = new window.PluggyConnect({
-          connectToken: connectToken,
-          onSuccess: async (data) => {
-            try {
-              const itemId = data.item?.id;
-              await bankApi.handleCallback(
-                itemId || 'pluggy_sdk_' + Date.now(),
-                connectToken,
-                selectedBank?.name || 'Banco'
-              );
-              alert(`✅ Conta ${selectedBank?.name} conectada com sucesso!`);
-              sessionStorage.removeItem('bank_connection_in_progress');
-              navigate('/app/dashboard');
-            } catch (error) {
-              alert('❌ Erro ao processar conexão bancária.');
-              sessionStorage.removeItem('bank_connection_in_progress');
-            }
-            setConnecting(false);
-          },
-          onError: (error) => {
-            alert(`❌ Erro na conexão: ${error.message || 'Erro desconhecido'}`);
-            sessionStorage.removeItem('bank_connection_in_progress');
-            setConnecting(false);
-          },
-          onClose: () => {
-            sessionStorage.removeItem('bank_connection_in_progress');
-            setConnecting(false);
-          }
-        });
-
-        pluggyConnect.init();
-      }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message
-        || error.response?.data?.error
-        || 'Erro ao conectar banco.';
-      const errorCode = error.response?.data?.code;
-
-      if (errorCode === 'BANK_CONNECTION_UNAVAILABLE') {
-        alert(`⚠️ Serviço Temporariamente Indisponível\n\n${errorMessage}`);
-      } else {
-        alert(`❌ Erro ao conectar banco\n\n${errorMessage}`);
-      }
-
-      sessionStorage.removeItem('bank_connection_in_progress');
-      setConnecting(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -315,8 +195,7 @@ const ConnectBank = () => {
         </div>
 
         {/* Card Principal - Conexão */}
-        {!showConsent && (
-          <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-8">
+        <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-8">
             {/* Área Principal com Botão */}
             <div className="relative bg-gradient-to-br from-primary-50 via-white to-green-50 p-8 sm:p-12">
               {/* Padrão decorativo de fundo */}
@@ -325,63 +204,32 @@ const ConnectBank = () => {
               }} />
 
               <div className="relative text-center">
-                {!bankError ? (
-                  <>
-                    <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-lg shadow-primary-200">
-                      <Shield className="w-12 h-12 text-white" />
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-                      Conecte seu banco
-                    </h2>
-                    <p className="text-gray-600 mb-8 max-w-sm mx-auto leading-relaxed">
-                      Com apenas um clique, selecione seu banco e faça login de forma segura através do Open Finance.
-                    </p>
-                    <button
-                      onClick={handleDirectConnect}
-                      disabled={connecting}
-                      className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white text-lg font-semibold px-10 py-4 rounded-2xl shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                    >
-                      {connecting ? (
-                        <>
-                          <RefreshCw className="w-6 h-6 animate-spin" />
-                          <span>Conectando...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Landmark className="w-6 h-6" />
-                          <span>Conectar Banco</span>
-                        </>
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="w-20 h-20 text-amber-500 mx-auto mb-4" />
-                    <h3 className="font-bold text-gray-900 text-xl mb-2">
-                      Conexão não disponível
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-                      Não foi possível carregar os bancos no momento. Por favor, tente novamente.
-                    </p>
-                    <button
-                      onClick={handleDirectConnect}
-                      disabled={connecting}
-                      className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-                    >
-                      {connecting ? (
-                        <>
-                          <RefreshCw className="w-5 h-5 animate-spin" />
-                          Conectando...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-5 h-5" />
-                          Tentar novamente
-                        </>
-                      )}
-                    </button>
-                  </>
-                )}
+                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-lg shadow-primary-200">
+                  <Shield className="w-12 h-12 text-white" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                  Conecte seu banco
+                </h2>
+                <p className="text-gray-600 mb-8 max-w-sm mx-auto leading-relaxed">
+                  Com apenas um clique, selecione seu banco e faça login de forma segura através do Open Finance.
+                </p>
+                <button
+                  onClick={handleDirectConnect}
+                  disabled={connecting}
+                  className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white text-lg font-semibold px-10 py-4 rounded-2xl shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {connecting ? (
+                    <>
+                      <RefreshCw className="w-6 h-6 animate-spin" />
+                      <span>Conectando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Landmark className="w-6 h-6" />
+                      <span>Conectar Banco</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -415,97 +263,9 @@ const ConnectBank = () => {
               </div>
             </div>
           </div>
-        )}
-
-        {/* Consent Screen para quando seleciona banco da lista */}
-        {showConsent && selectedBank && (
-          <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-8 max-w-2xl mx-auto">
-            <div className="p-8 text-center">
-              <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-                {selectedBank.logo?.startsWith('http') || selectedBank.logo?.startsWith('data:') ? (
-                  <img
-                    src={selectedBank.logo}
-                    alt={selectedBank.name}
-                    className="w-24 h-24 object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = '<span class="text-6xl">🏦</span>';
-                    }}
-                  />
-                ) : (
-                  <span className="text-6xl">{selectedBank.logo || '🏦'}</span>
-                )}
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Conectar com {selectedBank.name}
-              </h2>
-              <p className="text-gray-500 mb-6">
-                Você está prestes a autorizar o acesso às suas informações bancárias
-              </p>
-
-              <div className="bg-gray-50 rounded-2xl p-6 mb-6 text-left">
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                  <Lock className="w-5 h-5 mr-2 text-primary-600" />
-                  Permissões solicitadas
-                </h3>
-                <ul className="space-y-3 text-sm text-gray-700">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <strong>Ver informações da conta</strong>
-                      <p className="text-gray-500">Saldo, número da conta</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <strong>Ver transações</strong>
-                      <p className="text-gray-500">Histórico dos últimos 90 dias</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <strong>Acesso contínuo</strong>
-                      <p className="text-gray-500">Válido por 90 dias (renovável)</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowConsent(false)}
-                  className="flex-1 px-6 py-3 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
-                  disabled={connecting}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConnect}
-                  disabled={connecting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-3 rounded-xl transition-colors"
-                >
-                  {connecting ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      Conectando...
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-5 h-5" />
-                      Autorizar
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Info Card - O que é Open Finance */}
-        {!showConsent && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Shield className="w-5 h-5 text-primary-600" />
@@ -520,7 +280,6 @@ const ConnectBank = () => {
               </div>
             </div>
           </div>
-        )}
 
         {/*
         ========================================
