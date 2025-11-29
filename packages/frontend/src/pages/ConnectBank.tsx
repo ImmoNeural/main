@@ -191,8 +191,13 @@ const ConnectBank = () => {
               }} />
 
               <div className="relative text-center">
-                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-lg shadow-primary-200">
-                  <Shield className="w-12 h-12 text-white" />
+                {/* Imagem dos bancos compatíveis */}
+                <div className="mb-6">
+                  <img
+                    src="/bancos.png"
+                    alt="Bancos compatíveis"
+                    className="max-w-xs sm:max-w-sm md:max-w-md mx-auto h-auto"
+                  />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                   Conectar Banco
