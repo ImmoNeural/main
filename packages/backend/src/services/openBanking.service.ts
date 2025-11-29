@@ -70,36 +70,21 @@ class OpenBankingService {
     // Pluggy (Brasil)
     if ('getConnectors' in provider) {
       console.log('   ✅ Provider has getConnectors (Pluggy detected)');
-      console.log('   🔄 Calling provider.getConnectors...');
+      console.log('   🔄 Calling provider.getConnectors with isOpenFinance=true...');
 
       const connectors = await (provider as any).getConnectors(country);
-      console.log(`   📊 Received ${connectors.length} connectors from Pluggy API`);
+      console.log(`   📊 Received ${connectors.length} Open Finance connectors from Pluggy API`);
 
       if (connectors.length > 0) {
         console.log('   ✅ Mapping connectors to banks...');
         const banks = this.mapConnectorsToBanks(connectors);
-
-        // Se o filtro Open Finance resultou em 0 bancos, incluir todos os conectores
-        if (banks.length === 0) {
-          console.log('   ⚠️ No Open Finance banks found, returning all connectors');
-          const allBanks = connectors.map((connector: any) => ({
-            id: connector.id.toString(),
-            name: connector.name,
-            logo: connector.imageUrl || '🏦',
-            country: connector.country || 'BR',
-          }));
-          console.log(`   ✅ Returning ${allBanks.length} banks (all connectors)`);
-          console.log('📋 [OpenBanking] getAvailableBanks END\n');
-          return allBanks;
-        }
-
         console.log(`   ✅ Returning ${banks.length} banks from Pluggy`);
         console.log('📋 [OpenBanking] getAvailableBanks END\n');
         return banks;
       }
 
       // Pluggy retornou 0 conectores - isso é um erro
-      console.error('   ❌ Pluggy returned 0 connectors');
+      console.error('   ❌ Pluggy returned 0 Open Finance connectors');
       console.log('📋 [OpenBanking] getAvailableBanks END\n');
       throw new Error('Nenhum banco disponível no momento. Por favor, tente novamente mais tarde.');
     }
@@ -138,51 +123,20 @@ class OpenBankingService {
 
   /**
    * Mapeia conectores do Pluggy para nosso formato
+   * A filtragem por Open Finance já é feita na API (isOpenFinance=true)
    */
   private mapConnectorsToBanks(connectors: any[]) {
-    // Filtrar APENAS conectores Open Finance (regulados pelo Banco Central)
-    // Estes são muito mais confiáveis que os conectores de scraping
-    const openFinanceConnectors = connectors.filter(connector => connector.isOpenFinance === true);
+    console.log(`   📊 Total Open Finance connectors from API: ${connectors.length}`);
 
-    console.log(`   📊 Total connectors: ${connectors.length}`);
-    console.log(`   ✅ Open Finance connectors: ${openFinanceConnectors.length}`);
-    console.log(`   ❌ Filtered out (non-Open Finance): ${connectors.length - openFinanceConnectors.length}`);
-
-    // Remover duplicatas pelo nome base do banco (sem sufixos como PF/PJ)
-    // Manter preferência por conectores "regulado" se existirem
-    const uniqueBanks = new Map<string, any>();
-
-    for (const connector of openFinanceConnectors) {
-      // Extrair nome base removendo "(Open Finance)", "PF", "PJ", etc.
-      const baseName = connector.name
-        .replace(/\s*\(Open Finance\)\s*/gi, '')
-        .replace(/\s*-?\s*PF\s*$/gi, '')
-        .replace(/\s*-?\s*PJ\s*$/gi, '')
-        .replace(/\s*-?\s*Pessoa\s*(Física|Jurídica)\s*/gi, '')
-        .trim();
-
-      const key = `${baseName}_${connector.type || 'BANK'}`;
-      const existing = uniqueBanks.get(key);
-
-      // Preferir conector "regulado" se existir ou se não houver existente
-      const isRegulated = connector.name.toLowerCase().includes('regulado');
-      const existingIsRegulated = existing?.name?.toLowerCase().includes('regulado');
-
-      if (!existing || (isRegulated && !existingIsRegulated)) {
-        uniqueBanks.set(key, connector);
-      }
-    }
-
-    const filteredConnectors = Array.from(uniqueBanks.values());
-    console.log(`   🔄 After deduplication: ${filteredConnectors.length} unique banks`);
-
-    return filteredConnectors.map(connector => ({
+    // Mapear diretamente sem filtro adicional (API já filtra por isOpenFinance=true)
+    // Mantemos o tipo (PF/PJ) separado para mostrar na UI
+    return connectors.map(connector => ({
       id: connector.id.toString(),
-      name: connector.name.includes('Open Finance') ? connector.name : `${connector.name} (Open Finance)`,
+      name: connector.name,
       logo: connector.imageUrl || '🏦',
       country: connector.country || 'BR',
       type: connector.type || 'PERSONAL_BANK', // PERSONAL_BANK, BUSINESS_BANK, INVESTMENT, etc.
-      isOpenFinance: connector.isOpenFinance || false,
+      isOpenFinance: true, // Todos são Open Finance (filtrado na API)
     }));
   }
 

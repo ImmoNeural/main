@@ -107,10 +107,11 @@ export class PluggyService {
 
   /**
    * Lista conectores (bancos) disponíveis
+   * Filtra por isOpenFinance=true para mostrar apenas bancos regulados pelo Banco Central
    */
   async getConnectors(country: string = 'BR'): Promise<any[]> {
     try {
-      console.log(`[Pluggy] Fetching connectors for country: ${country}`);
+      console.log(`[Pluggy] Fetching Open Finance connectors for country: ${country}`);
       const apiKey = await this.getApiKey();
 
       const response = await this.client.get('/connectors', {
@@ -119,18 +120,20 @@ export class PluggyService {
         },
         params: {
           countries: country,
+          isOpenFinance: true, // Filtrar apenas bancos Open Finance (regulados pelo BC)
         },
       });
 
       const connectors = response.data.results || [];
-      console.log(`[Pluggy] Found ${connectors.length} connectors`);
+      console.log(`[Pluggy] Found ${connectors.length} Open Finance connectors`);
 
       // Log primeiro banco para debug
       if (connectors.length > 0) {
         console.log(`[Pluggy] Example connector:`, {
           id: connectors[0].id,
           name: connectors[0].name,
-          type: connectors[0].type
+          type: connectors[0].type,
+          isOpenFinance: connectors[0].isOpenFinance
         });
       }
 
