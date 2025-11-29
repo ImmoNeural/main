@@ -70,7 +70,7 @@ const FloatingIcon = ({ icon: Icon, className }: { icon: any; className: string 
 const ConnectBank = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [banks, setBanks] = useState<Bank[]>([]);
+  const [_banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
@@ -177,8 +177,7 @@ const ConnectBank = () => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleSelectBank = (bank: Bank) => {
+  const _handleSelectBank = (bank: Bank) => {
     setSelectedBank(bank);
     setShowConsent(true);
   };
