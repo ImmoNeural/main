@@ -181,19 +181,6 @@ const ConnectBank = () => {
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg shadow-primary-200 mb-4">
-            <Landmark className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            Conectar Banco
-          </h1>
-          <p className="text-gray-500 max-w-md mx-auto">
-            Conecte sua conta bancária de forma segura via Open Finance
-          </p>
-        </div>
-
         {/* Card Principal - Conexão */}
         <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-8">
             {/* Área Principal com Botão */}
@@ -208,10 +195,10 @@ const ConnectBank = () => {
                   <Shield className="w-12 h-12 text-white" />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-                  Conecte seu banco
+                  Conectar Banco
                 </h2>
                 <p className="text-gray-600 mb-8 max-w-sm mx-auto leading-relaxed">
-                  Com apenas um clique, selecione seu banco e faça login de forma segura através do Open Finance.
+                  Importe suas transações automaticamente via Open Finance do Banco Central.
                 </p>
                 <button
                   onClick={handleDirectConnect}
