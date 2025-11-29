@@ -454,58 +454,62 @@ const Dashboard = () => {
       const totalIncome = incomeItems.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
 
       return (
-        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl max-h-[520px] overflow-y-auto">
-          <p className="font-bold text-gray-900 text-base mb-3">{data?.monthFull}</p>
+        <div className="bg-white p-4 border-2 border-gray-200 rounded-xl shadow-xl">
+          <p className="font-bold text-gray-900 text-base mb-3 text-center">{data?.monthFull}</p>
 
-          {expenseItems.length > 0 && (
-            <>
-              <p className="font-bold text-red-600 mb-1">Despesas:</p>
-              {expenseItems.map((entry: any, index: number) => {
-                const category = entry.dataKey.replace('expense_', '');
-                return (
-                  <div key={index} className="flex justify-between items-center gap-6 py-1">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="w-3 h-3 rounded"
-                        style={{ backgroundColor: entry.color }}
-                      />
-                      <span className="text-xs">{category}</span>
-                    </span>
-                    <span className="font-semibold text-xs">{formatCurrency(entry.value)}</span>
-                  </div>
-                );
-              })}
-              <div className="flex justify-between items-center gap-6 py-1 mt-2 pt-2 border-t border-gray-200">
-                <span className="text-xs font-bold text-red-600">Subtotal:</span>
-                <span className="font-bold text-xs text-red-600">{formatCurrency(totalExpenses)}</span>
+          <div className="flex gap-6">
+            {/* Coluna Despesas */}
+            {expenseItems.length > 0 && (
+              <div className="flex-1 min-w-[140px]">
+                <p className="font-bold text-red-600 mb-2 text-sm">Despesas</p>
+                {expenseItems.map((entry: any, index: number) => {
+                  const category = entry.dataKey.replace('expense_', '');
+                  return (
+                    <div key={index} className="flex justify-between items-center gap-3 py-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="w-2.5 h-2.5 rounded"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="text-xs text-gray-700">{category}</span>
+                      </span>
+                      <span className="font-medium text-xs">{formatCurrency(entry.value)}</span>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-between items-center gap-3 py-1 mt-2 pt-2 border-t border-gray-200">
+                  <span className="text-xs font-bold text-red-600">Total:</span>
+                  <span className="font-bold text-xs text-red-600">{formatCurrency(totalExpenses)}</span>
+                </div>
               </div>
-            </>
-          )}
+            )}
 
-          {incomeItems.length > 0 && (
-            <>
-              <p className="font-bold text-green-600 mt-3 mb-1">Receitas:</p>
-              {incomeItems.map((entry: any, index: number) => {
-                const category = entry.dataKey.replace('income_', '');
-                return (
-                  <div key={index} className="flex justify-between items-center gap-6 py-1">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="w-3 h-3 rounded"
-                        style={{ backgroundColor: entry.color }}
-                      />
-                      <span className="text-xs">{category}</span>
-                    </span>
-                    <span className="font-semibold text-xs">{formatCurrency(entry.value)}</span>
-                  </div>
-                );
-              })}
-              <div className="flex justify-between items-center gap-6 py-1 mt-2 pt-2 border-t border-gray-200">
-                <span className="text-xs font-bold text-green-600">Subtotal:</span>
-                <span className="font-bold text-xs text-green-600">{formatCurrency(totalIncome)}</span>
+            {/* Coluna Receitas */}
+            {incomeItems.length > 0 && (
+              <div className="flex-1 min-w-[140px]">
+                <p className="font-bold text-green-600 mb-2 text-sm">Receitas</p>
+                {incomeItems.map((entry: any, index: number) => {
+                  const category = entry.dataKey.replace('income_', '');
+                  return (
+                    <div key={index} className="flex justify-between items-center gap-3 py-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="w-2.5 h-2.5 rounded"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="text-xs text-gray-700">{category}</span>
+                      </span>
+                      <span className="font-medium text-xs">{formatCurrency(entry.value)}</span>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-between items-center gap-3 py-1 mt-2 pt-2 border-t border-gray-200">
+                  <span className="text-xs font-bold text-green-600">Total:</span>
+                  <span className="font-bold text-xs text-green-600">{formatCurrency(totalIncome)}</span>
+                </div>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       );
     }
