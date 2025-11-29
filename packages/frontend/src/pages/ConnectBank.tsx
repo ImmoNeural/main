@@ -177,11 +177,6 @@ const ConnectBank = () => {
     }
   };
 
-  const _handleSelectBank = (bank: Bank) => {
-    setSelectedBank(bank);
-    setShowConsent(true);
-  };
-
   const handleConnect = async () => {
     if (!selectedBank) return;
 
