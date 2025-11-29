@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Shield, Lock, RefreshCw } from 'lucide-react';
+import { CheckCircle, Shield, Lock, RefreshCw, AlertTriangle } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { Bank } from '../types';
 
@@ -330,25 +330,24 @@ const ConnectBank = () => {
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error Message - Conexão não disponível */}
       {bankError && !showConsent && (
-        <div className="card bg-red-50 border border-red-200">
-          <div className="flex items-start space-x-3">
-            <div className="text-red-600 text-2xl">⚠️</div>
-            <div>
-              <h3 className="font-semibold text-red-900 mb-2">
-                Erro ao carregar bancos
-              </h3>
-              <p className="text-sm text-red-800 mb-4">{bankError}</p>
-              <button
-                onClick={loadBanks}
-                className="btn-primary text-sm"
-              >
-                <RefreshCw className="w-4 h-4 mr-2 inline" />
-                Tentar novamente
-              </button>
-            </div>
-          </div>
+        <div className="card bg-gray-50 border border-gray-200 max-w-lg mx-auto text-center py-12">
+          <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+          <h3 className="font-semibold text-gray-900 text-lg mb-2">
+            Conexão não disponível
+          </h3>
+          <p className="text-sm text-gray-600 mb-6">
+            Não foi possível carregar a lista de bancos no momento.<br />
+            Por favor, tente novamente mais tarde.
+          </p>
+          <button
+            onClick={loadBanks}
+            className="btn-primary text-sm inline-flex items-center"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Tentar novamente
+          </button>
         </div>
       )}
 

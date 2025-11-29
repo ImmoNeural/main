@@ -57,170 +57,83 @@ class OpenBankingService {
    * Lista de bancos disponíveis
    * Retorna lista de instituições baseada no provedor configurado
    *
-   * IMPORTANTE: Este método SEMPRE retorna uma lista de bancos, mesmo se o provedor falhar.
-   * Isso garante que o usuário sempre veja os bancos disponíveis.
-   * O erro real só será mostrado quando o usuário tentar CONECTAR a um banco.
+   * Se a API do Pluggy falhar, propaga o erro para o frontend mostrar mensagem apropriada
    */
-  async getAvailableBanks(country: string = 'DE') {
+  async getAvailableBanks(country: string = 'BR') {
     console.log('\n📋 [OpenBanking] getAvailableBanks START');
     console.log('   Country:', country);
     console.log('   Provider type:', this.providerType);
 
-    try {
-      const provider = this.getProvider();
-      console.log(`   Provider instance:`, provider.constructor.name);
+    const provider = this.getProvider();
+    console.log(`   Provider instance:`, provider.constructor.name);
 
-      // Pluggy (Brasil)
-      if ('getConnectors' in provider) {
-        console.log('   ✅ Provider has getConnectors (Pluggy detected)');
-        console.log('   🔄 Calling provider.getConnectors...');
+    // Pluggy (Brasil)
+    if ('getConnectors' in provider) {
+      console.log('   ✅ Provider has getConnectors (Pluggy detected)');
+      console.log('   🔄 Calling provider.getConnectors...');
 
-        try {
-          const connectors = await (provider as any).getConnectors(country);
-          console.log(`   📊 Received ${connectors.length} connectors from Pluggy API`);
+      const connectors = await (provider as any).getConnectors(country);
+      console.log(`   📊 Received ${connectors.length} connectors from Pluggy API`);
 
-          if (connectors.length > 0) {
-            console.log('   ✅ Mapping connectors to banks...');
-            const banks = this.mapConnectorsToBanks(connectors);
+      if (connectors.length > 0) {
+        console.log('   ✅ Mapping connectors to banks...');
+        const banks = this.mapConnectorsToBanks(connectors);
 
-            // Se o filtro Open Finance resultou em 0 bancos, incluir todos os conectores
-            if (banks.length === 0) {
-              console.log('   ⚠️ No Open Finance banks found, returning all connectors');
-              const allBanks = connectors.map((connector: any) => ({
-                id: connector.id.toString(),
-                name: connector.name,
-                logo: connector.imageUrl || '🏦',
-                country: connector.country || 'BR',
-              }));
-              console.log(`   ✅ Returning ${allBanks.length} banks (all connectors)`);
-              return allBanks;
-            }
-
-            console.log(`   ✅ Returning ${banks.length} banks from Pluggy`);
-            return banks;
-          }
-
-          // Pluggy retornou 0 conectores - fallback para lista estática
-          console.warn('');
-          console.warn('   ⚠️ Pluggy returned 0 connectors');
-          console.warn('   Falling back to static bank list');
-          console.warn('');
-        } catch (pluggyError: any) {
-          console.error('');
-          console.error('   ⚠️ PLUGGY API ERROR');
-          console.error('   Error calling Pluggy getConnectors:');
-          console.error('   Message:', pluggyError.message);
-          if (pluggyError.response) {
-            console.error('   HTTP Status:', pluggyError.response.status);
-            console.error('   Response:', JSON.stringify(pluggyError.response.data, null, 2));
-          }
-          console.error('');
-          console.log('   📋 Falling back to static bank list');
+        // Se o filtro Open Finance resultou em 0 bancos, incluir todos os conectores
+        if (banks.length === 0) {
+          console.log('   ⚠️ No Open Finance banks found, returning all connectors');
+          const allBanks = connectors.map((connector: any) => ({
+            id: connector.id.toString(),
+            name: connector.name,
+            logo: connector.imageUrl || '🏦',
+            country: connector.country || 'BR',
+          }));
+          console.log(`   ✅ Returning ${allBanks.length} banks (all connectors)`);
+          console.log('📋 [OpenBanking] getAvailableBanks END\n');
+          return allBanks;
         }
-      } else {
-        console.log('   ℹ️ Provider does NOT have getConnectors');
+
+        console.log(`   ✅ Returning ${banks.length} banks from Pluggy`);
+        console.log('📋 [OpenBanking] getAvailableBanks END\n');
+        return banks;
       }
 
-      // Belvo (América Latina) ou Nordigen (Europa)
-      if ('getInstitutions' in provider) {
-        try {
-          const providerName = provider.constructor.name;
-          console.log(`   Provider with getInstitutions: ${providerName}`);
-
-          const institutions = await (provider as any).getInstitutions(country);
-
-          if (providerName === 'BelvoService') {
-            console.log(`   Using Belvo institutions (${institutions.length} found)`);
-            return this.mapBelvoInstitutionsToBanks(institutions);
-          } else {
-            console.log(`   Using Nordigen institutions (${institutions.length} found)`);
-            return this.mapInstitutionsToBanks(institutions);
-          }
-        } catch (institutionError: any) {
-          console.error('   ⚠️ Error fetching institutions:', institutionError.message);
-          console.log('   📋 Falling back to static bank list');
-        }
-      }
-
-      // Tink (Europa)
-      if ('getProviders' in provider) {
-        try {
-          console.log('   Using Tink providers');
-          const providers = await (provider as any).getProviders(country);
-          return this.mapProvidersToBanks(providers);
-        } catch (tinkError: any) {
-          console.error('   ⚠️ Error fetching Tink providers:', tinkError.message);
-          console.log('   📋 Falling back to static bank list');
-        }
-      }
-
-      // Fallback para lista estática - SEMPRE retorna bancos para o usuário
-      console.log('   📋 Using static bank list as fallback');
-      const staticBanks = this.getStaticBankList(country);
-      console.log(`   📊 Static list has ${staticBanks.length} banks`);
-      return staticBanks;
-    } catch (error: any) {
-      console.error('   ❌ CATCH: Error in getAvailableBanks:', error);
-
-      // SEMPRE retorna lista estática em caso de erro
-      // Assim o usuário vê os bancos e só recebe erro ao tentar conectar
-      console.log('   📋 Falling back to static list due to error');
-      const staticBanks = this.getStaticBankList(country);
-      console.log(`   📊 Static list has ${staticBanks.length} banks`);
-      return staticBanks;
-    } finally {
+      // Pluggy retornou 0 conectores - isso é um erro
+      console.error('   ❌ Pluggy returned 0 connectors');
       console.log('📋 [OpenBanking] getAvailableBanks END\n');
+      throw new Error('Nenhum banco disponível no momento. Por favor, tente novamente mais tarde.');
     }
-  }
 
-  /**
-   * Lista estática de bancos principais por país
-   * Usada como fallback quando a API do provedor não está disponível
-   */
-  private getStaticBankList(country: string) {
-    const banks = {
-      DE: [
-        { id: 'DEUTSCHE_BANK_DEFF', name: 'Deutsche Bank', logo: '🏦', country: 'DE' },
-        { id: 'COMMERZBANK_COBADEFF', name: 'Commerzbank', logo: '🏦', country: 'DE' },
-        { id: 'SPARKASSE_DE', name: 'Sparkasse', logo: '🏦', country: 'DE' },
-        { id: 'ING_INGDDEFF', name: 'ING', logo: '🏦', country: 'DE' },
-        { id: 'N26_NTSBDEB1', name: 'N26', logo: '🏦', country: 'DE' },
-        { id: 'DKB_BYLADEM1', name: 'DKB', logo: '🏦', country: 'DE' },
-        { id: 'POSTBANK_PBNKDEFF', name: 'Postbank', logo: '🏦', country: 'DE' },
-      ],
-      BR: [
-        // Bancos tradicionais
-        { id: '001', name: 'Banco do Brasil', logo: '🏦', country: 'BR' },
-        { id: '341', name: 'Itaú Unibanco', logo: '🏦', country: 'BR' },
-        { id: '237', name: 'Bradesco', logo: '🏦', country: 'BR' },
-        { id: '033', name: 'Santander Brasil', logo: '🏦', country: 'BR' },
-        { id: '104', name: 'Caixa Econômica Federal', logo: '🏦', country: 'BR' },
-        // Bancos digitais
-        { id: '260', name: 'Nubank', logo: '💜', country: 'BR' },
-        { id: '077', name: 'Banco Inter', logo: '🧡', country: 'BR' },
-        { id: '336', name: 'C6 Bank', logo: '⚫', country: 'BR' },
-        { id: '290', name: 'PagBank', logo: '🟢', country: 'BR' },
-        { id: '212', name: 'Banco Original', logo: '🟢', country: 'BR' },
-        { id: '380', name: 'PicPay', logo: '🟢', country: 'BR' },
-        { id: '323', name: 'Mercado Pago', logo: '🔵', country: 'BR' },
-        { id: '637', name: 'Sofisa Direto', logo: '🏦', country: 'BR' },
-        { id: '756', name: 'Sicoob', logo: '🏦', country: 'BR' },
-        { id: '748', name: 'Sicredi', logo: '🏦', country: 'BR' },
-        // Outros
-        { id: '041', name: 'Banrisul', logo: '🏦', country: 'BR' },
-        { id: '422', name: 'Safra', logo: '🏦', country: 'BR' },
-        { id: '745', name: 'Citibank', logo: '🏦', country: 'BR' },
-        { id: '399', name: 'HSBC', logo: '🏦', country: 'BR' },
-        { id: '208', name: 'BTG Pactual', logo: '🏦', country: 'BR' },
-      ],
-      GB: [
-        { id: 'REVOLUT_REVOLT21', name: 'Revolut', logo: '🏦', country: 'GB' },
-        { id: 'MONZO_UK', name: 'Monzo', logo: '🏦', country: 'GB' },
-        { id: 'STARLING_UK', name: 'Starling Bank', logo: '🏦', country: 'GB' },
-      ],
-    };
+    // Belvo (América Latina) ou Nordigen (Europa)
+    if ('getInstitutions' in provider) {
+      const providerName = provider.constructor.name;
+      console.log(`   Provider with getInstitutions: ${providerName}`);
 
-    return banks[country as keyof typeof banks] || banks.BR;
+      const institutions = await (provider as any).getInstitutions(country);
+
+      if (providerName === 'BelvoService') {
+        console.log(`   Using Belvo institutions (${institutions.length} found)`);
+        console.log('📋 [OpenBanking] getAvailableBanks END\n');
+        return this.mapBelvoInstitutionsToBanks(institutions);
+      } else {
+        console.log(`   Using Nordigen institutions (${institutions.length} found)`);
+        console.log('📋 [OpenBanking] getAvailableBanks END\n');
+        return this.mapInstitutionsToBanks(institutions);
+      }
+    }
+
+    // Tink (Europa)
+    if ('getProviders' in provider) {
+      console.log('   Using Tink providers');
+      const providers = await (provider as any).getProviders(country);
+      console.log('📋 [OpenBanking] getAvailableBanks END\n');
+      return this.mapProvidersToBanks(providers);
+    }
+
+    // Nenhum provedor configurado
+    console.error('   ❌ No banking provider configured');
+    console.log('📋 [OpenBanking] getAvailableBanks END\n');
+    throw new Error('Serviço de conexão bancária não configurado. Entre em contato com o suporte.');
   }
 
   /**
