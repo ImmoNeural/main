@@ -1,9 +1,98 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Wallet, RefreshCw, Trash2, AlertCircle, CheckCircle, Plus } from 'lucide-react';
+import { Wallet, RefreshCw, Trash2, AlertCircle, CheckCircle, Plus, CreditCard, Clock, Calendar } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { BankAccount } from '../types';
+
+// Mapa de logos de bancos brasileiros conhecidos
+const bankLogos: Record<string, string> = {
+  'nubank': 'https://logodownload.org/wp-content/uploads/2019/08/nubank-logo-1.png',
+  'itau': 'https://logodownload.org/wp-content/uploads/2014/05/itau-logo-1.png',
+  'itaú': 'https://logodownload.org/wp-content/uploads/2014/05/itau-logo-1.png',
+  'bradesco': 'https://logodownload.org/wp-content/uploads/2014/04/bradesco-logo-1.png',
+  'santander': 'https://logodownload.org/wp-content/uploads/2016/10/Santander-logo-1.png',
+  'caixa': 'https://logodownload.org/wp-content/uploads/2014/02/caixa-logo-1.png',
+  'banco do brasil': 'https://logodownload.org/wp-content/uploads/2014/05/banco-do-brasil-logo-1.png',
+  'bb': 'https://logodownload.org/wp-content/uploads/2014/05/banco-do-brasil-logo-1.png',
+  'inter': 'https://logodownload.org/wp-content/uploads/2019/09/banco-inter-logo-1.png',
+  'c6': 'https://logodownload.org/wp-content/uploads/2020/02/c6-bank-logo-1.png',
+  'original': 'https://logodownload.org/wp-content/uploads/2019/06/banco-original-logo-1.png',
+  'sicoob': 'https://logodownload.org/wp-content/uploads/2020/02/sicoob-logo-1.png',
+  'sicredi': 'https://logodownload.org/wp-content/uploads/2018/04/sicredi-logo-1.png',
+  'banrisul': 'https://logodownload.org/wp-content/uploads/2018/09/banrisul-logo.png',
+  'picpay': 'https://logodownload.org/wp-content/uploads/2018/05/picpay-logo-1.png',
+  'mercado pago': 'https://logodownload.org/wp-content/uploads/2018/12/mercado-pago-logo.png',
+  'stone': 'https://logodownload.org/wp-content/uploads/2020/12/stone-logo.png',
+  'pagbank': 'https://logodownload.org/wp-content/uploads/2020/02/pagbank-logo.png',
+  'pagseguro': 'https://logodownload.org/wp-content/uploads/2020/02/pagbank-logo.png',
+  'neon': 'https://logodownload.org/wp-content/uploads/2019/09/neon-logo.png',
+  'next': 'https://logodownload.org/wp-content/uploads/2019/07/next-logo-1.png',
+  'xp': 'https://logodownload.org/wp-content/uploads/2019/03/xp-investimentos-logo.png',
+  'btg': 'https://logodownload.org/wp-content/uploads/2020/05/btg-pactual-logo.png',
+  'safra': 'https://logodownload.org/wp-content/uploads/2020/02/safra-logo.png',
+};
+
+// Função para obter logo do banco
+const getBankLogo = (bankName: string): string | null => {
+  const normalizedName = bankName.toLowerCase().trim();
+
+  for (const [key, url] of Object.entries(bankLogos)) {
+    if (normalizedName.includes(key)) {
+      return url;
+    }
+  }
+  return null;
+};
+
+// Função para obter cor do banco
+const getBankColor = (bankName: string): string => {
+  const name = bankName.toLowerCase();
+  if (name.includes('nubank')) return 'from-purple-500 to-purple-600';
+  if (name.includes('itau') || name.includes('itaú')) return 'from-orange-500 to-orange-600';
+  if (name.includes('bradesco')) return 'from-red-500 to-red-600';
+  if (name.includes('santander')) return 'from-red-600 to-red-700';
+  if (name.includes('caixa')) return 'from-blue-600 to-blue-700';
+  if (name.includes('brasil') || name.includes('bb')) return 'from-yellow-500 to-yellow-600';
+  if (name.includes('inter')) return 'from-orange-500 to-orange-600';
+  if (name.includes('c6')) return 'from-gray-800 to-black';
+  if (name.includes('original')) return 'from-green-500 to-green-600';
+  if (name.includes('neon')) return 'from-cyan-500 to-cyan-600';
+  if (name.includes('next')) return 'from-green-400 to-green-500';
+  return 'from-primary-500 to-primary-600';
+};
+
+// Componente de ícone do banco
+const BankIcon = ({ bankName, isActive, size = 'normal' }: { bankName: string; isActive: boolean; size?: 'normal' | 'large' }) => {
+  const logo = getBankLogo(bankName);
+  const initials = bankName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  const gradientColor = getBankColor(bankName);
+
+  const sizeClasses = size === 'large' ? 'w-16 h-16' : 'w-12 h-12';
+  const textSize = size === 'large' ? 'text-xl' : 'text-base';
+
+  if (logo) {
+    return (
+      <div className={`${sizeClasses} rounded-2xl overflow-hidden bg-white shadow-md flex items-center justify-center p-2 ${isActive ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
+        <img
+          src={logo}
+          alt={bankName}
+          className="w-full h-full object-contain"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement!.innerHTML = `<span class="${textSize} font-bold text-gray-700">${initials}</span>`;
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses} rounded-2xl bg-gradient-to-br ${gradientColor} shadow-lg flex items-center justify-center ${isActive ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
+      <span className={`${textSize} font-bold text-white`}>{initials}</span>
+    </div>
+  );
+};
 
 const Accounts = () => {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
@@ -188,131 +277,120 @@ const Accounts = () => {
       )}
 
       {/* Accounts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {accounts.map((account) => {
           const isActive = activeAccountId === account.id;
-          console.log('🔍 Account render:', {
-            accountId: account.id,
-            accountName: account.bank_name,
-            activeAccountId: activeAccountId,
-            isActive: isActive,
-            match: activeAccountId === account.id
-          });
           return (
           <div
             key={account.id}
-            className={`card transition-all ${
-              isActive ? 'ring-2 ring-primary-500 shadow-lg' : ''
+            className={`relative bg-white rounded-3xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl ${
+              isActive ? 'ring-2 ring-primary-500' : 'hover:-translate-y-1'
             }`}
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center space-x-3">
-                <div className={`p-3 rounded-full ${
-                  isActive ? 'bg-primary-600' : 'bg-primary-100'
-                }`}>
-                  <Wallet className={`w-6 h-6 ${
-                    isActive ? 'text-white' : 'text-primary-600'
-                  }`} />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold text-gray-900">{account.bank_name}</h3>
-                    {isActive && (
-                      <CheckCircle className="w-4 h-4 text-primary-600" />
-                    )}
+            {/* Header com gradiente */}
+            <div className={`relative px-6 pt-6 pb-4 ${isActive ? 'bg-gradient-to-br from-primary-50 to-green-50' : 'bg-gradient-to-br from-gray-50 to-white'}`}>
+              {/* Badge de status */}
+              <div className="absolute top-4 right-4">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${
+                    isActive
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {isActive && <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />}
+                  {isActive ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+
+              {/* Ícone e nome do banco */}
+              <div className="flex items-center gap-4">
+                <BankIcon bankName={account.bank_name} isActive={isActive} size="large" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-gray-900 text-lg truncate">{account.bank_name}</h3>
+                    {isActive && <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />}
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
+                    <CreditCard className="w-4 h-4" />
                     {account.account_type || 'Conta Corrente'}
                   </p>
                   {isActive && (
-                    <p className="text-xs text-primary-600 font-semibold mt-1">
+                    <p className="text-xs text-primary-600 font-medium mt-1">
                       Banco Ativo no Dashboard
                     </p>
                   )}
                 </div>
               </div>
-              <span
-                className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {isActive ? 'Ativo' : 'Não Ativo'}
-              </span>
             </div>
 
-            <div className="space-y-3">
-              {/* Balance */}
-              <div>
-                <p className="text-sm text-gray-500">Saldo</p>
-                <p className="text-2xl font-bold text-gray-900">
+            {/* Corpo do card */}
+            <div className="px-6 py-5">
+              {/* Saldo */}
+              <div className="mb-5">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Saldo</p>
+                <p className={`text-3xl font-bold ${account.balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
                   {formatCurrency(account.balance)}
                 </p>
               </div>
 
-              {/* IBAN */}
-              {account.iban && (
-                <div>
-                  <p className="text-sm text-gray-500">IBAN</p>
-                  <p className="text-sm font-mono text-gray-900">
-                    {account.iban.replace(/(.{4})/g, '$1 ').trim()}
-                  </p>
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-400">Última sync</p>
+                    <p className="text-gray-700 font-medium">
+                      {account.last_sync_at
+                        ? format(new Date(account.last_sync_at), 'dd/MM HH:mm')
+                        : 'Nunca'}
+                    </p>
+                  </div>
                 </div>
-              )}
-
-              {/* Last sync */}
-              <div>
-                <p className="text-sm text-gray-500">Última sincronização</p>
-                <p className="text-sm text-gray-900">
-                  {account.last_sync_at
-                    ? format(new Date(account.last_sync_at), 'dd/MM/yyyy HH:mm')
-                    : 'Nunca'}
-                </p>
-              </div>
-
-              {/* Connected date */}
-              <div>
-                <p className="text-sm text-gray-500">Conectada em</p>
-                <p className="text-sm text-gray-900">
-                  {format(new Date(account.connected_at), 'dd/MM/yyyy')}
-                </p>
+                <div className="flex items-start gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-400">Conectada em</p>
+                    <p className="text-gray-700 font-medium">
+                      {format(new Date(account.connected_at), 'dd/MM/yyyy')}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Activate Bank Button */}
-            {!isActive && (
-              <div className="mt-4">
+            {/* Footer com ações */}
+            <div className="px-6 pb-6 pt-2 space-y-3">
+              {/* Botão de ativar (se não ativo) */}
+              {!isActive && (
                 <button
                   onClick={() => setActiveAccount(account.id)}
-                  className="w-full btn-primary flex items-center justify-center space-x-2"
+                  className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Usar este Banco no Dashboard</span>
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Usar no Dashboard</span>
+                </button>
+              )}
+
+              {/* Botões de ação */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleSync(account.id)}
+                  disabled={syncing === account.id}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  title="Sincronizar transações"
+                >
+                  <RefreshCw className={`w-5 h-5 ${syncing === account.id ? 'animate-spin' : ''}`} />
+                  <span>Sincronizar</span>
+                </button>
+                <button
+                  onClick={() => handleDelete(account.id)}
+                  className="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-3 px-4 rounded-xl flex items-center justify-center transition-all"
+                  title="Desconectar e remover conta"
+                >
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex space-x-2 mt-6">
-              <button
-                onClick={() => handleSync(account.id)}
-                disabled={syncing === account.id}
-                className="flex-1 btn-secondary flex items-center justify-center space-x-2"
-                title="Sincronizar transações"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${syncing === account.id ? 'animate-spin' : ''}`}
-                />
-                <span>Sincronizar</span>
-              </button>
-              <button
-                onClick={() => handleDelete(account.id)}
-                className="btn-danger flex items-center justify-center"
-                title="Desconectar e remover conta"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           </div>
         );
