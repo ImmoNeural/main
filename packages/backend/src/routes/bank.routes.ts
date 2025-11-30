@@ -272,11 +272,35 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
     // Modo real com Pluggy
     console.log('[Bank] Processing real Pluggy callback');
 
-    // Trocar código por token
-    const tokenResponse = await openBankingService.exchangeCodeForToken(code, state);
+    // Trocar código por token (quickMode=true para evitar timeout 504)
+    // QuickMode retorna imediatamente sem esperar a sincronização completa
+    const tokenResponse = await openBankingService.exchangeCodeForToken(code, state, true);
+    const itemStatus = (tokenResponse as any).item_status;
+
+    console.log(`[Bank] Token obtained. Item status: ${itemStatus || 'unknown'}`);
 
     // Buscar contas do usuário
-    const accounts = await openBankingService.getAccounts(tokenResponse.access_token);
+    // Se o item ainda está sincronizando, pode retornar lista vazia
+    let accounts: any[] = [];
+    try {
+      accounts = await openBankingService.getAccounts(tokenResponse.access_token);
+      console.log(`[Bank] Found ${accounts.length} accounts`);
+    } catch (accountError: any) {
+      console.log(`[Bank] ⚠️ Could not fetch accounts yet (item may still be syncing): ${accountError.message}`);
+      // Se não conseguiu buscar contas, o item pode ainda estar sincronizando
+      // Vamos criar uma conta placeholder que será atualizada depois
+      if (itemStatus && itemStatus !== 'LOGIN_ERROR') {
+        accounts = [{
+          id: code, // usar itemId como id temporário
+          iban: undefined,
+          currency: 'BRL',
+          name: bank_name || 'Conta Bancária',
+          account_type: 'checking',
+          balance: { amount: 0, currency: 'BRL' },
+        }];
+        console.log(`[Bank] Created placeholder account for syncing item`);
+      }
+    }
 
     // Salvar cada conta no banco de dados
     const savedAccounts: BankAccount[] = [];
@@ -482,20 +506,36 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
         savedAccounts.push(bankAccount);
       }
 
-      // Sincronizar transações
-      // - Se é reconexão e tem last_sync_at: sync incremental
-      // - Se é nova conexão ou primeira sync: sync completo
+      // Sincronizar transações com timeout curto para evitar 504
+      // Se timeout, a conta já está salva e user pode sincronizar manualmente
       const forceFullSync = !isReconnection || !existingAccount?.last_sync_at;
+      console.log(`[Bank] Starting transaction sync (${forceFullSync ? 'full' : 'incremental'}) with 8s timeout`);
 
-      console.log(`[Bank] Starting transaction sync (${forceFullSync ? 'full' : 'incremental'})`);
+      // Função helper para timeout
+      const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | null> => {
+        return Promise.race([
+          promise,
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))
+        ]);
+      };
 
-      await syncTransactions(accountId, tokenResponse.access_token, forceFullSync);
+      // Tentar sync com timeout de 8 segundos (Vercel tem limite de 10s no free tier)
+      const syncResult = await withTimeout(
+        syncTransactions(accountId, tokenResponse.access_token, forceFullSync),
+        8000
+      );
 
-      // Atualizar last_sync_at após sincronização bem-sucedida
-      await supabase
-        .from('bank_accounts')
-        .update({ last_sync_at: toISOString(Date.now()) })
-        .eq('id', accountId);
+      if (syncResult !== null) {
+        // Sync completou a tempo
+        console.log(`[Bank] ✅ Sync completed: ${syncResult} transactions`);
+        await supabase
+          .from('bank_accounts')
+          .update({ last_sync_at: toISOString(Date.now()) })
+          .eq('id', accountId);
+      } else {
+        // Sync não completou a tempo - conta está salva, user pode sync depois
+        console.log(`[Bank] ⚠️ Sync timeout - account saved, user can sync later`);
+      }
 
       // Adicionar aos resultados se foi reconexão
       if (isReconnection) {
@@ -527,6 +567,9 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
         balance: acc.balance,
         currency: acc.currency,
       })),
+      message: savedAccounts.length > 0
+        ? 'Conta conectada com sucesso! Vá para Contas e clique em Sincronizar se as transações ainda não apareceram.'
+        : 'Conexão iniciada. A conta pode demorar alguns segundos para aparecer. Atualize a página Contas.',
     });
   } catch (error: any) {
     console.error('[Bank Callback] ❌ Error:', error.message || error);

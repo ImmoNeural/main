@@ -202,12 +202,35 @@ export class PluggyService {
 
   /**
    * No Pluggy, o itemId funciona como "token" de acesso
+   * @param itemId - ID do item no Pluggy
+   * @param quickMode - Se true, retorna imediatamente sem esperar sync (evita 504)
    */
-  async exchangeCodeForToken(itemId: string): Promise<OpenBankingTokenResponse> {
+  async exchangeCodeForToken(itemId: string, quickMode: boolean = false): Promise<OpenBankingTokenResponse> {
     try {
-      console.log(`[Pluggy] Aguardando item ${itemId} ficar pronto...`);
+      console.log(`[Pluggy] Processando item ${itemId} (quickMode: ${quickMode})...`);
 
-      // Aguardar o item ficar pronto (Pluggy precisa sincronizar após login)
+      if (quickMode) {
+        // Modo rápido: apenas verifica se o item existe e retorna
+        // Não espera a sincronização completar (evita timeout 504)
+        const item = await this.getItem(itemId);
+
+        if (item.status === 'LOGIN_ERROR') {
+          throw new Error('Login falhou no banco. Por favor, tente novamente.');
+        }
+
+        console.log(`[Pluggy] ✅ Item ${itemId} encontrado (quickMode). Status: ${item.status}`);
+
+        return {
+          access_token: itemId,
+          refresh_token: itemId,
+          expires_in: 7776000, // 90 dias
+          token_type: 'Bearer',
+          // Adicionar info extra sobre status
+          item_status: item.status,
+        } as OpenBankingTokenResponse & { item_status?: string };
+      }
+
+      // Modo normal: aguarda o item ficar pronto
       const item = await this.waitForItemReady(itemId);
 
       if (item.status === 'LOGIN_ERROR') {
@@ -217,14 +240,13 @@ export class PluggyService {
       console.log(`[Pluggy] ✅ Item ${itemId} pronto! Status: ${item.status}`);
 
       return {
-        access_token: itemId, // Usamos o itemId como token
+        access_token: itemId,
         refresh_token: itemId,
         expires_in: 7776000, // 90 dias
         token_type: 'Bearer',
       };
     } catch (error: any) {
       console.error(`[Pluggy] ❌ Erro ao processar item ${itemId}:`, error.message);
-      // Repassar a mensagem de erro original
       throw error;
     }
   }
@@ -232,9 +254,9 @@ export class PluggyService {
   /**
    * Aguarda o Item do Pluggy ficar pronto para uso
    * O Pluggy precisa de alguns segundos para processar após o login
-   * Timeout aumentado para 120s para bancos mais lentos como Santander
+   * Timeout: 3 minutos (90 tentativas * 2 segundos) para bancos lentos como Santander
    */
-  private async waitForItemReady(itemId: string, maxAttempts: number = 60): Promise<any> {
+  private async waitForItemReady(itemId: string, maxAttempts: number = 90): Promise<any> {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const item = await this.getItem(itemId);
@@ -281,9 +303,9 @@ export class PluggyService {
       }
     }
 
-    // Timeout após todas as tentativas (2 min)
+    // Timeout após todas as tentativas (3 min)
     throw new Error(
-      'Tempo limite excedido (2 min) aguardando sincronização do banco. ' +
+      'Tempo limite excedido (3 min) aguardando sincronização do banco. ' +
       'Alguns bancos como Santander podem demorar mais. ' +
       'Verifique se o banco confirmou a conexão e tente sincronizar novamente na página Contas.'
     );

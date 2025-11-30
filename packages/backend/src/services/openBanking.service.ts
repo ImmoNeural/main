@@ -152,10 +152,19 @@ class OpenBankingService {
 
   /**
    * Troca o código de autorização por tokens de acesso
+   * @param code - Código de autorização (itemId no caso do Pluggy)
+   * @param state - State/token
+   * @param quickMode - Se true, retorna imediatamente sem esperar sync completo (evita 504)
    */
-  async exchangeCodeForToken(code: string, state: string): Promise<OpenBankingTokenResponse> {
+  async exchangeCodeForToken(code: string, state: string, quickMode: boolean = false): Promise<OpenBankingTokenResponse> {
     try {
       const provider = this.getProvider();
+
+      // Verificar se o provider suporta quickMode
+      if ('exchangeCodeForToken' in provider && provider.exchangeCodeForToken.length >= 2) {
+        return await (provider as any).exchangeCodeForToken(code, quickMode);
+      }
+
       return await provider.exchangeCodeForToken(code, state);
     } catch (error: any) {
       // Repassar a mensagem de erro original se disponível

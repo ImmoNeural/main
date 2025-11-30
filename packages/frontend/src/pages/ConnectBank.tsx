@@ -124,16 +124,34 @@ const ConnectBank = () => {
             const itemId = data.item?.id;
             console.log('[ConnectBank] Pluggy onSuccess - itemId:', itemId);
 
-            await bankApi.handleCallback(
+            const response = await bankApi.handleCallback(
               itemId || 'pluggy_sdk_' + Date.now(),
               connectToken,
               'Banco'
             );
-            alert(`✅ Conta conectada com sucesso!`);
+
+            // Mostrar mensagem do backend (inclui dica de sincronizar)
+            const message = response.data?.message || 'Conta conectada com sucesso!';
+            alert(`✅ ${message}`);
             sessionStorage.removeItem('bank_connection_in_progress');
-            navigate('/app/dashboard');
+            navigate('/app/accounts'); // Ir para contas em vez de dashboard
           } catch (error: any) {
             console.error('[ConnectBank] Erro no callback:', error);
+
+            // Tratamento especial para erro 504 (Gateway Timeout)
+            if (error.response?.status === 504 || error.code === 'ECONNABORTED') {
+              alert(
+                '⏳ A conexão demorou mais que o esperado.\n\n' +
+                'Isso é normal para alguns bancos como Santander.\n\n' +
+                'Por favor, vá para a página "Contas" e verifique se sua conta apareceu. ' +
+                'Se não aparecer, aguarde alguns segundos e atualize a página.'
+              );
+              sessionStorage.removeItem('bank_connection_in_progress');
+              navigate('/app/accounts');
+              setConnecting(false);
+              return;
+            }
+
             const errorMessage = error.response?.data?.error
               || error.response?.data?.message
               || error.message
