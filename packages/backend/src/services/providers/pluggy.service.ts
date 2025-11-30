@@ -306,7 +306,7 @@ export class PluggyService {
     // Timeout após todas as tentativas (3 min)
     throw new Error(
       'Tempo limite excedido (3 min) aguardando sincronização do banco. ' +
-      'Alguns bancos como Santander podem demorar mais. ' +
+      'Alguns bancos podem demorar mais. ' +
       'Verifique se o banco confirmou a conexão e tente sincronizar novamente na página Contas.'
     );
   }

@@ -142,7 +142,7 @@ const ConnectBank = () => {
             if (error.response?.status === 504 || error.code === 'ECONNABORTED') {
               alert(
                 '⏳ A conexão demorou mais que o esperado.\n\n' +
-                'Isso é normal para alguns bancos como Santander.\n\n' +
+                'Isso é normal para alguns bancos.\n\n' +
                 'Por favor, vá para a página "Contas" e verifique se sua conta apareceu. ' +
                 'Se não aparecer, aguarde alguns segundos e atualize a página.'
               );
