@@ -15,7 +15,7 @@ import {
  */
 export interface OpenBankingProvider {
   initiateAuth(request: OpenBankingAuthRequest): Promise<OpenBankingAuthResponse>;
-  exchangeCodeForToken(code: string, state?: string): Promise<OpenBankingTokenResponse>;
+  exchangeCodeForToken(code: string, stateOrQuickMode?: string | boolean): Promise<OpenBankingTokenResponse>;
   getAccounts(accessToken: string): Promise<OpenBankingAccount[]>;
   getTransactions(
     accessToken: string,
