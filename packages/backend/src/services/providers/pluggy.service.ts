@@ -318,6 +318,8 @@ export class PluggyService {
     try {
       const apiKey = await this.getApiKey();
 
+      console.log(`[Pluggy] Fetching accounts for item ${itemId}...`);
+
       const response = await this.client.get('/accounts', {
         headers: {
           'X-API-KEY': apiKey,
@@ -328,6 +330,7 @@ export class PluggyService {
       });
 
       const accounts = response.data.results || [];
+      console.log(`[Pluggy] Found ${accounts.length} accounts for item ${itemId}`);
 
       return accounts.map((account: any) => ({
         id: account.id,
@@ -340,8 +343,16 @@ export class PluggyService {
           currency: account.currencyCode || 'BRL',
         },
       }));
-    } catch (error) {
-      throw new Error('Failed to fetch bank accounts');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      console.error(`[Pluggy] ❌ Error fetching accounts for item ${itemId}:`, errorMessage);
+
+      // Se o item ainda não está pronto, retornar mensagem mais clara
+      if (errorMessage.includes('not found') || errorMessage.includes('UPDATING')) {
+        throw new Error('Item ainda está sendo sincronizado. Aguarde alguns segundos.');
+      }
+
+      throw new Error(`Erro ao buscar contas: ${errorMessage}`);
     }
   }
 

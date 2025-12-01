@@ -279,16 +279,32 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
 
     console.log(`[Bank] Token obtained. Item status: ${itemStatus || 'unknown'}`);
 
-    // Buscar contas do usuário
-    // Se o item ainda está sincronizando, pode retornar lista vazia
+    // Buscar contas do usuário com retry
+    // Se o item ainda está sincronizando, tentar algumas vezes
     let accounts: any[] = [];
-    try {
-      accounts = await openBankingService.getAccounts(tokenResponse.access_token);
-      console.log(`[Bank] Found ${accounts.length} accounts`);
-    } catch (accountError: any) {
-      console.log(`[Bank] ⚠️ Could not fetch accounts yet (item may still be syncing): ${accountError.message}`);
-      // Se não conseguiu buscar contas, o item pode ainda estar sincronizando
-      // Vamos criar uma conta placeholder que será atualizada depois
+    let fetchAttempts = 0;
+    const maxFetchAttempts = 3;
+
+    while (fetchAttempts < maxFetchAttempts && accounts.length === 0) {
+      fetchAttempts++;
+      try {
+        console.log(`[Bank] Fetching accounts (attempt ${fetchAttempts}/${maxFetchAttempts})...`);
+        accounts = await openBankingService.getAccounts(tokenResponse.access_token);
+        console.log(`[Bank] Found ${accounts.length} accounts`);
+      } catch (accountError: any) {
+        console.log(`[Bank] ⚠️ Attempt ${fetchAttempts} failed: ${accountError.message}`);
+
+        // Se ainda há tentativas, esperar 2 segundos e tentar novamente
+        if (fetchAttempts < maxFetchAttempts) {
+          console.log(`[Bank] Waiting 2s before retry...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+
+    // Se não conseguiu buscar contas após todas as tentativas, criar placeholder
+    if (accounts.length === 0) {
+      console.log(`[Bank] Could not fetch accounts after ${maxFetchAttempts} attempts`);
       if (itemStatus && itemStatus !== 'LOGIN_ERROR') {
         accounts = [{
           id: code, // usar itemId como id temporário
