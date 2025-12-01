@@ -185,7 +185,7 @@ export class PluggyService {
    * Obtém informações do Item após autorização
    * Inclui retry para casos onde o item ainda não está disponível
    */
-  async getItem(itemId: string, retries: number = 3): Promise<any> {
+  async getItem(itemId: string, retries: number = 5): Promise<any> {
     let lastError: any = null;
 
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -198,7 +198,7 @@ export class PluggyService {
           headers: {
             'X-API-KEY': apiKey,
           },
-          timeout: 15000, // 15 segundos timeout
+          timeout: 25000, // 25 segundos timeout (internet lenta no Brasil)
         });
 
         console.log(`[Pluggy] Item ${itemId} found. Status: ${response.data.status}`);
@@ -213,15 +213,15 @@ export class PluggyService {
         // Se for erro 404 (item não encontrado), pode ser que ainda não foi criado
         // Aguardar e tentar novamente
         if (statusCode === 404 && attempt < retries) {
-          console.log(`[Pluggy] Item not found yet, waiting 3s before retry...`);
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          console.log(`[Pluggy] Item not found yet, waiting 5s before retry...`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
           continue;
         }
 
         // Se for erro de rede/timeout, tentar novamente
         if ((error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') && attempt < retries) {
-          console.log(`[Pluggy] Network timeout, waiting 2s before retry...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          console.log(`[Pluggy] Network timeout, waiting 3s before retry...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
           continue;
         }
 
@@ -230,7 +230,7 @@ export class PluggyService {
           break;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
     }
 
