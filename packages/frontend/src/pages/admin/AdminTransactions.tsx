@@ -6,11 +6,10 @@ import { Search, RefreshCw, ArrowLeft, User, Calendar, DollarSign } from 'lucide
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
-// Lista de emails de administradores (configurado via env)
-// No Netlify, defina VITE_ADMIN_EMAILS como "email1@x.com,email2@x.com"
-const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS
-  ? (import.meta.env.VITE_ADMIN_EMAILS as string).split(',').map(e => e.trim())
-  : [];
+// Lista de emails de administradores
+const ADMIN_EMAILS = [
+  'neurekaai@gmail.com',
+];
 
 interface Transaction {
   id: string;

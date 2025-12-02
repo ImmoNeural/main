@@ -3,11 +3,10 @@ import { supabase } from '../config/supabase';
 
 const router = Router();
 
-// Lista de emails de administradores (configurado via env ou hardcoded)
-// ADMIN_EMAILS pode ser uma string separada por vírgulas: "email1@x.com,email2@x.com"
-const ADMIN_EMAILS = process.env.ADMIN_EMAILS
-  ? process.env.ADMIN_EMAILS.split(',').map(e => e.trim())
-  : [];
+// Lista de emails de administradores
+const ADMIN_EMAILS = [
+  'neurekaai@gmail.com',
+];
 
 /**
  * Middleware para verificar se o usuário é admin
