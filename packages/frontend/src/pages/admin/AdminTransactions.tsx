@@ -45,17 +45,13 @@ const AdminTransactions = () => {
   const startImpersonation = () => {
     if (!userId) return;
 
+    console.log('🎭 Iniciando impersonação do usuário:', userId);
+
     localStorage.setItem('impersonate_user_id', userId);
     localStorage.setItem('impersonate_user_name', userInfo?.name || userInfo?.email || 'Usuário');
 
-    // Disparar evento para atualizar o banner
-    window.dispatchEvent(new Event('impersonation-changed'));
-
-    // Navegar para o dashboard
-    navigate('/app/dashboard');
-
-    // Recarregar para aplicar as mudanças
-    window.location.reload();
+    // Redirecionar para o dashboard (reload completo para garantir que o header seja enviado)
+    window.location.href = '/app/dashboard';
   };
 
   // Verificar se é admin

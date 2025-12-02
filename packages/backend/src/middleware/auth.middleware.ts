@@ -48,8 +48,15 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
     // Verificar se admin está tentando impersonar outro usuário
     const impersonateUserId = req.headers['x-impersonate-user'] as string;
+
+    if (impersonateUserId) {
+      console.log(`🎭 [Impersonate] Header recebido: ${impersonateUserId}`);
+      console.log(`🎭 [Impersonate] Email do usuário: ${data.user.email}`);
+      console.log(`🎭 [Impersonate] É admin? ${ADMIN_EMAILS.includes(data.user.email || '')}`);
+    }
+
     if (impersonateUserId && data.user.email && ADMIN_EMAILS.includes(data.user.email)) {
-      console.log(`🎭 [Impersonate] Admin ${data.user.email} impersonando usuário ${impersonateUserId}`);
+      console.log(`🎭 [Impersonate] ✅ Admin ${data.user.email} impersonando usuário ${impersonateUserId}`);
       req.originalUserId = data.user.id;
       req.userId = impersonateUserId;
       req.isImpersonating = true;

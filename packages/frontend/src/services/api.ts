@@ -27,6 +27,7 @@ api.interceptors.request.use(
     // Adicionar header de impersonação se admin estiver impersonando outro usuário
     const impersonatedUserId = localStorage.getItem('impersonate_user_id');
     if (impersonatedUserId) {
+      console.log('🎭 [API] Enviando header de impersonação:', impersonatedUserId);
       config.headers['X-Impersonate-User'] = impersonatedUserId;
     }
 
