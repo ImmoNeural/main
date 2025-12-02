@@ -310,6 +310,7 @@ router.get('/categories/list', (req: Request, res: Response) => {
 /**
  * POST /api/transactions/recategorize
  * Recategoriza todas as transações do usuário usando IA
+ * OTIMIZADO: Usa batch updates para evitar timeout
  */
 router.post('/recategorize', async (req: Request, res: Response) => {
   try {
@@ -329,58 +330,128 @@ router.post('/recategorize', async (req: Request, res: Response) => {
 
     console.log(`📊 Encontradas ${transactions?.length || 0} transações para recategorizar`);
 
-    let updated = 0;
-    let unchanged = 0;
-    let categorized = 0; // Transações com categoria válida (confiança >= 80%)
-    let uncategorized = 0; // Transações com "Não Categorizado" (confiança < 80%)
+    if (!transactions || transactions.length === 0) {
+      return res.json({
+        success: true,
+        total: 0,
+        updated: 0,
+        unchanged: 0,
+        categorized: 0,
+        uncategorized: 0,
+        message: 'Nenhuma transação encontrada para recategorizar'
+      });
+    }
 
-    for (const transaction of transactions || []) {
-      const oldCategory = transaction.category;
+    // FASE 1: Categorizar todas as transações em memória (rápido)
+    const categorizationResults: Array<{
+      id: string;
+      oldCategory: string | null;
+      newCategory: string;
+      newSubcategory: string;
+      confidence: number;
+    }> = [];
 
-      // RECATEGORIZAR usando IA com threshold de 80%
+    for (const transaction of transactions) {
       const categorization = categorizationService.categorizeTransaction(
         transaction.description || '',
         transaction.merchant || '',
         transaction.amount
       );
 
-      const newCategory = categorization.category;
-      const newSubcategory = categorization.subcategory; // NOVO: Priorizar subcategoria
-      const confidence = categorization.confidence;
+      categorizationResults.push({
+        id: transaction.id,
+        oldCategory: transaction.category,
+        newCategory: categorization.category,
+        newSubcategory: categorization.subcategory,
+        confidence: categorization.confidence
+      });
+    }
 
-      // Contar estatísticas
-      if (newCategory === 'Não Categorizado') {
+    // FASE 2: Agrupar por categoria para batch update
+    const updatesByCategory = new Map<string, Array<{ id: string; subcategory: string }>>();
+
+    for (const result of categorizationResults) {
+      const key = result.newCategory;
+      if (!updatesByCategory.has(key)) {
+        updatesByCategory.set(key, []);
+      }
+      updatesByCategory.get(key)!.push({
+        id: result.id,
+        subcategory: result.newSubcategory
+      });
+    }
+
+    // FASE 3: Executar batch updates em paralelo (máximo 10 categorias por vez)
+    const BATCH_SIZE = 10;
+    const categories = Array.from(updatesByCategory.entries());
+    const now = toISOString(Date.now());
+    let totalUpdated = 0;
+
+    for (let i = 0; i < categories.length; i += BATCH_SIZE) {
+      const batch = categories.slice(i, i + BATCH_SIZE);
+
+      const updatePromises = batch.map(async ([category, items]) => {
+        // Para cada categoria, podemos ter diferentes subcategorias
+        // Agrupar por subcategoria dentro de cada categoria
+        const bySubcategory = new Map<string, string[]>();
+        for (const item of items) {
+          if (!bySubcategory.has(item.subcategory)) {
+            bySubcategory.set(item.subcategory, []);
+          }
+          bySubcategory.get(item.subcategory)!.push(item.id);
+        }
+
+        // Atualizar cada grupo de subcategoria
+        const subPromises = Array.from(bySubcategory.entries()).map(async ([subcategory, ids]) => {
+          const { error: updateError, count } = await supabase
+            .from('transactions')
+            .update({
+              category,
+              subcategory,
+              updated_at: now
+            })
+            .in('id', ids);
+
+          if (updateError) {
+            console.error(`❌ Erro ao atualizar categoria ${category}/${subcategory}:`, updateError);
+            return 0;
+          }
+          return ids.length;
+        });
+
+        const results = await Promise.all(subPromises);
+        return results.reduce((a, b) => a + b, 0);
+      });
+
+      const batchResults = await Promise.all(updatePromises);
+      totalUpdated += batchResults.reduce((a, b) => a + b, 0);
+    }
+
+    // FASE 4: Calcular estatísticas
+    let updated = 0;
+    let unchanged = 0;
+    let categorized = 0;
+    let uncategorized = 0;
+
+    for (const result of categorizationResults) {
+      if (result.newCategory === 'Não Categorizado') {
         uncategorized++;
       } else {
         categorized++;
       }
 
-      // Atualizar SEMPRE, mesmo que seja a mesma categoria
-      // Isso garante que transações antigas sejam reavaliadas com as novas regras
-      // IMPORTANTE: Agora também atualiza SUBCATEGORIA
-      const { error: updateError } = await supabase
-        .from('transactions')
-        .update({
-          category: newCategory,
-          subcategory: newSubcategory, // NOVO: Salvar subcategoria
-          updated_at: toISOString(Date.now())
-        })
-        .eq('id', transaction.id);
-
-      if (!updateError) {
-        if (oldCategory !== newCategory) {
-          updated++;
-          console.log(`✅ [${confidence}%] ${transaction.description?.substring(0, 40)} | ${oldCategory || 'VAZIO'} → ${newCategory} (${newSubcategory})`);
-        } else {
-          unchanged++;
+      if (result.oldCategory !== result.newCategory) {
+        updated++;
+        if (updated <= 20) { // Log apenas as primeiras 20 mudanças
+          console.log(`✅ [${result.confidence}%] ${result.id.substring(0, 8)}... | ${result.oldCategory || 'VAZIO'} → ${result.newCategory}`);
         }
       } else {
-        console.error(`❌ Erro ao atualizar transação ${transaction.id}:`, updateError);
+        unchanged++;
       }
     }
 
     console.log(`✨ Recategorização concluída:`);
-    console.log(`   📊 Total: ${transactions?.length || 0} transações`);
+    console.log(`   📊 Total: ${transactions.length} transações`);
     console.log(`   ✅ Atualizadas: ${updated}`);
     console.log(`   ➖ Sem alteração: ${unchanged}`);
     console.log(`   🎯 Categorizadas (≥80%): ${categorized}`);
@@ -388,7 +459,7 @@ router.post('/recategorize', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      total: transactions?.length || 0,
+      total: transactions.length,
       updated,
       unchanged,
       categorized,
