@@ -1170,7 +1170,9 @@ const Transactions = () => {
                                 isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
                               }`}
                             >
-                              {categories.map((cat) => {
+                              {/* Opção "Não Categorizado" sempre primeiro */}
+                              <option value="Não Categorizado">❓ Não Categorizado</option>
+                              {categories.filter(cat => cat.category !== 'Não Categorizado').map((cat) => {
                                 const subcats = subcategoriesMap[cat.category] || [];
                                 if (subcats.length > 0) {
                                   return (
@@ -1216,7 +1218,9 @@ const Transactions = () => {
                             isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
                           }`}
                         >
-                          {categories.map((cat) => {
+                          {/* Opção "Não Categorizado" sempre primeiro */}
+                          <option value="Não Categorizado">❓ Não Categorizado</option>
+                          {categories.filter(cat => cat.category !== 'Não Categorizado').map((cat) => {
                             const subcats = subcategoriesMap[cat.category] || [];
                             if (subcats.length > 0) {
                               return (
