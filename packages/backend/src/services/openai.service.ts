@@ -29,7 +29,8 @@ class OpenAIService {
   private model = 'gpt-4o-mini'; // Modelo mais barato: $0.15/1M input, $0.60/1M output
 
   constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY;
+    // Suporta ambos os nomes de variável (OPENAI_KEY usado no Render)
+    this.apiKey = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
   }
 
   /**
