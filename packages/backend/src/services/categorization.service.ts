@@ -4,13 +4,56 @@
  * Sistema avançado de classificação automática de transações
  * Especializado no mercado brasileiro com IA e Machine Learning
  *
+ * 🏗️ ARQUITETURA DE TRÊS CAMADAS:
+ *
+ * Camada 1: Regras Estáticas (BRAZILIAN_CATEGORY_RULES)
+ *   - Classificação rápida e de alta confiança
+ *   - Threshold: 80% ou mais
+ *   - Em caso de falha: passa para Camada 2
+ *
+ * Camada 2: Inteligência Contextual (Histórico do Usuário)
+ *   - Usa histórico de categorizações do usuário
+ *   - Threshold: 70-90%
+ *   - Em caso de falha: passa para Camada 3
+ *
+ * Camada 3: Busca Externa (Web Search)
+ *   - Busca descrição na internet
+ *   - Threshold: 40-70% (baixo risco)
+ *   - Em caso de falha: "Não Categorizado"
+ *
  * Recursos:
  * - Base de conhecimento de +500 marcas brasileiras
- * - Fuzzy matching inteligente
- * - Reconhecimento de padrões (PIX, TED, DOC, Boleto)
+ * - Fuzzy matching inteligente (85% similaridade)
+ * - Reconhecimento de padrões (PIX, TED, DOC, Boleto, CNPJ/CPF)
  * - Score de confiança
- * - Aprendizado contínuo
+ * - Aprendizado contínuo via histórico do usuário
  */
+
+// Tipos para histórico do usuário (exportado para uso em outros módulos)
+export interface UserCategorizationHistory {
+  description_pattern: string;
+  category: string;
+  subcategory: string;
+  count: number;
+  last_used: Date;
+}
+
+// Interface para resultado de busca externa (exportado para uso em outros módulos)
+export interface ExternalSearchResult {
+  snippets: string[];
+  source: string;
+}
+
+// Interface para resultado de categorização com camada
+export interface ThreeLayerCategorizationResult {
+  category: string;
+  subcategory: string;
+  icon: string;
+  color: string;
+  confidence: number;
+  matchedBy: string;
+  layer: 0 | 1 | 2 | 3;
+}
 
 interface CategoryRule {
   category: string;
@@ -24,8 +67,45 @@ interface CategoryRule {
   priority: number; // Prioridade (maior = mais específico)
 }
 
+// 🔍 REGEX PATTERNS para CNPJ e CPF
+const CNPJ_PATTERN = /\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/;
+const CPF_PATTERN = /\d{3}\.?\d{3}\.?\d{3}-?\d{2}/;
+
 // 🇧🇷 BASE DE CONHECIMENTO - MERCADO BRASILEIRO
 const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
+  // 🆔 CNPJ/CPF - IDENTIFICAÇÃO FISCAL (PRIORIDADE MÁXIMA 100)
+  // Esta regra tenta identificar empresas conhecidas pelo CNPJ
+  // CNPJs de empresas conhecidas podem ser adicionados aqui
+  {
+    category: 'Identificação Fiscal',
+    subcategory: 'CNPJ/CPF Identificado',
+    keywords: ['cnpj', 'cpf'],
+    brands: [],
+    cnpjs: [
+      // Streaming e Entretenimento
+      '13.590.585/0001-88', // Netflix
+      '09.339.936/0001-16', // Spotify
+      // E-commerce
+      '10.573.521/0001-91', // Mercado Livre
+      '15.436.940/0001-03', // Amazon
+      '06.057.223/0001-71', // Shopee
+      // Delivery
+      '14.380.200/0001-21', // iFood
+      '27.584.651/0001-14', // Rappi
+      // Transporte
+      '17.895.646/0001-87', // Uber
+      '21.687.074/0001-71', // 99
+      // Supermercados
+      '47.508.411/0001-56', // Carrefour
+      '61.585.865/0001-51', // Pão de Açúcar
+      '07.526.557/0001-00', // Assaí
+    ],
+    patterns: [CNPJ_PATTERN, CPF_PATTERN],
+    icon: '🆔',
+    color: '#607D8B',
+    priority: 100, // PRIORIDADE MÁXIMA
+  },
+
   // 🛒 SUPERMERCADOS E ALIMENTAÇÃO (Merge: Alimentação/Supermercado)
   {
     category: 'Supermercado',
@@ -843,6 +923,7 @@ export const VALID_CATEGORIES = [
   'Receitas',
   'Transferências',
   'Impostos e Taxas',
+  'Identificação Fiscal', // Nova categoria para CNPJ/CPF
   'Não Categorizado',
 ];
 
@@ -943,7 +1024,7 @@ class CategorizationService {
         }
       }
 
-      // 3. Match por keywords (peso médio) - MATCH EXATO APENAS
+      // 3. Match por keywords (peso médio) - MATCH EXATO
       if (score === 0) {
         for (const keyword of rule.keywords) {
           if (text.includes(this.normalizeText(keyword))) {
@@ -952,6 +1033,59 @@ class CategorizationService {
             score = 70 + rule.priority;
             matchedBy = `palavra-chave: ${keyword}`;
             break;
+          }
+        }
+      }
+
+      // 4. Match por CNPJ conhecido (prioridade máxima)
+      if (score === 0 && rule.cnpjs && rule.cnpjs.length > 0) {
+        for (const cnpj of rule.cnpjs) {
+          // Normalizar CNPJ removendo pontuação
+          const normalizedCnpj = cnpj.replace(/[.\-\/]/g, '');
+          const textWithoutSpaces = text.replace(/\s/g, '');
+          if (textWithoutSpaces.includes(normalizedCnpj)) {
+            score = 100 + rule.priority; // Máxima confiança
+            matchedBy = `CNPJ identificado: ${cnpj}`;
+            break;
+          }
+        }
+      }
+
+      // 5. Match por Fuzzy Matching (FALLBACK - última linha de defesa)
+      // Apenas se não houve nenhum match anterior e similaridade >= 85%
+      if (score === 0) {
+        for (const keyword of rule.keywords) {
+          const normalizedKeyword = this.normalizeText(keyword);
+          // Verificar cada palavra do texto contra a keyword
+          const words = text.split(' ');
+          for (const word of words) {
+            if (word.length >= 4) { // Apenas palavras com 4+ caracteres
+              const similarity = this.fuzzyMatch(word, normalizedKeyword);
+              if (similarity >= 0.85) { // 85% de similaridade mínima
+                score = 50 + rule.priority; // Score baixo (fuzzy match)
+                matchedBy = `fuzzy match: "${word}" ≈ "${keyword}" (${(similarity * 100).toFixed(0)}%)`;
+                break;
+              }
+            }
+          }
+          if (score > 0) break;
+        }
+        // Também verificar brands com fuzzy
+        if (score === 0) {
+          for (const brand of rule.brands) {
+            const normalizedBrand = this.normalizeText(brand);
+            const words = text.split(' ');
+            for (const word of words) {
+              if (word.length >= 4) {
+                const similarity = this.fuzzyMatch(word, normalizedBrand);
+                if (similarity >= 0.85) {
+                  score = 55 + rule.priority; // Score um pouco maior para brands
+                  matchedBy = `fuzzy match marca: "${word}" ≈ "${brand}" (${(similarity * 100).toFixed(0)}%)`;
+                  break;
+                }
+              }
+            }
+            if (score > 0) break;
           }
         }
       }
@@ -998,6 +1132,30 @@ class CategorizationService {
       let finalIcon = bestMatch.rule.icon;
       let finalColor = bestMatch.rule.color;
       let adjustmentReason = '';
+
+      // 🔄 REGRA ESPECIAL: TRANSFERÊNCIAS vs MARCAS
+      // Se a categoria é "Transferências" (PIX, TED/DOC), verificar se há uma marca conhecida
+      // Ex: "PIX - Pagto Netflix" → deve ser categorizado como Streaming, não como Transferência
+      if (finalCategory === 'Transferências') {
+        // Buscar se há match de marca em outras categorias
+        for (const rule of sortedRules) {
+          // Ignorar regras de transferência e Identificação Fiscal
+          if (rule.category === 'Transferências' || rule.category === 'Identificação Fiscal') continue;
+
+          for (const brand of rule.brands) {
+            if (text.includes(this.normalizeText(brand))) {
+              // Encontrou uma marca! Usar esta categoria em vez de Transferência
+              finalCategory = rule.category;
+              finalSubcategory = rule.subcategory || 'Geral';
+              finalIcon = rule.icon;
+              finalColor = rule.color;
+              adjustmentReason = ` → Reclassificado de Transferência para ${rule.category} (marca detectada: ${brand})`;
+              break;
+            }
+          }
+          if (adjustmentReason) break;
+        }
+      }
 
       // 🔍 VERIFICAÇÃO DE SINAL DA TRANSAÇÃO (INVESTIMENTOS, SALÁRIO, RECEITAS)
       // Aplicar lógica inteligente baseada no valor positivo/negativo
@@ -1236,6 +1394,319 @@ class CategorizationService {
     }
 
     return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🏗️ ARQUITETURA DE TRÊS CAMADAS - MÉTODOS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * 🔄 CAMADA 2: Inteligência Contextual
+   * Categoriza usando o histórico de categorizações do usuário
+   *
+   * @param description - Descrição da transação
+   * @param userHistory - Histórico de categorizações do usuário
+   * @returns Resultado da categorização ou null se não encontrar
+   */
+  categorizeByUserHistory(
+    description: string,
+    userHistory: UserCategorizationHistory[]
+  ): {
+    category: string;
+    subcategory: string;
+    icon: string;
+    color: string;
+    confidence: number;
+    matchedBy: string;
+  } | null {
+    if (!userHistory || userHistory.length === 0) {
+      return null;
+    }
+
+    const normalizedDescription = this.normalizeText(description);
+    let bestMatch: {
+      history: UserCategorizationHistory;
+      similarity: number;
+    } | null = null;
+
+    for (const hist of userHistory) {
+      const normalizedPattern = this.normalizeText(hist.description_pattern);
+
+      // 1. Verificar match exato
+      if (normalizedDescription === normalizedPattern) {
+        // Match exato! Alta confiança
+        const rule = this.findRuleByCategory(hist.category);
+        return {
+          category: hist.category,
+          subcategory: hist.subcategory || 'Geral',
+          icon: rule?.icon || '📌',
+          color: rule?.color || '#9CA3AF',
+          confidence: 95, // Alta confiança por ser match exato do histórico
+          matchedBy: `histórico do usuário (match exato, usado ${hist.count}x)`,
+        };
+      }
+
+      // 2. Verificar se a descrição contém o padrão
+      if (normalizedDescription.includes(normalizedPattern) ||
+          normalizedPattern.includes(normalizedDescription)) {
+        const similarity = this.fuzzyMatch(normalizedDescription, normalizedPattern);
+        if (!bestMatch || similarity > bestMatch.similarity) {
+          bestMatch = { history: hist, similarity };
+        }
+      }
+
+      // 3. Fuzzy matching
+      const similarity = this.fuzzyMatch(normalizedDescription, normalizedPattern);
+      if (similarity >= 0.80 && (!bestMatch || similarity > bestMatch.similarity)) {
+        bestMatch = { history: hist, similarity };
+      }
+    }
+
+    if (bestMatch && bestMatch.similarity >= 0.80) {
+      const rule = this.findRuleByCategory(bestMatch.history.category);
+      // Confiança baseada na similaridade e frequência de uso
+      const usageBonus = Math.min(bestMatch.history.count * 2, 10); // Máx +10%
+      const confidence = Math.min(70 + (bestMatch.similarity * 20) + usageBonus, 95);
+
+      return {
+        category: bestMatch.history.category,
+        subcategory: bestMatch.history.subcategory || 'Geral',
+        icon: rule?.icon || '📌',
+        color: rule?.color || '#9CA3AF',
+        confidence,
+        matchedBy: `histórico do usuário (${(bestMatch.similarity * 100).toFixed(0)}% similar, usado ${bestMatch.history.count}x)`,
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 🔍 Helper: Encontra uma regra pela categoria
+   */
+  private findRuleByCategory(category: string): CategoryRule | undefined {
+    return this.rules.find(r => r.category === category);
+  }
+
+  /**
+   * 🌐 CAMADA 3: Busca Externa
+   * Categoriza usando resultados de busca na web
+   *
+   * @param description - Descrição da transação
+   * @param searchResults - Resultados da busca externa (snippets)
+   * @returns Resultado da categorização ou null se não encontrar
+   */
+  categorizeByExternalSearch(
+    description: string,
+    searchResults: ExternalSearchResult
+  ): {
+    category: string;
+    subcategory: string;
+    icon: string;
+    color: string;
+    confidence: number;
+    matchedBy: string;
+  } | null {
+    if (!searchResults || !searchResults.snippets || searchResults.snippets.length === 0) {
+      return null;
+    }
+
+    // Combinar todos os snippets em um único texto normalizado
+    const combinedSnippet = this.normalizeText(searchResults.snippets.join(' '));
+
+    let bestMatch: {
+      rule: CategoryRule;
+      brand: string;
+      confidence: number;
+    } | null = null;
+
+    // Tentar encontrar marcas conhecidas nos snippets
+    for (const rule of this.rules) {
+      // Ignorar regras de identificação fiscal e transferências
+      if (rule.category === 'Identificação Fiscal' || rule.category === 'Transferências') {
+        continue;
+      }
+
+      for (const brand of rule.brands) {
+        const normalizedBrand = this.normalizeText(brand);
+        if (combinedSnippet.includes(normalizedBrand)) {
+          // Encontrou marca nos resultados da busca!
+          const confidence = 60 + rule.priority; // Confiança média-baixa (busca externa)
+          if (!bestMatch || confidence > bestMatch.confidence) {
+            bestMatch = { rule, brand, confidence };
+          }
+        }
+      }
+
+      // Também verificar keywords
+      for (const keyword of rule.keywords) {
+        const normalizedKeyword = this.normalizeText(keyword);
+        if (combinedSnippet.includes(normalizedKeyword) && normalizedKeyword.length >= 5) {
+          const confidence = 55 + rule.priority;
+          if (!bestMatch || confidence > bestMatch.confidence) {
+            bestMatch = { rule, brand: keyword, confidence };
+          }
+        }
+      }
+    }
+
+    if (bestMatch) {
+      return {
+        category: bestMatch.rule.category,
+        subcategory: bestMatch.rule.subcategory || 'Geral',
+        icon: bestMatch.rule.icon,
+        color: bestMatch.rule.color,
+        confidence: Math.min(bestMatch.confidence, 75), // Máximo 75% para busca externa
+        matchedBy: `busca externa (${searchResults.source}): "${bestMatch.brand}" encontrado`,
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 🎯 MÉTODO PRINCIPAL: Categorização em Três Camadas
+   *
+   * Executa a categorização seguindo a arquitetura de três camadas:
+   * 1. Camada 1: Regras Estáticas (threshold: 80%)
+   * 2. Camada 2: Histórico do Usuário (threshold: 70%)
+   * 3. Camada 3: Busca Externa (threshold: 40%)
+   *
+   * @param description - Descrição da transação
+   * @param merchant - Nome do merchant (opcional)
+   * @param amount - Valor da transação (opcional)
+   * @param userHistory - Histórico de categorizações do usuário (opcional)
+   * @param externalSearchResults - Resultados de busca externa (opcional)
+   * @returns Resultado da categorização com informação de qual camada foi usada
+   */
+  categorizeWithThreeLayers(
+    description: string,
+    merchant?: string | null,
+    amount?: number | null,
+    userHistory?: UserCategorizationHistory[],
+    externalSearchResults?: ExternalSearchResult
+  ): {
+    category: string;
+    subcategory: string;
+    icon: string;
+    color: string;
+    confidence: number;
+    matchedBy: string;
+    layer: 1 | 2 | 3 | 0; // 0 = não categorizado
+  } {
+    // ═══════════════════════════════════════════════════════════════════════
+    // CAMADA 1: Regras Estáticas
+    // ═══════════════════════════════════════════════════════════════════════
+    const layer1Result = this.categorizeTransaction(description, merchant || undefined, amount || undefined);
+
+    if (layer1Result.confidence >= 80) {
+      return {
+        ...layer1Result,
+        layer: 1,
+        matchedBy: `[Camada 1] ${layer1Result.matchedBy}`,
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CAMADA 2: Histórico do Usuário
+    // ═══════════════════════════════════════════════════════════════════════
+    if (userHistory && userHistory.length > 0) {
+      const layer2Result = this.categorizeByUserHistory(description, userHistory);
+
+      if (layer2Result && layer2Result.confidence >= 70) {
+        return {
+          ...layer2Result,
+          layer: 2,
+          matchedBy: `[Camada 2] ${layer2Result.matchedBy}`,
+        };
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CAMADA 3: Busca Externa
+    // ═══════════════════════════════════════════════════════════════════════
+    if (externalSearchResults) {
+      const layer3Result = this.categorizeByExternalSearch(description, externalSearchResults);
+
+      if (layer3Result && layer3Result.confidence >= 40) {
+        return {
+          ...layer3Result,
+          layer: 3,
+          matchedBy: `[Camada 3] ${layer3Result.matchedBy}`,
+        };
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FALLBACK: Se a Camada 1 teve algum resultado (mesmo que baixa confiança)
+    // ═══════════════════════════════════════════════════════════════════════
+    if (layer1Result.confidence > 0 && layer1Result.category !== 'Não Categorizado') {
+      return {
+        ...layer1Result,
+        layer: 1,
+        matchedBy: `[Camada 1 - Baixa Confiança] ${layer1Result.matchedBy}`,
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // NÃO CATEGORIZADO
+    // ═══════════════════════════════════════════════════════════════════════
+    return {
+      category: 'Não Categorizado',
+      subcategory: 'Requer Classificação Manual',
+      icon: '❓',
+      color: '#9CA3AF',
+      confidence: 0,
+      matchedBy: 'nenhuma camada conseguiu categorizar',
+      layer: 0,
+    };
+  }
+
+  /**
+   * 📝 Extrai padrão de descrição para histórico
+   * Remove números variáveis, datas, etc. para criar um padrão reutilizável
+   *
+   * @param description - Descrição original
+   * @returns Padrão normalizado
+   */
+  extractDescriptionPattern(description: string): string {
+    let pattern = this.normalizeText(description);
+
+    // Remover datas (dd/mm/yyyy, dd-mm-yyyy, etc.)
+    pattern = pattern.replace(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g, '');
+
+    // Remover horários (hh:mm, hh:mm:ss)
+    pattern = pattern.replace(/\d{1,2}:\d{2}(:\d{2})?/g, '');
+
+    // Remover sequências numéricas longas (IDs, códigos)
+    pattern = pattern.replace(/\d{6,}/g, '');
+
+    // Remover valores monetários (R$ 123,45)
+    pattern = pattern.replace(/r?\$?\s*\d+[,\.]\d{2}/g, '');
+
+    // Normalizar espaços
+    pattern = pattern.replace(/\s+/g, ' ').trim();
+
+    return pattern;
+  }
+
+  /**
+   * 📊 Gera sugestões de busca para Camada 3
+   *
+   * @param description - Descrição da transação
+   * @returns Query sugerida para busca
+   */
+  generateSearchQuery(description: string): string {
+    const pattern = this.extractDescriptionPattern(description);
+
+    // Se tiver CNPJ, buscar pelo CNPJ
+    const cnpjMatch = description.match(CNPJ_PATTERN);
+    if (cnpjMatch) {
+      return `CNPJ ${cnpjMatch[0]} empresa`;
+    }
+
+    // Caso contrário, buscar pela descrição
+    return `O que é: ${pattern}`;
   }
 }
 
