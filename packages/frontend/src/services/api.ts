@@ -23,6 +23,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Adicionar header de impersonação se admin estiver impersonando outro usuário
+    const impersonatedUserId = localStorage.getItem('impersonate_user_id');
+    if (impersonatedUserId) {
+      config.headers['X-Impersonate-User'] = impersonatedUserId;
+    }
+
     return config;
   },
   (error) => {

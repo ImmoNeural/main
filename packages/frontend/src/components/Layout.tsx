@@ -3,6 +3,7 @@ import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRig
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useState } from 'react';
+import ImpersonationBanner from './ImpersonationBanner';
 
 const Layout = () => {
   const location = useLocation();
@@ -185,6 +186,7 @@ const Layout = () => {
               </p>
             </div>
           )}
+          <ImpersonationBanner />
           <Outlet />
         </main>
       </div>

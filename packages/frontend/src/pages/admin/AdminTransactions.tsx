@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Navigate } from 'react-router-dom';
+import { useSearchParams, Navigate, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, RefreshCw, ArrowLeft, User, Calendar, DollarSign } from 'lucide-react';
+import { Search, RefreshCw, ArrowLeft, User, Calendar, DollarSign, Eye } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -32,6 +32,7 @@ interface UserInfo {
 const AdminTransactions = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const userId = searchParams.get('user_id');
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -39,6 +40,23 @@ const AdminTransactions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Função para iniciar impersonação
+  const startImpersonation = () => {
+    if (!userId) return;
+
+    localStorage.setItem('impersonate_user_id', userId);
+    localStorage.setItem('impersonate_user_name', userInfo?.name || userInfo?.email || 'Usuário');
+
+    // Disparar evento para atualizar o banner
+    window.dispatchEvent(new Event('impersonation-changed'));
+
+    // Navegar para o dashboard
+    navigate('/app/dashboard');
+
+    // Recarregar para aplicar as mudanças
+    window.location.reload();
+  };
 
   // Verificar se é admin
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
@@ -158,14 +176,23 @@ const AdminTransactions = () => {
           )}
         </div>
 
-        <button
-          onClick={loadData}
-          disabled={isLoading}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={startImpersonation}
+            className="btn-primary flex items-center gap-2 bg-orange-500 hover:bg-orange-600"
+          >
+            <Eye className="w-4 h-4" />
+            Visualizar como este usuário
+          </button>
+          <button
+            onClick={loadData}
+            disabled={isLoading}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
       </div>
 
       {/* Erro */}

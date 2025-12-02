@@ -1,12 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabaseAuth } from '../config/supabase';
 
+// Lista de emails de administradores (para impersonação)
+const ADMIN_EMAILS = [
+  'neurekaai@gmail.com',
+];
+
 // Estender o tipo Request do Express para incluir userId
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
       userEmail?: string;
+      isImpersonating?: boolean;
+      originalUserId?: string;
     }
   }
 }
@@ -14,6 +21,7 @@ declare global {
 /**
  * Middleware de autenticação usando Supabase Auth
  * Verifica se o token é válido e adiciona userId ao request
+ * Suporta impersonação para admins via header X-Impersonate-User
  */
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -36,6 +44,16 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     // Adicionar userId e email ao request
     req.userId = data.user.id;
     req.userEmail = data.user.email;
+    req.isImpersonating = false;
+
+    // Verificar se admin está tentando impersonar outro usuário
+    const impersonateUserId = req.headers['x-impersonate-user'] as string;
+    if (impersonateUserId && data.user.email && ADMIN_EMAILS.includes(data.user.email)) {
+      console.log(`🎭 [Impersonate] Admin ${data.user.email} impersonando usuário ${impersonateUserId}`);
+      req.originalUserId = data.user.id;
+      req.userId = impersonateUserId;
+      req.isImpersonating = true;
+    }
 
     next();
   } catch (error) {
