@@ -31,7 +31,7 @@ interface UserInfo {
 }
 
 const AdminTransactions = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const userId = searchParams.get('user_id');
 
@@ -44,7 +44,16 @@ const AdminTransactions = () => {
   // Verificar se é admin
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
-  // Se não for admin, redirecionar
+  // Mostrar loading enquanto auth carrega
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // Se não for admin (e auth já carregou), redirecionar
   if (!isAdmin) {
     return <Navigate to="/app/dashboard" replace />;
   }
