@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import categorizationService from '../services/categorization.service';
+import categorizationService, { UserCategorizationHistory } from '../services/categorization.service';
+import openaiService from '../services/openai.service';
 import { syncBudgetsWithTransactions } from '../services/budget.service';
 // authMiddleware removido - já é aplicado no app.ts
 import { Transaction } from '../types';
@@ -194,9 +195,11 @@ router.post('/:id/find-similar', async (req: Request, res: Response) => {
 /**
  * PATCH /api/transactions/:id/category
  * Atualiza a categoria de uma transação
+ * APRENDIZADO: Salva padrão no histórico do usuário e global
  */
 router.patch('/:id/category', async (req: Request, res: Response) => {
   try {
+    const user_id = req.userId!;
     const { id } = req.params;
     const { category, subcategory } = req.body;
 
@@ -204,19 +207,24 @@ router.patch('/:id/category', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'category is required' });
     }
 
-    // Verificar se transação existe
+    // Verificar se transação existe e pertence ao usuário
     const { data: transaction, error: fetchError } = await supabase
       .from('transactions')
-      .select('*')
+      .select('*, bank_accounts!inner(user_id)')
       .eq('id', id)
+      .eq('bank_accounts.user_id', user_id)
       .single();
 
     if (fetchError || !transaction) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
-    // Atualizar categoria e subcategoria
-    const updateData: any = { category, updated_at: toISOString(Date.now()) };
+    // Atualizar categoria, subcategoria e marcar como categorizado manualmente
+    const updateData: any = {
+      category,
+      manually_categorized: true,
+      updated_at: toISOString(Date.now())
+    };
     if (subcategory !== undefined) {
       updateData.subcategory = subcategory;
     }
@@ -230,6 +238,75 @@ router.patch('/:id/category', async (req: Request, res: Response) => {
 
     if (updateError) {
       throw updateError;
+    }
+
+    // 🧠 APRENDIZADO: Salvar padrão para uso futuro
+    const descriptionPattern = categorizationService.extractDescriptionPattern(
+      transaction.description || ''
+    );
+
+    if (descriptionPattern && descriptionPattern.length >= 3) {
+      // Salvar no histórico do usuário (Camada 2A)
+      try {
+        await supabase
+          .from('user_category_preferences')
+          .upsert({
+            user_id,
+            description_pattern: descriptionPattern,
+            category,
+            subcategory: subcategory || null,
+            usage_count: 1,
+            last_used_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,description_pattern',
+            ignoreDuplicates: false
+          });
+      } catch (prefError) {
+        console.warn('⚠️ Failed to save user preference:', prefError);
+      }
+
+      // Salvar no padrão global (Camada 2B)
+      try {
+        // Tentar INSERT/UPDATE manual (mais seguro que RPC)
+        const { data: existing } = await supabase
+          .from('global_category_patterns')
+          .select('*')
+          .eq('description_pattern', descriptionPattern)
+          .single();
+
+        if (!existing) {
+          await supabase.from('global_category_patterns').insert({
+            description_pattern: descriptionPattern,
+            category,
+            subcategory: subcategory || null
+          });
+        } else if (existing.category === category) {
+          await supabase
+            .from('global_category_patterns')
+            .update({
+              user_count: existing.user_count + 1,
+              usage_count: existing.usage_count + 1,
+              confidence: Math.min(1.0, existing.confidence + 0.05)
+            })
+            .eq('id', existing.id);
+        } else {
+          // Conflito: diferentes categorias
+          await supabase
+            .from('global_category_patterns')
+            .update({
+              has_conflict: true,
+              conflict_categories: [
+                ...(existing.conflict_categories || []),
+                { category, count: 1 }
+              ]
+            })
+            .eq('id', existing.id);
+        }
+      } catch (globalError) {
+        console.warn('⚠️ Failed to save global pattern:', globalError);
+      }
+
+      console.log(`🧠 Padrão aprendido: "${descriptionPattern}" → ${category}`);
     }
 
     res.json(updated);
@@ -469,6 +546,321 @@ router.post('/recategorize', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('❌ Error recategorizing transactions:', error);
     res.status(500).json({ error: 'Erro ao recategorizar transações' });
+  }
+});
+
+/**
+ * POST /api/transactions/recategorize-ai
+ * Recategoriza transações usando arquitetura de 3 camadas:
+ * - Camada 1: Regras estáticas (BRAZILIAN_CATEGORY_RULES)
+ * - Camada 2A: Histórico pessoal do usuário
+ * - Camada 2B: Padrões globais de todos os usuários
+ * - Camada 3: ChatGPT/IA externa
+ */
+router.post('/recategorize-ai', async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { only_uncategorized = true } = req.body; // Por padrão, só recategoriza "Não Categorizado"
+
+    console.log('🤖 Iniciando recategorização com IA (3 camadas) para user:', user_id);
+
+    // Buscar transações do usuário
+    let query = supabase
+      .from('transactions')
+      .select('*, bank_accounts!inner(user_id)')
+      .eq('bank_accounts.user_id', user_id);
+
+    // Se only_uncategorized, filtrar apenas as não categorizadas
+    if (only_uncategorized) {
+      query = query.or('category.is.null,category.eq.Não Categorizado');
+    }
+
+    const { data: transactions, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    if (!transactions || transactions.length === 0) {
+      return res.json({
+        success: true,
+        total: 0,
+        layer1: 0,
+        layer2a: 0,
+        layer2b: 0,
+        layer3: 0,
+        uncategorized: 0,
+        message: 'Nenhuma transação para recategorizar'
+      });
+    }
+
+    console.log(`📊 Encontradas ${transactions.length} transações para recategorizar com IA`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // BUSCAR DADOS PARA CAMADA 2
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Camada 2A: Histórico pessoal do usuário
+    const { data: userPreferences } = await supabase
+      .from('user_category_preferences')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('usage_count', { ascending: false });
+
+    const userHistory: UserCategorizationHistory[] = (userPreferences || []).map(p => ({
+      description_pattern: p.description_pattern,
+      category: p.category,
+      subcategory: p.subcategory || 'Geral',
+      count: p.usage_count,
+      last_used: new Date(p.last_used_at)
+    }));
+
+    console.log(`   📁 Histórico pessoal: ${userHistory.length} padrões`);
+
+    // Camada 2B: Padrões globais (apenas com alta confiança e sem conflito)
+    const { data: globalPatterns } = await supabase
+      .from('global_category_patterns')
+      .select('*')
+      .eq('has_conflict', false)
+      .gte('confidence', 0.7)
+      .order('confidence', { ascending: false });
+
+    const globalHistory: UserCategorizationHistory[] = (globalPatterns || []).map(p => ({
+      description_pattern: p.description_pattern,
+      category: p.category,
+      subcategory: p.subcategory || 'Geral',
+      count: p.user_count,
+      last_used: new Date(p.updated_at)
+    }));
+
+    console.log(`   🌍 Padrões globais: ${globalHistory.length} padrões`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PROCESSAR TRANSAÇÕES COM 3 CAMADAS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const results: Array<{
+      id: string;
+      oldCategory: string | null;
+      newCategory: string;
+      newSubcategory: string;
+      layer: 0 | 1 | 2 | 3;
+      confidence: number;
+    }> = [];
+
+    // Transações que precisam de Camada 3 (ChatGPT)
+    const needsLayer3: Array<{ id: string; description: string; merchant?: string }> = [];
+
+    // FASE 1: Tentar Camadas 1, 2A e 2B
+    for (const transaction of transactions) {
+      const description = transaction.description || '';
+      const merchant = transaction.merchant || undefined;
+
+      // Tentar Camada 1 (regras estáticas)
+      const layer1Result = categorizationService.categorizeTransaction(
+        description,
+        merchant,
+        transaction.amount
+      );
+
+      if (layer1Result.confidence >= 80) {
+        results.push({
+          id: transaction.id,
+          oldCategory: transaction.category,
+          newCategory: layer1Result.category,
+          newSubcategory: layer1Result.subcategory,
+          layer: 1,
+          confidence: layer1Result.confidence
+        });
+        continue;
+      }
+
+      // Tentar Camada 2A (histórico pessoal)
+      const layer2aResult = categorizationService.categorizeByUserHistory(description, userHistory);
+      if (layer2aResult && layer2aResult.confidence >= 70) {
+        results.push({
+          id: transaction.id,
+          oldCategory: transaction.category,
+          newCategory: layer2aResult.category,
+          newSubcategory: layer2aResult.subcategory,
+          layer: 2,
+          confidence: layer2aResult.confidence
+        });
+        continue;
+      }
+
+      // Tentar Camada 2B (padrões globais)
+      const layer2bResult = categorizationService.categorizeByUserHistory(description, globalHistory);
+      if (layer2bResult && layer2bResult.confidence >= 70) {
+        results.push({
+          id: transaction.id,
+          oldCategory: transaction.category,
+          newCategory: layer2bResult.category,
+          newSubcategory: layer2bResult.subcategory,
+          layer: 2,
+          confidence: layer2bResult.confidence
+        });
+        continue;
+      }
+
+      // Não conseguiu categorizar - precisa Camada 3
+      needsLayer3.push({
+        id: transaction.id,
+        description,
+        merchant
+      });
+    }
+
+    console.log(`   🤖 ${needsLayer3.length} transações precisam de Camada 3 (ChatGPT)`);
+
+    // FASE 2: Processar Camada 3 (ChatGPT) para transações restantes
+    if (needsLayer3.length > 0 && openaiService.isConfigured()) {
+      console.log('   🌐 Chamando ChatGPT para categorização...');
+
+      // Processar em batches de 5 para não sobrecarregar a API
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < needsLayer3.length; i += BATCH_SIZE) {
+        const batch = needsLayer3.slice(i, i + BATCH_SIZE);
+
+        const batchResults = await Promise.all(
+          batch.map(async (t) => {
+            const aiResult = await openaiService.categorizeTransaction(t.description, t.merchant);
+            const originalTx = transactions.find(tx => tx.id === t.id);
+
+            if (aiResult && aiResult.confidence >= 40) {
+              return {
+                id: t.id,
+                oldCategory: originalTx?.category || null,
+                newCategory: aiResult.category,
+                newSubcategory: aiResult.subcategory,
+                layer: 3 as const,
+                confidence: aiResult.confidence
+              };
+            }
+
+            // Fallback: usar resultado da Camada 1 mesmo com baixa confiança
+            const fallback = categorizationService.categorizeTransaction(
+              t.description,
+              t.merchant,
+              originalTx?.amount
+            );
+
+            return {
+              id: t.id,
+              oldCategory: originalTx?.category || null,
+              newCategory: fallback.category,
+              newSubcategory: fallback.subcategory,
+              layer: 0 as const,
+              confidence: fallback.confidence
+            };
+          })
+        );
+
+        results.push(...batchResults);
+
+        // Pequena pausa entre batches
+        if (i + BATCH_SIZE < needsLayer3.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+    } else if (needsLayer3.length > 0) {
+      // ChatGPT não configurado - usar fallback
+      console.log('   ⚠️ ChatGPT não configurado. Usando Camada 1 com baixa confiança.');
+
+      for (const t of needsLayer3) {
+        const originalTx = transactions.find(tx => tx.id === t.id);
+        const fallback = categorizationService.categorizeTransaction(
+          t.description,
+          t.merchant,
+          originalTx?.amount
+        );
+
+        results.push({
+          id: t.id,
+          oldCategory: originalTx?.category || null,
+          newCategory: fallback.category,
+          newSubcategory: fallback.subcategory,
+          layer: 0,
+          confidence: fallback.confidence
+        });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FASE 3: ATUALIZAR BANCO DE DADOS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Agrupar por categoria/subcategoria para batch update
+    const updatesByCategory = new Map<string, string[]>();
+
+    for (const result of results) {
+      const key = `${result.newCategory}|||${result.newSubcategory}`;
+      if (!updatesByCategory.has(key)) {
+        updatesByCategory.set(key, []);
+      }
+      updatesByCategory.get(key)!.push(result.id);
+    }
+
+    const now = toISOString(Date.now());
+
+    // Executar updates em paralelo
+    const updatePromises = Array.from(updatesByCategory.entries()).map(async ([key, ids]) => {
+      const [category, subcategory] = key.split('|||');
+
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({
+          category,
+          subcategory,
+          updated_at: now
+        })
+        .in('id', ids);
+
+      if (updateError) {
+        console.error(`❌ Erro ao atualizar ${category}:`, updateError);
+        return 0;
+      }
+      return ids.length;
+    });
+
+    await Promise.all(updatePromises);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CALCULAR ESTATÍSTICAS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const stats = {
+      layer1: results.filter(r => r.layer === 1).length,
+      layer2a: results.filter(r => r.layer === 2 && userHistory.some(h =>
+        r.newCategory === h.category
+      )).length,
+      layer2b: results.filter(r => r.layer === 2).length,
+      layer3: results.filter(r => r.layer === 3).length,
+      uncategorized: results.filter(r => r.layer === 0 || r.newCategory === 'Não Categorizado').length,
+      updated: results.filter(r => r.oldCategory !== r.newCategory).length
+    };
+
+    // Ajustar layer2b para não contar layer2a duas vezes
+    stats.layer2b = stats.layer2b - stats.layer2a;
+
+    console.log(`✨ Recategorização com IA concluída:`);
+    console.log(`   📊 Total: ${transactions.length} transações`);
+    console.log(`   🎯 Camada 1 (regras): ${stats.layer1}`);
+    console.log(`   👤 Camada 2A (pessoal): ${stats.layer2a}`);
+    console.log(`   🌍 Camada 2B (global): ${stats.layer2b}`);
+    console.log(`   🤖 Camada 3 (ChatGPT): ${stats.layer3}`);
+    console.log(`   ❓ Não categorizadas: ${stats.uncategorized}`);
+    console.log(`   ✅ Atualizadas: ${stats.updated}`);
+
+    res.json({
+      success: true,
+      total: transactions.length,
+      ...stats,
+      message: `Recategorização com IA concluída! Camada 1: ${stats.layer1}, Camada 2: ${stats.layer2a + stats.layer2b}, Camada 3: ${stats.layer3}, Não categorizadas: ${stats.uncategorized}`
+    });
+  } catch (error) {
+    console.error('❌ Error in AI recategorization:', error);
+    res.status(500).json({ error: 'Erro ao recategorizar com IA' });
   }
 });
 
