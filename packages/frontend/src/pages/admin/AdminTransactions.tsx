@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, RefreshCw, ArrowLeft, User, Calendar, DollarSign, Eye } from 'lucide-react';
+import { Search, RefreshCw, ArrowLeft, User, Calendar, DollarSign, Eye, CreditCard, Wrench } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -40,6 +40,11 @@ const AdminTransactions = () => {
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Estado para correção de cartões de crédito
+  const [showCreditCardFix, setShowCreditCardFix] = useState(false);
+  const [creditCardFixResult, setCreditCardFixResult] = useState<any>(null);
+  const [isFixingCreditCards, setIsFixingCreditCards] = useState(false);
+
   // Função para iniciar impersonação
   const startImpersonation = () => {
     if (!userId) return;
@@ -51,6 +56,53 @@ const AdminTransactions = () => {
 
     // Redirecionar para o dashboard (reload completo para garantir que o header seja enviado)
     window.location.href = '/app/dashboard';
+  };
+
+  // Função para corrigir cartões de crédito (dry run primeiro)
+  const previewCreditCardFix = async () => {
+    setIsFixingCreditCards(true);
+    setCreditCardFixResult(null);
+    try {
+      const params: any = { dry_run: 'true' };
+      if (userId) {
+        params.user_id = userId;
+      }
+      const response = await api.post('/admin/fix-credit-card-transactions', null, { params });
+      setCreditCardFixResult(response.data);
+      setShowCreditCardFix(true);
+    } catch (err: any) {
+      console.error('Erro ao verificar cartões:', err);
+      alert('Erro ao verificar cartões de crédito: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setIsFixingCreditCards(false);
+    }
+  };
+
+  // Função para executar correção de verdade
+  const executeCreditCardFix = async () => {
+    if (!confirm('Tem certeza que deseja corrigir as transações de cartão de crédito? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    setIsFixingCreditCards(true);
+    try {
+      const params: any = {};
+      if (userId) {
+        params.user_id = userId;
+      }
+      const response = await api.post('/admin/fix-credit-card-transactions', null, { params });
+      setCreditCardFixResult(response.data);
+      alert(`Correção concluída!\n${response.data.transactionsInverted} transações invertidas\n${response.data.transactionsDeleted} transações deletadas`);
+      // Recarregar dados se estiver vendo um usuário específico
+      if (userId) {
+        loadData();
+      }
+    } catch (err: any) {
+      console.error('Erro ao corrigir cartões:', err);
+      alert('Erro ao corrigir cartões de crédito: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setIsFixingCreditCards(false);
+    }
   };
 
   // Verificar se é admin
@@ -172,6 +224,14 @@ const AdminTransactions = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={previewCreditCardFix}
+            disabled={isFixingCreditCards}
+            className="btn-secondary flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 border-purple-300"
+          >
+            <CreditCard className={`w-4 h-4 ${isFixingCreditCards ? 'animate-pulse' : ''}`} />
+            {isFixingCreditCards ? 'Verificando...' : 'Corrigir Cartões'}
+          </button>
           <button
             onClick={startImpersonation}
             className="btn-primary flex items-center gap-2 bg-orange-500 hover:bg-orange-600"
@@ -325,6 +385,106 @@ const AdminTransactions = () => {
           </table>
         )}
       </div>
+
+      {/* Modal de Correção de Cartões de Crédito */}
+      {showCreditCardFix && creditCardFixResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <CreditCard className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Correção de Cartões de Crédito</h2>
+                  <p className="text-sm text-gray-500">
+                    {userId ? 'Para este usuário' : 'Para todos os usuários'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {creditCardFixResult.accountsProcessed === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma conta de cartão de crédito encontrada.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-blue-600">{creditCardFixResult.accountsProcessed}</p>
+                      <p className="text-sm text-gray-600">Contas de cartão</p>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-orange-600">{creditCardFixResult.transactionsInverted}</p>
+                      <p className="text-sm text-gray-600">Serão invertidas</p>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-red-600">{creditCardFixResult.transactionsDeleted}</p>
+                      <p className="text-sm text-gray-600">Serão deletadas</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 className="font-semibold text-gray-700 mb-2">O que será feito:</h3>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Transações <span className="text-green-600 font-medium">positivas</span> (compras) serão <span className="text-orange-600 font-medium">invertidas para negativas</span></li>
+                      <li>• Transações <span className="text-red-600 font-medium">negativas</span> (pagamentos de fatura) serão <span className="text-red-600 font-medium">deletadas</span></li>
+                    </ul>
+                  </div>
+
+                  {creditCardFixResult.details && creditCardFixResult.details.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-gray-700 mb-2">Detalhes por conta:</h3>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {creditCardFixResult.details.map((detail: any, index: number) => (
+                          <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 text-sm">
+                            <p className="font-medium text-gray-900">{detail.bank_name}</p>
+                            <p className="text-gray-500 text-xs">{detail.account_id}</p>
+                            <div className="flex gap-4 mt-1">
+                              <span className="text-orange-600">{detail.transactionsToInvert} inverter</span>
+                              <span className="text-red-600">{detail.transactionsToDelete} deletar</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {creditCardFixResult.dry_run && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <p className="text-yellow-800 text-sm">
+                        <strong>Modo preview:</strong> Nenhuma alteração foi feita ainda. Clique em "Executar Correção" para aplicar as mudanças.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => setShowCreditCardFix(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+              >
+                Fechar
+              </button>
+              {creditCardFixResult.dry_run && (creditCardFixResult.transactionsInverted > 0 || creditCardFixResult.transactionsDeleted > 0) && (
+                <button
+                  onClick={executeCreditCardFix}
+                  disabled={isFixingCreditCards}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2"
+                >
+                  <Wrench className={`w-4 h-4 ${isFixingCreditCards ? 'animate-spin' : ''}`} />
+                  {isFixingCreditCards ? 'Executando...' : 'Executar Correção'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
