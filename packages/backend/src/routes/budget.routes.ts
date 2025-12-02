@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { authMiddleware } from '../middleware/auth.supabase.middleware';
+// authMiddleware removido - já é aplicado no app.ts
 import { normalizeToCategory, SUBCATEGORY_TO_CATEGORY_MAP, VALID_CATEGORIES } from '../services/categorization.service';
 
 const router = Router();
@@ -10,7 +10,7 @@ const router = Router();
  * Retorna todos os budgets customizados do usuário
  * Agrupa por categoria e soma fixo + variável para o radar
  */
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
@@ -45,7 +45,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
  * GET /api/budgets/detailed
  * Retorna todos os budgets COM detalhes de tipo_custo (fixo/variável)
  */
-router.get('/detailed', authMiddleware, async (req: Request, res: Response) => {
+router.get('/detailed', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
@@ -72,7 +72,7 @@ router.get('/detailed', authMiddleware, async (req: Request, res: Response) => {
  * Retorna o budget de uma categoria específica para um tipo de custo específico (fixo ou variavel)
  * Também busca registros antigos sem tipo_custo e os migra automaticamente
  */
-router.get('/:categoryName/:tipoCusto', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:categoryName/:tipoCusto', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { categoryName, tipoCusto } = req.params;
@@ -145,7 +145,7 @@ router.get('/:categoryName/:tipoCusto', authMiddleware, async (req: Request, res
  * GET /api/budgets/:categoryName
  * Retorna o budget de uma categoria específica (soma fixo + variável se houver)
  */
-router.get('/:categoryName', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:categoryName', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { categoryName } = req.params;
@@ -181,7 +181,7 @@ router.get('/:categoryName', authMiddleware, async (req: Request, res: Response)
  * Verifica preferências para determinar se categoria é híbrida
  * Body: { category_name: string, budget_value: number, tipo_custo?: 'fixo' | 'variavel' }
  */
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
@@ -241,7 +241,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
  * Atualiza budget(s) existente(s)
  * Body: { budget_value: number }
  */
-router.put('/:categoryName', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:categoryName', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { categoryName } = req.params;
@@ -306,7 +306,7 @@ router.put('/:categoryName', authMiddleware, async (req: Request, res: Response)
  * DELETE /api/budgets/:categoryName
  * Remove todos os budgets de uma categoria
  */
-router.delete('/:categoryName', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:categoryName', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { categoryName } = req.params;
@@ -341,7 +341,7 @@ router.delete('/:categoryName', authMiddleware, async (req: Request, res: Respon
  * 4. Deleta os budgets antigos com subcategorias
  * 5. Cria novos budgets com categorias corretas
  */
-router.post('/cleanup', authMiddleware, async (req: Request, res: Response) => {
+router.post('/cleanup', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 

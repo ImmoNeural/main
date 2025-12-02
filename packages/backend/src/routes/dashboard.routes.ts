@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { startOfDay, subDays, format, startOfWeek, endOfWeek, getWeek, getYear, startOfMonth, subMonths } from 'date-fns';
 import { supabase } from '../config/supabase';
-import { authMiddleware } from '../middleware/auth.supabase.middleware';
+// authMiddleware removido - já é aplicado no app.ts
 import { DashboardStats, CategoryStats, DailyStats, WeeklyStats } from '../types';
 
 const router = Router();
@@ -40,7 +40,7 @@ function getStartDateFromPeriod(days: number): number {
  * GET /api/dashboard/stats
  * Retorna estatísticas gerais do dashboard
  */
-router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
+router.get('/stats', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '365', account_id } = req.query; // Padrão: 12 meses
@@ -188,7 +188,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response) => {
  * GET /api/dashboard/expenses-by-category
  * Retorna despesas agrupadas por categoria
  */
-router.get('/expenses-by-category', authMiddleware, async (req: Request, res: Response) => {
+router.get('/expenses-by-category', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '365', account_id } = req.query; // Padrão: 12 meses
@@ -259,7 +259,7 @@ router.get('/expenses-by-category', authMiddleware, async (req: Request, res: Re
  * GET /api/dashboard/daily-stats
  * Retorna estatísticas diárias
  */
-router.get('/daily-stats', authMiddleware, async (req: Request, res: Response) => {
+router.get('/daily-stats', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '30', account_id } = req.query;
@@ -331,7 +331,7 @@ router.get('/daily-stats', authMiddleware, async (req: Request, res: Response) =
  * GET /api/dashboard/top-merchants
  * Retorna os comerciantes com mais gastos
  */
-router.get('/top-merchants', authMiddleware, async (req: Request, res: Response) => {
+router.get('/top-merchants', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { days = '90', limit = '10', account_id } = req.query;
@@ -396,7 +396,7 @@ router.get('/top-merchants', authMiddleware, async (req: Request, res: Response)
  * GET /api/dashboard/monthly-comparison
  * Compara gastos mensais
  */
-router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Response) => {
+router.get('/monthly-comparison', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const { months = '6', account_id } = req.query;
@@ -468,7 +468,7 @@ router.get('/monthly-comparison', authMiddleware, async (req: Request, res: Resp
  * Ex: Se período é "últimos 3 meses" (set/out/nov), só conta transações >= 01/09,
  * mesmo que a semana 36 comece em 31/08
  */
-router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) => {
+router.get('/weekly-stats', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { days = '365', account_id } = req.query; // Padrão: 365 dias (12 meses)
@@ -585,7 +585,7 @@ router.get('/weekly-stats', authMiddleware, async (req: Request, res: Response) 
  * GET /api/dashboard/monthly-stats-by-category
  * Retorna estatísticas mensais com categorias (transação por transação)
  */
-router.get('/monthly-stats-by-category', authMiddleware, async (req: Request, res: Response) => {
+router.get('/monthly-stats-by-category', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { months = '12', category, account_id } = req.query;

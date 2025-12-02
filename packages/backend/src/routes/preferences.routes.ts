@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { syncBudgetsWithTransactions } from '../services/budget.service';
-import { authMiddleware } from '../middleware/auth.supabase.middleware';
+// authMiddleware removido - já é aplicado no app.ts
 import { normalizeToCategory } from '../services/categorization.service';
 
 const router = Router();
@@ -17,7 +17,7 @@ interface PreferenceItem {
  * GET /api/preferences
  * Retorna todas as preferências do usuário
  */
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
@@ -44,7 +44,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
  * Salva todas as preferências do usuário e sincroniza com custom_budgets
  * Body: { preferences: PreferenceItem[] }
  */
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { preferences } = req.body as { preferences: PreferenceItem[] };
@@ -281,7 +281,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
  * GET /api/preferences/categories
  * Retorna o tipo de cada categoria (hibrido ou normal) baseado nas preferências
  */
-router.get('/categories', authMiddleware, async (req: Request, res: Response) => {
+router.get('/categories', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 

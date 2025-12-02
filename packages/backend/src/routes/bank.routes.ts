@@ -4,7 +4,7 @@ import { supabase } from '../config/supabase';
 import openBankingService from '../services/openBanking.service';
 import categorizationService from '../services/categorization.service';
 import { syncBudgetsWithTransactions } from '../services/budget.service';
-import { authMiddleware } from '../middleware/auth.supabase.middleware';
+// authMiddleware removido - já é aplicado no app.ts
 import { createMockBankAccount } from '../services/providers/mock.service';
 import { BankAccount, Transaction } from '../types';
 
@@ -59,7 +59,7 @@ router.get('/available', async (req: Request, res: Response) => {
  * Inicia conexão direta com Pluggy (sem pré-selecionar banco)
  * Abre o widget do Pluggy com a lista completa de bancos
  */
-router.post('/connect-direct', authMiddleware, async (req: Request, res: Response) => {
+router.post('/connect-direct', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
@@ -88,7 +88,7 @@ router.post('/connect-direct', authMiddleware, async (req: Request, res: Respons
  * POST /api/bank/connect
  * Inicia o processo de conexão com um banco específico
  */
-router.post('/connect', authMiddleware, async (req: Request, res: Response) => {
+router.post('/connect', async (req: Request, res: Response) => {
   try {
     const { bank_id } = req.body;
     const user_id = req.userId!; // Obtido do token JWT
@@ -147,7 +147,7 @@ router.post('/connect', authMiddleware, async (req: Request, res: Response) => {
  * GET /api/bank/item-status/:itemId
  * Busca o status detalhado de um item no Pluggy (para debug de erros)
  */
-router.get('/item-status/:itemId', authMiddleware, async (req: Request, res: Response) => {
+router.get('/item-status/:itemId', async (req: Request, res: Response) => {
   try {
     const { itemId } = req.params;
 
@@ -172,7 +172,7 @@ router.get('/item-status/:itemId', authMiddleware, async (req: Request, res: Res
  * POST /api/bank/callback
  * Processa o callback após autorização do banco
  */
-router.post('/callback', authMiddleware, async (req: Request, res: Response) => {
+router.post('/callback', async (req: Request, res: Response) => {
   try {
     const { code, state, bank_name } = req.body;
     const user_id = req.userId!; // Obtido do token JWT
@@ -602,7 +602,7 @@ router.post('/callback', authMiddleware, async (req: Request, res: Response) => 
  * GET /api/bank/accounts
  * Lista todas as contas conectadas
  */
-router.get('/accounts', authMiddleware, async (req: Request, res: Response) => {
+router.get('/accounts', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
 
@@ -628,7 +628,7 @@ router.get('/accounts', authMiddleware, async (req: Request, res: Response) => {
  * POST /api/bank/accounts/:accountId/sync
  * Sincroniza transações de uma conta
  */
-router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, res: Response) => {
+router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
 
@@ -678,7 +678,7 @@ router.post('/accounts/:accountId/sync', authMiddleware, async (req: Request, re
  * DELETE /api/bank/accounts/:accountId
  * Remove uma conta conectada e TODAS as transações associadas (HARD DELETE)
  */
-router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/accounts/:accountId', async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
     const user_id = req.userId!;

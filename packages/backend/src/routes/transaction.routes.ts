@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import categorizationService from '../services/categorization.service';
 import { syncBudgetsWithTransactions } from '../services/budget.service';
-import { authMiddleware } from '../middleware/auth.supabase.middleware';
+// authMiddleware removido - já é aplicado no app.ts
 import { Transaction } from '../types';
 
 const router = Router();
@@ -19,7 +19,7 @@ function toISOString(timestamp: number | undefined): string | null {
  * GET /api/transactions
  * Lista transações com filtros opcionais
  */
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
     const {
@@ -99,7 +99,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
  * GET /api/transactions/:id
  * Busca uma transação específica
  */
-router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -124,7 +124,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
  * POST /api/transactions/:id/find-similar
  * Busca transações similares baseadas no merchant/descrição
  */
-router.post('/:id/find-similar', authMiddleware, async (req: Request, res: Response) => {
+router.post('/:id/find-similar', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { id } = req.params;
@@ -195,7 +195,7 @@ router.post('/:id/find-similar', authMiddleware, async (req: Request, res: Respo
  * PATCH /api/transactions/:id/category
  * Atualiza a categoria de uma transação
  */
-router.patch('/:id/category', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/category', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { category, subcategory } = req.body;
@@ -243,7 +243,7 @@ router.patch('/:id/category', authMiddleware, async (req: Request, res: Response
  * PATCH /api/transactions/bulk-update-category
  * Atualiza a categoria de múltiplas transações
  */
-router.patch('/bulk-update-category', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/bulk-update-category', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { transaction_ids, category } = req.body;
@@ -311,7 +311,7 @@ router.get('/categories/list', (req: Request, res: Response) => {
  * POST /api/transactions/recategorize
  * Recategoriza todas as transações do usuário usando IA
  */
-router.post('/recategorize', authMiddleware, async (req: Request, res: Response) => {
+router.post('/recategorize', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
 
@@ -407,7 +407,7 @@ router.post('/recategorize', authMiddleware, async (req: Request, res: Response)
  * Se account_id for fornecido via query param, apaga apenas dessa conta
  * Se não, apaga TODAS as transações e contas do usuário
  */
-router.delete('/all', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/all', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { account_id } = req.query;
@@ -501,7 +501,7 @@ router.delete('/all', authMiddleware, async (req: Request, res: Response) => {
  * POST /api/transactions/find-similar
  * Busca transações similares com base em palavras-chave
  */
-router.post('/find-similar', authMiddleware, async (req: Request, res: Response) => {
+router.post('/find-similar', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { description, merchant, excludeId, newCategory } = req.body;
@@ -587,7 +587,7 @@ router.post('/find-similar', authMiddleware, async (req: Request, res: Response)
  * POST /api/transactions/bulk-update-category
  * Atualiza categoria de múltiplas transações
  */
-router.post('/bulk-update-category', authMiddleware, async (req: Request, res: Response) => {
+router.post('/bulk-update-category', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { transactionIds, newCategory } = req.body;
@@ -648,7 +648,7 @@ router.post('/bulk-update-category', authMiddleware, async (req: Request, res: R
  * POST /api/transactions/debug-categorization
  * Debug: Mostra como uma transação seria categorizada
  */
-router.post('/debug-categorization', authMiddleware, async (req: Request, res: Response) => {
+router.post('/debug-categorization', async (req: Request, res: Response) => {
   console.log('\n\n🐛🐛🐛 ===============================================');
   console.log('🐛 DEBUG CATEGORIZATION ENDPOINT CHAMADO!');
   console.log('🐛 ===============================================\n');
@@ -738,7 +738,7 @@ router.post('/debug-categorization', authMiddleware, async (req: Request, res: R
  * POST /api/transactions/import
  * Importa transações manualmente (CSV ou JSON)
  */
-router.post('/import', authMiddleware, async (req: Request, res: Response) => {
+router.post('/import', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { transactions: importedTransactions, account_id } = req.body;
