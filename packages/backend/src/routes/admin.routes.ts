@@ -10,33 +10,28 @@ const ADMIN_EMAILS = [
 
 /**
  * Middleware para verificar se o usuário é admin
+ * Usa req.userEmail que já vem do auth middleware
  */
 const adminMiddleware = async (req: Request, res: Response, next: Function) => {
   try {
-    const userId = req.userId;
+    const userEmail = req.userEmail;
 
-    if (!userId) {
+    if (!userEmail) {
+      console.log('[Admin] ❌ Email não encontrado no request');
       return res.status(401).json({ error: 'Não autenticado' });
     }
 
-    // Buscar email do usuário
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('email')
-      .eq('id', userId)
-      .single();
+    console.log(`[Admin] Verificando permissão para: ${userEmail}`);
 
-    if (error || !user) {
-      return res.status(401).json({ error: 'Usuário não encontrado' });
-    }
-
-    if (!ADMIN_EMAILS.includes(user.email)) {
+    if (!ADMIN_EMAILS.includes(userEmail)) {
+      console.log(`[Admin] ❌ ${userEmail} não é admin`);
       return res.status(403).json({ error: 'Acesso negado - apenas administradores' });
     }
 
+    console.log(`[Admin] ✅ ${userEmail} é admin`);
     next();
   } catch (error) {
-    console.error('Admin middleware error:', error);
+    console.error('[Admin] Middleware error:', error);
     res.status(500).json({ error: 'Erro ao verificar permissões de admin' });
   }
 };
