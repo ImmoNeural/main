@@ -26,7 +26,7 @@ interface OpenAIResponse {
 class OpenAIService {
   private apiKey: string | undefined;
   private baseUrl = 'https://api.openai.com/v1/chat/completions';
-  private model = 'gpt-3.5-turbo'; // Mais barato e rápido, suficiente para categorização
+  private model = 'gpt-4o-mini'; // Modelo mais barato: $0.15/1M input, $0.60/1M output
 
   constructor() {
     this.apiKey = process.env.OPENAI_API_KEY;
