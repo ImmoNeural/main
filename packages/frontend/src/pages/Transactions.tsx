@@ -266,13 +266,13 @@ const Transactions = () => {
   };
 
   const handleResetCategories = async () => {
-    const accountName = activeAccountId
-      ? accounts.find(a => a.id === activeAccountId)?.bank_name || 'conta selecionada'
-      : 'TODAS as contas';
+    const accountScope = activeAccountId
+      ? 'da conta selecionada'
+      : 'de TODAS as contas';
 
     const confirmReset = confirm(
       `⚠️ Resetar categorias?\n\n` +
-      `Todas as transações de "${accountName}" serão marcadas como "Não Categorizado".\n\n` +
+      `Todas as transações ${accountScope} serão marcadas como "Não Categorizado".\n\n` +
       `Isso permite recategorizar do zero com IA.`
     );
 
