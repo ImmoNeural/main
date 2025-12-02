@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Navigate, useNavigate } from 'react-router-dom';
+import { useSearchParams, Navigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Search, RefreshCw, ArrowLeft, User, Calendar, DollarSign, Eye } from 'lucide-react';
@@ -32,7 +32,6 @@ interface UserInfo {
 const AdminTransactions = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const userId = searchParams.get('user_id');
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
