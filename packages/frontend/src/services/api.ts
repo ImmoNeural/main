@@ -144,6 +144,19 @@ export const transactionApi = {
   recategorizeAll: () =>
     api.post<{ success: boolean; total: number; updated: number; unchanged: number; categorized: number; uncategorized: number; message: string }>('/transactions/recategorize'),
 
+  recategorizeAI: (onlyUncategorized: boolean = true) =>
+    api.post<{
+      success: boolean;
+      total: number;
+      layer1: number;
+      layer2a: number;
+      layer2b: number;
+      layer3: number;
+      uncategorized: number;
+      updated: number;
+      message: string;
+    }>('/transactions/recategorize-ai', { only_uncategorized: onlyUncategorized }),
+
   findSimilar: (description: string, merchant?: string, excludeId?: string, newCategory?: string) =>
     api.post<{
       similar: Array<Transaction & { matchScore: number; matchedWords: string[] }>;

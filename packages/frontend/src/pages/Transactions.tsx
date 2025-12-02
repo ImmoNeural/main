@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles } from 'lucide-react';
 import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
@@ -65,6 +65,9 @@ const Transactions = () => {
   // Estado para saldo inicial (vindo do backend)
   const [initialBalance, setInitialBalance] = useState<number | null>(null);
   const [initialBalanceDate, setInitialBalanceDate] = useState<string | null>(null);
+
+  // Estado para recategorização com IA
+  const [isAILoading, setIsAILoading] = useState(false);
 
   // Gerar últimos 12 meses dinamicamente (não usado no momento)
   /* const getLast12Months = () => {
@@ -236,6 +239,52 @@ const Transactions = () => {
       alert('❌ Erro ao recategorizar.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRecategorizeAI = async () => {
+    const confirmRecategorize = confirm(
+      '🤖 Categorizar com IA (3 camadas)?\n\n' +
+      '• Camada 1: Regras estáticas\n' +
+      '• Camada 2: Histórico pessoal + padrões globais\n' +
+      '• Camada 3: ChatGPT (para casos difíceis)\n\n' +
+      'Apenas transações "Não Categorizado" serão processadas.'
+    );
+
+    if (!confirmRecategorize) return;
+
+    setIsAILoading(true);
+    try {
+      console.log('🤖 Iniciando recategorização com IA (3 camadas)...');
+      const response = await transactionApi.recategorizeAI(true);
+      console.log('✅ Recategorização com IA concluída:', response.data);
+
+      // Log detalhado das camadas
+      console.log('📊 Estatísticas por camada:');
+      console.log(`   🎯 Camada 1 (regras estáticas): ${response.data.layer1}`);
+      console.log(`   👤 Camada 2A (histórico pessoal): ${response.data.layer2a}`);
+      console.log(`   🌍 Camada 2B (padrões globais): ${response.data.layer2b}`);
+      console.log(`   🤖 Camada 3 (ChatGPT): ${response.data.layer3}`);
+      console.log(`   ❓ Não categorizadas: ${response.data.uncategorized}`);
+      console.log(`   ✅ Total atualizadas: ${response.data.updated}`);
+
+      alert(
+        `✅ Categorização com IA concluída!\n\n` +
+        `📊 Resultados:\n` +
+        `• Camada 1 (regras): ${response.data.layer1}\n` +
+        `• Camada 2 (histórico): ${response.data.layer2a + response.data.layer2b}\n` +
+        `• Camada 3 (ChatGPT): ${response.data.layer3}\n` +
+        `• Não categorizadas: ${response.data.uncategorized}\n\n` +
+        `Total atualizado: ${response.data.updated} transações`
+      );
+
+      // Recarregar transações
+      await loadData();
+    } catch (error: any) {
+      console.error('❌ Erro ao recategorizar com IA:', error);
+      alert('❌ Erro ao recategorizar com IA. Verifique o console para detalhes.');
+    } finally {
+      setIsAILoading(false);
     }
   };
 
@@ -686,11 +735,21 @@ const Transactions = () => {
                 onClick={handleRecategorizeAll}
                 className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
                 disabled={isLoading}
-                title="Recategorizar todas as transações usando IA (threshold 80%)"
+                title="Recategorizar todas as transações usando regras (threshold 80%)"
               >
                 <RefreshCw className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Recategorizar</span>
-                <span className="sm:hidden">Recat.</span>
+                <span className="hidden sm:inline">Regras</span>
+                <span className="sm:hidden">Regras</span>
+              </button>
+              <button
+                onClick={handleRecategorizeAI}
+                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isAILoading || isLoading}
+                title="Categorizar com IA (3 camadas: regras + histórico + ChatGPT)"
+              >
+                <Sparkles className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isAILoading ? 'animate-pulse' : ''}`} />
+                <span className="hidden sm:inline">IA</span>
+                <span className="sm:hidden">IA</span>
               </button>
               <button
                 onClick={exportToCSV}

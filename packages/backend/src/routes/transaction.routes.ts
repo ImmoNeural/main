@@ -664,6 +664,7 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
       );
 
       if (layer1Result.confidence >= 80) {
+        console.log(`   🎯 [L1] "${description.substring(0, 40)}..." → ${layer1Result.category} (${layer1Result.confidence}%)`);
         results.push({
           id: transaction.id,
           oldCategory: transaction.category,
@@ -678,6 +679,7 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
       // Tentar Camada 2A (histórico pessoal)
       const layer2aResult = categorizationService.categorizeByUserHistory(description, userHistory);
       if (layer2aResult && layer2aResult.confidence >= 70) {
+        console.log(`   👤 [L2A] "${description.substring(0, 40)}..." → ${layer2aResult.category} (${layer2aResult.confidence}%) [pessoal]`);
         results.push({
           id: transaction.id,
           oldCategory: transaction.category,
@@ -692,6 +694,7 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
       // Tentar Camada 2B (padrões globais)
       const layer2bResult = categorizationService.categorizeByUserHistory(description, globalHistory);
       if (layer2bResult && layer2bResult.confidence >= 70) {
+        console.log(`   🌍 [L2B] "${description.substring(0, 40)}..." → ${layer2bResult.category} (${layer2bResult.confidence}%) [global]`);
         results.push({
           id: transaction.id,
           oldCategory: transaction.category,
@@ -728,6 +731,7 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
             const originalTx = transactions.find(tx => tx.id === t.id);
 
             if (aiResult && aiResult.confidence >= 40) {
+              console.log(`   🤖 [L3] "${t.description.substring(0, 40)}..." → ${aiResult.category} (${aiResult.confidence}%) [ChatGPT]`);
               return {
                 id: t.id,
                 oldCategory: originalTx?.category || null,
@@ -745,6 +749,7 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
               originalTx?.amount
             );
 
+            console.log(`   ❓ [L0] "${t.description.substring(0, 40)}..." → ${fallback.category} (${fallback.confidence}%) [fallback]`);
             return {
               id: t.id,
               oldCategory: originalTx?.category || null,
@@ -765,7 +770,8 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
       }
     } else if (needsLayer3.length > 0) {
       // ChatGPT não configurado - usar fallback
-      console.log('   ⚠️ ChatGPT não configurado. Usando Camada 1 com baixa confiança.');
+      console.log('   ⚠️ ChatGPT NÃO CONFIGURADO! Configure OPENAI_KEY no Render.');
+      console.log('   ⚠️ Usando Camada 1 com baixa confiança como fallback...');
 
       for (const t of needsLayer3) {
         const originalTx = transactions.find(tx => tx.id === t.id);
@@ -775,6 +781,7 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
           originalTx?.amount
         );
 
+        console.log(`   ❓ [L0] "${t.description.substring(0, 40)}..." → ${fallback.category} (${fallback.confidence}%) [sem ChatGPT]`);
         results.push({
           id: t.id,
           oldCategory: originalTx?.category || null,
