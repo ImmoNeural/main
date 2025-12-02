@@ -872,6 +872,77 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/transactions/reset-categories
+ * Reseta todas as transações para "Não Categorizado"
+ * Se account_id for fornecido, reseta apenas dessa conta
+ */
+router.post('/reset-categories', async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { account_id } = req.body;
+
+    console.log('🔄 Resetando categorias para "Não Categorizado"...');
+
+    let query = supabase
+      .from('transactions')
+      .update({
+        category: 'Não Categorizado',
+        subcategory: 'Geral',
+        updated_at: toISOString(Date.now())
+      });
+
+    if (account_id) {
+      // Resetar apenas transações de uma conta específica
+      const { data: account } = await supabase
+        .from('bank_accounts')
+        .select('id')
+        .eq('id', account_id)
+        .eq('user_id', user_id)
+        .single();
+
+      if (!account) {
+        return res.status(404).json({ error: 'Conta não encontrada' });
+      }
+
+      query = query.eq('account_id', account_id);
+      console.log(`   📁 Conta: ${account_id}`);
+    } else {
+      // Resetar todas as transações do usuário
+      const { data: accounts } = await supabase
+        .from('bank_accounts')
+        .select('id')
+        .eq('user_id', user_id);
+
+      if (!accounts || accounts.length === 0) {
+        return res.json({ success: true, updated: 0, message: 'Nenhuma conta encontrada' });
+      }
+
+      const accountIds = accounts.map(a => a.id);
+      query = query.in('account_id', accountIds);
+      console.log(`   📁 Todas as contas (${accountIds.length})`);
+    }
+
+    const { data, error } = await query.select('id');
+
+    if (error) {
+      throw error;
+    }
+
+    const updated = data?.length || 0;
+    console.log(`✅ ${updated} transações resetadas para "Não Categorizado"`);
+
+    res.json({
+      success: true,
+      updated,
+      message: `${updated} transações resetadas para "Não Categorizado"`
+    });
+  } catch (error) {
+    console.error('❌ Error resetting categories:', error);
+    res.status(500).json({ error: 'Erro ao resetar categorias' });
+  }
+});
+
+/**
  * DELETE /api/transactions/all
  * Apaga transações do usuário (IRREVERSÍVEL)
  * Se account_id for fornecido via query param, apaga apenas dessa conta

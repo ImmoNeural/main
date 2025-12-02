@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw } from 'lucide-react';
 import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
@@ -262,6 +262,32 @@ const Transactions = () => {
       alert('❌ Erro ao recategorizar com IA. Verifique o console para detalhes.');
     } finally {
       setIsAILoading(false);
+    }
+  };
+
+  const handleResetCategories = async () => {
+    const accountName = activeAccountId
+      ? accounts.find(a => a.id === activeAccountId)?.bank_name || 'conta selecionada'
+      : 'TODAS as contas';
+
+    const confirmReset = confirm(
+      `⚠️ Resetar categorias?\n\n` +
+      `Todas as transações de "${accountName}" serão marcadas como "Não Categorizado".\n\n` +
+      `Isso permite recategorizar do zero com IA.`
+    );
+
+    if (!confirmReset) return;
+
+    setIsLoading(true);
+    try {
+      const response = await transactionApi.resetCategories(activeAccountId || undefined);
+      alert(`✅ ${response.data.updated} transações resetadas para "Não Categorizado"`);
+      await loadData();
+    } catch (error: any) {
+      console.error('❌ Erro ao resetar categorias:', error);
+      alert('❌ Erro ao resetar categorias.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -717,6 +743,15 @@ const Transactions = () => {
                 <Sparkles className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isAILoading ? 'animate-pulse' : ''}`} />
                 <span className="hidden sm:inline">Categorizar</span>
                 <span className="sm:hidden">IA</span>
+              </button>
+              <button
+                onClick={handleResetCategories}
+                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                disabled={isLoading}
+                title="Reseta todas para 'Não Categorizado'"
+              >
+                <RotateCcw className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                <span className="hidden sm:inline">Resetar</span>
               </button>
               <button
                 onClick={exportToCSV}

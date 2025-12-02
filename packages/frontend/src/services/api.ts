@@ -157,6 +157,12 @@ export const transactionApi = {
       message: string;
     }>('/transactions/recategorize-ai', { only_uncategorized: onlyUncategorized }),
 
+  resetCategories: (accountId?: string) =>
+    api.post<{ success: boolean; updated: number; message: string }>(
+      '/transactions/reset-categories',
+      { account_id: accountId }
+    ),
+
   findSimilar: (description: string, merchant?: string, excludeId?: string, newCategory?: string) =>
     api.post<{
       similar: Array<Transaction & { matchScore: number; matchedWords: string[] }>;
