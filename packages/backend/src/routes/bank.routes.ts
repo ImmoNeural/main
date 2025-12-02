@@ -769,16 +769,22 @@ router.delete('/accounts/:accountId', authMiddleware, async (req: Request, res: 
  * - Melhoria: ~333x mais rápido para 1000 transações
  */
 async function syncTransactions(accountId: string, accessToken: string, forceFullSync: boolean = false): Promise<number> {
-  // Buscar dados da conta incluindo last_sync_at E user_id
+  // Buscar dados da conta incluindo last_sync_at, user_id E account_type
   const { data: account, error } = await supabase
     .from('bank_accounts')
-    .select('provider_account_id, last_sync_at, user_id')
+    .select('provider_account_id, last_sync_at, user_id, account_type')
     .eq('id', accountId)
     .single();
 
   if (error || !account || !account.provider_account_id) {
     console.warn(`[Sync] Account ${accountId} has no provider_account_id, skipping transactions sync`);
     return 0;
+  }
+
+  // Detectar se é cartão de crédito (lógica invertida de valores)
+  const isCreditCard = account.account_type === 'card';
+  if (isCreditCard) {
+    console.log(`[Sync] 💳 Conta de cartão de crédito detectada - aplicando lógica invertida`);
   }
 
   // Determinar período de sincronização (incremental ou completo)
@@ -801,7 +807,7 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
   console.log(`[Sync] Fetching transactions for account ${accountId} (provider: ${account.provider_account_id})`);
 
   // Buscar transações do provedor
-  const transactions = await openBankingService.getTransactions(
+  let transactions = await openBankingService.getTransactions(
     accessToken,
     account.provider_account_id,
     daysToSync
@@ -811,6 +817,33 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
 
   if (transactions.length === 0) {
     return 0;
+  }
+
+  // 💳 CARTÃO DE CRÉDITO: Lógica invertida
+  // No cartão de crédito via Open Finance:
+  // - Valores POSITIVOS = despesas (compras) → devem virar NEGATIVOS
+  // - Valores NEGATIVOS = pagamentos de fatura → devem ser IGNORADOS
+  if (isCreditCard) {
+    const originalCount = transactions.length;
+
+    // Filtrar: remover pagamentos de fatura (valores negativos)
+    transactions = transactions.filter(t => t.transaction_amount.amount > 0);
+
+    const filteredCount = originalCount - transactions.length;
+    if (filteredCount > 0) {
+      console.log(`[Sync] 💳 Ignorando ${filteredCount} pagamento(s) de fatura (valores negativos)`);
+    }
+
+    // Inverter: transformar valores positivos em negativos (despesas)
+    transactions = transactions.map(t => ({
+      ...t,
+      transaction_amount: {
+        ...t.transaction_amount,
+        amount: -Math.abs(t.transaction_amount.amount) // Garantir que é negativo
+      }
+    }));
+
+    console.log(`[Sync] 💳 ${transactions.length} transações de cartão processadas (valores invertidos para negativos)`);
   }
 
   // OTIMIZAÇÃO: Buscar todos os transaction_ids existentes de uma só vez
