@@ -31,7 +31,7 @@ const Transactions = () => {
     'Alimentação': ['Restaurantes e Delivery', 'Padaria'],
     'Saúde': ['Odontologia', 'Farmácias e Drogarias', 'Médicos e Clínicas', 'Academia e Fitness'],
     'Entretenimento': ['Lazer e Diversão', 'Streaming e Assinaturas'],
-    'Transporte': ['Apps de Transporte', 'Combustível e Pedágio', 'Transporte Público', 'Seguros'],
+    'Transporte': ['Apps de Transporte', 'Combustível e Pedágio', 'Transporte Público', 'Seguros', 'Estacionamentos'],
     'Compras': ['E-commerce', 'Moda e Vestuário', 'Tecnologia'],
     'Casa': ['Construção e Reforma', 'Móveis e Decoração'],
     'Banco e Seguradoras': ['Bancos e Fintechs', 'Seguradoras', 'Empréstimos Bancários', 'Financiamentos'],

@@ -73,39 +73,6 @@ const CPF_PATTERN = /\d{3}\.?\d{3}\.?\d{3}-?\d{2}/;
 
 // 🇧🇷 BASE DE CONHECIMENTO - MERCADO BRASILEIRO
 const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
-  // 🆔 CNPJ/CPF - IDENTIFICAÇÃO FISCAL (PRIORIDADE MÁXIMA 100)
-  // Esta regra tenta identificar empresas conhecidas pelo CNPJ
-  // CNPJs de empresas conhecidas podem ser adicionados aqui
-  {
-    category: 'Identificação Fiscal',
-    subcategory: 'CNPJ/CPF Identificado',
-    keywords: ['cnpj', 'cpf'],
-    brands: [],
-    cnpjs: [
-      // Streaming e Entretenimento
-      '13.590.585/0001-88', // Netflix
-      '09.339.936/0001-16', // Spotify
-      // E-commerce
-      '10.573.521/0001-91', // Mercado Livre
-      '15.436.940/0001-03', // Amazon
-      '06.057.223/0001-71', // Shopee
-      // Delivery
-      '14.380.200/0001-21', // iFood
-      '27.584.651/0001-14', // Rappi
-      // Transporte
-      '17.895.646/0001-87', // Uber
-      '21.687.074/0001-71', // 99
-      // Supermercados
-      '47.508.411/0001-56', // Carrefour
-      '61.585.865/0001-51', // Pão de Açúcar
-      '07.526.557/0001-00', // Assaí
-    ],
-    patterns: [CNPJ_PATTERN, CPF_PATTERN],
-    icon: '🆔',
-    color: '#607D8B',
-    priority: 100, // PRIORIDADE MÁXIMA
-  },
-
   // 🛒 SUPERMERCADOS E ALIMENTAÇÃO (Merge: Alimentação/Supermercado)
   {
     category: 'Supermercado',
@@ -328,6 +295,20 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     icon: '🛡️',
     color: '#3F51B5',
     priority: 9,
+  },
+
+  // 🅿️ TRANSPORTE - Estacionamentos
+  {
+    category: 'Transporte',
+    subcategory: 'Estacionamentos',
+    keywords: ['estacionamento', 'parking', 'vaga', 'garagem', 'rotativo'],
+    brands: [
+      'estapar', 'indigo', 'park indigo', 'allpark', 'multipark',
+      'zaitt', 'quick park', 'saba', 'rede park', 'hora park',
+    ],
+    icon: '🅿️',
+    color: '#607D8B',
+    priority: 8,
   },
 
   // 🛍️ COMPRAS ONLINE
@@ -923,7 +904,6 @@ export const VALID_CATEGORIES = [
   'Receitas',
   'Transferências',
   'Impostos e Taxas',
-  'Identificação Fiscal', // Nova categoria para CNPJ/CPF
   'Não Categorizado',
 ];
 
@@ -1139,8 +1119,8 @@ class CategorizationService {
       if (finalCategory === 'Transferências') {
         // Buscar se há match de marca em outras categorias
         for (const rule of sortedRules) {
-          // Ignorar regras de transferência e Identificação Fiscal
-          if (rule.category === 'Transferências' || rule.category === 'Identificação Fiscal') continue;
+          // Ignorar regras de transferência
+          if (rule.category === 'Transferências') continue;
 
           for (const brand of rule.brands) {
             if (text.includes(this.normalizeText(brand))) {
@@ -1522,8 +1502,8 @@ class CategorizationService {
 
     // Tentar encontrar marcas conhecidas nos snippets
     for (const rule of this.rules) {
-      // Ignorar regras de identificação fiscal e transferências
-      if (rule.category === 'Identificação Fiscal' || rule.category === 'Transferências') {
+      // Ignorar regras de transferências
+      if (rule.category === 'Transferências') {
         continue;
       }
 

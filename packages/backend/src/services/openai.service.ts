@@ -186,6 +186,7 @@ CATEGORIAS E SUBCATEGORIAS DISPONÍVEIS:
    • Combustível e Pedágio - Postos de gasolina, Shell, Ipiranga, BR, pedágios
    • Transporte Público - Metrô, ônibus, VLT, bilhete único
    • Seguros - Seguro auto, IPVA, licenciamento
+   • Estacionamentos - Estacionamentos, parking, garagens, Estapar, Indigo
 
 🛒 COMPRAS
    • E-commerce - Mercado Livre, Amazon, Magalu, Shopee, AliExpress, Americanas

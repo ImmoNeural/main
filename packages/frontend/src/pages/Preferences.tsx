@@ -23,6 +23,7 @@ const SUBCATEGORIES_CONFIG: SubcategoryConfig[] = [
   { category: 'Transporte', subcategory: 'Apps de Transporte', icon: '🚗', defaultTipo: 'variavel', description: 'Uber, 99, Cabify' },
   { category: 'Transporte', subcategory: 'Combustível e Pedágio', icon: '⛽', defaultTipo: 'variavel', description: 'Postos e tags de pedágio' },
   { category: 'Transporte', subcategory: 'Transporte Público', icon: '🚌', defaultTipo: 'variavel', description: 'Metrô, trem e ônibus' },
+  { category: 'Transporte', subcategory: 'Estacionamentos', icon: '🅿️', defaultTipo: 'variavel', description: 'Estacionamentos rotativos e garagens' },
   { category: 'Transporte', subcategory: 'Seguros', icon: '🛡️', defaultTipo: 'fixo', description: 'Seguro auto, moto, veículo' },
 
   // SAÚDE
