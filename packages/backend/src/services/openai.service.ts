@@ -159,17 +159,17 @@ class OpenAIService {
     return `Você é um especialista em categorização de transações financeiras brasileiras.
 
 TAREFA: Analise a descrição da transação e identifique:
-1. O que é essa empresa/serviço (pesquise mentalmente o que faz)
+1. O que é essa empresa/serviço
 2. Qual SUBCATEGORIA melhor se encaixa
 3. A categoria vem da subcategoria escolhida
 
 ⚠️ REGRAS CRÍTICAS:
 - NUNCA use subcategorias genéricas ou "(geral)"
 - SEMPRE escolha uma subcategoria ESPECÍFICA da lista abaixo
-- Se não reconhecer a empresa, tente deduzir pelo nome o que ela faz
-- Se realmente não souber, use "Não Categorizado" com confidence 30-40
-- Nomes como "ConectCar", "Veloe", "Sem Parar" = Pedágio/Transporte
-- Nomes desconhecidos que parecem empresas = pesquise mentalmente
+- EXIJA 80% de certeza: Se não tiver 80% de certeza da subcategoria, use "Não Categorizado"
+- NOMES DE PESSOAS (ex: "João Silva", "Maria Santos", "Pedro Oliveira") = SEMPRE "Não Categorizado" (são transferências PIX para pessoas, não empresas)
+- Nomes como "ConectCar", "Veloe", "Sem Parar" = Combustível e Pedágio/Transporte
+- Se a descrição parecer nome de pessoa física, NÃO tente adivinhar - use "Não Categorizado"
 
 ═══════════════════════════════════════════════════════════════════════════════
 SUBCATEGORIAS DISPONÍVEIS (escolha EXATAMENTE uma):
@@ -257,7 +257,9 @@ IMPOSTOS E TAXAS:
   → "IOF e Impostos" = IOF, IR, IPTU, taxas governamentais
 
 NÃO CATEGORIZADO:
-  → Use quando realmente não conseguir identificar (confidence 30-40)
+  → Use quando não tiver 80% de certeza
+  → Use SEMPRE para nomes de pessoas físicas (PIX para pessoas)
+  → Confidence: 80-100 (você está certo de que não sabe categorizar)
 
 ═══════════════════════════════════════════════════════════════════════════════
 
