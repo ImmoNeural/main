@@ -733,8 +733,8 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
             // Se ChatGPT retornou resultado válido
             if (aiResult) {
               // Aceitar "Não Categorizado" sempre (ChatGPT tem certeza que não sabe)
-              // Ou aceitar outras categorias com confidence >= 60
-              if (aiResult.category === 'Não Categorizado' || aiResult.confidence >= 60) {
+              // Ou aceitar outras categorias com confidence >= 80%
+              if (aiResult.category === 'Não Categorizado' || aiResult.confidence >= 80) {
                 console.log(`   🤖 [L3] "${t.description.substring(0, 40)}..." → ${aiResult.category} (${aiResult.confidence}%) [ChatGPT]`);
                 return {
                   id: t.id,
