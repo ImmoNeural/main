@@ -219,29 +219,6 @@ const Transactions = () => {
     }
   };
 
-  const handleRecategorizeAll = async () => {
-    const confirmRecategorize = confirm('🔄 Recategorizar todas as transações?\n\nApenas transações com 80%+ de confiança serão categorizadas.');
-
-    if (!confirmRecategorize) return;
-
-    setIsLoading(true);
-    try {
-      console.log('🔄 Iniciando recategorização de todas as transações...');
-      const response = await transactionApi.recategorizeAll();
-      console.log('✅ Recategorização concluída:', response.data);
-
-      alert(`✅ Recategorização concluída! ${response.data.updated} transações atualizadas.`);
-
-      // Recarregar transações
-      await loadData();
-    } catch (error: any) {
-      console.error('❌ Erro ao recategorizar:', error);
-      alert('❌ Erro ao recategorizar.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleRecategorizeAI = async () => {
     const confirmRecategorize = confirm(
       '🤖 Categorizar com IA (3 camadas)?\n\n' +
@@ -732,23 +709,13 @@ const Transactions = () => {
                 <span className="sm:hidden">Import</span>
               </button>
               <button
-                onClick={handleRecategorizeAll}
-                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
-                disabled={isLoading}
-                title="Recategorizar todas as transações usando regras (threshold 80%)"
-              >
-                <RefreshCw className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Regras</span>
-                <span className="sm:hidden">Regras</span>
-              </button>
-              <button
                 onClick={handleRecategorizeAI}
                 className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isAILoading || isLoading}
-                title="Categorizar com IA (3 camadas: regras + histórico + ChatGPT)"
+                title="Categoriza usando: 1) Regras 2) Seu histórico 3) ChatGPT"
               >
                 <Sparkles className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isAILoading ? 'animate-pulse' : ''}`} />
-                <span className="hidden sm:inline">IA</span>
+                <span className="hidden sm:inline">Categorizar</span>
                 <span className="sm:hidden">IA</span>
               </button>
               <button
