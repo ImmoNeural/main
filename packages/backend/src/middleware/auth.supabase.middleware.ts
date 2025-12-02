@@ -1,12 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabaseAuth } from '../config/supabase';
 
+// Lista de emails de administradores (para impersonação)
+const ADMIN_EMAILS = [
+  'neurekaai@gmail.com',
+];
+
 // Extender interface do Express Request
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
       userEmail?: string;
+      isImpersonating?: boolean;
+      originalUserId?: string;
     }
   }
 }
@@ -46,7 +53,25 @@ export const authMiddleware = async (
     // Adicionar user ID ao request
     req.userId = user.id;
     req.userEmail = user.email;
-    console.log(`✅ Auth middleware: User authenticated - ${user.email} (${user.id.substring(0, 8)}...)`);
+    req.isImpersonating = false;
+
+    // Verificar se admin está tentando impersonar outro usuário
+    const impersonateUserId = req.headers['x-impersonate-user'] as string;
+
+    if (impersonateUserId) {
+      console.log(`🎭 [Impersonate] Header recebido: ${impersonateUserId}`);
+      console.log(`🎭 [Impersonate] Email do usuário: ${user.email}`);
+      console.log(`🎭 [Impersonate] É admin? ${ADMIN_EMAILS.includes(user.email || '')}`);
+    }
+
+    if (impersonateUserId && user.email && ADMIN_EMAILS.includes(user.email)) {
+      console.log(`🎭 [Impersonate] ✅ Admin ${user.email} impersonando usuário ${impersonateUserId}`);
+      req.originalUserId = user.id;
+      req.userId = impersonateUserId;
+      req.isImpersonating = true;
+    }
+
+    console.log(`✅ Auth middleware: User authenticated - ${user.email} (${req.userId.substring(0, 8)}...)${req.isImpersonating ? ' [IMPERSONATING]' : ''}`);
 
     next();
   } catch (error) {
