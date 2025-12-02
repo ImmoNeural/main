@@ -326,13 +326,25 @@ const Accounts = () => {
 
             {/* Corpo do card */}
             <div className="px-6 py-5">
-              {/* Saldo */}
-              <div className="mb-5">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Saldo</p>
-                <p className={`text-3xl font-bold ${account.balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-                  {formatCurrency(account.balance)}
-                </p>
-              </div>
+              {/* Saldo - não mostrar para cartões de crédito */}
+              {account.account_type !== 'card' ? (
+                <div className="mb-5">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Saldo</p>
+                  <p className={`text-3xl font-bold ${account.balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                    {formatCurrency(account.balance)}
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-5">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Tipo</p>
+                  <p className="text-lg font-semibold text-purple-600">
+                    Cartão de Crédito
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Saldo não aplicável
+                  </p>
+                </div>
+              )}
 
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-4 text-sm">

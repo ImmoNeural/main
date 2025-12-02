@@ -52,9 +52,10 @@ router.get('/stats', async (req: Request, res: Response) => {
     console.log(`📊 Dashboard stats: user=${user_id.substring(0, 8)}..., account_id=${account_id || 'ALL'}`);
 
     // Total de saldo de todas as contas + buscar saldo inicial
+    // NOTA: Excluir cartões de crédito (account_type = 'card') do saldo total
     let accountsQuery = supabase
       .from('bank_accounts')
-      .select('id, balance, initial_balance, initial_balance_date')
+      .select('id, balance, initial_balance, initial_balance_date, account_type')
       .eq('user_id', user_id)
       .eq('status', 'active');
 
@@ -67,7 +68,9 @@ router.get('/stats', async (req: Request, res: Response) => {
 
     if (accountsError) throw accountsError;
 
-    const total_balance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+    // Excluir cartões de crédito do saldo total (cartões não representam dinheiro disponível)
+    const nonCreditCardAccounts = accounts?.filter(acc => acc.account_type !== 'card') || [];
+    const total_balance = nonCreditCardAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
     // Buscar saldo inicial salvo na conta (calculado durante importação)
     const initial_balance = accounts && accounts.length > 0 && accounts[0].initial_balance !== undefined
