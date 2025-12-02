@@ -730,33 +730,33 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
             const aiResult = await openaiService.categorizeTransaction(t.description, t.merchant);
             const originalTx = transactions.find(tx => tx.id === t.id);
 
-            if (aiResult && aiResult.confidence >= 40) {
-              console.log(`   🤖 [L3] "${t.description.substring(0, 40)}..." → ${aiResult.category} (${aiResult.confidence}%) [ChatGPT]`);
-              return {
-                id: t.id,
-                oldCategory: originalTx?.category || null,
-                newCategory: aiResult.category,
-                newSubcategory: aiResult.subcategory,
-                layer: 3 as const,
-                confidence: aiResult.confidence
-              };
+            // Se ChatGPT retornou resultado válido
+            if (aiResult) {
+              // Aceitar "Não Categorizado" sempre (ChatGPT tem certeza que não sabe)
+              // Ou aceitar outras categorias com confidence >= 60
+              if (aiResult.category === 'Não Categorizado' || aiResult.confidence >= 60) {
+                console.log(`   🤖 [L3] "${t.description.substring(0, 40)}..." → ${aiResult.category} (${aiResult.confidence}%) [ChatGPT]`);
+                return {
+                  id: t.id,
+                  oldCategory: originalTx?.category || null,
+                  newCategory: aiResult.category,
+                  newSubcategory: aiResult.subcategory,
+                  layer: 3 as const,
+                  confidence: aiResult.confidence
+                };
+              }
             }
 
-            // Fallback: usar resultado da Camada 1 mesmo com baixa confiança
-            const fallback = categorizationService.categorizeTransaction(
-              t.description,
-              t.merchant,
-              originalTx?.amount
-            );
-
-            console.log(`   ❓ [L0] "${t.description.substring(0, 40)}..." → ${fallback.category} (${fallback.confidence}%) [fallback]`);
+            // Fallback: Usar "Não Categorizado" quando ChatGPT não tem certeza
+            // NÃO usar Layer 1 pois pode gerar categorizações erradas
+            console.log(`   ❓ [L0] "${t.description.substring(0, 40)}..." → Não Categorizado [sem certeza]`);
             return {
               id: t.id,
               oldCategory: originalTx?.category || null,
-              newCategory: fallback.category,
-              newSubcategory: fallback.subcategory,
+              newCategory: 'Não Categorizado',
+              newSubcategory: 'Geral',
               layer: 0 as const,
-              confidence: fallback.confidence
+              confidence: 0
             };
           })
         );
@@ -769,26 +769,21 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
         }
       }
     } else if (needsLayer3.length > 0) {
-      // ChatGPT não configurado - usar fallback
+      // ChatGPT não configurado - marcar como "Não Categorizado"
       console.log('   ⚠️ ChatGPT NÃO CONFIGURADO! Configure OPENAI_KEY no Render.');
-      console.log('   ⚠️ Usando Camada 1 com baixa confiança como fallback...');
+      console.log('   ⚠️ Marcando transações como "Não Categorizado"...');
 
       for (const t of needsLayer3) {
         const originalTx = transactions.find(tx => tx.id === t.id);
-        const fallback = categorizationService.categorizeTransaction(
-          t.description,
-          t.merchant,
-          originalTx?.amount
-        );
 
-        console.log(`   ❓ [L0] "${t.description.substring(0, 40)}..." → ${fallback.category} (${fallback.confidence}%) [sem ChatGPT]`);
+        console.log(`   ❓ [L0] "${t.description.substring(0, 40)}..." → Não Categorizado [sem ChatGPT]`);
         results.push({
           id: t.id,
           oldCategory: originalTx?.category || null,
-          newCategory: fallback.category,
-          newSubcategory: fallback.subcategory,
+          newCategory: 'Não Categorizado',
+          newSubcategory: 'Geral',
           layer: 0,
-          confidence: fallback.confidence
+          confidence: 0
         });
       }
     }

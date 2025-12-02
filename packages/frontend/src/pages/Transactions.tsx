@@ -738,7 +738,7 @@ const Transactions = () => {
                 onClick={handleRecategorizeAI}
                 className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isAILoading || isLoading}
-                title="Categoriza usando: 1) Regras 2) Seu histórico 3) ChatGPT"
+                title="Usar IA para categorizar transações"
               >
                 <Sparkles className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isAILoading ? 'animate-pulse' : ''}`} />
                 <span className="hidden sm:inline">Categorizar</span>
