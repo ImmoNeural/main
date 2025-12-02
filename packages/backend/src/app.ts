@@ -13,6 +13,7 @@ import dashboardRoutes from './routes/dashboard.routes';
 import budgetRoutes from './routes/budget.routes';
 import preferencesRoutes from './routes/preferences.routes';
 import subscriptionRoutes from './routes/subscription.routes';
+import adminRoutes from './routes/admin.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 import { checkSubscriptionStatus, requireActiveSubscription } from './middleware/subscription.middleware';
 import openBankingService from './services/openBanking.service';
@@ -98,6 +99,9 @@ app.use('/api/transactions', authMiddleware, checkSubscriptionStatus, requireAct
 app.use('/api/dashboard', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, dashboardRoutes);
 app.use('/api/budgets', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, budgetRoutes);
 app.use('/api/preferences', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, preferencesRoutes);
+
+// Admin routes - requerem apenas autenticação (admin check é feito no middleware interno)
+app.use('/api/admin', authMiddleware, adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

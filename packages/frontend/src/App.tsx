@@ -10,6 +10,7 @@ import BudgetDetails from './pages/BudgetDetails';
 import Preferences from './pages/Preferences';
 import ConnectBank from './pages/ConnectBank';
 import Plans from './pages/Plans';
+import AdminTransactions from './pages/admin/AdminTransactions';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -62,6 +63,8 @@ function App() {
               <Route path="preferences" element={<Preferences />} />
               <Route path="connect-bank" element={<ConnectBank />} />
               <Route path="planos" element={<Plans />} />
+              {/* Admin routes */}
+              <Route path="admin/transactions" element={<AdminTransactions />} />
             </Route>
 
             {/* Rota padrão - manter wildcards funcionando */}
