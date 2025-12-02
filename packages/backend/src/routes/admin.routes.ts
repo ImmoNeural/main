@@ -239,39 +239,53 @@ router.post('/fix-credit-card-transactions', adminMiddleware, async (req: Reques
       console.log(`[Admin] 💳 ${account.bank_name}: ${positiveCount} positivas (inverter), ${negativeCount} negativas (deletar)`);
 
       if (!isDryRun) {
-        // INVERTER transações positivas para negativas
+        // INVERTER transações positivas para negativas (uma query por conta)
         if (positiveTransactions && positiveTransactions.length > 0) {
-          for (const trans of positiveTransactions) {
-            const { error: updateError } = await supabase
-              .from('transactions')
-              .update({
-                amount: -Math.abs(trans.amount),
-                type: 'debit',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', trans.id);
+          // Update todas transações positivas desta conta de uma vez
+          // Multiplica amount por -1 para inverter
+          const { error: updateError, count } = await supabase
+            .from('transactions')
+            .update({
+              type: 'debit',
+              updated_at: new Date().toISOString()
+            })
+            .eq('account_id', account.id)
+            .gt('amount', 0);
 
-            if (updateError) {
-              console.error(`[Admin] Erro ao inverter transação ${trans.id}:`, updateError);
-            } else {
-              totalInverted++;
-            }
+          if (updateError) {
+            console.error(`[Admin] Erro ao atualizar tipo:`, updateError);
           }
+
+          // Agora inverter os valores (precisa fazer um por um infelizmente)
+          // Mas fazemos em paralelo com Promise.all
+          const updatePromises = positiveTransactions.map(trans =>
+            supabase
+              .from('transactions')
+              .update({ amount: -Math.abs(trans.amount) })
+              .eq('id', trans.id)
+          );
+
+          // Executar em batches de 50 para não sobrecarregar
+          const BATCH_SIZE = 50;
+          for (let i = 0; i < updatePromises.length; i += BATCH_SIZE) {
+            await Promise.all(updatePromises.slice(i, i + BATCH_SIZE));
+          }
+
+          totalInverted += positiveTransactions.length;
         }
 
-        // DELETAR transações negativas (pagamentos de fatura)
+        // DELETAR transações negativas - uma única query por conta
         if (negativeTransactions && negativeTransactions.length > 0) {
-          const idsToDelete = negativeTransactions.map(t => t.id);
-
           const { error: deleteError } = await supabase
             .from('transactions')
             .delete()
-            .in('id', idsToDelete);
+            .eq('account_id', account.id)
+            .lt('amount', 0);
 
           if (deleteError) {
-            console.error(`[Admin] Erro ao deletar transações:`, deleteError);
+            console.error(`[Admin] Erro ao deletar:`, deleteError);
           } else {
-            totalDeleted += idsToDelete.length;
+            totalDeleted += negativeTransactions.length;
           }
         }
       } else {
