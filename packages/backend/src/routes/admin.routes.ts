@@ -155,4 +155,167 @@ router.get('/users', adminMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/admin/fix-credit-card-transactions
+ * Corrige transações de cartão de crédito existentes (apenas para admins)
+ *
+ * No cartão de crédito via Open Finance:
+ * - Valores POSITIVOS = despesas (compras) → devem virar NEGATIVOS
+ * - Valores NEGATIVOS = pagamentos de fatura → devem ser DELETADOS
+ *
+ * Query params:
+ * - user_id (opcional): corrigir apenas para um usuário específico
+ * - dry_run (opcional): se "true", apenas mostra o que seria feito sem alterar
+ */
+router.post('/fix-credit-card-transactions', adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { user_id, dry_run } = req.query;
+    const isDryRun = dry_run === 'true';
+
+    console.log(`[Admin] 💳 Iniciando correção de transações de cartão de crédito${isDryRun ? ' (DRY RUN)' : ''}`);
+
+    // 1. Buscar todas as contas de cartão de crédito
+    let accountsQuery = supabase
+      .from('bank_accounts')
+      .select('id, user_id, bank_name')
+      .eq('account_type', 'card');
+
+    if (user_id) {
+      accountsQuery = accountsQuery.eq('user_id', user_id);
+    }
+
+    const { data: creditCardAccounts, error: accountsError } = await accountsQuery;
+
+    if (accountsError) {
+      throw accountsError;
+    }
+
+    if (!creditCardAccounts || creditCardAccounts.length === 0) {
+      return res.json({
+        success: true,
+        message: 'Nenhuma conta de cartão de crédito encontrada',
+        accountsProcessed: 0,
+        transactionsInverted: 0,
+        transactionsDeleted: 0,
+      });
+    }
+
+    console.log(`[Admin] 💳 Encontradas ${creditCardAccounts.length} contas de cartão de crédito`);
+
+    let totalInverted = 0;
+    let totalDeleted = 0;
+    const details: any[] = [];
+
+    for (const account of creditCardAccounts) {
+      console.log(`[Admin] 💳 Processando conta: ${account.bank_name} (${account.id})`);
+
+      // Buscar transações positivas (precisam ser invertidas)
+      const { data: positiveTransactions, error: posError } = await supabase
+        .from('transactions')
+        .select('id, amount, description')
+        .eq('account_id', account.id)
+        .gt('amount', 0);
+
+      if (posError) {
+        console.error(`[Admin] Erro ao buscar transações positivas:`, posError);
+        continue;
+      }
+
+      // Buscar transações negativas (precisam ser deletadas - pagamentos de fatura)
+      const { data: negativeTransactions, error: negError } = await supabase
+        .from('transactions')
+        .select('id, amount, description')
+        .eq('account_id', account.id)
+        .lt('amount', 0);
+
+      if (negError) {
+        console.error(`[Admin] Erro ao buscar transações negativas:`, negError);
+        continue;
+      }
+
+      const positiveCount = positiveTransactions?.length || 0;
+      const negativeCount = negativeTransactions?.length || 0;
+
+      console.log(`[Admin] 💳 ${account.bank_name}: ${positiveCount} positivas (inverter), ${negativeCount} negativas (deletar)`);
+
+      if (!isDryRun) {
+        // INVERTER transações positivas para negativas
+        if (positiveTransactions && positiveTransactions.length > 0) {
+          for (const trans of positiveTransactions) {
+            const { error: updateError } = await supabase
+              .from('transactions')
+              .update({
+                amount: -Math.abs(trans.amount),
+                type: 'debit',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', trans.id);
+
+            if (updateError) {
+              console.error(`[Admin] Erro ao inverter transação ${trans.id}:`, updateError);
+            } else {
+              totalInverted++;
+            }
+          }
+        }
+
+        // DELETAR transações negativas (pagamentos de fatura)
+        if (negativeTransactions && negativeTransactions.length > 0) {
+          const idsToDelete = negativeTransactions.map(t => t.id);
+
+          const { error: deleteError } = await supabase
+            .from('transactions')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (deleteError) {
+            console.error(`[Admin] Erro ao deletar transações:`, deleteError);
+          } else {
+            totalDeleted += idsToDelete.length;
+          }
+        }
+      } else {
+        // Dry run - apenas contar
+        totalInverted += positiveCount;
+        totalDeleted += negativeCount;
+      }
+
+      details.push({
+        account_id: account.id,
+        bank_name: account.bank_name,
+        user_id: account.user_id,
+        transactionsToInvert: positiveCount,
+        transactionsToDelete: negativeCount,
+        samplePositive: positiveTransactions?.slice(0, 3).map(t => ({
+          amount: t.amount,
+          description: t.description?.substring(0, 50)
+        })),
+        sampleNegative: negativeTransactions?.slice(0, 3).map(t => ({
+          amount: t.amount,
+          description: t.description?.substring(0, 50)
+        })),
+      });
+    }
+
+    const message = isDryRun
+      ? `DRY RUN: ${totalInverted} transações seriam invertidas, ${totalDeleted} seriam deletadas`
+      : `Correção concluída: ${totalInverted} transações invertidas, ${totalDeleted} deletadas`;
+
+    console.log(`[Admin] 💳 ${message}`);
+
+    res.json({
+      success: true,
+      dry_run: isDryRun,
+      message,
+      accountsProcessed: creditCardAccounts.length,
+      transactionsInverted: totalInverted,
+      transactionsDeleted: totalDeleted,
+      details,
+    });
+  } catch (error) {
+    console.error('[Admin] Error fixing credit card transactions:', error);
+    res.status(500).json({ error: 'Failed to fix credit card transactions' });
+  }
+});
+
 export default router;
