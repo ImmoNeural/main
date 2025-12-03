@@ -67,13 +67,25 @@ export const CategoryIcon = ({ category, className = "w-7 h-7" }: { category: st
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" /><path d="M10 12h4" /></svg>,
       color: '#f87171'
     },
+    'Pet': {
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3" /><path d="M4.5 8.5c1.5-1.5 3-2 4-1s1.5 3 1 4.5" /><path d="M19.5 8.5c-1.5-1.5-3-2-4-1s-1.5 3-1 4.5" /><path d="M4.5 15.5c1.5 1.5 3 2 4 1s1.5-3 1-4.5" /><path d="M19.5 15.5c-1.5 1.5-3 2-4 1s-1.5-3-1-4.5" /></svg>,
+      color: '#a855f7'
+    },
+    'Viagens': {
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" /></svg>,
+      color: '#0ea5e9'
+    },
+    'Não Categorizado': {
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
+      color: '#9ca3af'
+    },
     'Outros': {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>,
       color: '#94a3b8'
     }
   };
 
-  const categoryData = iconMap[category] || iconMap['Outros'];
+  const categoryData = iconMap[category] || iconMap['Não Categorizado'];
 
   return (
     <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-white shadow-inner">
@@ -101,8 +113,11 @@ export const CategoryIconSmall = ({ category, className = "w-5 h-5" }: { categor
     'Saques': <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>,
     'Impostos e Taxas': <svg viewBox="0 0 24 24" fill="none" stroke="#a3e635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 10h18" /><path d="M12 2l9 6H3l9-6z" /><path d="M8 22V12" /><path d="M12 22V12" /><path d="M16 22V12" /></svg>,
     'Banco e Seguradoras': <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" /><path d="M10 12h4" /></svg>,
+    'Pet': <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3" /><path d="M4.5 8.5c1.5-1.5 3-2 4-1s1.5 3 1 4.5" /><path d="M19.5 8.5c-1.5-1.5-3-2-4-1s-1.5 3-1 4.5" /><path d="M4.5 15.5c1.5 1.5 3 2 4 1s1.5-3 1-4.5" /><path d="M19.5 15.5c-1.5 1.5-3 2-4 1s-1.5-3-1-4.5" /></svg>,
+    'Viagens': <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" /></svg>,
+    'Não Categorizado': <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
     'Outros': <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
   };
 
-  return iconMap[category] || iconMap['Outros'];
+  return iconMap[category] || iconMap['Não Categorizado'];
 };

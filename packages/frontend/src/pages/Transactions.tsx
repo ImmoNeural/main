@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2 } from 'lucide-react';
 import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
@@ -68,6 +68,8 @@ const Transactions = () => {
 
   // Estado para recategorização com IA
   const [isAILoading, setIsAILoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiProgressText, setAiProgressText] = useState('');
 
   // Gerar últimos 12 meses dinamicamente (não usado no momento)
   /* const getLast12Months = () => {
@@ -220,8 +222,18 @@ const Transactions = () => {
   };
 
   const handleRecategorizeAI = async () => {
+    // Contar transações não categorizadas para mostrar no confirm
+    const uncategorizedCount = transactions.filter(
+      t => !t.category || t.category === 'Não Categorizado'
+    ).length;
+
+    if (uncategorizedCount === 0) {
+      alert('Não há transações para categorizar. Todas já estão categorizadas!');
+      return;
+    }
+
     const confirmRecategorize = confirm(
-      '🤖 Categorizar com IA (3 camadas)?\n\n' +
+      `🤖 Categorizar ${uncategorizedCount} transações com IA?\n\n` +
       '• Camada 1: Regras estáticas\n' +
       '• Camada 2: Histórico pessoal + padrões globais\n' +
       '• Camada 3: ChatGPT (para casos difíceis)\n\n' +
@@ -231,9 +243,38 @@ const Transactions = () => {
     if (!confirmRecategorize) return;
 
     setIsAILoading(true);
+    setAiProgress(0);
+    setAiProgressText('Iniciando categorização...');
+
+    // Simular progresso enquanto backend processa
+    const progressInterval = setInterval(() => {
+      setAiProgress(prev => {
+        if (prev >= 90) return prev; // Parar em 90% até backend responder
+        const increment = Math.random() * 15;
+        const newProgress = Math.min(prev + increment, 90);
+
+        // Atualizar texto baseado no progresso
+        if (newProgress < 30) {
+          setAiProgressText('Camada 1: Aplicando regras estáticas...');
+        } else if (newProgress < 60) {
+          setAiProgressText('Camada 2: Analisando histórico...');
+        } else {
+          setAiProgressText('Camada 3: Processando com ChatGPT...');
+        }
+
+        return newProgress;
+      });
+    }, 500);
+
     try {
       console.log('🤖 Iniciando recategorização com IA (3 camadas)...');
       const response = await transactionApi.recategorizeAI(true);
+
+      // Backend respondeu, completar progresso
+      clearInterval(progressInterval);
+      setAiProgress(100);
+      setAiProgressText('Concluído!');
+
       console.log('✅ Recategorização com IA concluída:', response.data);
 
       // Log detalhado das camadas
@@ -244,6 +285,9 @@ const Transactions = () => {
       console.log(`   🤖 Camada 3 (ChatGPT): ${response.data.layer3}`);
       console.log(`   ❓ Não categorizadas: ${response.data.uncategorized}`);
       console.log(`   ✅ Total atualizadas: ${response.data.updated}`);
+
+      // Pequeno delay para mostrar 100%
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       alert(
         `✅ Categorização com IA concluída!\n\n` +
@@ -258,10 +302,13 @@ const Transactions = () => {
       // Recarregar transações
       await loadData();
     } catch (error: any) {
+      clearInterval(progressInterval);
       console.error('❌ Erro ao recategorizar com IA:', error);
       alert('❌ Erro ao recategorizar com IA. Verifique o console para detalhes.');
     } finally {
       setIsAILoading(false);
+      setAiProgress(0);
+      setAiProgressText('');
     }
   };
 
@@ -734,16 +781,41 @@ const Transactions = () => {
                 <span className="hidden sm:inline">Importar</span>
                 <span className="sm:hidden">Import</span>
               </button>
-              <button
-                onClick={handleRecategorizeAI}
-                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isAILoading || isLoading}
-                title="Usar IA para categorizar transações"
-              >
-                <Sparkles className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isAILoading ? 'animate-pulse' : ''}`} />
-                <span className="hidden sm:inline">Categorizar</span>
-                <span className="sm:hidden">IA</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={handleRecategorizeAI}
+                  className={`flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed ${
+                    isAILoading
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-700 animate-pulse'
+                      : 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700'
+                  }`}
+                  disabled={isAILoading || isLoading}
+                  title="Usar IA para categorizar transações"
+                >
+                  {isAILoading ? (
+                    <Loader2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                  )}
+                  <span className="hidden sm:inline">{isAILoading ? 'Categorizando...' : 'Categorizar'}</span>
+                  <span className="sm:hidden">{isAILoading ? '...' : 'IA'}</span>
+                </button>
+                {/* Barra de progresso */}
+                {isAILoading && (
+                  <div className="absolute -bottom-12 left-0 right-0 w-48 sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10">
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span className="truncate max-w-[140px] sm:max-w-[200px]">{aiProgressText}</span>
+                      <span className="font-semibold">{Math.round(aiProgress)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${aiProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleResetCategories}
                 className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
@@ -1145,7 +1217,7 @@ const Transactions = () => {
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-white shadow-sm flex-shrink-0">
-                          <CategoryIconSmall category={transaction.category || 'Outros'} className="w-4 h-4" />
+                          <CategoryIconSmall category={transaction.category || 'Não Categorizado'} className="w-4 h-4" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-xs sm:text-sm text-gray-800 truncate">{transaction.merchant || transaction.description}</div>
