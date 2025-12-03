@@ -39,7 +39,7 @@ export class PluggyService {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 30000,
+      timeout: 120000, // 2 minutos de timeout para requisições
     });
 
     console.log('[Pluggy] Service initialized');
@@ -198,7 +198,7 @@ export class PluggyService {
           headers: {
             'X-API-KEY': apiKey,
           },
-          timeout: 25000, // 25 segundos timeout (internet lenta no Brasil)
+          timeout: 60000, // 60 segundos timeout (bancos lentos como Itaú)
         });
 
         console.log(`[Pluggy] Item ${itemId} found. Status: ${response.data.status}`);
@@ -293,9 +293,9 @@ export class PluggyService {
   /**
    * Aguarda o Item do Pluggy ficar pronto para uso
    * O Pluggy precisa de alguns segundos para processar após o login
-   * Timeout: 3 minutos (90 tentativas * 2 segundos) para bancos lentos como Santander
+   * Timeout: 5 minutos (150 tentativas * 2 segundos) para bancos lentos como Itaú Personalité
    */
-  private async waitForItemReady(itemId: string, maxAttempts: number = 90): Promise<any> {
+  private async waitForItemReady(itemId: string, maxAttempts: number = 150): Promise<any> {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const item = await this.getItem(itemId);
@@ -342,9 +342,9 @@ export class PluggyService {
       }
     }
 
-    // Timeout após todas as tentativas (3 min)
+    // Timeout após todas as tentativas (5 min)
     throw new Error(
-      'Tempo limite excedido (3 min) aguardando sincronização do banco. ' +
+      'Tempo limite excedido (5 min) aguardando sincronização do banco. ' +
       'Alguns bancos podem demorar mais. ' +
       'Verifique se o banco confirmou a conexão e tente sincronizar novamente na página Contas.'
     );

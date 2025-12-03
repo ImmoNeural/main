@@ -522,10 +522,10 @@ router.post('/callback', async (req: Request, res: Response) => {
         savedAccounts.push(bankAccount);
       }
 
-      // Sincronizar transações com timeout curto para evitar 504
+      // Sincronizar transações com timeout mais longo (Render permite mais tempo)
       // Se timeout, a conta já está salva e user pode sincronizar manualmente
       const forceFullSync = !isReconnection || !existingAccount?.last_sync_at;
-      console.log(`[Bank] Starting transaction sync (${forceFullSync ? 'full' : 'incremental'}) with 8s timeout`);
+      console.log(`[Bank] Starting transaction sync (${forceFullSync ? 'full' : 'incremental'}) with 60s timeout`);
 
       // Função helper para timeout
       const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | null> => {
@@ -535,10 +535,10 @@ router.post('/callback', async (req: Request, res: Response) => {
         ]);
       };
 
-      // Tentar sync com timeout de 8 segundos (Vercel tem limite de 10s no free tier)
+      // Tentar sync com timeout de 60 segundos (Render permite mais tempo que Vercel)
       const syncResult = await withTimeout(
         syncTransactions(accountId, tokenResponse.access_token, forceFullSync),
-        8000
+        60000
       );
 
       if (syncResult !== null) {
