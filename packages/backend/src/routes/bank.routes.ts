@@ -60,22 +60,32 @@ router.get('/available', async (req: Request, res: Response) => {
  * Abre o widget do Pluggy com a lista completa de bancos
  */
 router.post('/connect-direct', async (req: Request, res: Response) => {
+  console.log('[Bank] 🚀 ====== CONNECT-DIRECT START ======');
+  console.log('[Bank] 📋 Timestamp:', new Date().toISOString());
+
   try {
     const user_id = req.userId!;
+    console.log(`[Bank] 👤 User ID: ${user_id}`);
 
     // Importar o serviço Pluggy diretamente para criar token sem connectorId
     const { PluggyService } = await import('../services/providers/pluggy.service');
     const pluggyService = new PluggyService();
 
     // Criar connect token SEM especificar connectorId
+    console.log('[Bank] 📡 Creating direct connect token...');
     const tokenResponse = await (pluggyService as any).createDirectConnectToken(user_id);
+
+    console.log('[Bank] ✅ ====== CONNECT-DIRECT SUCCESS ======');
+    console.log(`[Bank] ✅ Connect token created: ${tokenResponse.connectToken.substring(0, 20)}...`);
 
     res.json({
       connect_token: tokenResponse.connectToken,
       state: tokenResponse.connectToken,
     });
   } catch (error: any) {
-    console.error('[Bank] ❌ Error creating direct connect token:', error.message);
+    console.error('[Bank] ❌ ====== CONNECT-DIRECT ERROR ======');
+    console.error('[Bank] ❌ Error:', error.message);
+    console.error('[Bank] ❌ Stack:', error.stack || 'N/A');
     res.status(503).json({
       error: 'Serviço de conexão bancária temporariamente indisponível',
       message: 'Não foi possível iniciar a conexão. Por favor, tente novamente em alguns minutos.',
@@ -89,22 +99,33 @@ router.post('/connect-direct', async (req: Request, res: Response) => {
  * Inicia o processo de conexão com um banco específico
  */
 router.post('/connect', async (req: Request, res: Response) => {
+  console.log('[Bank] 🚀 ====== CONNECT START ======');
+  console.log('[Bank] 📋 Request body:', JSON.stringify(req.body));
+  console.log('[Bank] 📋 Timestamp:', new Date().toISOString());
+
   try {
     const { bank_id } = req.body;
     const user_id = req.userId!; // Obtido do token JWT
 
+    console.log(`[Bank] 📋 Bank ID: ${bank_id}`);
+    console.log(`[Bank] 👤 User ID: ${user_id}`);
+
     if (!bank_id) {
+      console.error('[Bank] ❌ Missing bank_id');
       return res.status(400).json({ error: 'bank_id is required' });
     }
 
     try {
       // Tentar autenticação real com Pluggy
+      console.log('[Bank] 📡 Initiating Pluggy auth...');
       const authResponse = await openBankingService.initiateAuth({
         bank_id,
         redirect_uri: process.env.OPEN_BANKING_REDIRECT_URI || 'http://localhost:3000/bank/callback',
         user_id,
       });
 
+      console.log('[Bank] ✅ ====== CONNECT SUCCESS ======');
+      console.log(`[Bank] ✅ Auth URL generated`);
       res.json(authResponse);
     } catch (pluggyError: any) {
       // Verificar se modo demo está EXPLICITAMENTE habilitado
@@ -173,11 +194,24 @@ router.get('/item-status/:itemId', async (req: Request, res: Response) => {
  * Processa o callback após autorização do banco
  */
 router.post('/callback', async (req: Request, res: Response) => {
+  console.log('[Bank] 🏦 ========================================');
+  console.log('[Bank] 🏦 ====== BANK CALLBACK START ======');
+  console.log('[Bank] 🏦 ========================================');
+  console.log('[Bank] 📋 Request body:', JSON.stringify(req.body));
+  console.log('[Bank] 📋 Timestamp:', new Date().toISOString());
+
   try {
     const { code, state, bank_name } = req.body;
     const user_id = req.userId!; // Obtido do token JWT
 
+    console.log('[Bank] 📋 Parsed parameters:');
+    console.log(`[Bank]    - code (itemId): ${code}`);
+    console.log(`[Bank]    - state: ${state ? state.substring(0, 30) + '...' : 'N/A'}`);
+    console.log(`[Bank]    - bank_name: ${bank_name}`);
+    console.log(`[Bank]    - user_id: ${user_id}`);
+
     if (!code || !state) {
+      console.error('[Bank] ❌ Missing required parameters: code or state');
       return res.status(400).json({ error: 'code and state are required' });
     }
 
@@ -270,17 +304,22 @@ router.post('/callback', async (req: Request, res: Response) => {
     }
 
     // Modo real com Pluggy
-    console.log('[Bank] Processing real Pluggy callback');
+    console.log('[Bank] 🔄 Processing real Pluggy callback');
+    console.log(`[Bank] 🔄 Item ID (code): ${code}`);
 
     // Trocar código por token (quickMode=true para evitar timeout 504)
     // QuickMode retorna imediatamente sem esperar a sincronização completa
+    console.log('[Bank] 🔄 Calling exchangeCodeForToken (quickMode=true)...');
     const tokenResponse = await openBankingService.exchangeCodeForToken(code, state, true);
     const itemStatus = (tokenResponse as any).item_status;
 
-    console.log(`[Bank] Token obtained. Item status: ${itemStatus || 'unknown'}`);
+    console.log(`[Bank] ✅ Token exchange completed`);
+    console.log(`[Bank] ✅ Item status: ${itemStatus || 'unknown'}`);
+    console.log(`[Bank] ✅ Access token: ${tokenResponse.access_token}`);
 
     // Buscar contas do usuário com retry
     // Se o item ainda está sincronizando, tentar algumas vezes
+    console.log('[Bank] 📊 ====== FETCHING ACCOUNTS ======');
     let accounts: any[] = [];
     let fetchAttempts = 0;
     const maxFetchAttempts = 3;
@@ -288,15 +327,23 @@ router.post('/callback', async (req: Request, res: Response) => {
     while (fetchAttempts < maxFetchAttempts && accounts.length === 0) {
       fetchAttempts++;
       try {
-        console.log(`[Bank] Fetching accounts (attempt ${fetchAttempts}/${maxFetchAttempts})...`);
+        console.log(`[Bank] 📊 Fetching accounts (attempt ${fetchAttempts}/${maxFetchAttempts})...`);
+        console.log(`[Bank] 📊 Using access_token: ${tokenResponse.access_token}`);
         accounts = await openBankingService.getAccounts(tokenResponse.access_token);
-        console.log(`[Bank] Found ${accounts.length} accounts`);
+        console.log(`[Bank] 📊 Found ${accounts.length} accounts`);
+        if (accounts.length > 0) {
+          accounts.forEach((acc, idx) => {
+            console.log(`[Bank] 📊 Account ${idx + 1}: id=${acc.id}, type=${acc.account_type}, name=${acc.name}`);
+          });
+        }
       } catch (accountError: any) {
-        console.log(`[Bank] ⚠️ Attempt ${fetchAttempts} failed: ${accountError.message}`);
+        console.error(`[Bank] ❌ Attempt ${fetchAttempts}/${maxFetchAttempts} failed to fetch accounts`);
+        console.error(`[Bank] ❌ Error: ${accountError.message}`);
+        console.error(`[Bank] ❌ Stack: ${accountError.stack || 'N/A'}`);
 
         // Se ainda há tentativas, esperar 2 segundos e tentar novamente
         if (fetchAttempts < maxFetchAttempts) {
-          console.log(`[Bank] Waiting 2s before retry...`);
+          console.log(`[Bank] ⏳ Waiting 2s before retry...`);
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
@@ -574,6 +621,15 @@ router.post('/callback', async (req: Request, res: Response) => {
       console.error('⚠️ [Bank Callback] Erro ao sincronizar budgets (não crítico):', syncError);
     }
 
+    console.log('[Bank] 🏦 ========================================');
+    console.log('[Bank] 🏦 ====== BANK CALLBACK SUCCESS ======');
+    console.log('[Bank] 🏦 ========================================');
+    console.log(`[Bank] ✅ Saved ${savedAccounts.length} accounts`);
+    savedAccounts.forEach((acc, idx) => {
+      console.log(`[Bank] ✅ Account ${idx + 1}: ${acc.bank_name} (${acc.id})`);
+    });
+    console.log('[Bank] ✅ Timestamp:', new Date().toISOString());
+
     res.json({
       success: true,
       accounts: savedAccounts.map(acc => ({
@@ -588,7 +644,18 @@ router.post('/callback', async (req: Request, res: Response) => {
         : 'Conexão iniciada. A conta pode demorar alguns segundos para aparecer. Atualize a página Contas.',
     });
   } catch (error: any) {
-    console.error('[Bank Callback] ❌ Error:', error.message || error);
+    console.error('[Bank] ❌ ========================================');
+    console.error('[Bank] ❌ ====== BANK CALLBACK ERROR ======');
+    console.error('[Bank] ❌ ========================================');
+    console.error('[Bank] ❌ Error message:', error.message || 'Unknown error');
+    console.error('[Bank] ❌ Error name:', error.name || 'N/A');
+    console.error('[Bank] ❌ Error code:', error.code || 'N/A');
+    console.error('[Bank] ❌ Status:', error.response?.status || 'N/A');
+    console.error('[Bank] ❌ Response data:', JSON.stringify(error.response?.data || {}));
+    console.error('[Bank] ❌ Stack trace:', error.stack || 'N/A');
+    console.error('[Bank] ❌ Request body was:', JSON.stringify(req.body));
+    console.error('[Bank] ❌ Timestamp:', new Date().toISOString());
+
     const errorMessage = error.message || 'Failed to process bank callback';
     res.status(500).json({
       error: errorMessage,

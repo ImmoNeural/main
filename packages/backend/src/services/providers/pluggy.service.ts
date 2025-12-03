@@ -55,9 +55,11 @@ export class PluggyService {
   private async getApiKey(): Promise<string> {
     // Se já temos uma API Key válida, retorna ela
     if (this.apiKey && Date.now() < this.apiKeyExpiresAt) {
-      console.log('[Pluggy] Using cached API Key');
+      console.log('[Pluggy] ✅ Using cached API Key');
       return this.apiKey;
     }
+
+    console.log('[Pluggy] 🔑 Requesting new API Key...');
 
     try {
       const response = await this.client.post('/auth', {
@@ -69,9 +71,12 @@ export class PluggyService {
       // API Key do Pluggy não expira, mas vamos renovar a cada 24h por segurança
       this.apiKeyExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
+      console.log('[Pluggy] ✅ API Key obtained successfully');
       return this.apiKey;
     } catch (error: any) {
       console.error('[Pluggy] ❌ Error obtaining API Key:', error.response?.data || error.message);
+      console.error('[Pluggy] ❌ Status:', error.response?.status);
+      console.error('[Pluggy] ❌ Headers:', JSON.stringify(error.response?.headers || {}));
       throw new Error('Failed to authenticate with Pluggy: ' + (error.response?.data?.message || error.message));
     }
   }
@@ -104,14 +109,24 @@ export class PluggyService {
    * Inicia o processo de autenticação
    */
   async initiateAuth(request: OpenBankingAuthRequest): Promise<OpenBankingAuthResponse> {
+    console.log('[Pluggy] 🚀 ====== INITIATE AUTH START ======');
+    console.log('[Pluggy] 📋 Request:', JSON.stringify({
+      bank_id: request.bank_id,
+      user_id: request.user_id,
+      redirect_uri: request.redirect_uri
+    }));
+
     try {
       const apiKey = await this.getApiKey();
 
       // Validar se o connector ID é um número válido
       const connectorId = parseInt(request.bank_id);
       if (isNaN(connectorId)) {
+        console.error(`[Pluggy] ❌ Invalid connector ID: ${request.bank_id}`);
         throw new Error(`Invalid connector ID: ${request.bank_id}`);
       }
+
+      console.log(`[Pluggy] 📡 Creating connect token for connectorId: ${connectorId}`);
 
       // Criar um Connect Token no Pluggy
       // Este token será usado no Pluggy Connect Widget
@@ -132,9 +147,12 @@ export class PluggyService {
       );
 
       const connectToken = tokenResponse.data.accessToken;
+      console.log(`[Pluggy] ✅ Connect token created: ${connectToken.substring(0, 20)}...`);
 
       // Gerar URL de autenticação do Pluggy Connect Widget
       const authUrl = `https://connect.pluggy.ai?connectToken=${connectToken}`;
+      console.log(`[Pluggy] 🔗 Auth URL generated`);
+      console.log('[Pluggy] ✅ ====== INITIATE AUTH SUCCESS ======');
 
       return {
         authorization_url: authUrl,
@@ -142,7 +160,10 @@ export class PluggyService {
         consent_id: connectToken,
       };
     } catch (error: any) {
-      console.error('[Pluggy] ❌ Error initiating auth');
+      console.error('[Pluggy] ❌ ====== INITIATE AUTH ERROR ======');
+      console.error('[Pluggy] ❌ Error message:', error.message);
+      console.error('[Pluggy] ❌ Status:', error.response?.status);
+      console.error('[Pluggy] ❌ Response data:', JSON.stringify(error.response?.data || {}));
       const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
       throw new Error('Failed to initiate bank authorization: ' + errorMessage);
     }
@@ -153,8 +174,13 @@ export class PluggyService {
    * O widget do Pluggy mostrará a lista completa de bancos
    */
   async createDirectConnectToken(userId: string): Promise<{ connectToken: string }> {
+    console.log('[Pluggy] 🚀 ====== CREATE DIRECT CONNECT TOKEN START ======');
+    console.log(`[Pluggy] 👤 User ID: ${userId}`);
+
     try {
       const apiKey = await this.getApiKey();
+
+      console.log('[Pluggy] 📡 Creating connect token (no connector pre-selected)...');
 
       const tokenResponse = await this.client.post(
         '/connect_token',
@@ -172,10 +198,18 @@ export class PluggyService {
         }
       );
 
+      const connectToken = tokenResponse.data.accessToken;
+      console.log(`[Pluggy] ✅ Direct connect token created: ${connectToken.substring(0, 20)}...`);
+      console.log('[Pluggy] ✅ ====== CREATE DIRECT CONNECT TOKEN SUCCESS ======');
+
       return {
-        connectToken: tokenResponse.data.accessToken,
+        connectToken: connectToken,
       };
     } catch (error: any) {
+      console.error('[Pluggy] ❌ ====== CREATE DIRECT CONNECT TOKEN ERROR ======');
+      console.error('[Pluggy] ❌ Error message:', error.message);
+      console.error('[Pluggy] ❌ Status:', error.response?.status);
+      console.error('[Pluggy] ❌ Response data:', JSON.stringify(error.response?.data || {}));
       const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
       throw new Error('Failed to create connect token: ' + errorMessage);
     }
@@ -186,13 +220,17 @@ export class PluggyService {
    * Inclui retry para casos onde o item ainda não está disponível
    */
   async getItem(itemId: string, retries: number = 5): Promise<any> {
+    console.log(`[Pluggy] 📦 ====== GET ITEM START ======`);
+    console.log(`[Pluggy] 📦 Item ID: ${itemId}`);
+    console.log(`[Pluggy] 📦 Max retries: ${retries}`);
+
     let lastError: any = null;
 
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const apiKey = await this.getApiKey();
 
-        console.log(`[Pluggy] Getting item ${itemId} (attempt ${attempt}/${retries})...`);
+        console.log(`[Pluggy] 📦 Getting item ${itemId} (attempt ${attempt}/${retries})...`);
 
         const response = await this.client.get(`/items/${itemId}`, {
           headers: {
@@ -201,26 +239,39 @@ export class PluggyService {
           timeout: 60000, // 60 segundos timeout (bancos lentos como Itaú)
         });
 
-        console.log(`[Pluggy] Item ${itemId} found. Status: ${response.data.status}`);
-        return response.data;
+        const item = response.data;
+        console.log(`[Pluggy] 📦 Item ${itemId} retrieved successfully`);
+        console.log(`[Pluggy] 📦 Item status: ${item.status}`);
+        console.log(`[Pluggy] 📦 Execution status: ${item.executionStatus || 'N/A'}`);
+        console.log(`[Pluggy] 📦 Connector ID: ${item.connector?.id || 'N/A'}`);
+        console.log(`[Pluggy] 📦 Connector name: ${item.connector?.name || 'N/A'}`);
+        if (item.error) {
+          console.log(`[Pluggy] 📦 Item error: ${JSON.stringify(item.error)}`);
+        }
+        console.log(`[Pluggy] ✅ ====== GET ITEM SUCCESS ======`);
+
+        return item;
       } catch (error: any) {
         lastError = error;
         const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
         const statusCode = error.response?.status;
 
-        console.error(`[Pluggy] ❌ Attempt ${attempt} failed to get item ${itemId}: ${errorMessage} (status: ${statusCode})`);
+        console.error(`[Pluggy] ❌ Attempt ${attempt}/${retries} failed for item ${itemId}`);
+        console.error(`[Pluggy] ❌ Error: ${errorMessage}`);
+        console.error(`[Pluggy] ❌ Status code: ${statusCode}`);
+        console.error(`[Pluggy] ❌ Error code: ${error.code || 'N/A'}`);
 
         // Se for erro 404 (item não encontrado), pode ser que ainda não foi criado
         // Aguardar e tentar novamente
         if (statusCode === 404 && attempt < retries) {
-          console.log(`[Pluggy] Item not found yet, waiting 5s before retry...`);
+          console.log(`[Pluggy] ⏳ Item not found yet, waiting 5s before retry...`);
           await new Promise(resolve => setTimeout(resolve, 5000));
           continue;
         }
 
         // Se for erro de rede/timeout, tentar novamente
         if ((error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') && attempt < retries) {
-          console.log(`[Pluggy] Network timeout, waiting 3s before retry...`);
+          console.log(`[Pluggy] ⏳ Network timeout, waiting 3s before retry...`);
           await new Promise(resolve => setTimeout(resolve, 3000));
           continue;
         }
@@ -235,6 +286,12 @@ export class PluggyService {
     }
 
     // Todas as tentativas falharam
+    console.error(`[Pluggy] ❌ ====== GET ITEM FAILED ======`);
+    console.error(`[Pluggy] ❌ All ${retries} attempts failed for item ${itemId}`);
+    console.error(`[Pluggy] ❌ Last error: ${lastError?.message}`);
+    console.error(`[Pluggy] ❌ Last status: ${lastError?.response?.status}`);
+    console.error(`[Pluggy] ❌ Last response: ${JSON.stringify(lastError?.response?.data || {})}`);
+
     const errorMessage = lastError?.response?.data?.message || lastError?.message || 'Unknown error';
     throw new Error(`Erro ao buscar dados do item: ${errorMessage}`);
   }
@@ -245,19 +302,27 @@ export class PluggyService {
    * @param quickMode - Se true, retorna imediatamente sem esperar sync (evita 504)
    */
   async exchangeCodeForToken(itemId: string, quickMode: boolean = false): Promise<OpenBankingTokenResponse> {
-    try {
-      console.log(`[Pluggy] Processando item ${itemId} (quickMode: ${quickMode})...`);
+    console.log(`[Pluggy] 🔄 ====== EXCHANGE CODE FOR TOKEN START ======`);
+    console.log(`[Pluggy] 🔄 Item ID: ${itemId}`);
+    console.log(`[Pluggy] 🔄 Quick mode: ${quickMode}`);
 
+    try {
       if (quickMode) {
         // Modo rápido: apenas verifica se o item existe e retorna
         // Não espera a sincronização completar (evita timeout 504)
+        console.log(`[Pluggy] 🔄 Quick mode enabled - fetching item without waiting for sync...`);
         const item = await this.getItem(itemId);
 
         if (item.status === 'LOGIN_ERROR') {
+          console.error(`[Pluggy] ❌ Item ${itemId} has LOGIN_ERROR status`);
+          console.error(`[Pluggy] ❌ Item error details: ${JSON.stringify(item.error || {})}`);
           throw new Error('Login falhou no banco. Por favor, tente novamente.');
         }
 
-        console.log(`[Pluggy] ✅ Item ${itemId} encontrado (quickMode). Status: ${item.status}`);
+        console.log(`[Pluggy] ✅ Item ${itemId} found (quickMode)`);
+        console.log(`[Pluggy] ✅ Status: ${item.status}`);
+        console.log(`[Pluggy] ✅ Execution status: ${item.executionStatus || 'N/A'}`);
+        console.log(`[Pluggy] ✅ ====== EXCHANGE CODE FOR TOKEN SUCCESS (QUICK) ======`);
 
         return {
           access_token: itemId,
@@ -270,13 +335,18 @@ export class PluggyService {
       }
 
       // Modo normal: aguarda o item ficar pronto
+      console.log(`[Pluggy] 🔄 Normal mode - waiting for item to be ready...`);
       const item = await this.waitForItemReady(itemId);
 
       if (item.status === 'LOGIN_ERROR') {
+        console.error(`[Pluggy] ❌ Item ${itemId} has LOGIN_ERROR status after waiting`);
+        console.error(`[Pluggy] ❌ Item error details: ${JSON.stringify(item.error || {})}`);
         throw new Error('Login falhou no banco. Por favor, tente novamente.');
       }
 
-      console.log(`[Pluggy] ✅ Item ${itemId} pronto! Status: ${item.status}`);
+      console.log(`[Pluggy] ✅ Item ${itemId} is ready!`);
+      console.log(`[Pluggy] ✅ Final status: ${item.status}`);
+      console.log(`[Pluggy] ✅ ====== EXCHANGE CODE FOR TOKEN SUCCESS ======`);
 
       return {
         access_token: itemId,
@@ -285,7 +355,10 @@ export class PluggyService {
         token_type: 'Bearer',
       };
     } catch (error: any) {
-      console.error(`[Pluggy] ❌ Erro ao processar item ${itemId}:`, error.message);
+      console.error(`[Pluggy] ❌ ====== EXCHANGE CODE FOR TOKEN ERROR ======`);
+      console.error(`[Pluggy] ❌ Item ID: ${itemId}`);
+      console.error(`[Pluggy] ❌ Error: ${error.message}`);
+      console.error(`[Pluggy] ❌ Stack: ${error.stack || 'N/A'}`);
       throw error;
     }
   }
