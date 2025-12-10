@@ -163,13 +163,29 @@ app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
       return res.status(400).json({ error: 'Account not properly configured' });
     }
 
+    // 0. Primeiro verificar status do item no Pluggy
+    let itemStatus = null;
+    try {
+      itemStatus = await openBankingService.getItemStatus(account.access_token);
+      console.log(`[Diagnose] 📋 Item status: ${itemStatus?.status}`);
+    } catch (e: any) {
+      console.log(`[Diagnose] ⚠️ Could not get item status:`, e.message);
+    }
+
     // 1. Buscar transações do Pluggy
     console.log(`[Diagnose] 📡 Fetching transactions from Pluggy (last ${days} days)...`);
-    const pluggyTransactions = await openBankingService.getTransactions(
-      account.access_token,
-      account.provider_account_id,
-      Number(days)
-    );
+    let pluggyTransactions: any[] = [];
+    let pluggyError = null;
+    try {
+      pluggyTransactions = await openBankingService.getTransactions(
+        account.access_token,
+        account.provider_account_id,
+        Number(days)
+      );
+    } catch (e: any) {
+      pluggyError = e.message;
+      console.error(`[Diagnose] ❌ Pluggy error:`, e.message);
+    }
 
     // 2. Buscar transações do Supabase
     const daysAgo = new Date();
@@ -184,23 +200,14 @@ app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
 
     if (dbError) {
       console.error(`[Diagnose] ❌ DB Error:`, dbError);
-      return res.status(500).json({ error: 'Database error' });
     }
 
-    // 3. Comparar
+    // 3. Comparar (mesmo se Pluggy falhou, mostrar o que temos)
     const pluggyIds = new Set(pluggyTransactions.map(t => t.transaction_id));
     const supabaseIds = new Set((supabaseTransactions || []).map((t: any) => t.transaction_id));
 
     const missingInSupabase = pluggyTransactions.filter(t => !supabaseIds.has(t.transaction_id));
     const extraInSupabase = (supabaseTransactions || []).filter((t: any) => !pluggyIds.has(t.transaction_id));
-
-    // 4. Status do item no Pluggy
-    let itemStatus = null;
-    try {
-      itemStatus = await openBankingService.getItemStatus(account.access_token);
-    } catch (e) {
-      console.log(`[Diagnose] ⚠️ Could not get item status`);
-    }
 
     console.log(`[Diagnose] ✅ ====== DIAGNOSE COMPLETE ======`);
     console.log(`[Diagnose] 📊 Pluggy: ${pluggyTransactions.length} transactions`);
@@ -213,13 +220,17 @@ app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
         bank_name: account.bank_name,
         last_sync_at: account.last_sync_at,
         account_type: account.account_type,
+        access_token: account.access_token?.substring(0, 8) + '...', // Mostra só início do token
+        provider_account_id: account.provider_account_id,
       },
       item_status: itemStatus ? {
         status: itemStatus.status,
         statusDetail: itemStatus.statusDetail,
         lastUpdatedAt: itemStatus.lastUpdatedAt,
         executionStatus: itemStatus.executionStatus,
-      } : null,
+        error: itemStatus.error || null,
+      } : { error: 'Could not fetch item status' },
+      pluggy_error: pluggyError,
       comparison: {
         period_days: Number(days),
         pluggy_count: pluggyTransactions.length,
