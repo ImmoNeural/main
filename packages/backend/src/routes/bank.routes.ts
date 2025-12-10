@@ -667,7 +667,7 @@ router.post('/callback', async (req: Request, res: Response) => {
 
 /**
  * GET /api/bank/accounts
- * Lista todas as contas conectadas
+ * Lista todas as contas conectadas com saldo calculado a partir das transações
  */
 router.get('/accounts', async (req: Request, res: Response) => {
   try {
@@ -675,7 +675,7 @@ router.get('/accounts', async (req: Request, res: Response) => {
 
     const { data: accounts, error } = await supabase
       .from('bank_accounts')
-      .select('id, user_id, bank_name, account_number, iban, account_type, balance, currency, connected_at, last_sync_at, status, created_at, updated_at')
+      .select('id, user_id, bank_name, account_number, iban, account_type, balance, initial_balance, currency, connected_at, last_sync_at, status, created_at, updated_at')
       .eq('user_id', user_id)
       .neq('status', 'disconnected')  // Excluir contas desconectadas
       .order('created_at', { ascending: false });
@@ -684,7 +684,46 @@ router.get('/accounts', async (req: Request, res: Response) => {
       throw error;
     }
 
-    res.json(accounts || []);
+    if (!accounts || accounts.length === 0) {
+      return res.json([]);
+    }
+
+    // 💰 Calcular saldo real para cada conta (exceto cartões de crédito)
+    const accountsWithCalculatedBalance = await Promise.all(
+      accounts.map(async (account) => {
+        // Cartões de crédito não têm saldo calculado
+        if (account.account_type === 'card') {
+          return { ...account, balance: 0 };
+        }
+
+        // Buscar soma de todas as transações da conta
+        const { data: transactionsSum, error: txError } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('account_id', account.id);
+
+        if (txError) {
+          console.error(`⚠️ Erro ao calcular saldo da conta ${account.id}:`, txError);
+          return account;
+        }
+
+        // Calcular: initial_balance + soma das transações
+        const sum = (transactionsSum || []).reduce((total, tx) => total + (tx.amount || 0), 0);
+        const calculatedBalance = (account.initial_balance || 0) + sum;
+
+        // Atualizar no banco se diferente
+        if (Math.abs(calculatedBalance - (account.balance || 0)) > 0.01) {
+          await supabase
+            .from('bank_accounts')
+            .update({ balance: calculatedBalance, updated_at: new Date().toISOString() })
+            .eq('id', account.id);
+        }
+
+        return { ...account, balance: calculatedBalance };
+      })
+    );
+
+    res.json(accountsWithCalculatedBalance);
   } catch (error) {
     console.error('Error fetching accounts:', error);
     res.status(500).json({ error: 'Failed to fetch accounts' });

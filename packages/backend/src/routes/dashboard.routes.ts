@@ -70,12 +70,40 @@ router.get('/stats', async (req: Request, res: Response) => {
 
     // Excluir cartões de crédito do saldo total (cartões não representam dinheiro disponível)
     const nonCreditCardAccounts = accounts?.filter(acc => acc.account_type !== 'card') || [];
-    const total_balance = nonCreditCardAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    const nonCreditCardAccountIds = nonCreditCardAccounts.map(acc => acc.id);
 
     // Buscar saldo inicial salvo na conta (calculado durante importação)
     const initial_balance = accounts && accounts.length > 0 && accounts[0].initial_balance !== undefined
       ? accounts[0].initial_balance
       : null;
+
+    // 💰 CALCULAR SALDO ATUAL: initial_balance + soma de TODAS as transações
+    // Buscar TODAS as transações (sem filtro de data) para calcular saldo atual
+    let allTransactionsQuery = supabase
+      .from('transactions')
+      .select('amount, account_id')
+      .eq('user_id', user_id);
+
+    // Se account_id for especificado, filtrar apenas transações dessa conta
+    if (account_id) {
+      allTransactionsQuery = allTransactionsQuery.eq('account_id', account_id as string);
+    } else if (nonCreditCardAccountIds.length > 0) {
+      // Excluir transações de cartões de crédito
+      allTransactionsQuery = allTransactionsQuery.in('account_id', nonCreditCardAccountIds);
+    }
+
+    const { data: allTransactions, error: allTransError } = await allTransactionsQuery;
+
+    if (allTransError) {
+      console.error('⚠️ Erro ao buscar todas as transações:', allTransError);
+    }
+
+    // Calcular saldo atual: initial_balance + soma de todas as transações
+    // amount já é positivo para créditos e negativo para débitos
+    const transactionsSum = (allTransactions || []).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const total_balance = (initial_balance || 0) + transactionsSum;
+
+    console.log(`💰 Cálculo do saldo: inicial(${initial_balance || 0}) + transações(${transactionsSum.toFixed(2)}) = ${total_balance.toFixed(2)}`);
 
     if (initial_balance !== null) {
       console.log(`💰 Saldo Inicial (salvo na conta): R$ ${initial_balance.toFixed(2)}`);
@@ -104,48 +132,21 @@ router.get('/stats', async (req: Request, res: Response) => {
 
     if (transactionsError) throw transactionsError;
 
-    // 💰 Buscar saldo atual da conta (balance_after da transação mais recente)
-    let recentTransactionQuery = supabase
-      .from('transactions')
-      .select('balance_after, date, account_id, bank_accounts!inner(user_id)')
-      .eq('bank_accounts.user_id', user_id)
-      .not('balance_after', 'is', null)
-      .order('date', { ascending: false }) // Ordena por data DESC para pegar a mais recente
-      .limit(1);
-
-    // Se account_id for especificado, filtrar apenas transações dessa conta
-    if (account_id) {
-      recentTransactionQuery = recentTransactionQuery.eq('account_id', account_id as string);
-    }
-
-    const { data: mostRecentTransaction, error: recentError } = await recentTransactionQuery;
-
-    // Atualizar saldo da conta com o saldo da transação mais recente
-    if (mostRecentTransaction && mostRecentTransaction.length > 0) {
-      const currentBalance = mostRecentTransaction[0].balance_after;
-      console.log(`💰 Saldo atual encontrado na transação mais recente: R$ ${currentBalance.toFixed(2)} (data: ${format(mostRecentTransaction[0].date, 'dd/MM/yyyy HH:mm')})`);
-
-      // Atualizar a conta específica ou todas as contas ativas do usuário
-      let updateQuery = supabase
+    // 💰 Atualizar saldo da conta com o valor calculado (para sincronizar com página de Contas)
+    if (account_id && nonCreditCardAccounts.length > 0) {
+      // Se uma conta específica foi selecionada, atualizar apenas ela
+      const { error: updateBalanceError } = await supabase
         .from('bank_accounts')
         .update({
-          balance: currentBalance,
+          balance: total_balance,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', user_id)
-        .eq('status', 'active');
-
-      // Se account_id for especificado, atualizar apenas essa conta
-      if (account_id) {
-        updateQuery = updateQuery.eq('id', account_id as string);
-      }
-
-      const { error: updateBalanceError } = await updateQuery;
+        .eq('id', account_id as string);
 
       if (updateBalanceError) {
-        console.error('⚠️ Erro ao atualizar saldo das contas:', updateBalanceError);
+        console.error('⚠️ Erro ao atualizar saldo da conta:', updateBalanceError);
       } else {
-        console.log(`✅ Saldo das contas atualizado para: R$ ${currentBalance.toFixed(2)}`);
+        console.log(`✅ Saldo da conta ${account_id} atualizado para: R$ ${total_balance.toFixed(2)}`);
       }
     }
 
