@@ -93,22 +93,8 @@ app.get('/api/bank/available', async (req, res) => {
   }
 });
 
-// Rotas protegidas - requerem autenticação E assinatura ativa
-app.use('/api/bank', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, bankRoutes);
-app.use('/api/transactions', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, transactionRoutes);
-app.use('/api/dashboard', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, dashboardRoutes);
-app.use('/api/budgets', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, budgetRoutes);
-app.use('/api/preferences', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, preferencesRoutes);
-
-// Admin routes - requerem apenas autenticação (admin check é feito no middleware interno)
-app.use('/api/admin', authMiddleware, adminRoutes);
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // ROTA PÚBLICA: Diagnóstico de transações (requer admin_key)
+// IMPORTANTE: Deve vir ANTES das rotas protegidas /api/bank
 app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
   const { accountId } = req.params;
   const { days = 30, admin_key } = req.query;
@@ -222,6 +208,21 @@ app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
     console.error(`[Diagnose] ❌ Error:`, error.message);
     res.status(500).json({ error: error.message });
   }
+});
+
+// Rotas protegidas - requerem autenticação E assinatura ativa
+app.use('/api/bank', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, bankRoutes);
+app.use('/api/transactions', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, transactionRoutes);
+app.use('/api/dashboard', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, dashboardRoutes);
+app.use('/api/budgets', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, budgetRoutes);
+app.use('/api/preferences', authMiddleware, checkSubscriptionStatus, requireActiveSubscription, preferencesRoutes);
+
+// Admin routes - requerem apenas autenticação (admin check é feito no middleware interno)
+app.use('/api/admin', authMiddleware, adminRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Error handling
