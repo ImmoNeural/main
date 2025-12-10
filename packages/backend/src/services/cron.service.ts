@@ -168,20 +168,34 @@ async function syncAllBankAccounts(): Promise<void> {
         // 2. Aguardar item ficar pronto (máximo 30s)
         await openBankingService.waitForItemReady(account.access_token, 15);
 
-        // 3. Sincronizar transações
+        // 3. Buscar saldo atualizado do Pluggy
+        let updatedBalance = 0;
+        try {
+          const pluggyAccounts = await openBankingService.getAccounts(account.access_token);
+          const matchingAccount = pluggyAccounts.find(pa => pa.id === account.provider_account_id);
+          if (matchingAccount && matchingAccount.balance) {
+            updatedBalance = matchingAccount.balance.amount;
+            console.log(`[Cron] 💰 Balance from Pluggy: R$ ${updatedBalance.toFixed(2)}`);
+          }
+        } catch (balanceError: any) {
+          console.error(`[Cron] ⚠️ Error fetching balance:`, balanceError.message);
+        }
+
+        // 4. Sincronizar transações
         const transactionCount = await syncAccountTransactions(account);
         totalTransactions += transactionCount;
 
-        // 4. Atualizar last_sync_at
+        // 5. Atualizar last_sync_at E saldo
         await getSupabase()
           .from('bank_accounts')
           .update({
+            balance: updatedBalance,
             last_sync_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
           .eq('id', account.id);
 
-        console.log(`[Cron] ✅ Account ${account.bank_name}: ${transactionCount} new transactions`);
+        console.log(`[Cron] ✅ Account ${account.bank_name}: ${transactionCount} new transactions, balance R$ ${updatedBalance.toFixed(2)}`);
         successCount++;
 
         // Pequeno delay entre contas para não sobrecarregar

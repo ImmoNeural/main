@@ -667,7 +667,8 @@ router.post('/callback', async (req: Request, res: Response) => {
 
 /**
  * GET /api/bank/accounts
- * Lista todas as contas conectadas com saldo calculado a partir das transações
+ * Lista todas as contas conectadas
+ * NOTA: O saldo (balance) é atualizado via Pluggy quando o usuário clica em "Sincronizar"
  */
 router.get('/accounts', async (req: Request, res: Response) => {
   try {
@@ -675,7 +676,7 @@ router.get('/accounts', async (req: Request, res: Response) => {
 
     const { data: accounts, error } = await supabase
       .from('bank_accounts')
-      .select('id, user_id, bank_name, account_number, iban, account_type, balance, initial_balance, currency, connected_at, last_sync_at, status, created_at, updated_at')
+      .select('id, user_id, bank_name, account_number, iban, account_type, balance, currency, connected_at, last_sync_at, status, created_at, updated_at')
       .eq('user_id', user_id)
       .neq('status', 'disconnected')  // Excluir contas desconectadas
       .order('created_at', { ascending: false });
@@ -684,46 +685,7 @@ router.get('/accounts', async (req: Request, res: Response) => {
       throw error;
     }
 
-    if (!accounts || accounts.length === 0) {
-      return res.json([]);
-    }
-
-    // 💰 Calcular saldo real para cada conta (exceto cartões de crédito)
-    const accountsWithCalculatedBalance = await Promise.all(
-      accounts.map(async (account) => {
-        // Cartões de crédito não têm saldo calculado
-        if (account.account_type === 'card') {
-          return { ...account, balance: 0 };
-        }
-
-        // Buscar soma de todas as transações da conta
-        const { data: transactionsSum, error: txError } = await supabase
-          .from('transactions')
-          .select('amount')
-          .eq('account_id', account.id);
-
-        if (txError) {
-          console.error(`⚠️ Erro ao calcular saldo da conta ${account.id}:`, txError);
-          return account;
-        }
-
-        // Calcular: initial_balance + soma das transações
-        const sum = (transactionsSum || []).reduce((total, tx) => total + (tx.amount || 0), 0);
-        const calculatedBalance = (account.initial_balance || 0) + sum;
-
-        // Atualizar no banco se diferente
-        if (Math.abs(calculatedBalance - (account.balance || 0)) > 0.01) {
-          await supabase
-            .from('bank_accounts')
-            .update({ balance: calculatedBalance, updated_at: new Date().toISOString() })
-            .eq('id', account.id);
-        }
-
-        return { ...account, balance: calculatedBalance };
-      })
-    );
-
-    res.json(accountsWithCalculatedBalance);
+    res.json(accounts || []);
   } catch (error) {
     console.error('Error fetching accounts:', error);
     res.status(500).json({ error: 'Failed to fetch accounts' });
@@ -776,18 +738,38 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
       console.log(`[Bank Sync] ⚠️ Item not ready yet, fetching available transactions...`);
     }
 
-    // 🔄 STEP 3: Buscar transações atualizadas (mesmo se não estiver 100% pronto)
-    console.log(`[Bank Sync] 📊 Step 3: Fetching transactions...`);
+    // 🔄 STEP 3: Buscar saldo atualizado do banco via Pluggy
+    console.log(`[Bank Sync] 💰 Step 3: Fetching updated balance from Pluggy...`);
+    let updatedBalance = account.balance; // Fallback para saldo atual
+    try {
+      const pluggyAccounts = await openBankingService.getAccounts(account.access_token);
+      // Encontrar a conta correspondente pelo provider_account_id
+      const matchingAccount = pluggyAccounts.find(pa => pa.id === account.provider_account_id);
+      if (matchingAccount && matchingAccount.balance) {
+        updatedBalance = matchingAccount.balance.amount;
+        console.log(`[Bank Sync] 💰 New balance from Pluggy: R$ ${updatedBalance.toFixed(2)}`);
+      } else {
+        console.log(`[Bank Sync] ⚠️ Could not find matching account in Pluggy response`);
+      }
+    } catch (balanceError: any) {
+      console.error(`[Bank Sync] ⚠️ Error fetching balance from Pluggy:`, balanceError.message);
+    }
+
+    // 🔄 STEP 4: Buscar transações atualizadas (mesmo se não estiver 100% pronto)
+    console.log(`[Bank Sync] 📊 Step 4: Fetching transactions...`);
     const transactionCount = await syncTransactions(accountId, account.access_token);
 
-    // Atualizar last_sync_at
+    // Atualizar last_sync_at E saldo com o valor do Pluggy
     await supabase
       .from('bank_accounts')
       .update({
+        balance: updatedBalance,
         last_sync_at: toISOString(Date.now()),
         updated_at: toISOString(Date.now())
       })
       .eq('id', accountId);
+
+    console.log(`[Bank Sync] 💰 Account balance updated to: R$ ${updatedBalance.toFixed(2)}`);
 
     // 🔄 SINCRONIZAR BUDGETS após sync manual
     try {

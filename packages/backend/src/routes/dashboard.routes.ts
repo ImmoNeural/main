@@ -69,41 +69,16 @@ router.get('/stats', async (req: Request, res: Response) => {
     if (accountsError) throw accountsError;
 
     // Excluir cartões de crédito do saldo total (cartões não representam dinheiro disponível)
+    // NOTA: O saldo (balance) é atualizado via Pluggy quando o usuário clica em "Sincronizar"
     const nonCreditCardAccounts = accounts?.filter(acc => acc.account_type !== 'card') || [];
-    const nonCreditCardAccountIds = nonCreditCardAccounts.map(acc => acc.id);
+    const total_balance = nonCreditCardAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
     // Buscar saldo inicial salvo na conta (calculado durante importação)
     const initial_balance = accounts && accounts.length > 0 && accounts[0].initial_balance !== undefined
       ? accounts[0].initial_balance
       : null;
 
-    // 💰 CALCULAR SALDO ATUAL: initial_balance + soma de TODAS as transações
-    // Buscar TODAS as transações (sem filtro de data) para calcular saldo atual
-    let allTransactionsQuery = supabase
-      .from('transactions')
-      .select('amount, account_id')
-      .eq('user_id', user_id);
-
-    // Se account_id for especificado, filtrar apenas transações dessa conta
-    if (account_id) {
-      allTransactionsQuery = allTransactionsQuery.eq('account_id', account_id as string);
-    } else if (nonCreditCardAccountIds.length > 0) {
-      // Excluir transações de cartões de crédito
-      allTransactionsQuery = allTransactionsQuery.in('account_id', nonCreditCardAccountIds);
-    }
-
-    const { data: allTransactions, error: allTransError } = await allTransactionsQuery;
-
-    if (allTransError) {
-      console.error('⚠️ Erro ao buscar todas as transações:', allTransError);
-    }
-
-    // Calcular saldo atual: initial_balance + soma de todas as transações
-    // amount já é positivo para créditos e negativo para débitos
-    const transactionsSum = (allTransactions || []).reduce((sum, tx) => sum + (tx.amount || 0), 0);
-    const total_balance = (initial_balance || 0) + transactionsSum;
-
-    console.log(`💰 Cálculo do saldo: inicial(${initial_balance || 0}) + transações(${transactionsSum.toFixed(2)}) = ${total_balance.toFixed(2)}`);
+    console.log(`💰 Saldo total das contas (via Pluggy): R$ ${total_balance.toFixed(2)}`);
 
     if (initial_balance !== null) {
       console.log(`💰 Saldo Inicial (salvo na conta): R$ ${initial_balance.toFixed(2)}`);
@@ -131,24 +106,6 @@ router.get('/stats', async (req: Request, res: Response) => {
     const { data: transactions, error: transactionsError } = await transactionsQuery;
 
     if (transactionsError) throw transactionsError;
-
-    // 💰 Atualizar saldo da conta com o valor calculado (para sincronizar com página de Contas)
-    if (account_id && nonCreditCardAccounts.length > 0) {
-      // Se uma conta específica foi selecionada, atualizar apenas ela
-      const { error: updateBalanceError } = await supabase
-        .from('bank_accounts')
-        .update({
-          balance: total_balance,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', account_id as string);
-
-      if (updateBalanceError) {
-        console.error('⚠️ Erro ao atualizar saldo da conta:', updateBalanceError);
-      } else {
-        console.log(`✅ Saldo da conta ${account_id} atualizado para: R$ ${total_balance.toFixed(2)}`);
-      }
-    }
 
     // Calcular agregações
     let total_income = 0;
