@@ -757,7 +757,7 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
 
     // 🔄 STEP 4: Buscar transações atualizadas (mesmo se não estiver 100% pronto)
     console.log(`[Bank Sync] 📊 Step 4: Fetching transactions...`);
-    const transactionCount = await syncTransactions(accountId, account.access_token);
+    const transactionCount = await syncTransactions(accountId, account.access_token, false, updatedBalance);
 
     // Atualizar last_sync_at E saldo com o valor do Pluggy
     await supabase
@@ -893,7 +893,7 @@ router.delete('/accounts/:accountId', async (req: Request, res: Response) => {
  * - Depois: 3 queries fixas (account + existing + bulk insert) = 3 queries
  * - Melhoria: ~333x mais rápido para 1000 transações
  */
-async function syncTransactions(accountId: string, accessToken: string, forceFullSync: boolean = false): Promise<number> {
+async function syncTransactions(accountId: string, accessToken: string, forceFullSync: boolean = false, currentAccountBalance?: number): Promise<number> {
   // Buscar dados da conta incluindo last_sync_at, user_id E account_type
   const { data: account, error } = await supabase
     .from('bank_accounts')
@@ -998,7 +998,7 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
 
   // Preparar dados para bulk insert
   const now = Date.now();
-  const transactionsToInsert = newTransactions.map(trans => {
+  let transactionsToInsert = newTransactions.map(trans => {
     const amount = trans.transaction_amount.amount;
     const description = trans.remittance_information || '';
     const merchant = trans.creditor_name || trans.debtor_name || '';
@@ -1018,16 +1018,38 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
       merchant,
       category: categorization.category,
       type: amount < 0 ? 'debit' : 'credit',
-      // NOTA: balance_after geralmente é null porque o Pluggy não retorna balance_after_transaction
-      // Isso impede o cálculo preciso do saldo acumulado real (que deveria ser: saldo inicial + deltas)
-      // Por enquanto, o saldo acumulado é calculado apenas a partir dos deltas de transações
-      balance_after: trans.balance_after_transaction?.amount,
+      // Usar balance_after_transaction do Pluggy se disponível
+      balance_after: trans.balance_after_transaction?.amount as number | undefined,
       reference: trans.remittance_information,
       status: 'completed',
       created_at: toISOString(now), // TIMESTAMPTZ
       updated_at: toISOString(now), // TIMESTAMPTZ
     };
   });
+
+  // Calcular balance_after se Pluggy não forneceu e temos o saldo atual da conta
+  const hasPluggyBalance = transactionsToInsert.some(t => t.balance_after !== undefined && t.balance_after !== null);
+
+  if (!hasPluggyBalance && currentAccountBalance !== undefined) {
+    console.log(`[Sync] 💰 Calculating balance_after from current account balance: R$ ${currentAccountBalance.toFixed(2)}`);
+
+    // Ordenar por data decrescente (mais recente primeiro)
+    transactionsToInsert.sort((a, b) => b.date - a.date);
+
+    // Calcular balance_after: a transação mais recente tem balance_after = saldo atual
+    // Cada transação anterior: balance_after = balance_after_seguinte - amount_seguinte
+    let runningBalance = currentAccountBalance;
+
+    for (let i = 0; i < transactionsToInsert.length; i++) {
+      transactionsToInsert[i].balance_after = runningBalance;
+      // Para a próxima iteração, subtraímos o amount desta transação
+      runningBalance = runningBalance - transactionsToInsert[i].amount;
+    }
+
+    console.log(`[Sync] 💰 Calculated balance_after for ${transactionsToInsert.length} transactions`);
+  } else if (hasPluggyBalance) {
+    console.log(`[Sync] 💰 Using balance_after from Pluggy API`);
+  }
 
   // OTIMIZAÇÃO: Bulk insert - inserir todas as transações de uma vez
   // Dividir em batches de 1000 para evitar limites do Supabase

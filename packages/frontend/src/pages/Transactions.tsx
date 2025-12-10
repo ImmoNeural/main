@@ -1200,6 +1200,9 @@ const Transactions = () => {
                   <th scope="col" className="w-24 sm:w-28 px-1 sm:px-2 py-2 text-right text-xs font-semibold text-gray-600 uppercase">
                     Valor
                   </th>
+                  <th scope="col" className="hidden lg:table-cell w-24 sm:w-28 px-1 sm:px-2 py-2 text-right text-xs font-semibold text-gray-600 uppercase">
+                    Saldo
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1332,12 +1335,17 @@ const Transactions = () => {
                     <td className={`px-1 sm:px-2 py-2 text-xs sm:text-sm font-semibold text-right ${valueClass}`}>
                       {isReceita ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                     </td>
+                    <td className="hidden lg:table-cell px-1 sm:px-2 py-2 text-xs sm:text-sm font-medium text-right text-gray-700">
+                      {transaction.balance_after !== undefined && transaction.balance_after !== null
+                        ? formatCurrency(transaction.balance_after)
+                        : '-'}
+                    </td>
                   </tr>
                 );
               })}
               {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-4 sm:p-8 text-center text-sm sm:text-base text-gray-500">
+                  <td colSpan={6} className="p-4 sm:p-8 text-center text-sm sm:text-base text-gray-500">
                     Nenhuma transação encontrada para o termo de busca.
                   </td>
                 </tr>

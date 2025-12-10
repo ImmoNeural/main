@@ -32,7 +32,7 @@ function getSupabase(): SupabaseClient {
  * Sincroniza transações de uma conta específica
  * (Versão simplificada sem depender de bank.routes.ts)
  */
-async function syncAccountTransactions(account: any): Promise<number> {
+async function syncAccountTransactions(account: any, currentAccountBalance?: number): Promise<number> {
   try {
     const { PluggyService } = await import('./providers/pluggy.service');
     const pluggyService = new PluggyService();
@@ -71,7 +71,7 @@ async function syncAccountTransactions(account: any): Promise<number> {
     const isCreditCard = account.account_type === 'card';
 
     // Mapear para formato do banco de dados
-    const transactionsToInsert = newTransactions.map(t => {
+    let transactionsToInsert = newTransactions.map(t => {
       let amount = t.transaction_amount.amount;
 
       // Cartão de crédito: inverter valores positivos para negativos
@@ -95,12 +95,38 @@ async function syncAccountTransactions(account: any): Promise<number> {
         currency: t.transaction_amount.currency,
         category: 'Não Categorizado',
         type: amount < 0 ? 'debit' : 'credit',
+        // Usar balance_after do Pluggy se disponível
+        balance_after: t.balance_after_transaction?.amount as number | undefined,
         reference: description,
         status: 'completed',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
     });
+
+    // Calcular balance_after se Pluggy não forneceu e temos o saldo atual da conta
+    const hasPluggyBalance = transactionsToInsert.some(t => t.balance_after !== undefined && t.balance_after !== null);
+
+    if (!hasPluggyBalance && currentAccountBalance !== undefined) {
+      console.log(`[Cron] 💰 Calculating balance_after from current account balance: R$ ${currentAccountBalance.toFixed(2)}`);
+
+      // Ordenar por data decrescente (mais recente primeiro)
+      transactionsToInsert.sort((a, b) => b.date - a.date);
+
+      // Calcular balance_after: a transação mais recente tem balance_after = saldo atual
+      // Cada transação anterior: balance_after = balance_after_seguinte - amount_seguinte
+      let runningBalance = currentAccountBalance;
+
+      for (let i = 0; i < transactionsToInsert.length; i++) {
+        transactionsToInsert[i].balance_after = runningBalance;
+        // Para a próxima iteração, subtraímos o amount desta transação
+        runningBalance = runningBalance - transactionsToInsert[i].amount;
+      }
+
+      console.log(`[Cron] 💰 Calculated balance_after for ${transactionsToInsert.length} transactions`);
+    } else if (hasPluggyBalance) {
+      console.log(`[Cron] 💰 Using balance_after from Pluggy API`);
+    }
 
     // Inserir em batches
     const BATCH_SIZE = 100;
@@ -181,8 +207,8 @@ async function syncAllBankAccounts(): Promise<void> {
           console.error(`[Cron] ⚠️ Error fetching balance:`, balanceError.message);
         }
 
-        // 4. Sincronizar transações
-        const transactionCount = await syncAccountTransactions(account);
+        // 4. Sincronizar transações (passar saldo atual para calcular balance_after)
+        const transactionCount = await syncAccountTransactions(account, updatedBalance);
         totalTransactions += transactionCount;
 
         // 5. Atualizar last_sync_at E saldo
