@@ -780,11 +780,25 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
  * GET /api/bank/accounts/:accountId/diagnose
  * Diagnóstico de transações: compara Pluggy vs Supabase
  * Útil para verificar se há transações novas não sincronizadas
+ *
+ * Aceita admin_key como query param para acesso direto sem auth header
+ * Exemplo: /api/bank/accounts/xxx/diagnose?admin_key=YOUR_KEY&days=30
  */
 router.get('/accounts/:accountId/diagnose', async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
-    const { days = 30 } = req.query;
+    const { days = 30, admin_key } = req.query;
+
+    // Verificar admin_key se fornecida (permite acesso direto sem auth header)
+    const validAdminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (admin_key && admin_key !== validAdminKey) {
+      return res.status(401).json({ error: 'Invalid admin key' });
+    }
+
+    // Se não tem admin_key e não tem userId (não autenticado), bloquear
+    if (!admin_key && !req.userId) {
+      return res.status(401).json({ error: 'Authentication required. Use admin_key param or Authorization header.' });
+    }
 
     console.log(`[Diagnose] 🔍 ====== DIAGNOSE START ======`);
     console.log(`[Diagnose] 📋 Account ID: ${accountId}`);
