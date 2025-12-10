@@ -6,14 +6,27 @@
  */
 
 import cron from 'node-cron';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import openBankingService from './openBanking.service';
 import type { OpenBankingTransaction } from '../types';
 
-// Inicializar Supabase
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Lazy initialization do Supabase (evita erro de variáveis não carregadas)
+let _supabase: SupabaseClient | null = null;
+
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('[Cron] Supabase credentials not configured');
+    }
+
+    _supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('[Cron] ✅ Supabase client initialized');
+  }
+  return _supabase;
+}
 
 /**
  * Sincroniza transações de uma conta específica
@@ -37,7 +50,7 @@ async function syncAccountTransactions(account: any): Promise<number> {
 
     // Buscar IDs existentes para evitar duplicatas
     const providerTransactionIds = transactions.map(t => t.transaction_id);
-    const { data: existingTransactions } = await supabase
+    const { data: existingTransactions } = await getSupabase()
       .from('transactions')
       .select('transaction_id')
       .eq('account_id', account.id)
@@ -91,7 +104,7 @@ async function syncAccountTransactions(account: any): Promise<number> {
 
     for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
       const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('transactions')
         .insert(batch);
 
@@ -119,7 +132,7 @@ async function syncAllBankAccounts(): Promise<void> {
 
   try {
     // Buscar todas as contas com access_token válido
-    const { data: accounts, error } = await supabase
+    const { data: accounts, error } = await getSupabase()
       .from('bank_accounts')
       .select('id, user_id, bank_name, access_token, provider_account_id, account_type')
       .not('access_token', 'is', null);
@@ -156,7 +169,7 @@ async function syncAllBankAccounts(): Promise<void> {
         totalTransactions += transactionCount;
 
         // 4. Atualizar last_sync_at
-        await supabase
+        await getSupabase()
           .from('bank_accounts')
           .update({
             last_sync_at: new Date().toISOString(),
