@@ -325,12 +325,13 @@ app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
     // 2. Buscar transações do Supabase
     const daysAgo = new Date();
     daysAgo.setDate(daysAgo.getDate() - Number(days));
+    const daysAgoTimestamp = daysAgo.getTime(); // Converter para timestamp em ms
 
     const { data: supabaseTransactions, error: dbError } = await supabase
       .from('transactions')
       .select('transaction_id, date, description, amount')
       .eq('account_id', accountId)
-      .gte('date', daysAgo.toISOString().split('T')[0])
+      .gte('date', daysAgoTimestamp) // Comparar timestamp com timestamp
       .order('date', { ascending: false });
 
     if (dbError) {
