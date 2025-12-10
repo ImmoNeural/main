@@ -93,6 +93,43 @@ app.get('/api/bank/available', async (req, res) => {
   }
 });
 
+// ROTA PÚBLICA: Listar contas de um usuário (requer admin_key)
+// Uso: /api/diagnose/user/:userId/accounts?admin_key=KEY
+app.get('/api/diagnose/user/:userId/accounts', async (req, res) => {
+  const { userId } = req.params;
+  const { admin_key } = req.query;
+
+  const validAdminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!admin_key || admin_key !== validAdminKey) {
+    return res.status(401).json({ error: 'Invalid or missing admin_key' });
+  }
+
+  try {
+    const { supabase } = await import('./config/supabase');
+
+    const { data: accounts, error } = await supabase
+      .from('bank_accounts')
+      .select('id, bank_name, account_type, last_sync_at, created_at')
+      .eq('user_id', userId);
+
+    if (error) {
+      return res.status(500).json({ error: 'Database error', details: error.message });
+    }
+
+    res.json({
+      user_id: userId,
+      accounts_count: accounts?.length || 0,
+      accounts: accounts || [],
+      diagnose_urls: (accounts || []).map(a => ({
+        bank: a.bank_name,
+        url: `/api/bank/accounts/${a.id}/diagnose?admin_key=YOUR_KEY&days=60`
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ROTA PÚBLICA: Diagnóstico de transações (requer admin_key)
 // IMPORTANTE: Deve vir ANTES das rotas protegidas /api/bank
 app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
