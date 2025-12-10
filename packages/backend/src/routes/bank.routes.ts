@@ -695,7 +695,7 @@ router.get('/accounts', async (req: Request, res: Response) => {
  * POST /api/bank/accounts/:accountId/sync
  * Sincroniza transações de uma conta
  * 1. Dispara updateItem para buscar dados frescos do banco via Open Finance
- * 2. Aguarda o item ficar pronto
+ * 2. Aguarda brevemente o item ficar pronto (max 10s para evitar timeout)
  * 3. Busca as transações atualizadas
  */
 router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => {
@@ -729,16 +729,16 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
     console.log(`[Bank Sync] 🔄 Step 1: Triggering updateItem to refresh bank data...`);
     await openBankingService.updateItem(account.access_token);
 
-    // 🔄 STEP 2: Aguardar o item ficar pronto (máximo 60s = 30 tentativas * 2s)
-    console.log(`[Bank Sync] ⏳ Step 2: Waiting for item to be ready...`);
-    const isReady = await openBankingService.waitForItemReady(account.access_token, 30);
+    // 🔄 STEP 2: Aguardar brevemente (max 10s = 5 tentativas * 2s para evitar timeout 504)
+    console.log(`[Bank Sync] ⏳ Step 2: Waiting briefly for item to be ready (max 10s)...`);
+    const isReady = await openBankingService.waitForItemReady(account.access_token, 5);
 
     if (!isReady) {
-      console.log(`[Bank Sync] ⚠️ Item not ready, but continuing with sync anyway...`);
+      console.log(`[Bank Sync] ⚠️ Item not ready yet, fetching available transactions...`);
     }
 
-    // 🔄 STEP 3: Buscar transações atualizadas
-    console.log(`[Bank Sync] 📊 Step 3: Fetching updated transactions...`);
+    // 🔄 STEP 3: Buscar transações atualizadas (mesmo se não estiver 100% pronto)
+    console.log(`[Bank Sync] 📊 Step 3: Fetching transactions...`);
     const transactionCount = await syncTransactions(accountId, account.access_token);
 
     // Atualizar last_sync_at
@@ -766,7 +766,7 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
       transactions_synced: transactionCount,
       message: isReady
         ? 'Dados atualizados com sucesso do banco!'
-        : 'Sincronização concluída (alguns dados podem demorar a aparecer)',
+        : 'Sincronização iniciada! Novas transações podem aparecer em alguns minutos.',
     });
   } catch (error: any) {
     console.error(`[Bank Sync] ❌ ====== SYNC ERROR ======`);
