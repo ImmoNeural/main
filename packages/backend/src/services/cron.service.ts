@@ -8,6 +8,7 @@
 import cron from 'node-cron';
 import { createClient } from '@supabase/supabase-js';
 import openBankingService from './openBanking.service';
+import type { OpenBankingTransaction } from '../types';
 
 // Inicializar Supabase
 const supabaseUrl = process.env.SUPABASE_URL!;
@@ -65,18 +66,22 @@ async function syncAccountTransactions(account: any): Promise<number> {
         amount = -Math.abs(amount);
       }
 
+      // Usar remittance_information como descrição (conforme OpenBankingTransaction)
+      const description = t.remittance_information || '';
+      // Merchant: creditor para receitas, debtor para despesas
+      const merchant = t.creditor_name || t.debtor_name || description;
+
       return {
         user_id: account.user_id,
         account_id: account.id,
         transaction_id: t.transaction_id,
         date: t.booking_date,
-        description: t.description,
-        merchant: t.merchant_name || t.description,
+        description: description,
+        merchant: merchant,
         amount: amount,
         currency: t.transaction_amount.currency,
         category: 'Não Categorizado',
         source: 'open_banking',
-        reference: t.reference,
       };
     });
 
