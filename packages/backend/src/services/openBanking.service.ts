@@ -248,6 +248,67 @@ class OpenBankingService {
       throw error;
     }
   }
+
+  /**
+   * Dispara atualização de dados do banco via Open Finance
+   * Força o provedor a buscar dados frescos do banco
+   */
+  async updateItem(itemId: string): Promise<void> {
+    try {
+      const provider = this.getProvider();
+
+      // Verificar se o provider suporta updateItem (Pluggy)
+      if ('updateItem' in provider) {
+        await (provider as any).updateItem(itemId);
+        console.log(`[OpenBanking] ✅ Item ${itemId} update triggered`);
+        return;
+      }
+
+      console.log(`[OpenBanking] ⚠️ Provider does not support updateItem, skipping...`);
+    } catch (error: any) {
+      console.error(`[OpenBanking] ❌ Failed to update item ${itemId}:`, error.message);
+      // Não propagar erro - continuar com sync mesmo se update falhar
+    }
+  }
+
+  /**
+   * Aguarda o item ficar pronto após trigger de update
+   */
+  async waitForItemReady(itemId: string, maxAttempts: number = 30): Promise<boolean> {
+    try {
+      const provider = this.getProvider();
+
+      if (!('getItem' in provider)) {
+        return true; // Provider não suporta, assumir pronto
+      }
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const item = await (provider as any).getItem(itemId, 1); // 1 retry por tentativa
+
+        if (item.status === 'UPDATED') {
+          console.log(`[OpenBanking] ✅ Item ${itemId} is ready (attempt ${attempt}/${maxAttempts})`);
+          return true;
+        }
+
+        if (item.status === 'LOGIN_ERROR' || item.status === 'OUTDATED') {
+          console.error(`[OpenBanking] ❌ Item ${itemId} has error status: ${item.status}`);
+          return false;
+        }
+
+        // Status UPDATING - aguardar
+        if (attempt < maxAttempts) {
+          console.log(`[OpenBanking] ⏳ Item ${itemId} status: ${item.status}, waiting... (${attempt}/${maxAttempts})`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      console.log(`[OpenBanking] ⚠️ Item ${itemId} timeout after ${maxAttempts} attempts`);
+      return false; // Timeout, mas continuar mesmo assim
+    } catch (error: any) {
+      console.error(`[OpenBanking] ❌ Error waiting for item ${itemId}:`, error.message);
+      return false;
+    }
+  }
 }
 
 export default new OpenBankingService();

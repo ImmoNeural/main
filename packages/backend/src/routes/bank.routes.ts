@@ -694,10 +694,17 @@ router.get('/accounts', async (req: Request, res: Response) => {
 /**
  * POST /api/bank/accounts/:accountId/sync
  * Sincroniza transações de uma conta
+ * 1. Dispara updateItem para buscar dados frescos do banco via Open Finance
+ * 2. Aguarda o item ficar pronto
+ * 3. Busca as transações atualizadas
  */
 router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => {
   try {
     const { accountId } = req.params;
+
+    console.log(`[Bank Sync] 🔄 ====== SYNC START ======`);
+    console.log(`[Bank Sync] 📋 Account ID: ${accountId}`);
+    console.log(`[Bank Sync] 📋 Timestamp: ${new Date().toISOString()}`);
 
     const { data: account, error } = await supabase
       .from('bank_accounts')
@@ -706,13 +713,32 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
       .single();
 
     if (error || !account) {
+      console.error(`[Bank Sync] ❌ Account not found: ${accountId}`);
       return res.status(404).json({ error: 'Account not found' });
     }
 
+    console.log(`[Bank Sync] 📋 Bank: ${account.bank_name}`);
+    console.log(`[Bank Sync] 📋 Access Token (itemId): ${account.access_token}`);
+
     if (!account.access_token) {
+      console.error(`[Bank Sync] ❌ Account has no access token`);
       return res.status(400).json({ error: 'Account has no access token' });
     }
 
+    // 🔄 STEP 1: Disparar updateItem para forçar refresh do banco via Open Finance
+    console.log(`[Bank Sync] 🔄 Step 1: Triggering updateItem to refresh bank data...`);
+    await openBankingService.updateItem(account.access_token);
+
+    // 🔄 STEP 2: Aguardar o item ficar pronto (máximo 60s = 30 tentativas * 2s)
+    console.log(`[Bank Sync] ⏳ Step 2: Waiting for item to be ready...`);
+    const isReady = await openBankingService.waitForItemReady(account.access_token, 30);
+
+    if (!isReady) {
+      console.log(`[Bank Sync] ⚠️ Item not ready, but continuing with sync anyway...`);
+    }
+
+    // 🔄 STEP 3: Buscar transações atualizadas
+    console.log(`[Bank Sync] 📊 Step 3: Fetching updated transactions...`);
     const transactionCount = await syncTransactions(accountId, account.access_token);
 
     // Atualizar last_sync_at
@@ -731,12 +757,21 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
       console.error('⚠️ [Bank Sync] Erro ao sincronizar budgets (não crítico):', syncError);
     }
 
+    console.log(`[Bank Sync] ✅ ====== SYNC SUCCESS ======`);
+    console.log(`[Bank Sync] ✅ Transactions synced: ${transactionCount}`);
+    console.log(`[Bank Sync] ✅ Timestamp: ${new Date().toISOString()}`);
+
     res.json({
       success: true,
       transactions_synced: transactionCount,
+      message: isReady
+        ? 'Dados atualizados com sucesso do banco!'
+        : 'Sincronização concluída (alguns dados podem demorar a aparecer)',
     });
-  } catch (error) {
-    console.error('Error syncing account:', error);
+  } catch (error: any) {
+    console.error(`[Bank Sync] ❌ ====== SYNC ERROR ======`);
+    console.error(`[Bank Sync] ❌ Error: ${error.message}`);
+    console.error(`[Bank Sync] ❌ Stack: ${error.stack || 'N/A'}`);
     res.status(500).json({ error: 'Failed to sync account' });
   }
 });
