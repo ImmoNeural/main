@@ -225,7 +225,7 @@ app.post('/api/diagnose/accounts/:accountId/force-sync', async (req, res) => {
       merchant: t.creditor_name || t.debtor_name || '',
       category: 'Não Categorizado',
       type: t.transaction_amount.amount < 0 ? 'debit' : 'credit',
-      source: 'open_banking',
+      reference: t.remittance_information || '',
       status: 'completed',
       created_at: new Date(now).toISOString(),
       updated_at: new Date(now).toISOString(),

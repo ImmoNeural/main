@@ -88,13 +88,17 @@ async function syncAccountTransactions(account: any): Promise<number> {
         user_id: account.user_id,
         account_id: account.id,
         transaction_id: t.transaction_id,
-        date: t.booking_date,
+        date: new Date(t.booking_date).getTime(), // Timestamp em ms
         description: description,
         merchant: merchant,
         amount: amount,
         currency: t.transaction_amount.currency,
         category: 'Não Categorizado',
-        source: 'open_banking',
+        type: amount < 0 ? 'debit' : 'credit',
+        reference: description,
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
     });
 
