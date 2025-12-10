@@ -130,6 +130,141 @@ app.get('/api/diagnose/user/:userId/accounts', async (req, res) => {
   }
 });
 
+// ROTA PÚBLICA: Forçar sync de uma conta (requer admin_key)
+// Uso: /api/diagnose/accounts/:accountId/force-sync?admin_key=KEY
+app.post('/api/diagnose/accounts/:accountId/force-sync', async (req, res) => {
+  const { accountId } = req.params;
+  const { admin_key, days = 60 } = req.query;
+
+  const validAdminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!admin_key || admin_key !== validAdminKey) {
+    return res.status(401).json({ error: 'Invalid or missing admin_key' });
+  }
+
+  try {
+    const { supabase } = await import('./config/supabase');
+    const { v4: uuidv4 } = await import('uuid');
+
+    console.log(`[Force Sync] 🔄 ====== FORCE SYNC START ======`);
+    console.log(`[Force Sync] 📋 Account ID: ${accountId}`);
+
+    // Buscar conta
+    const { data: account, error } = await supabase
+      .from('bank_accounts')
+      .select('*')
+      .eq('id', accountId)
+      .single();
+
+    if (error || !account) {
+      return res.status(404).json({ error: 'Account not found' });
+    }
+
+    const isCreditCard = account.account_type === 'card';
+    console.log(`[Force Sync] 💳 Is credit card: ${isCreditCard}`);
+
+    // Buscar transações do Pluggy
+    let transactions = await openBankingService.getTransactions(
+      account.access_token,
+      account.provider_account_id,
+      Number(days)
+    );
+
+    console.log(`[Force Sync] 📊 Fetched ${transactions.length} transactions from Pluggy`);
+
+    if (transactions.length === 0) {
+      return res.json({ message: 'No transactions to sync', count: 0 });
+    }
+
+    // Para cartões: inverter valores
+    if (isCreditCard) {
+      const beforeFilter = transactions.length;
+      transactions = transactions.filter(t => t.transaction_amount.amount > 0);
+      console.log(`[Force Sync] 💳 Filtered ${beforeFilter - transactions.length} negative transactions`);
+
+      transactions = transactions.map(t => ({
+        ...t,
+        transaction_amount: {
+          ...t.transaction_amount,
+          amount: -Math.abs(t.transaction_amount.amount)
+        }
+      }));
+    }
+
+    // Verificar existentes
+    const providerIds = transactions.map(t => t.transaction_id);
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('transaction_id')
+      .eq('account_id', accountId)
+      .in('transaction_id', providerIds);
+
+    const existingIds = new Set((existing || []).map((t: any) => t.transaction_id));
+    const newTransactions = transactions.filter(t => !existingIds.has(t.transaction_id));
+
+    console.log(`[Force Sync] 📊 ${existingIds.size} already exist, ${newTransactions.length} new to insert`);
+
+    if (newTransactions.length === 0) {
+      return res.json({
+        message: 'All transactions already synced',
+        existing: existingIds.size,
+        new: 0
+      });
+    }
+
+    // Preparar para inserção
+    const now = Date.now();
+    const toInsert = newTransactions.map(t => ({
+      id: uuidv4(),
+      user_id: account.user_id,
+      account_id: accountId,
+      transaction_id: t.transaction_id,
+      date: new Date(t.booking_date).getTime(),
+      amount: t.transaction_amount.amount,
+      currency: t.transaction_amount.currency,
+      description: t.remittance_information || '',
+      merchant: t.creditor_name || t.debtor_name || '',
+      category: 'Não Categorizado',
+      type: t.transaction_amount.amount < 0 ? 'debit' : 'credit',
+      source: 'open_banking',
+      status: 'completed',
+      created_at: new Date(now).toISOString(),
+      updated_at: new Date(now).toISOString(),
+    }));
+
+    console.log(`[Force Sync] 📝 Prepared ${toInsert.length} transactions for insert`);
+    console.log(`[Force Sync] 📝 Sample:`, JSON.stringify(toInsert[0], null, 2));
+
+    // Inserir
+    const { data: inserted, error: insertError } = await supabase
+      .from('transactions')
+      .insert(toInsert)
+      .select('id');
+
+    if (insertError) {
+      console.error(`[Force Sync] ❌ Insert error:`, insertError);
+      return res.status(500).json({
+        error: 'Insert failed',
+        details: insertError.message,
+        code: insertError.code,
+        hint: insertError.hint,
+        sample_transaction: toInsert[0]
+      });
+    }
+
+    console.log(`[Force Sync] ✅ Inserted ${inserted?.length || 0} transactions`);
+
+    res.json({
+      success: true,
+      inserted: inserted?.length || 0,
+      sample: toInsert[0]
+    });
+
+  } catch (error: any) {
+    console.error(`[Force Sync] ❌ Error:`, error);
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
 // ROTA PÚBLICA: Diagnóstico de transações (requer admin_key)
 // IMPORTANTE: Deve vir ANTES das rotas protegidas /api/bank
 app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
