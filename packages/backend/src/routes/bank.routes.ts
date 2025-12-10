@@ -19,6 +19,116 @@ function toISOString(timestamp: number | undefined): string | null {
 }
 
 /**
+ * Limpa contas duplicadas com saldo zero para um usuário
+ * Mantém apenas a conta com saldo maior (ou a mais antiga se todas tiverem saldo zero)
+ * Agrupa por provider_account_id, bank_name ou IBAN para identificar duplicatas
+ */
+async function cleanupDuplicateAccounts(userId: string): Promise<number> {
+  try {
+    // Buscar todas as contas do usuário (exceto desconectadas)
+    const { data: accounts, error } = await supabase
+      .from('bank_accounts')
+      .select('id, bank_name, account_type, balance, iban, provider_account_id, created_at, status')
+      .eq('user_id', userId)
+      .neq('status', 'disconnected')
+      .order('created_at', { ascending: true }); // Mais antigas primeiro
+
+    if (error || !accounts || accounts.length <= 1) {
+      return 0; // Nada para limpar
+    }
+
+    // Agrupar contas por identificador único (provider_account_id > IBAN > bank_name+type)
+    const groups: Map<string, typeof accounts> = new Map();
+
+    for (const account of accounts) {
+      // Criar chave de agrupamento
+      let groupKey: string;
+
+      if (account.provider_account_id) {
+        groupKey = `provider:${account.provider_account_id}`;
+      } else if (account.iban) {
+        groupKey = `iban:${account.iban.replace(/[\s.\-]/g, '')}`;
+      } else {
+        groupKey = `bank:${account.bank_name}:${account.account_type}`;
+      }
+
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, []);
+      }
+      groups.get(groupKey)!.push(account);
+    }
+
+    // Identificar contas duplicadas para deletar
+    const accountsToDelete: string[] = [];
+
+    for (const [groupKey, groupAccounts] of groups) {
+      if (groupAccounts.length <= 1) continue; // Não é duplicata
+
+      console.log(`[Bank Cleanup] 🔍 Found ${groupAccounts.length} duplicate accounts for group: ${groupKey}`);
+
+      // Ordenar: primeiro por saldo (maior primeiro), depois por data de criação (mais antiga primeiro)
+      groupAccounts.sort((a, b) => {
+        const balanceA = a.balance || 0;
+        const balanceB = b.balance || 0;
+
+        // Priorizar conta com saldo maior que zero
+        if (balanceA > 0 && balanceB <= 0) return -1;
+        if (balanceB > 0 && balanceA <= 0) return 1;
+        if (balanceA !== balanceB) return balanceB - balanceA; // Maior saldo primeiro
+
+        // Se saldos iguais, manter a mais antiga
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
+
+      // Manter a primeira (melhor candidata), deletar as outras
+      const toKeep = groupAccounts[0];
+      const toDelete = groupAccounts.slice(1);
+
+      console.log(`[Bank Cleanup] ✅ Keeping: ${toKeep.bank_name} (balance: ${toKeep.balance}, id: ${toKeep.id})`);
+
+      for (const acc of toDelete) {
+        console.log(`[Bank Cleanup] 🗑️ Marking for deletion: ${acc.bank_name} (balance: ${acc.balance}, id: ${acc.id})`);
+        accountsToDelete.push(acc.id);
+      }
+    }
+
+    // Deletar contas duplicadas e suas transações
+    if (accountsToDelete.length > 0) {
+      console.log(`[Bank Cleanup] 🗑️ Deleting ${accountsToDelete.length} duplicate accounts...`);
+
+      // Primeiro, deletar transações das contas duplicadas
+      const { error: transError } = await supabase
+        .from('transactions')
+        .delete()
+        .in('account_id', accountsToDelete);
+
+      if (transError) {
+        console.error('[Bank Cleanup] ⚠️ Error deleting transactions:', transError);
+      }
+
+      // Depois, deletar as contas
+      const { error: deleteError } = await supabase
+        .from('bank_accounts')
+        .delete()
+        .in('id', accountsToDelete);
+
+      if (deleteError) {
+        console.error('[Bank Cleanup] ⚠️ Error deleting accounts:', deleteError);
+        return 0;
+      }
+
+      console.log(`[Bank Cleanup] ✅ Successfully deleted ${accountsToDelete.length} duplicate accounts`);
+      return accountsToDelete.length;
+    }
+
+    return 0;
+  } catch (error: any) {
+    console.error('[Bank Cleanup] ❌ Error cleaning up duplicates:', error.message);
+    return 0;
+  }
+}
+
+/**
  * GET /api/bank/available
  * Lista os bancos disponíveis para conexão
  */
@@ -621,25 +731,44 @@ router.post('/callback', async (req: Request, res: Response) => {
       console.error('⚠️ [Bank Callback] Erro ao sincronizar budgets (não crítico):', syncError);
     }
 
+    // 🧹 LIMPAR CONTAS DUPLICADAS (saldo zero)
+    // Remove automaticamente contas duplicadas com saldo zero que podem ter sido criadas
+    try {
+      const deletedCount = await cleanupDuplicateAccounts(user_id);
+      if (deletedCount > 0) {
+        console.log(`[Bank Callback] 🧹 Cleaned up ${deletedCount} duplicate accounts`);
+      }
+    } catch (cleanupError) {
+      console.error('⚠️ [Bank Callback] Erro ao limpar duplicatas (não crítico):', cleanupError);
+    }
+
+    // Buscar contas atualizadas após cleanup
+    const { data: finalAccounts } = await supabase
+      .from('bank_accounts')
+      .select('id, bank_name, iban, balance, currency')
+      .eq('user_id', user_id)
+      .neq('status', 'disconnected')
+      .order('created_at', { ascending: false });
+
     console.log('[Bank] 🏦 ========================================');
     console.log('[Bank] 🏦 ====== BANK CALLBACK SUCCESS ======');
     console.log('[Bank] 🏦 ========================================');
-    console.log(`[Bank] ✅ Saved ${savedAccounts.length} accounts`);
-    savedAccounts.forEach((acc, idx) => {
+    console.log(`[Bank] ✅ Final accounts count: ${finalAccounts?.length || 0}`);
+    (finalAccounts || []).forEach((acc, idx) => {
       console.log(`[Bank] ✅ Account ${idx + 1}: ${acc.bank_name} (${acc.id})`);
     });
     console.log('[Bank] ✅ Timestamp:', new Date().toISOString());
 
     res.json({
       success: true,
-      accounts: savedAccounts.map(acc => ({
+      accounts: (finalAccounts || []).map(acc => ({
         id: acc.id,
         bank_name: acc.bank_name,
         iban: acc.iban,
         balance: acc.balance,
         currency: acc.currency,
       })),
-      message: savedAccounts.length > 0
+      message: (finalAccounts?.length || 0) > 0
         ? 'Conta conectada com sucesso! Vá para Contas e clique em Sincronizar se as transações ainda não apareceram.'
         : 'Conexão iniciada. A conta pode demorar alguns segundos para aparecer. Atualize a página Contas.',
     });
@@ -669,10 +798,23 @@ router.post('/callback', async (req: Request, res: Response) => {
  * GET /api/bank/accounts
  * Lista todas as contas conectadas
  * NOTA: O saldo (balance) é atualizado via Pluggy quando o usuário clica em "Sincronizar"
+ * NOTA: Executa limpeza automática de contas duplicadas com saldo zero
  */
 router.get('/accounts', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!; // Obtido do token JWT
+
+    // 🧹 Limpar contas duplicadas automaticamente ANTES de retornar
+    // Isso garante que o usuário nunca veja duplicatas
+    try {
+      const deletedCount = await cleanupDuplicateAccounts(user_id);
+      if (deletedCount > 0) {
+        console.log(`[Bank GET] 🧹 Cleaned up ${deletedCount} duplicate accounts for user ${user_id}`);
+      }
+    } catch (cleanupErr) {
+      console.error('[Bank GET] ⚠️ Error cleaning up duplicates:', cleanupErr);
+      // Continua mesmo se cleanup falhar
+    }
 
     const { data: accounts, error } = await supabase
       .from('bank_accounts')
