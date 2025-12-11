@@ -62,6 +62,7 @@ const SUBCATEGORIES_CONFIG: SubcategoryConfig[] = [
   { category: 'Banco e Seguradoras', subcategory: 'Seguradoras', icon: '🛡️', defaultTipo: 'fixo', description: 'Seguros diversos' },
   { category: 'Banco e Seguradoras', subcategory: 'Empréstimos Bancários', icon: '💰', defaultTipo: 'fixo', description: 'Parcelas de empréstimos' },
   { category: 'Banco e Seguradoras', subcategory: 'Financiamentos', icon: '📋', defaultTipo: 'fixo', description: 'Parcelas de financiamentos' },
+  { category: 'Banco e Seguradoras', subcategory: 'Cheque Especial', icon: '💳', defaultTipo: 'variavel', description: 'Juros de cheque especial e limite de conta' },
 
   // PET
   { category: 'Pet', subcategory: 'Alimentação', icon: '🦴', defaultTipo: 'variavel', description: 'Ração e petiscos' },

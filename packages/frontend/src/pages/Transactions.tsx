@@ -34,7 +34,7 @@ const Transactions = () => {
     'Transporte': ['Apps de Transporte', 'Combustível e Pedágio', 'Transporte Público', 'Seguros', 'Estacionamentos'],
     'Compras': ['E-commerce', 'Moda e Vestuário', 'Tecnologia'],
     'Casa': ['Construção e Reforma', 'Móveis e Decoração'],
-    'Banco e Seguradoras': ['Bancos e Fintechs', 'Seguradoras', 'Empréstimos Bancários', 'Financiamentos'],
+    'Banco e Seguradoras': ['Bancos e Fintechs', 'Seguradoras', 'Empréstimos Bancários', 'Financiamentos', 'Cheque Especial'],
     'Contas': ['Telefonia e Internet', 'Energia e Água', 'Boletos e Débitos', 'Condomínio', 'Aluguel de Eletrodomésticos', 'Aluguel de Imóvel'],
     'Educação': ['Livrarias e Papelarias', 'Cursos e Ensino'],
     'Pet': ['Alimentação', 'Médico', 'Tratamentos', 'Seguradoras'],

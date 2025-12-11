@@ -443,6 +443,26 @@ const BRAZILIAN_CATEGORY_RULES: CategoryRule[] = [
     priority: 9,
   },
 
+  // 💳 BANCO E SEGURADORAS - Cheque Especial
+  {
+    category: 'Banco e Seguradoras',
+    subcategory: 'Cheque Especial',
+    keywords: [
+      'cheque especial', 'limite da conta', 'juros limite', 'juros cheque',
+      'utilizacao limite', 'encargos limite', 'juros s/ limite', 'juros sobre limite'
+    ],
+    brands: [],
+    patterns: [
+      /juros.*limite/i,
+      /cheque\s*especial/i,
+      /encargos.*limite/i,
+      /utilizacao.*limite/i
+    ],
+    icon: '💳',
+    color: '#F44336', // Vermelho para indicar que é despesa/custo
+    priority: 11, // Alta prioridade para não confundir com receitas
+  },
+
   // 📱 TELEFONIA E INTERNET (Merge: Comunicação/Internet e Comunicação/Telefone)
   {
     category: 'Contas',
@@ -838,6 +858,7 @@ export const SUBCATEGORY_TO_CATEGORY_MAP: Record<string, string> = {
   'Seguradoras': 'Banco e Seguradoras',
   'Empréstimos Bancários': 'Banco e Seguradoras',
   'Financiamentos': 'Banco e Seguradoras',
+  'Cheque Especial': 'Banco e Seguradoras',
 
   // Contas
   'Telefonia e Internet': 'Contas',
