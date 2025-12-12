@@ -547,32 +547,32 @@ const LandingPage = () => {
               <div className="space-y-8">
                 <div className="text-right lg:text-right">
                   <div className="flex items-center justify-end gap-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">Limite de Gastos</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Custos Fixos e Variáveis</h3>
                     <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
                       <Target className="w-5 h-5" />
                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm">Defina quanto gastar em cada categoria e economize sem esforço.</p>
+                  <p className="text-gray-600 text-sm">Defina custos fixos, variáveis e de investimentos. Tenha uma visão clara de onde economizar.</p>
                 </div>
 
                 <div className="text-right lg:text-right">
                   <div className="flex items-center justify-end gap-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">Alertas Inteligentes</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Alertas de Limite</h3>
                     <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
                       <Zap className="w-5 h-5" />
                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm">Receba avisos quando estiver próximo do limite. Sem surpresas no fim do mês!</p>
+                  <p className="text-gray-600 text-sm">Receba avisos quando estiver próximo ou ultrapassar o limite. Sem surpresas no fim do mês!</p>
                 </div>
 
                 <div className="text-right lg:text-right">
                   <div className="flex items-center justify-end gap-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">Visão Mensal</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Gráficos Mensais</h3>
                     <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
                       <TrendingUp className="w-5 h-5" />
                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm">Acompanhe mês a mês seu progresso e veja sua evolução financeira.</p>
+                  <p className="text-gray-600 text-sm">Barras mensais mostram a distribuição dos gastos por categoria para melhor definir seus budgets.</p>
                 </div>
               </div>
 
@@ -592,9 +592,9 @@ const LandingPage = () => {
                     <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
                       <PieChart className="w-5 h-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Por Categoria</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Regra 50/30/20</h3>
                   </div>
-                  <p className="text-gray-600 text-sm">Crie orçamentos separados: Alimentação, Lazer, Transporte e mais.</p>
+                  <p className="text-gray-600 text-sm">Siga a regra de ouro: 50% fixos, 30% variáveis, 20% investimentos. O sistema te avisa se sair do limite.</p>
                 </div>
 
                 <div className="text-left">
@@ -602,9 +602,9 @@ const LandingPage = () => {
                     <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
                       <Shield className="w-5 h-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Controle Total</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Subcategorias</h3>
                   </div>
-                  <p className="text-gray-600 text-sm">Saiba exatamente quanto já gastou e quanto ainda pode gastar.</p>
+                  <p className="text-gray-600 text-sm">Detalhe cada categoria em subcategorias. Veja exatamente onde está gastando mais dentro de cada área.</p>
                 </div>
 
                 <div className="text-left">
@@ -612,9 +612,9 @@ const LandingPage = () => {
                     <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
                       <Star className="w-5 h-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Metas Financeiras</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Saldo Disponível</h3>
                   </div>
-                  <p className="text-gray-600 text-sm">Transforme seus sonhos em metas alcançáveis com planejamento.</p>
+                  <p className="text-gray-600 text-sm">Veja em tempo real quanto ainda pode gastar no mês. Verde = dentro do limite, Vermelho = acima.</p>
                 </div>
               </div>
             </div>
