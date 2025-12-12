@@ -308,15 +308,15 @@ const LandingPage = () => {
                 </h2>
 
                 {/* Passos */}
-                <div className="space-y-10">
+                <div className="space-y-6">
                   <div className="flex">
                     <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
                     <div>
-                      <h4 className="font-bold text-gray-900 text-xl mb-3">
+                      <h4 className="font-bold text-gray-900 text-lg mb-2">
                         1º Passo – Conecte seu banco ao Guru do Dindin
                       </h4>
-                      <p className="text-gray-500 text-lg">
-                        Integre sua conta bancária ao Guru do Dindin para começar a sincronizar seus dados automaticamente, usando nosso parceiro Pluggy.
+                      <p className="text-gray-500">
+                        Integre sua conta bancária para sincronizar seus dados automaticamente via Open Finance.
                       </p>
                     </div>
                   </div>
@@ -324,13 +324,53 @@ const LandingPage = () => {
                   <div className="flex">
                     <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
                     <div>
-                      <h4 className="font-bold text-gray-900 text-xl mb-3">
+                      <h4 className="font-bold text-gray-900 text-lg mb-2">
                         2º Passo – Importe seu histórico de transações
                       </h4>
-                      <p className="text-gray-500 text-lg">
-                        Traga as movimentações dos últimos dias e tenha tudo em um só lugar.
+                      <p className="text-gray-500">
+                        Traga as movimentações dos últimos 90 dias e tenha tudo em um só lugar.
                       </p>
                     </div>
+                  </div>
+
+                  <div className="flex">
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg mb-2">
+                        3º Passo – Conecte cartões de crédito e débito
+                      </h4>
+                      <p className="text-gray-500">
+                        PF e PJ em um só lugar. Tenha controle total de seus gastos e receitas.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex">
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg mb-2">
+                        4º Passo – Categorize com auxílio da IA
+                      </h4>
+                      <p className="text-gray-500">
+                        Suas transações são categorizadas automaticamente. Recategorize com 1 clique se preferir.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex">
+                    <div className="w-1 bg-yellow-400 rounded-full mr-4 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-lg mb-2">
+                        5º Passo – Defina Budgets por categoria
+                      </h4>
+                      <p className="text-gray-500">
+                        Saiba onde e quanto você excedeu em cada categoria. Controle seus limites!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 text-center">
+                    <span className="text-primary-600 font-bold text-lg">E muito mais!</span>
                   </div>
                 </div>
               </div>
