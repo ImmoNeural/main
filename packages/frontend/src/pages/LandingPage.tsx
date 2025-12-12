@@ -170,42 +170,53 @@ const LandingPage = () => {
         </header>
 
         {/* Hero Section */}
-        <section className="pt-32 pb-0 bg-gradient-to-br from-primary-600 via-primary-500 to-primary-600 text-white relative overflow-hidden">
+        <section className="pt-32 pb-0 bg-gradient-to-br from-primary-600 via-primary-500 to-primary-600 text-white relative overflow-hidden min-h-[600px]">
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
             <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl"></div>
           </div>
 
-          <div className="max-w-7xl mx-auto relative px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-8 items-end">
-              {/* Left side - Text */}
-              <div className="text-center lg:text-left pb-12 lg:pb-20">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                  A Organização Financeira<br />
-                  <span className="text-yellow-300">que Você Precisa</span>
-                </h1>
-                <p className="text-xl sm:text-2xl mb-8 text-white/90">
-                  Controle seus gastos com apenas um clique usando o Open Finance
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Link
-                    to="/register"
-                    className="bg-white text-primary-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl inline-flex items-center justify-center space-x-2"
-                  >
-                    <span>Experimente grátis!</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
+          <div className="relative h-full">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid lg:grid-cols-2 gap-8 items-center">
+                {/* Left side - Text */}
+                <div className="text-center lg:text-left py-12 lg:py-20">
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                    A Organização Financeira<br />
+                    <span className="text-yellow-300">que Você Precisa</span>
+                  </h1>
+                  <p className="text-xl sm:text-2xl mb-8 text-white/90">
+                    Controle seus gastos com apenas um clique usando o Open Finance
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <Link
+                      to="/register"
+                      className="bg-white text-primary-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl inline-flex items-center justify-center space-x-2"
+                    >
+                      <span>Experimente grátis!</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </Link>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Right side - Visual */}
-              <div className="flex items-end justify-center lg:justify-end">
-                <img
-                  src="/Gemini.png"
-                  alt="Guru do Dindin Dashboard"
-                  className="w-full max-w-2xl h-auto object-contain"
-                />
-              </div>
+            {/* Right side - Visual (absolute positioned to extend to edges) */}
+            <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-1/2">
+              <img
+                src="/Gemini.png"
+                alt="Guru do Dindin Dashboard"
+                className="absolute right-0 bottom-0 h-full w-auto max-w-none object-cover object-left"
+              />
+            </div>
+
+            {/* Mobile image */}
+            <div className="lg:hidden flex justify-center px-4">
+              <img
+                src="/Gemini.png"
+                alt="Guru do Dindin Dashboard"
+                className="w-full max-w-md h-auto"
+              />
             </div>
           </div>
         </section>
