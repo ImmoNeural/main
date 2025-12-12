@@ -503,7 +503,7 @@ const LandingPage = () => {
                 <img
                   src="/Categorizacao%20de%20despezas.png"
                   alt="Categorização Inteligente de Despesas"
-                  className="max-w-xl w-full h-auto rounded-xl shadow-2xl border border-gray-100"
+                  className="max-w-2xl w-full h-auto rounded-xl shadow-2xl border border-gray-100"
                 />
               </div>
 
@@ -581,7 +581,7 @@ const LandingPage = () => {
                 <img
                   src="/Budget.png"
                   alt="Controle de Orçamentos"
-                  className="max-w-xl w-full h-auto rounded-xl shadow-2xl border border-gray-100"
+                  className="max-w-2xl w-full h-auto rounded-xl shadow-2xl border border-gray-100"
                 />
               </div>
 
