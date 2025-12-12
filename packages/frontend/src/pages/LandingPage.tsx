@@ -517,7 +517,7 @@ const LandingPage = () => {
                 <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2">
                   <div className="absolute inset-0 bg-gradient-to-t from-primary-900/80 via-primary-900/20 to-transparent z-10"></div>
                   <img
-                    src="/categorizacao.png"
+                    src="/Categorizacao%20de%20despezas.png"
                     alt="Categorização Inteligente de Despesas"
                     className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
                   />
@@ -543,7 +543,7 @@ const LandingPage = () => {
                 <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2">
                   <div className="absolute inset-0 bg-gradient-to-t from-primary-900/80 via-primary-900/20 to-transparent z-10"></div>
                   <img
-                    src="/budget.png"
+                    src="/Budget.png"
                     alt="Controle de Orçamentos"
                     className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
                   />
