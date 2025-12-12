@@ -202,7 +202,7 @@ const LandingPage = () => {
               <div className="flex items-center justify-center mt-8 lg:mt-0">
                 <div className="relative">
                   <img
-                    src="/marketing.png"
+                    src="/Gemini.png"
                     alt="Guru do Dindin Dashboard"
                     className="max-w-full h-auto rounded-2xl lg:rounded-3xl shadow-2xl"
                   />
