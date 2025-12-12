@@ -186,6 +186,7 @@ export const requireActiveSubscription = (req: Request, res: Response, next: Nex
     '/api/bank/available',     // Listar bancos (público)
     '/api/bank/connect',        // Conectar banco (permite primeira conexão)
     '/api/bank/callback',       // Callback de conexão (permite primeira conexão)
+    '/api/transactions/import', // Importação CSV manual (não usa Open Finance)
   ];
 
   // Verificar se é rota isenta
