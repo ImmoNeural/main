@@ -464,7 +464,7 @@ const LandingPage = () => {
             </div>
 
             {/* Bloco Categorização: Features lado a lado com imagem no centro */}
-            <div className="grid lg:grid-cols-3 gap-8 items-center mb-24">
+            <div className="grid lg:grid-cols-[1fr_2fr_1fr] gap-6 items-center mb-24">
               {/* Features Esquerda */}
               <div className="space-y-8">
                 <div className="text-right lg:text-right">
@@ -542,7 +542,7 @@ const LandingPage = () => {
             </div>
 
             {/* Bloco Budget: Features lado a lado com imagem no centro */}
-            <div className="grid lg:grid-cols-3 gap-8 items-center">
+            <div className="grid lg:grid-cols-[1fr_2fr_1fr] gap-6 items-center">
               {/* Features Esquerda */}
               <div className="space-y-8">
                 <div className="text-right lg:text-right">
