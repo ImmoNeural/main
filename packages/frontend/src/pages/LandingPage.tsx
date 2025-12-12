@@ -24,40 +24,6 @@ const LandingPage = () => {
     }
   };
 
-  // Primeiro grupo (cards 1-3): Categorização, Segurança, Conexão Bancos
-  // Segundo grupo (cards 4-6): Acesso, Orçamentos, Objetivos
-  const features = [
-    {
-      icon: <PieChart className="w-8 h-8" />,
-      title: 'Categorização Inteligente',
-      description: 'Suas transações são categorizadas automaticamente usando IA, facilitando o controle.'
-    },
-    {
-      icon: <Shield className="w-8 h-8" />,
-      title: '100% Seguro',
-      description: 'Seus dados são criptografados e protegidos com as melhores práticas de segurança.'
-    },
-    {
-      icon: <Zap className="w-8 h-8" />,
-      title: 'Conexão com Bancos',
-      description: 'Conecte suas contas bancárias e tenha tudo em um só lugar.'
-    },
-    {
-      icon: <Smartphone className="w-8 h-8" />,
-      title: 'Acesso em Qualquer Lugar',
-      description: 'Acesse sua conta de qualquer dispositivo, desktop ou mobile.'
-    },
-    {
-      icon: <TrendingUp className="w-8 h-8" />,
-      title: 'Controle de Orçamentos (Budgets)',
-      description: 'Defina limites de gastos por categoria e acompanhe em tempo real.'
-    },
-    {
-      icon: <Target className="w-8 h-8" />,
-      title: 'Objetivos Financeiros',
-      description: 'Defina metas e acompanhe seu progresso para alcançar seus sonhos.'
-    }
-  ];
 
   const testimonials = [
     {
@@ -497,63 +463,159 @@ const LandingPage = () => {
               </p>
             </div>
 
-            {/* Primeiro bloco: Cards à esquerda + Imagem à direita */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-              {/* Cards */}
-              <div className="space-y-6">
-                {features.slice(0, 3).map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-4 bg-gray-50 p-6 rounded-xl shadow-md hover:shadow-lg transition-all"
-                  >
-                    <div className="bg-primary-100 text-primary-600 w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {feature.icon}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">{feature.title}</h3>
-                      <p className="text-gray-600 text-sm">{feature.description}</p>
+            {/* Bloco Categorização: Features lado a lado com imagem no centro */}
+            <div className="grid lg:grid-cols-3 gap-8 items-center mb-24">
+              {/* Features Esquerda */}
+              <div className="space-y-8">
+                <div className="text-right lg:text-right">
+                  <div className="flex items-center justify-end gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Categorização Inteligente</h3>
+                    <div className="bg-primary-100 text-primary-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <PieChart className="w-5 h-5" />
                     </div>
                   </div>
-                ))}
+                  <p className="text-gray-600 text-sm">Suas transações são categorizadas automaticamente usando IA. Entenda para onde vai seu dinheiro.</p>
+                </div>
+
+                <div className="text-right lg:text-right">
+                  <div className="flex items-center justify-end gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Subcategorias Detalhadas</h3>
+                    <div className="bg-primary-100 text-primary-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Target className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm">Alimentação, Transporte, Lazer, Saúde e muito mais. Organize seus gastos com precisão.</p>
+                </div>
+
+                <div className="text-right lg:text-right">
+                  <div className="flex items-center justify-end gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Recategorize com 1 Clique</h3>
+                    <div className="bg-primary-100 text-primary-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Zap className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm">Não gostou da categoria? Mude facilmente e o sistema aprende suas preferências.</p>
+                </div>
               </div>
 
-              {/* Imagem Categorização */}
-              <div className="flex justify-center lg:justify-end">
+              {/* Imagem Central */}
+              <div className="flex justify-center">
                 <img
                   src="/Categorizacao%20de%20despezas.png"
                   alt="Categorização Inteligente de Despesas"
-                  className="max-w-md w-full h-auto rounded-xl shadow-lg border border-gray-100"
+                  className="max-w-sm w-full h-auto rounded-xl shadow-2xl border border-gray-100"
                 />
+              </div>
+
+              {/* Features Direita */}
+              <div className="space-y-8">
+                <div className="text-left">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-primary-100 text-primary-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">Gráficos e Relatórios</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Visualize seus gastos em gráficos intuitivos. Saiba exatamente onde economizar.</p>
+                </div>
+
+                <div className="text-left">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-primary-100 text-primary-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">100% Seguro</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Seus dados são criptografados e protegidos. Privacidade garantida.</p>
+                </div>
+
+                <div className="text-left">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-primary-100 text-primary-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">Acesso em Qualquer Lugar</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Desktop ou mobile, acompanhe suas finanças de onde estiver.</p>
+                </div>
               </div>
             </div>
 
-            {/* Segundo bloco: Imagem à esquerda + Cards à direita */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Imagem Budget */}
-              <div className="flex justify-center lg:justify-start order-2 lg:order-1">
+            {/* Bloco Budget: Features lado a lado com imagem no centro */}
+            <div className="grid lg:grid-cols-3 gap-8 items-center">
+              {/* Features Esquerda */}
+              <div className="space-y-8">
+                <div className="text-right lg:text-right">
+                  <div className="flex items-center justify-end gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Limite de Gastos</h3>
+                    <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Target className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm">Defina quanto gastar em cada categoria e economize sem esforço.</p>
+                </div>
+
+                <div className="text-right lg:text-right">
+                  <div className="flex items-center justify-end gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Alertas Inteligentes</h3>
+                    <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Zap className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm">Receba avisos quando estiver próximo do limite. Sem surpresas no fim do mês!</p>
+                </div>
+
+                <div className="text-right lg:text-right">
+                  <div className="flex items-center justify-end gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Visão Mensal</h3>
+                    <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm">Acompanhe mês a mês seu progresso e veja sua evolução financeira.</p>
+                </div>
+              </div>
+
+              {/* Imagem Central */}
+              <div className="flex justify-center">
                 <img
                   src="/Budget.png"
                   alt="Controle de Orçamentos"
-                  className="max-w-md w-full h-auto rounded-xl shadow-lg border border-gray-100"
+                  className="max-w-sm w-full h-auto rounded-xl shadow-2xl border border-gray-100"
                 />
               </div>
 
-              {/* Cards */}
-              <div className="space-y-6 order-1 lg:order-2">
-                {features.slice(3, 6).map((feature, index) => (
-                  <div
-                    key={index + 3}
-                    className="flex items-start gap-4 bg-gray-50 p-6 rounded-xl shadow-md hover:shadow-lg transition-all"
-                  >
-                    <div className="bg-primary-100 text-primary-600 w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {feature.icon}
+              {/* Features Direita */}
+              <div className="space-y-8">
+                <div className="text-left">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <PieChart className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">{feature.title}</h3>
-                      <p className="text-gray-600 text-sm">{feature.description}</p>
-                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">Por Categoria</h3>
                   </div>
-                ))}
+                  <p className="text-gray-600 text-sm">Crie orçamentos separados: Alimentação, Lazer, Transporte e mais.</p>
+                </div>
+
+                <div className="text-left">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">Controle Total</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Saiba exatamente quanto já gastou e quanto ainda pode gastar.</p>
+                </div>
+
+                <div className="text-left">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Star className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">Metas Financeiras</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Transforme seus sonhos em metas alcançáveis com planejamento.</p>
+                </div>
               </div>
             </div>
           </div>
