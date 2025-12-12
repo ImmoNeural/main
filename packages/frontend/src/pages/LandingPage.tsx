@@ -32,8 +32,8 @@ const LandingPage = () => {
     },
     {
       icon: <TrendingUp className="w-8 h-8" />,
-      title: 'Análise em Tempo Real',
-      description: 'Acompanhe suas receitas e despesas com gráficos e relatórios atualizados.'
+      title: 'Controle de Orçamentos (Budgets)',
+      description: 'Defina limites de gastos por categoria e acompanhe em tempo real.'
     },
     {
       icon: <Shield className="w-8 h-8" />,
@@ -508,6 +508,61 @@ const LandingPage = () => {
                   <p className="text-gray-600">{feature.description}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Showcase de Funcionalidades com Imagens */}
+            <div className="mt-20 grid lg:grid-cols-2 gap-12 lg:gap-16">
+              {/* Categorização de Despesas */}
+              <div className="group">
+                <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2">
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary-900/80 via-primary-900/20 to-transparent z-10"></div>
+                  <img
+                    src="/categorizacao.png"
+                    alt="Categorização Inteligente de Despesas"
+                    className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="bg-yellow-400 p-2 rounded-lg">
+                        <PieChart className="w-6 h-6 text-gray-900" />
+                      </div>
+                      <span className="bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        IA INTEGRADA
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Categorização Inteligente</h3>
+                    <p className="text-white/90 text-sm">
+                      Suas transações são categorizadas automaticamente, dando clareza sobre para onde vai seu dinheiro.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Controle de Orçamentos */}
+              <div className="group">
+                <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2">
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary-900/80 via-primary-900/20 to-transparent z-10"></div>
+                  <img
+                    src="/budget.png"
+                    alt="Controle de Orçamentos"
+                    className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="bg-yellow-400 p-2 rounded-lg">
+                        <Target className="w-6 h-6 text-gray-900" />
+                      </div>
+                      <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        CONTROLE TOTAL
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Controle de Orçamentos</h3>
+                    <p className="text-white/90 text-sm">
+                      Defina limites de gastos por categoria e receba alertas quando estiver próximo do limite.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
