@@ -497,77 +497,63 @@ const LandingPage = () => {
               </p>
             </div>
 
-            {/* Primeiro grupo: 3 cards + imagem categorização */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {features.slice(0, 3).map((feature, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 duration-300"
-                >
-                  <div className="bg-primary-100 text-primary-600 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
-                    {feature.icon}
+            {/* Primeiro bloco: Cards à esquerda + Imagem à direita */}
+            <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
+              {/* Cards */}
+              <div className="space-y-6">
+                {features.slice(0, 3).map((feature, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-4 bg-gray-50 p-6 rounded-xl shadow-md hover:shadow-lg transition-all"
+                  >
+                    <div className="bg-primary-100 text-primary-600 w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">{feature.title}</h3>
+                      <p className="text-gray-600 text-sm">{feature.description}</p>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Imagem Categorização - efeito 3D perspectiva */}
-            <div className="mb-16 flex justify-center" style={{ perspective: '1000px' }}>
-              <div
-                className="relative max-w-2xl w-full"
-                style={{
-                  transform: 'rotateY(-8deg) rotateX(5deg)',
-                  transformStyle: 'preserve-3d'
-                }}
-              >
+              {/* Imagem Categorização */}
+              <div className="flex justify-center lg:justify-end">
                 <img
                   src="/Categorizacao%20de%20despezas.png"
                   alt="Categorização Inteligente de Despesas"
-                  className="w-full h-auto rounded-xl shadow-2xl border border-gray-200"
+                  className="max-w-sm w-full h-auto rounded-xl shadow-lg border border-gray-100"
                 />
-                {/* Sombra perspectiva */}
-                <div
-                  className="absolute -bottom-4 left-4 right-4 h-8 bg-gradient-to-t from-black/20 to-transparent blur-xl -z-10 rounded-full"
-                ></div>
               </div>
             </div>
 
-            {/* Segundo grupo: 3 cards + imagem budget */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {features.slice(3, 6).map((feature, index) => (
-                <div
-                  key={index + 3}
-                  className="bg-gray-50 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 duration-300"
-                >
-                  <div className="bg-primary-100 text-primary-600 w-16 h-16 rounded-xl flex items-center justify-center mb-4">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Imagem Budget - efeito 3D perspectiva (inclinado oposto) */}
-            <div className="flex justify-center" style={{ perspective: '1000px' }}>
-              <div
-                className="relative max-w-2xl w-full"
-                style={{
-                  transform: 'rotateY(8deg) rotateX(5deg)',
-                  transformStyle: 'preserve-3d'
-                }}
-              >
+            {/* Segundo bloco: Imagem à esquerda + Cards à direita */}
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Imagem Budget */}
+              <div className="flex justify-center lg:justify-start order-2 lg:order-1">
                 <img
                   src="/Budget.png"
                   alt="Controle de Orçamentos"
-                  className="w-full h-auto rounded-xl shadow-2xl border border-gray-200"
+                  className="max-w-md w-full h-auto rounded-xl shadow-lg border border-gray-100"
                 />
-                {/* Sombra perspectiva */}
-                <div
-                  className="absolute -bottom-4 left-4 right-4 h-8 bg-gradient-to-t from-black/20 to-transparent blur-xl -z-10 rounded-full"
-                ></div>
+              </div>
+
+              {/* Cards */}
+              <div className="space-y-6 order-1 lg:order-2">
+                {features.slice(3, 6).map((feature, index) => (
+                  <div
+                    key={index + 3}
+                    className="flex items-start gap-4 bg-gray-50 p-6 rounded-xl shadow-md hover:shadow-lg transition-all"
+                  >
+                    <div className="bg-primary-100 text-primary-600 w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">{feature.title}</h3>
+                      <p className="text-gray-600 text-sm">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
