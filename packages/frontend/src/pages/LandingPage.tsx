@@ -226,7 +226,7 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
               {/* Lado Esquerdo - Texto */}
-              <div className="order-2 lg:order-1">
+              <div className="order-1 lg:order-1">
                 {/* Header com badge */}
                 <div className="flex items-center gap-3 mb-6">
                   <span className="text-gray-900 font-semibold text-lg">Conexão Bancária</span>
@@ -283,7 +283,7 @@ const LandingPage = () => {
               </div>
 
               {/* Lado Direito - Imagem */}
-              <div className="order-1 lg:order-2 flex justify-center">
+              <div className="order-2 lg:order-2 flex justify-center">
                 <img
                   src="/bancos.png"
                   alt="Bancos conectados via Open Finance"
@@ -587,6 +587,15 @@ const LandingPage = () => {
                   </div>
                   <p className="text-gray-600 text-sm">Desktop ou mobile, acompanhe suas finanças de onde estiver.</p>
                 </div>
+
+                {/* Budget Image - Mobile Only (aparece depois de "Acesso em Qualquer Lugar") */}
+                <div className="lg:hidden mt-8">
+                  <img
+                    src="/Budget.png"
+                    alt="Controle de Orçamentos"
+                    className="w-full h-auto rounded-xl shadow-2xl border border-gray-100"
+                  />
+                </div>
               </div>
             </div>
 
@@ -625,8 +634,8 @@ const LandingPage = () => {
                 </div>
               </div>
 
-              {/* Imagem Central */}
-              <div className="flex justify-center">
+              {/* Imagem Central - Hidden on mobile (shown above in "Acesso em Qualquer Lugar") */}
+              <div className="hidden lg:flex justify-center">
                 <img
                   src="/Budget.png"
                   alt="Controle de Orçamentos"
