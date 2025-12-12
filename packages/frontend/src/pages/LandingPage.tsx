@@ -513,13 +513,25 @@ const LandingPage = () => {
               ))}
             </div>
 
-            {/* Imagem Categorização - limpa, sem overlay */}
-            <div className="mb-16 flex justify-center">
-              <img
-                src="/Categorizacao%20de%20despezas.png"
-                alt="Categorização Inteligente de Despesas"
-                className="max-w-4xl w-full h-auto rounded-2xl shadow-xl"
-              />
+            {/* Imagem Categorização - efeito 3D perspectiva */}
+            <div className="mb-16 flex justify-center" style={{ perspective: '1000px' }}>
+              <div
+                className="relative max-w-2xl w-full"
+                style={{
+                  transform: 'rotateY(-8deg) rotateX(5deg)',
+                  transformStyle: 'preserve-3d'
+                }}
+              >
+                <img
+                  src="/Categorizacao%20de%20despezas.png"
+                  alt="Categorização Inteligente de Despesas"
+                  className="w-full h-auto rounded-xl shadow-2xl border border-gray-200"
+                />
+                {/* Sombra perspectiva */}
+                <div
+                  className="absolute -bottom-4 left-4 right-4 h-8 bg-gradient-to-t from-black/20 to-transparent blur-xl -z-10 rounded-full"
+                ></div>
+              </div>
             </div>
 
             {/* Segundo grupo: 3 cards + imagem budget */}
@@ -538,13 +550,25 @@ const LandingPage = () => {
               ))}
             </div>
 
-            {/* Imagem Budget - limpa, sem overlay */}
-            <div className="flex justify-center">
-              <img
-                src="/Budget.png"
-                alt="Controle de Orçamentos"
-                className="max-w-4xl w-full h-auto rounded-2xl shadow-xl"
-              />
+            {/* Imagem Budget - efeito 3D perspectiva (inclinado oposto) */}
+            <div className="flex justify-center" style={{ perspective: '1000px' }}>
+              <div
+                className="relative max-w-2xl w-full"
+                style={{
+                  transform: 'rotateY(8deg) rotateX(5deg)',
+                  transformStyle: 'preserve-3d'
+                }}
+              >
+                <img
+                  src="/Budget.png"
+                  alt="Controle de Orçamentos"
+                  className="w-full h-auto rounded-xl shadow-2xl border border-gray-200"
+                />
+                {/* Sombra perspectiva */}
+                <div
+                  className="absolute -bottom-4 left-4 right-4 h-8 bg-gradient-to-t from-black/20 to-transparent blur-xl -z-10 rounded-full"
+                ></div>
+              </div>
             </div>
           </div>
         </section>
