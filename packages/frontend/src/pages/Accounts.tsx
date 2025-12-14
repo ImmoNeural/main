@@ -102,7 +102,7 @@ const Accounts = () => {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
 
   // Get subscription info for plan-based restrictions
-  const { planType, isSubscriptionActive } = useSubscription();
+  const { planType } = useSubscription();
 
   // Determine if Open Finance connection is allowed based on plan
   const isManualPlan = planType === 'manual';
@@ -301,7 +301,7 @@ const Accounts = () => {
               <span className="text-sm sm:text-base">Conectar Banco</span>
             </button>
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
-              Limite de {maxAccounts} {maxAccounts === 1 ? 'conta' : 'contas'} atingido. Faça upgrade para conectar mais.
+              Limite de {maxAccounts} contas atingido. Faça upgrade para conectar mais.
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
             </div>
           </div>

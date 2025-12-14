@@ -35,11 +35,7 @@ const Transactions = () => {
   const isConectadoPlusPlan = planType === 'conectado_plus';
 
   // Categorize button: disabled for manual, enabled without AI for conectado, full AI for conectado_plus
-  const canUseCategorize = !isManualPlan;
   const canUseAI = isConectadoPlusPlan;
-
-  // Open Finance: disabled for manual plan
-  const canUseOpenFinance = !isManualPlan;
 
   // Mapeamento de subcategorias por categoria
   const subcategoriesMap: Record<string, string[]> = {
