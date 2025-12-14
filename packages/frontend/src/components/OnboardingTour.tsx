@@ -4,24 +4,18 @@ import {
   ChevronRight,
   ChevronLeft,
   Wallet,
-  CreditCard,
-  PieChart,
-  Sparkles,
   Settings,
   CheckCircle,
   ArrowRight,
-  Banknote,
-  LayoutDashboard,
-  Receipt
 } from 'lucide-react';
 
 interface OnboardingStep {
   id: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
+  image?: string; // Caminho para imagem
   tips?: string[];
-  highlight?: string; // CSS selector to highlight
 }
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -40,7 +34,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'connect-bank',
     title: '1. Conecte sua Conta Bancária',
     description: 'O primeiro passo é conectar sua conta bancária. Usamos Open Finance (regulado pelo Banco Central) para importar suas transações automaticamente.',
-    icon: <CreditCard className="w-12 h-12 text-blue-500" />,
+    image: '/bancos_arq.png',
     tips: [
       'Vá em "Contas" no menu lateral',
       'Clique em "Conectar Banco"',
@@ -52,7 +46,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'accounts',
     title: '2. Página de Contas',
     description: 'Na página de Contas você pode gerenciar todas as suas contas conectadas, ver saldos atualizados e sincronizar transações.',
-    icon: <Banknote className="w-12 h-12 text-green-500" />,
+    image: '/bancos_arq.png',
     tips: [
       'Clique em "Sincronizar" para atualizar transações',
       'Use "Usar no Dashboard" para selecionar a conta ativa',
@@ -64,7 +58,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'transactions',
     title: '3. Página de Transações',
     description: 'Aqui você vê todas as transações da conta selecionada. Pode filtrar por período, categoria e tipo (receita/despesa).',
-    icon: <Receipt className="w-12 h-12 text-purple-500" />,
+    image: '/Categorizacao de despezas.png',
     tips: [
       'Use os filtros para encontrar transações específicas',
       'Clique na categoria para alterar manualmente',
@@ -76,9 +70,9 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'categorize',
     title: '4. Categorize suas Transações',
     description: 'A categorização ajuda você a entender para onde vai seu dinheiro. Use a IA para categorizar automaticamente ou faça manualmente.',
-    icon: <Sparkles className="w-12 h-12 text-amber-500" />,
+    image: '/Categorizacao de despezas.png',
     tips: [
-      'Clique em "Categorizar" para usar IA (planos Conectado)',
+      'Clique em "Categorizar" para usar IA',
       'A IA aprende com suas escolhas ao longo do tempo',
       'Transações em cinza ainda não foram categorizadas',
       'Ao categorizar uma, transações similares são sugeridas',
@@ -88,7 +82,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'dashboard',
     title: '5. Dashboard - Visão Geral',
     description: 'O Dashboard mostra um resumo completo das suas finanças: saldo, receitas, despesas e gráficos de evolução.',
-    icon: <LayoutDashboard className="w-12 h-12 text-indigo-500" />,
+    image: '/marketing.png',
     tips: [
       'Veja o saldo atual da conta selecionada',
       'Acompanhe receitas vs despesas',
@@ -100,7 +94,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'budget',
     title: '6. Orçamentos (Opcional)',
     description: 'Defina limites de gastos por categoria para controlar melhor suas finanças e receber alertas.',
-    icon: <PieChart className="w-12 h-12 text-rose-500" />,
+    image: '/Budget.png',
     tips: [
       'Acesse "Orçamentos" no menu',
       'Defina quanto quer gastar por categoria',
@@ -182,9 +176,9 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
         {/* Progress bar */}
-        <div className="h-1 bg-gray-100">
+        <div className="h-1 bg-gray-100 sticky top-0">
           <div
             className="h-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-500"
             style={{ width: `${progress}%` }}
@@ -194,7 +188,7 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
         {/* Close button */}
         <button
           onClick={handleSkip}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors z-10"
           title="Pular tour"
         >
           <X className="w-5 h-5" />
@@ -209,11 +203,21 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
             </span>
           </div>
 
-          {/* Icon */}
+          {/* Image or Icon */}
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-gray-50 rounded-full">
-              {step.icon}
-            </div>
+            {step.image ? (
+              <div className="w-full max-w-sm rounded-xl overflow-hidden shadow-lg border border-gray-200">
+                <img
+                  src={step.image}
+                  alt={step.title}
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            ) : step.icon ? (
+              <div className="p-4 bg-gray-50 rounded-full">
+                {step.icon}
+              </div>
+            ) : null}
           </div>
 
           {/* Title */}
