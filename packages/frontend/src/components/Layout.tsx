@@ -1,15 +1,18 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings, PlusCircle } from 'lucide-react';
+import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings, PlusCircle, HelpCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
+import { useOnboarding } from '../hooks/useOnboarding';
 import { useState } from 'react';
 import ImpersonationBanner from './ImpersonationBanner';
+import OnboardingTour from './OnboardingTour';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { isTrialActive, daysRemaining, isExpired, subscription } = useSubscription();
+  const { showOnboarding, completeOnboarding, skipOnboarding, resetOnboarding } = useOnboarding();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
@@ -29,6 +32,13 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+      {/* Onboarding Tour */}
+      {showOnboarding && (
+        <OnboardingTour
+          onComplete={completeOnboarding}
+          onSkip={skipOnboarding}
+        />
+      )}
       {/* Sidebar - Desktop apenas */}
       <aside
         className={`hidden lg:flex bg-gradient-to-b from-primary-700 to-primary-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0 z-40 flex-col
@@ -113,6 +123,14 @@ const Layout = () => {
                 </div>
               </div>
               <button
+                onClick={resetOnboarding}
+                className="w-full flex items-center space-x-3 px-3 py-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                title="Ver tutorial novamente"
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span className="text-sm font-medium">Tutorial</span>
+              </button>
+              <button
                 onClick={handleLogout}
                 className="w-full flex items-center space-x-3 px-3 py-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
               >
@@ -121,13 +139,22 @@ const Layout = () => {
               </button>
             </div>
           ) : (
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
-              title="Sair"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={resetOnboarding}
+                className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                title="Ver tutorial"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                title="Sair"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           )}
         </div>
 
