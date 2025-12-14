@@ -40,7 +40,7 @@ const Plans = () => {
       type: 'manual',
       name: 'Plano Manual',
       description: 'Controle manual das suas finanças',
-      monthlyPrice: 9.90,
+      monthlyPrice: 13.90,
       maxAccounts: 0,
       icon: <Shield className="w-8 h-8" />,
       features: [
@@ -56,7 +56,7 @@ const Plans = () => {
       type: 'conectado',
       name: 'Plano Conectado',
       description: 'Ideal para quem quer agilidade',
-      monthlyPrice: 19.90,
+      monthlyPrice: 29.90,
       maxAccounts: 2,
       popular: true,
       icon: <Zap className="w-8 h-8" />,
@@ -73,7 +73,7 @@ const Plans = () => {
       type: 'conectado_plus',
       name: 'Plano Conectado Plus',
       description: 'Para quem tem múltiplas contas',
-      monthlyPrice: 29.90,
+      monthlyPrice: 41.90,
       maxAccounts: 4,
       icon: <Crown className="w-8 h-8" />,
       features: [
