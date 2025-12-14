@@ -20,18 +20,23 @@ import openBankingService from './services/openBanking.service';
 
 const app = express();
 
-// Middleware - CORS configurado para aceitar Netlify e localhost
+// Middleware - CORS configurado para aceitar Netlify, localhost e Capacitor (mobile)
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
+      'https://localhost',           // Capacitor Android
+      'capacitor://localhost',       // Capacitor iOS
+      'http://localhost',            // Capacitor Android alternativo
       'https://gurudodindin.com.br',
+      'https://www.gurudodindin.com.br',
       'http://gurudodindin.com.br',
       process.env.FRONTEND_URL,
     ];
 
-    // Permitir qualquer domínio *.netlify.app
+    // Permitir qualquer domínio *.netlify.app, *.render.com, ou subdomínios
+    // Também permitir requests sem origin (mobile apps, Postman, etc)
     if (!origin ||
         allowedOrigins.includes(origin) ||
         origin.endsWith('.netlify.app') ||
@@ -39,6 +44,7 @@ app.use(cors({
         origin.endsWith('.gurudodindin.com.br')) {
       callback(null, true);
     } else {
+      console.log('❌ CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
