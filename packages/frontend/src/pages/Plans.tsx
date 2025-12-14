@@ -17,9 +17,6 @@ interface Plan {
   type: 'manual' | 'conectado' | 'conectado_plus';
   name: string;
   description: string;
-  price: number;
-  originalPrice: number;
-  discount: number;
   monthlyPrice: number;
   maxAccounts: number;
   popular?: boolean;
@@ -42,57 +39,47 @@ const Plans = () => {
       id: 'manual',
       type: 'manual',
       name: 'Plano Manual',
-      description: 'Controle total das suas finanças',
-      originalPrice: 166.80,
-      price: 116.90,
-      discount: 30,
-      monthlyPrice: 13.90,
+      description: 'Controle manual das suas finanças',
+      monthlyPrice: 9.90,
       maxAccounts: 0,
       icon: <Shield className="w-8 h-8" />,
       features: [
-        'Sem Conexão Bancária',
         'Controle manual de contas e cartões',
         'Importação por CSV do Excel',
-        'Relatórios completos'
+        'Relatórios completos',
+        'Sem conexão bancária automática',
+        'Sem categorização com IA'
       ]
     },
     {
       id: 'conectado',
       type: 'conectado',
       name: 'Plano Conectado',
-      description: 'Ideal para agilidade com poucas contas',
-      originalPrice: 358.80,
-      price: 249.90,
-      discount: 30,
-      monthlyPrice: 29.90,
+      description: 'Ideal para quem quer agilidade',
+      monthlyPrice: 19.90,
       maxAccounts: 2,
       popular: true,
       icon: <Zap className="w-8 h-8" />,
       features: [
         'Tudo do Plano Manual',
-        'Até 2 contas/cartões conectados',
-        'Conexão via Open Finance',
+        'Até 2 cartões conectados via Open Finance',
+        'Conexão PF e PJ',
         'Importe lançamentos com 1 clique',
-        'Categorização automática',
-        'Mais agilidade na organização'
+        'Categorização automática (sem IA)'
       ]
     },
     {
       id: 'conectado_plus',
       type: 'conectado_plus',
       name: 'Plano Conectado Plus',
-      description: 'Para quem tem múltiplas contas bancárias',
-      originalPrice: 502.90,
-      price: 352.90,
-      discount: 30,
-      monthlyPrice: 41.90,
+      description: 'Para quem tem múltiplas contas',
+      monthlyPrice: 29.90,
       maxAccounts: 4,
       icon: <Crown className="w-8 h-8" />,
       features: [
-        'Tudo do Plano Manual',
         'Tudo do Plano Conectado',
-        'Até 4 contas/cartões conectados',
-        'Controle Multi-Empresas/Famílias',
+        'Até 4 cartões conectados via Open Finance',
+        'Categorização com IA',
         'Relatórios Personalizados (PDF/Excel)',
         'Suporte Dedicado 24h'
       ]
@@ -233,7 +220,7 @@ const Plans = () => {
 
     setLoading(true);
     try {
-      const { data } = await subscriptionApi.createSubscription(plan.type, 'yearly');
+      const { data } = await subscriptionApi.createSubscription(plan.type, 'monthly');
 
       if (data.checkoutUrl) {
         // Redirecionar para Stripe Checkout (página segura do Stripe)
@@ -266,7 +253,7 @@ const Plans = () => {
               Escolha o Plano Perfeito
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Comece 2025 com organização financeira de verdade. Descontos especiais na assinatura anual!
+              Comece a organizar suas finanças hoje. Planos mensais com 7 dias grátis!
             </p>
 
             {/* Status da Assinatura */}
@@ -366,45 +353,22 @@ const Plans = () => {
                     <p className="text-gray-600 text-sm">{plan.description}</p>
                   </div>
 
-                  {/* Preço */}
+                  {/* Preço Mensal */}
                   <div className="mb-6">
-                    {plan.price === 0 ? (
-                      // Plano Grátis
-                      <div className="text-center">
-                        <div className="inline-block bg-gradient-to-r from-yellow-100 to-amber-100 px-6 py-3 rounded-xl border-2 border-yellow-400">
-                          <p className="text-4xl font-extrabold text-gray-900">
-                            R$ 0,00
-                          </p>
-                          <p className="text-sm text-gray-700 font-bold mt-1">
-                            100% Gratuito
-                          </p>
-                        </div>
-                        <p className="text-xs text-gray-600 font-semibold mt-3">
-                          🎉 Oferta por tempo limitado
-                        </p>
-                      </div>
-                    ) : (
-                      // Planos pagos
-                      <>
-                        <div className="flex items-baseline space-x-2 mb-2">
-                          <span className="text-sm text-gray-500 line-through">
-                            R$ {plan.originalPrice.toFixed(2)}
-                          </span>
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
-                            {plan.discount}% OFF
-                          </span>
-                        </div>
-                        <div className="flex items-baseline mb-1">
-                          <span className="text-4xl font-extrabold text-primary-600">
-                            R$ {plan.price.toFixed(2)}
-                          </span>
-                          <span className="ml-2 text-gray-600">/ano</span>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          ou 12x de R$ {plan.monthlyPrice.toFixed(2)}/mês
-                        </p>
-                      </>
-                    )}
+                    <div className="flex items-baseline mb-2">
+                      <span className="text-4xl font-extrabold text-primary-600">
+                        R$ {plan.monthlyPrice.toFixed(2)}
+                      </span>
+                      <span className="ml-2 text-gray-600">/mês</span>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mt-3">
+                      <p className="text-sm text-green-800 font-medium">
+                        🎉 7 dias grátis para testar!
+                      </p>
+                      <p className="text-xs text-green-700 mt-1">
+                        Cancele a qualquer momento nos primeiros 7 dias e não será cobrado.
+                      </p>
+                    </div>
                   </div>
 
                   {/* Features */}
@@ -467,6 +431,25 @@ const Plans = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Info sobre 7 dias grátis */}
+          <div className="max-w-4xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg mb-6">
+            <h3 className="text-xl font-bold mb-3 text-center text-blue-900 flex items-center justify-center gap-2">
+              <Shield className="w-6 h-6" />
+              Garantia de 7 Dias Grátis
+            </h3>
+            <div className="text-center space-y-2">
+              <p className="text-blue-800 font-medium">
+                Experimente qualquer plano por 7 dias sem compromisso.
+              </p>
+              <p className="text-blue-700 text-sm">
+                Se você cancelar dentro dos primeiros 7 dias, <strong>não será cobrado</strong>. Sem perguntas, sem burocracia.
+              </p>
+              <p className="text-blue-600 text-xs">
+                Após o período de teste, a cobrança será realizada automaticamente via cartão de crédito.
+              </p>
+            </div>
           </div>
 
           {/* Informações Adicionais */}

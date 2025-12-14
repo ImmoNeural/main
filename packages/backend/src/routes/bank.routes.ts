@@ -165,6 +165,79 @@ router.get('/available', async (req: Request, res: Response) => {
 });
 
 /**
+ * Helper function to get connection limits based on plan type
+ */
+function getMaxConnectionsForPlan(planType: string | null): number {
+  switch (planType) {
+    case 'conectado':
+      return 2;
+    case 'conectado_plus':
+      return 4;
+    case 'manual':
+    default:
+      return 0; // Manual plan cannot use Open Finance
+  }
+}
+
+/**
+ * Helper function to check if user can connect more accounts
+ */
+async function checkConnectionLimit(userId: string): Promise<{ canConnect: boolean; message?: string; currentCount: number; maxAllowed: number }> {
+  // Get user's subscription
+  const { data: subscription, error: subError } = await supabase
+    .from('subscriptions')
+    .select('plan_type, status')
+    .eq('user_id', userId)
+    .in('status', ['active', 'trial'])
+    .maybeSingle();
+
+  if (subError) {
+    console.error('[Bank] Error checking subscription:', subError);
+    return { canConnect: false, message: 'Erro ao verificar assinatura', currentCount: 0, maxAllowed: 0 };
+  }
+
+  const planType = subscription?.plan_type || 'manual';
+  const maxConnections = getMaxConnectionsForPlan(planType);
+
+  // Count current active connections
+  const { data: accounts, error: accountsError } = await supabase
+    .from('bank_accounts')
+    .select('id')
+    .eq('user_id', userId)
+    .neq('status', 'disconnected');
+
+  if (accountsError) {
+    console.error('[Bank] Error counting accounts:', accountsError);
+    return { canConnect: false, message: 'Erro ao verificar contas', currentCount: 0, maxAllowed: 0 };
+  }
+
+  const currentCount = accounts?.length || 0;
+
+  // Check if manual plan (no Open Finance allowed)
+  if (planType === 'manual') {
+    return {
+      canConnect: false,
+      message: 'Open Finance não está disponível no Plano Manual. Faça upgrade para o Plano Conectado ou Conectado Plus.',
+      currentCount,
+      maxAllowed: 0
+    };
+  }
+
+  // Check if limit reached
+  if (currentCount >= maxConnections) {
+    const planName = planType === 'conectado' ? 'Conectado' : 'Conectado Plus';
+    return {
+      canConnect: false,
+      message: `Limite de ${maxConnections} conexões atingido no Plano ${planName}. ${planType === 'conectado' ? 'Faça upgrade para o Plano Conectado Plus para conectar até 4 contas.' : 'Desconecte uma conta para adicionar outra.'}`,
+      currentCount,
+      maxAllowed: maxConnections
+    };
+  }
+
+  return { canConnect: true, currentCount, maxAllowed: maxConnections };
+}
+
+/**
  * POST /api/bank/connect-direct
  * Inicia conexão direta com Pluggy (sem pré-selecionar banco)
  * Abre o widget do Pluggy com a lista completa de bancos
@@ -176,6 +249,21 @@ router.post('/connect-direct', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     console.log(`[Bank] 👤 User ID: ${user_id}`);
+
+    // Check connection limit based on subscription plan
+    const { canConnect, message, currentCount, maxAllowed } = await checkConnectionLimit(user_id);
+    if (!canConnect) {
+      console.log(`[Bank] ❌ Connection limit reached: ${currentCount}/${maxAllowed}`);
+      return res.status(403).json({
+        error: 'Limite de conexões atingido',
+        message,
+        currentCount,
+        maxAllowed,
+        code: 'CONNECTION_LIMIT_REACHED'
+      });
+    }
+
+    console.log(`[Bank] ✅ Connection allowed: ${currentCount}/${maxAllowed}`);
 
     // Importar o serviço Pluggy diretamente para criar token sem connectorId
     const { PluggyService } = await import('../services/providers/pluggy.service');
@@ -224,6 +312,21 @@ router.post('/connect', async (req: Request, res: Response) => {
       console.error('[Bank] ❌ Missing bank_id');
       return res.status(400).json({ error: 'bank_id is required' });
     }
+
+    // Check connection limit based on subscription plan
+    const { canConnect, message, currentCount, maxAllowed } = await checkConnectionLimit(user_id);
+    if (!canConnect) {
+      console.log(`[Bank] ❌ Connection limit reached: ${currentCount}/${maxAllowed}`);
+      return res.status(403).json({
+        error: 'Limite de conexões atingido',
+        message,
+        currentCount,
+        maxAllowed,
+        code: 'CONNECTION_LIMIT_REACHED'
+      });
+    }
+
+    console.log(`[Bank] ✅ Connection allowed: ${currentCount}/${maxAllowed}`);
 
     try {
       // Tentar autenticação real com Pluggy

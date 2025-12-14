@@ -564,6 +564,19 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
 
     console.log('🤖 Iniciando recategorização com IA (3 camadas) para user:', user_id);
 
+    // Check if user has Plus plan (required for Layer 3 - ChatGPT)
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('plan_type, status')
+      .eq('user_id', user_id)
+      .in('status', ['active', 'trial'])
+      .maybeSingle();
+
+    const planType = subscription?.plan_type || 'manual';
+    const canUseAI = planType === 'conectado_plus';
+
+    console.log(`📋 User plan: ${planType}, AI enabled: ${canUseAI}`);
+
     // Buscar transações do usuário
     let query = supabase
       .from('transactions')
@@ -717,7 +730,8 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
     console.log(`   🤖 ${needsLayer3.length} transações precisam de Camada 3 (ChatGPT)`);
 
     // FASE 2: Processar Camada 3 (ChatGPT) para transações restantes
-    if (needsLayer3.length > 0 && openaiService.isConfigured()) {
+    // AI is only available for conectado_plus plan
+    if (needsLayer3.length > 0 && openaiService.isConfigured() && canUseAI) {
       console.log('   🌐 Chamando ChatGPT para categorização...');
 
       // Processar em batches de 5 para não sobrecarregar a API
@@ -769,9 +783,14 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
         }
       }
     } else if (needsLayer3.length > 0) {
-      // ChatGPT não configurado - marcar como "Não Categorizado"
-      console.log('   ⚠️ ChatGPT NÃO CONFIGURADO! Configure OPENAI_KEY no Render.');
-      console.log('   ⚠️ Marcando transações como "Não Categorizado"...');
+      // ChatGPT not available - either not configured or user doesn't have Plus plan
+      if (!canUseAI) {
+        console.log('   ⚠️ IA desabilitada - Plano não é Conectado Plus');
+        console.log('   ⚠️ Usando apenas Camadas 1 e 2 (regras e histórico)...');
+      } else {
+        console.log('   ⚠️ ChatGPT NÃO CONFIGURADO! Configure OPENAI_KEY no Render.');
+      }
+      console.log('   ⚠️ Marcando transações restantes como "Não Categorizado"...');
 
       for (const t of needsLayer3) {
         const originalTx = transactions.find(tx => tx.id === t.id);

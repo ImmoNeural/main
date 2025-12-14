@@ -2,12 +2,13 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2 } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock } from 'lucide-react';
 import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { CategoryIconSmall } from '../components/CategoryIcons';
+import { useSubscription } from '../hooks/useSubscription';
 
 const Transactions = () => {
   const navigate = useNavigate();
@@ -24,6 +25,21 @@ const Transactions = () => {
     return localStorage.getItem('activeAccountId');
   });
   const [accountInitialized, setAccountInitialized] = useState(false);
+
+  // Get subscription info for plan-based restrictions
+  const { planType } = useSubscription();
+
+  // Plan-based feature flags
+  const isManualPlan = planType === 'manual';
+  const isConectadoPlan = planType === 'conectado';
+  const isConectadoPlusPlan = planType === 'conectado_plus';
+
+  // Categorize button: disabled for manual, enabled without AI for conectado, full AI for conectado_plus
+  const canUseCategorize = !isManualPlan;
+  const canUseAI = isConectadoPlusPlan;
+
+  // Open Finance: disabled for manual plan
+  const canUseOpenFinance = !isManualPlan;
 
   // Mapeamento de subcategorias por categoria
   const subcategoriesMap: Record<string, string[]> = {
@@ -781,39 +797,67 @@ const Transactions = () => {
                 <span className="hidden sm:inline">Importar</span>
                 <span className="sm:hidden">Import</span>
               </button>
-              <div className="relative">
-                <button
-                  onClick={handleRecategorizeAI}
-                  className={`flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed ${
-                    isAILoading
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-700 animate-pulse'
-                      : 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700'
-                  }`}
-                  disabled={isAILoading || isLoading}
-                  title="Usar IA para categorizar transações"
-                >
-                  {isAILoading ? (
-                    <Loader2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
-                  )}
-                  <span className="hidden sm:inline">{isAILoading ? 'Categorizando...' : 'Categorizar'}</span>
-                  <span className="sm:hidden">{isAILoading ? '...' : 'IA'}</span>
-                </button>
-                {/* Barra de progresso */}
-                {isAILoading && (
-                  <div className="absolute -bottom-12 left-0 right-0 w-48 sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10">
-                    <div className="flex justify-between text-xs text-gray-600 mb-1">
-                      <span className="truncate max-w-[140px] sm:max-w-[200px]">{aiProgressText}</span>
-                      <span className="font-semibold">{Math.round(aiProgress)}%</span>
+              <div className="relative group">
+                {isManualPlan ? (
+                  <>
+                    <button
+                      disabled
+                      className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium bg-gray-400 text-white opacity-60 cursor-not-allowed"
+                    >
+                      <Lock className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                      <span className="hidden sm:inline">Categorizar</span>
+                      <span className="sm:hidden">Cat</span>
+                    </button>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                      Disponível apenas nos planos Conectado ou Conectado Plus
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${aiProgress}%` }}
-                      />
-                    </div>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleRecategorizeAI}
+                      className={`flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed ${
+                        isAILoading
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-700 animate-pulse'
+                          : canUseAI
+                            ? 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700'
+                            : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'
+                      }`}
+                      disabled={isAILoading || isLoading}
+                      title={canUseAI ? "Usar IA para categorizar transações" : "Categorização automática (sem IA)"}
+                    >
+                      {isAILoading ? (
+                        <Loader2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                      )}
+                      <span className="hidden sm:inline">{isAILoading ? 'Categorizando...' : 'Categorizar'}</span>
+                      <span className="sm:hidden">{isAILoading ? '...' : 'Cat'}</span>
+                    </button>
+                    {/* Tooltip for Conectado plan (no AI) */}
+                    {isConectadoPlan && !isAILoading && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-amber-600 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                        IA desabilitada - Apenas categorização por regras
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-amber-600"></div>
+                      </div>
+                    )}
+                    {/* Barra de progresso */}
+                    {isAILoading && (
+                      <div className="absolute -bottom-12 left-0 right-0 w-48 sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span className="truncate max-w-[140px] sm:max-w-[200px]">{aiProgressText}</span>
+                          <span className="font-semibold">{Math.round(aiProgress)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300 ease-out"
+                            style={{ width: `${aiProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <button
@@ -855,13 +899,29 @@ const Transactions = () => {
           </div>
 
           <div className="w-full sm:w-auto mt-3 sm:mt-0">
-            <button
-              onClick={() => navigate('/app/connect-bank')}
-              className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2"
-            >
-              <PlusCircle className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
-              <span>Conectar Banco</span>
-            </button>
+            {isManualPlan ? (
+              <div className="relative group">
+                <button
+                  disabled
+                  className="btn-secondary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2 opacity-60 cursor-not-allowed"
+                >
+                  <Lock className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                  <span>Conectar Banco</span>
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                  Disponível apenas nos planos Conectado ou Conectado Plus
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/app/connect-bank')}
+                className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2"
+              >
+                <PlusCircle className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                <span>Conectar Banco</span>
+              </button>
+            )}
           </div>
         </div>
 

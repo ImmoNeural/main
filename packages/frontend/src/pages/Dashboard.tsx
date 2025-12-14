@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3, Upload, PieChart as PieChartIcon, TrendingUp as ChartIcon, Trophy, List } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3, Upload, PieChart as PieChartIcon, TrendingUp as ChartIcon, Trophy, List, Lock } from 'lucide-react';
 import { dashboardApi, transactionApi, bankApi } from '../services/api';
 import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
 import { CategoryIcon } from '../components/CategoryIcons';
 import { BudgetRadarChart } from '../components/BudgetRadarChart';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
+import { useSubscription } from '../hooks/useSubscription';
 import {
   BarChart,
   Bar,
@@ -22,7 +23,7 @@ import { format, startOfMonth, subMonths } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
 
 // Componente para estado vazio dos gráficos
-const EmptyChartState = ({ message = "Você ainda não tem dados" }: { message?: string }) => (
+const EmptyChartState = ({ message = "Você ainda não tem dados", isManualPlan = false }: { message?: string; isManualPlan?: boolean }) => (
   <div className="flex flex-col items-center justify-center py-12 px-4">
     <div className="relative mb-4">
       <BarChart3 className="w-20 h-20 text-gray-300" strokeWidth={1.5} />
@@ -33,12 +34,28 @@ const EmptyChartState = ({ message = "Você ainda não tem dados" }: { message?:
     <p className="text-gray-500 text-sm text-center max-w-xs">
       {message}
     </p>
-    <Link
-      to="/app/connect-bank"
-      className="mt-4 text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
-    >
-      Conectar banco <ArrowRight className="w-4 h-4" />
-    </Link>
+    {isManualPlan ? (
+      <div className="relative group mt-4">
+        <button
+          disabled
+          className="text-gray-400 text-sm font-medium flex items-center gap-1 cursor-not-allowed"
+        >
+          <Lock className="w-4 h-4" />
+          Conectar banco
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+          Disponível apenas nos planos Conectado ou Conectado Plus
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        </div>
+      </div>
+    ) : (
+      <Link
+        to="/app/connect-bank"
+        className="mt-4 text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
+      >
+        Conectar banco <ArrowRight className="w-4 h-4" />
+      </Link>
+    )}
   </div>
 );
 
@@ -64,6 +81,10 @@ const Dashboard = () => {
   const [accountInitialized, setAccountInitialized] = useState(false);
   const transactionsRef = useRef<HTMLDivElement>(null); // Ref para seção de transações
   const [showImportModal, setShowImportModal] = useState(false);
+
+  // Get subscription info for plan-based restrictions
+  const { planType } = useSubscription();
+  const isManualPlan = planType === 'manual';
   const [selectedPeriod, setSelectedPeriod] = useState<{
     type: 'week' | 'month' | null;
     weekNumber?: number;
@@ -560,10 +581,26 @@ const Dashboard = () => {
           <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 whitespace-nowrap">
-            <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-sm sm:text-base">Conectar Banco</span>
-          </Link>
+          {isManualPlan ? (
+            <div className="relative group">
+              <button
+                disabled
+                className="btn-secondary flex items-center space-x-2 whitespace-nowrap opacity-60 cursor-not-allowed"
+              >
+                <Lock className="w-4 sm:w-5 h-4 sm:h-5" />
+                <span className="text-sm sm:text-base">Conectar Banco</span>
+              </button>
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                Disponível apenas nos planos Conectado ou Conectado Plus
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </div>
+          ) : (
+            <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 whitespace-nowrap">
+              <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
+              <span className="text-sm sm:text-base">Conectar Banco</span>
+            </Link>
+          )}
           <button
             onClick={() => setShowImportModal(true)}
             className="btn-secondary flex items-center space-x-2 whitespace-nowrap"
@@ -718,7 +755,7 @@ const Dashboard = () => {
               Últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
             </p>
             {monthlyChartData.length === 0 ? (
-              <EmptyChartState />
+              <EmptyChartState isManualPlan={isManualPlan} />
             ) : (
             <div className="w-full">
               <ResponsiveContainer width="100%" height={400}>
@@ -797,7 +834,7 @@ const Dashboard = () => {
               Últimos {getMonthsCount()} {getMonthsCount() === 1 ? 'mês' : 'meses'}
             </p>
             {categoryStats.length === 0 ? (
-              <EmptyChartState />
+              <EmptyChartState isManualPlan={isManualPlan} />
             ) : (
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4">
               <div className="w-full lg:w-1/2">
@@ -863,7 +900,7 @@ const Dashboard = () => {
             </p>
           </div>
           {categoryStats.length === 0 ? (
-            <EmptyChartState />
+            <EmptyChartState isManualPlan={isManualPlan} />
           ) : (
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <div className="min-w-[400px] px-4 sm:px-0">
@@ -1013,7 +1050,7 @@ const Dashboard = () => {
                 <ChartIcon className="w-5 h-5 text-primary-600" />
                 Detalhamento da categoria por mês
               </h2>
-              <EmptyChartState />
+              <EmptyChartState isManualPlan={isManualPlan} />
             </>
           ) : (
             <div className="flex items-center justify-center h-full p-8">
