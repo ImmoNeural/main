@@ -24,7 +24,6 @@ const Transactions = () => {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(() => {
     return localStorage.getItem('activeAccountId');
   });
-  const [activeAccount, setActiveAccount] = useState<BankAccount | null>(null); // Dados completos da conta ativa
   const [accountInitialized, setAccountInitialized] = useState(false);
 
   // Get subscription info for plan-based restrictions
@@ -114,25 +113,21 @@ const Transactions = () => {
           if (foundAccount) {
             console.log('✅ Transactions: Conta ativa válida:', savedAccountId);
             setActiveAccountId(savedAccountId);
-            setActiveAccount(foundAccount);
           } else {
             console.log('⚠️ Transactions: Conta ativa inválida, limpando');
             localStorage.removeItem('activeAccountId');
             setActiveAccountId(null);
-            setActiveAccount(null);
 
             if (accounts.length > 0) {
               const firstActive = accounts.find((acc) => acc.status === 'active') || accounts[0];
               localStorage.setItem('activeAccountId', firstActive.id);
               setActiveAccountId(firstActive.id);
-              setActiveAccount(firstActive);
             }
           }
         } catch (error) {
           console.error('❌ Transactions: Erro ao validar conta:', error);
           localStorage.removeItem('activeAccountId');
           setActiveAccountId(null);
-          setActiveAccount(null);
         }
       }
 
@@ -142,24 +137,10 @@ const Transactions = () => {
     validateActiveAccount();
 
     // Listener para mudanças no banco ativo
-    const handleActiveAccountChange = async (event: any) => {
+    const handleActiveAccountChange = (event: any) => {
       const { accountId } = event.detail;
       console.log('🏦 Transactions: Conta ativa mudou para:', accountId);
       setActiveAccountId(accountId);
-
-      // Buscar dados completos da nova conta
-      if (accountId) {
-        try {
-          const response = await bankApi.getAccounts();
-          const accounts = response.data as BankAccount[];
-          const foundAccount = accounts.find((acc) => acc.id === accountId);
-          setActiveAccount(foundAccount || null);
-        } catch (error) {
-          setActiveAccount(null);
-        }
-      } else {
-        setActiveAccount(null);
-      }
     };
 
     window.addEventListener('activeAccountChanged', handleActiveAccountChange);
@@ -183,7 +164,7 @@ const Transactions = () => {
       const accountFilter = activeAccountId ? activeAccountId : undefined;
       console.log(`📊 Loading transactions: account=${accountFilter || 'ALL'}`);
 
-      const [transactionsRes, categoriesRes, accountsRes] = await Promise.all([
+      const [transactionsRes, categoriesRes] = await Promise.all([
         transactionApi.getTransactions({
           category: selectedCategory || undefined,
           type: selectedType || undefined,
@@ -191,20 +172,9 @@ const Transactions = () => {
           limit: 10000, // Buscar todas as transações
         }),
         transactionApi.getCategories(),
-        bankApi.getAccounts(), // Buscar contas atualizadas (saldo atualizado)
       ]);
 
       setTransactions(transactionsRes.data.transactions);
-
-      // Atualizar dados da conta ativa (para ter saldo atualizado)
-      if (activeAccountId && accountsRes.data) {
-        const accounts = accountsRes.data as BankAccount[];
-        const foundAccount = accounts.find((acc) => acc.id === activeAccountId);
-        if (foundAccount) {
-          setActiveAccount(foundAccount);
-          console.log(`💰 Conta atualizada: ${foundAccount.bank_name}, saldo=${foundAccount.balance}`);
-        }
-      }
 
       // Extrair saldo inicial do backend
       if (transactionsRes.data.initial_balance !== undefined && transactionsRes.data.initial_balance !== null) {
@@ -472,38 +442,8 @@ const Transactions = () => {
     return matchesSearch && matchesPeriod && matchesCostType;
   });
 
-  // 💰 RECALCULAR SALDOS: Calcula balance_after para todas as transações
-  // baseado no saldo atual da conta (vindo do Open Finance)
-  const filteredTransactions = useMemo(() => {
-    if (!activeAccount || transactions.length === 0) {
-      return filteredTransactionsRaw;
-    }
-
-    // Ordenar TODAS as transações por data (mais recente primeiro)
-    const allSorted = [...transactions].sort((a, b) => b.date - a.date);
-
-    // Criar mapa de balance_after recalculado para cada transação
-    const balanceMap = new Map<string, number>();
-    let runningBalance = activeAccount.balance;
-
-    // Iterar do mais recente para o mais antigo
-    for (const trans of allSorted) {
-      balanceMap.set(trans.id, runningBalance);
-      // Para a próxima iteração (transação mais antiga):
-      // Subtraímos o amount para "desfazer" a transação
-      // - Crédito (positivo): saldo anterior era menor
-      // - Débito (negativo): saldo anterior era maior
-      runningBalance = runningBalance - trans.amount;
-    }
-
-    console.log(`💰 Saldos recalculados: conta=${activeAccount.bank_name}, saldo atual=${activeAccount.balance}`);
-
-    // Aplicar os saldos recalculados às transações filtradas
-    return filteredTransactionsRaw.map(trans => ({
-      ...trans,
-      balance_after: balanceMap.get(trans.id) ?? trans.balance_after
-    }));
-  }, [filteredTransactionsRaw, transactions, activeAccount]);
+  // Transações filtradas (coluna de saldo removida por segurança)
+  const filteredTransactions = filteredTransactionsRaw;
 
   // Calcular transações dos últimos 12 meses COMPLETOS (para cards de resumo e breakdown)
   // Lógica: 12 meses = mês atual + 11 meses anteriores
@@ -1319,9 +1259,6 @@ const Transactions = () => {
                   <th scope="col" className="w-24 sm:w-28 px-1 sm:px-2 py-2 text-right text-xs font-semibold text-gray-600 uppercase">
                     Valor
                   </th>
-                  <th scope="col" className="hidden lg:table-cell w-24 sm:w-28 px-1 sm:px-2 py-2 text-right text-xs font-semibold text-gray-600 uppercase">
-                    Saldo
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1454,17 +1391,12 @@ const Transactions = () => {
                     <td className={`px-1 sm:px-2 py-2 text-xs sm:text-sm font-semibold text-right ${valueClass}`}>
                       {isReceita ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                     </td>
-                    <td className="hidden lg:table-cell px-1 sm:px-2 py-2 text-xs sm:text-sm font-medium text-right text-gray-700">
-                      {transaction.balance_after !== undefined && transaction.balance_after !== null
-                        ? formatCurrency(transaction.balance_after)
-                        : '-'}
-                    </td>
                   </tr>
                 );
               })}
               {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-4 sm:p-8 text-center text-sm sm:text-base text-gray-500">
+                  <td colSpan={5} className="p-4 sm:p-8 text-center text-sm sm:text-base text-gray-500">
                     Nenhuma transação encontrada para o termo de busca.
                   </td>
                 </tr>
