@@ -452,16 +452,16 @@ export class PluggyService {
         // Para cartões de crédito: creditData.creditLimit
         if (account.creditData?.creditLimit) {
           credit_limit = account.creditData.creditLimit;
-          console.log(`[Pluggy] 💳 Credit card limit: R$ ${credit_limit.toFixed(2)}`);
+          console.log(`[Pluggy] 💳 Credit card limit: R$ ${account.creditData.creditLimit.toFixed(2)}`);
         }
 
         // Para contas correntes: bankData.overdraftContractedLimit ou overdraftContractedLimitAmount
         if (account.bankData?.overdraftContractedLimit) {
           overdraft_limit = account.bankData.overdraftContractedLimit;
-          console.log(`[Pluggy] 🏦 Overdraft limit: R$ ${overdraft_limit.toFixed(2)}`);
+          console.log(`[Pluggy] 🏦 Overdraft limit: R$ ${account.bankData.overdraftContractedLimit.toFixed(2)}`);
         } else if (account.bankData?.overdraftContractedLimitAmount) {
           overdraft_limit = account.bankData.overdraftContractedLimitAmount;
-          console.log(`[Pluggy] 🏦 Overdraft limit: R$ ${overdraft_limit.toFixed(2)}`);
+          console.log(`[Pluggy] 🏦 Overdraft limit: R$ ${account.bankData.overdraftContractedLimitAmount.toFixed(2)}`);
         }
 
         return {
