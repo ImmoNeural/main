@@ -36,3 +36,14 @@ coverage/
 *.tgz
 .cache/
 .parcel-cache/
+
+# Android / Capacitor
+*.apk
+*.aab
+*.keystore
+*.jks
+packages/frontend/android/.gradle/
+packages/frontend/android/app/build/
+packages/frontend/android/build/
+packages/frontend/android/local.properties
+packages/frontend/android/.idea/
