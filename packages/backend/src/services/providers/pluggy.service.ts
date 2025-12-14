@@ -444,17 +444,40 @@ export class PluggyService {
       const accounts = response.data.results || [];
       console.log(`[Pluggy] Found ${accounts.length} accounts for item ${itemId}`);
 
-      return accounts.map((account: any) => ({
-        id: account.id,
-        iban: account.number || undefined,
-        currency: account.currencyCode || 'BRL',
-        name: account.name || account.type,
-        account_type: this.mapAccountType(account.type),
-        balance: {
-          amount: account.balance || 0,
+      return accounts.map((account: any) => {
+        // Extrair limite de crédito baseado no tipo de conta
+        let credit_limit: number | undefined;
+        let overdraft_limit: number | undefined;
+
+        // Para cartões de crédito: creditData.creditLimit
+        if (account.creditData?.creditLimit) {
+          credit_limit = account.creditData.creditLimit;
+          console.log(`[Pluggy] 💳 Credit card limit: R$ ${credit_limit.toFixed(2)}`);
+        }
+
+        // Para contas correntes: bankData.overdraftContractedLimit ou overdraftContractedLimitAmount
+        if (account.bankData?.overdraftContractedLimit) {
+          overdraft_limit = account.bankData.overdraftContractedLimit;
+          console.log(`[Pluggy] 🏦 Overdraft limit: R$ ${overdraft_limit.toFixed(2)}`);
+        } else if (account.bankData?.overdraftContractedLimitAmount) {
+          overdraft_limit = account.bankData.overdraftContractedLimitAmount;
+          console.log(`[Pluggy] 🏦 Overdraft limit: R$ ${overdraft_limit.toFixed(2)}`);
+        }
+
+        return {
+          id: account.id,
+          iban: account.number || undefined,
           currency: account.currencyCode || 'BRL',
-        },
-      }));
+          name: account.name || account.type,
+          account_type: this.mapAccountType(account.type),
+          balance: {
+            amount: account.balance || 0,
+            currency: account.currencyCode || 'BRL',
+          },
+          credit_limit: credit_limit,
+          overdraft_limit: overdraft_limit,
+        };
+      });
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
       console.error(`[Pluggy] ❌ Error fetching accounts for item ${itemId}:`, errorMessage);

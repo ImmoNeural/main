@@ -986,6 +986,7 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
     // 🔄 STEP 3: Buscar saldo atualizado do banco via Pluggy
     console.log(`[Bank Sync] 💰 Step 3: Fetching updated balance from Pluggy...`);
     let updatedBalance = account.balance; // Fallback para saldo atual
+    let creditLimit: number | null = null;
     try {
       const pluggyAccounts = await openBankingService.getAccounts(account.access_token);
       // Encontrar a conta correspondente pelo provider_account_id
@@ -993,6 +994,15 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
       if (matchingAccount && matchingAccount.balance) {
         updatedBalance = matchingAccount.balance.amount;
         console.log(`[Bank Sync] 💰 New balance from Pluggy: R$ ${updatedBalance.toFixed(2)}`);
+
+        // Buscar limite de crédito (cartão ou cheque especial)
+        if (matchingAccount.credit_limit) {
+          creditLimit = matchingAccount.credit_limit;
+          console.log(`[Bank Sync] 💳 Credit limit: R$ ${creditLimit.toFixed(2)}`);
+        } else if (matchingAccount.overdraft_limit) {
+          creditLimit = matchingAccount.overdraft_limit;
+          console.log(`[Bank Sync] 🏦 Overdraft limit: R$ ${creditLimit.toFixed(2)}`);
+        }
       } else {
         console.log(`[Bank Sync] ⚠️ Could not find matching account in Pluggy response`);
       }
@@ -1004,17 +1014,22 @@ router.post('/accounts/:accountId/sync', async (req: Request, res: Response) => 
     console.log(`[Bank Sync] 📊 Step 4: Fetching transactions...`);
     const transactionCount = await syncTransactions(accountId, account.access_token, false, updatedBalance);
 
-    // Atualizar last_sync_at E saldo com o valor do Pluggy
+    // Atualizar last_sync_at, saldo E limite de crédito com os valores do Pluggy
+    const updateData: any = {
+      balance: updatedBalance,
+      last_sync_at: toISOString(Date.now()),
+      updated_at: toISOString(Date.now())
+    };
+    if (creditLimit !== null) {
+      updateData.credit_limit = creditLimit;
+    }
+
     await supabase
       .from('bank_accounts')
-      .update({
-        balance: updatedBalance,
-        last_sync_at: toISOString(Date.now()),
-        updated_at: toISOString(Date.now())
-      })
+      .update(updateData)
       .eq('id', accountId);
 
-    console.log(`[Bank Sync] 💰 Account balance updated to: R$ ${updatedBalance.toFixed(2)}`);
+    console.log(`[Bank Sync] 💰 Account balance updated to: R$ ${updatedBalance.toFixed(2)}${creditLimit ? ` (limit: R$ ${creditLimit.toFixed(2)})` : ''}`);
 
     // 🔄 SINCRONIZAR BUDGETS após sync manual
     try {

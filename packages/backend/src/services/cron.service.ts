@@ -196,12 +196,22 @@ async function syncAllBankAccounts(): Promise<void> {
 
         // 3. Buscar saldo atualizado do Pluggy
         let updatedBalance = 0;
+        let creditLimit: number | null = null;
         try {
           const pluggyAccounts = await openBankingService.getAccounts(account.access_token);
           const matchingAccount = pluggyAccounts.find(pa => pa.id === account.provider_account_id);
           if (matchingAccount && matchingAccount.balance) {
             updatedBalance = matchingAccount.balance.amount;
             console.log(`[Cron] 💰 Balance from Pluggy: R$ ${updatedBalance.toFixed(2)}`);
+
+            // Buscar limite de crédito (cartão ou cheque especial)
+            if (matchingAccount.credit_limit) {
+              creditLimit = matchingAccount.credit_limit;
+              console.log(`[Cron] 💳 Credit limit: R$ ${creditLimit.toFixed(2)}`);
+            } else if (matchingAccount.overdraft_limit) {
+              creditLimit = matchingAccount.overdraft_limit;
+              console.log(`[Cron] 🏦 Overdraft limit: R$ ${creditLimit.toFixed(2)}`);
+            }
           }
         } catch (balanceError: any) {
           console.error(`[Cron] ⚠️ Error fetching balance:`, balanceError.message);
@@ -211,17 +221,22 @@ async function syncAllBankAccounts(): Promise<void> {
         const transactionCount = await syncAccountTransactions(account, updatedBalance);
         totalTransactions += transactionCount;
 
-        // 5. Atualizar last_sync_at E saldo
+        // 5. Atualizar last_sync_at, saldo E limite de crédito
+        const updateData: any = {
+          balance: updatedBalance,
+          last_sync_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        if (creditLimit !== null) {
+          updateData.credit_limit = creditLimit;
+        }
+
         await getSupabase()
           .from('bank_accounts')
-          .update({
-            balance: updatedBalance,
-            last_sync_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', account.id);
 
-        console.log(`[Cron] ✅ Account ${account.bank_name}: ${transactionCount} new transactions, balance R$ ${updatedBalance.toFixed(2)}`);
+        console.log(`[Cron] ✅ Account ${account.bank_name}: ${transactionCount} new transactions, balance R$ ${updatedBalance.toFixed(2)}${creditLimit ? ` (limit: R$ ${creditLimit.toFixed(2)})` : ''}`);
         successCount++;
 
         // Pequeno delay entre contas para não sobrecarregar

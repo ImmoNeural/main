@@ -379,20 +379,48 @@ const Accounts = () => {
               {/* Saldo - não mostrar para cartões de crédito */}
               {account.account_type !== 'card' ? (
                 <div className="mb-5">
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Saldo</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Saldo</p>
+                    {account.credit_limit && account.credit_limit > 0 && (
+                      <p className="text-xs text-gray-500">
+                        Limite: <span className="font-semibold text-gray-700">{formatCurrency(account.credit_limit)}</span>
+                      </p>
+                    )}
+                  </div>
                   <p className={`text-3xl font-bold ${account.balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
                     {formatCurrency(account.balance)}
                   </p>
+                  {/* Mostrar saldo disponível quando houver limite e saldo negativo */}
+                  {account.credit_limit && account.credit_limit > 0 && account.balance < 0 && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Disponível no limite: <span className="font-semibold">{formatCurrency(account.credit_limit + account.balance)}</span>
+                    </p>
+                  )}
+                  {/* Mostrar saldo total disponível quando houver limite e saldo positivo */}
+                  {account.credit_limit && account.credit_limit > 0 && account.balance >= 0 && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Total disponível: <span className="font-semibold">{formatCurrency(account.credit_limit + account.balance)}</span>
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="mb-5">
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Tipo</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Cartão de Crédito</p>
+                    {account.credit_limit && account.credit_limit > 0 && (
+                      <p className="text-xs text-gray-500">
+                        Limite: <span className="font-semibold text-gray-700">{formatCurrency(account.credit_limit)}</span>
+                      </p>
+                    )}
+                  </div>
                   <p className="text-lg font-semibold text-purple-600">
-                    Cartão de Crédito
+                    Fatura: {formatCurrency(Math.abs(account.balance))}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Saldo não aplicável
-                  </p>
+                  {account.credit_limit && account.credit_limit > 0 && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Disponível: <span className="font-semibold">{formatCurrency(account.credit_limit - Math.abs(account.balance))}</span>
+                    </p>
+                  )}
                 </div>
               )}
 

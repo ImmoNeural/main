@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet, Receipt, ArrowRight, RefreshCw, MousePointerClick, BarChart3, Upload, PieChart as PieChartIcon, TrendingUp as ChartIcon, Trophy, List, Lock } from 'lucide-react';
 import { dashboardApi, transactionApi, bankApi } from '../services/api';
-import type { DashboardStats, CategoryStats, WeeklyStats, Transaction } from '../types';
+import type { DashboardStats, CategoryStats, WeeklyStats, Transaction, BankAccount } from '../types';
 import { CategoryIcon } from '../components/CategoryIcons';
 import { BudgetRadarChart } from '../components/BudgetRadarChart';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
@@ -78,6 +78,7 @@ const Dashboard = () => {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(() => {
     return localStorage.getItem('activeAccountId');
   });
+  const [activeAccount, setActiveAccount] = useState<BankAccount | null>(null); // Dados completos da conta ativa
   const [accountInitialized, setAccountInitialized] = useState(false);
   const transactionsRef = useRef<HTMLDivElement>(null); // Ref para seção de transações
   const [showImportModal, setShowImportModal] = useState(false);
@@ -106,23 +107,26 @@ const Dashboard = () => {
         try {
           // Buscar contas do usuário para validar
           const response = await bankApi.getAccounts();
-          const accounts = response.data;
-          const accountExists = accounts.some((acc: any) => acc.id === savedAccountId);
+          const accounts = response.data as BankAccount[];
+          const foundAccount = accounts.find((acc) => acc.id === savedAccountId);
 
-          if (accountExists) {
+          if (foundAccount) {
             console.log('✅ Dashboard: Conta ativa válida:', savedAccountId);
             setActiveAccountId(savedAccountId);
+            setActiveAccount(foundAccount); // Armazenar dados completos da conta
           } else {
             console.log('⚠️ Dashboard: Conta ativa inválida, limpando localStorage');
             localStorage.removeItem('activeAccountId');
             setActiveAccountId(null);
+            setActiveAccount(null);
 
             // Se há contas disponíveis, usar a primeira ativa
             if (accounts.length > 0) {
-              const firstActive = accounts.find((acc: any) => acc.status === 'active') || accounts[0];
+              const firstActive = accounts.find((acc) => acc.status === 'active') || accounts[0];
               console.log('🔄 Dashboard: Definindo nova conta ativa:', firstActive.id);
               localStorage.setItem('activeAccountId', firstActive.id);
               setActiveAccountId(firstActive.id);
+              setActiveAccount(firstActive); // Armazenar dados completos da conta
             }
           }
         } catch (error) {
@@ -130,6 +134,7 @@ const Dashboard = () => {
           // Em caso de erro, limpar e continuar sem filtro
           localStorage.removeItem('activeAccountId');
           setActiveAccountId(null);
+          setActiveAccount(null);
         }
       }
 
@@ -152,10 +157,25 @@ const Dashboard = () => {
     }
 
     // Listener para mudanças no banco ativo
-    const handleActiveAccountChange = (event: any) => {
-      const { accountId} = event.detail;
+    const handleActiveAccountChange = async (event: any) => {
+      const { accountId } = event.detail;
       console.log('🏦 Dashboard: Conta ativa mudou para:', accountId);
       setActiveAccountId(accountId);
+
+      // Buscar dados completos da nova conta ativa
+      if (accountId) {
+        try {
+          const response = await bankApi.getAccounts();
+          const accounts = response.data as BankAccount[];
+          const foundAccount = accounts.find((acc) => acc.id === accountId);
+          setActiveAccount(foundAccount || null);
+        } catch (error) {
+          console.error('❌ Dashboard: Erro ao buscar conta:', error);
+          setActiveAccount(null);
+        }
+      } else {
+        setActiveAccount(null);
+      }
     };
 
     window.addEventListener('activeAccountChanged', handleActiveAccountChange);
@@ -199,7 +219,7 @@ const Dashboard = () => {
 
       // IMPORTANTE: Passar account_id para TODAS as APIs do dashboard
       // Isso garante que apenas transações da conta ativa sejam mostradas
-      const [statsRes, categoryRes, weeklyRes, monthlyRes, transactionsRes] = await Promise.all([
+      const [statsRes, categoryRes, weeklyRes, monthlyRes, transactionsRes, accountsRes] = await Promise.all([
         dashboardApi.getStats(period, accountFilter),
         dashboardApi.getExpensesByCategory(period, accountFilter),
         dashboardApi.getWeeklyStats(period, accountFilter),
@@ -208,6 +228,7 @@ const Dashboard = () => {
           limit: 10,
           account_id: accountFilter
         }),
+        bankApi.getAccounts(), // Buscar contas atualizadas (saldo e limite)
       ]);
 
       console.log(`📈 Received weekly stats: ${weeklyRes.data.length} weeks`);
@@ -218,6 +239,16 @@ const Dashboard = () => {
       setWeeklyStats(weeklyRes.data);
       setMonthlyStats(monthlyRes.data);
       setRecentTransactions(transactionsRes.data.transactions);
+
+      // Atualizar dados da conta ativa (para mostrar saldo e limite atualizados)
+      if (activeAccountId && accountsRes.data) {
+        const accounts = accountsRes.data as BankAccount[];
+        const foundAccount = accounts.find((acc) => acc.id === activeAccountId);
+        if (foundAccount) {
+          setActiveAccount(foundAccount);
+          console.log(`💰 Account updated: balance=${foundAccount.balance}, credit_limit=${foundAccount.credit_limit || 'N/A'}`);
+        }
+      }
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -631,10 +662,26 @@ const Dashboard = () => {
         <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Saldo total hoje</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">Saldo total hoje</p>
+                {activeAccount?.credit_limit && activeAccount.credit_limit > 0 && (
+                  <p className="text-xs text-gray-400 ml-2">
+                    Limite: {formatCurrency(activeAccount.credit_limit)}
+                  </p>
+                )}
+              </div>
+              <p className={`text-xl sm:text-2xl font-bold mt-1 ${(stats?.total_balance || 0) >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
                 {formatCurrency(stats?.total_balance || 0)}
               </p>
+              {/* Mostrar disponível quando houver limite */}
+              {activeAccount?.credit_limit && activeAccount.credit_limit > 0 && (
+                <p className={`text-xs mt-1 ${(stats?.total_balance || 0) < 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                  {(stats?.total_balance || 0) < 0
+                    ? `Disponível: ${formatCurrency(activeAccount.credit_limit + (stats?.total_balance || 0))}`
+                    : `Total disponível: ${formatCurrency(activeAccount.credit_limit + (stats?.total_balance || 0))}`
+                  }
+                </p>
+              )}
             </div>
             <div className="p-3 bg-primary-100 rounded-full">
               <Wallet className="w-6 h-6 text-primary-600" />

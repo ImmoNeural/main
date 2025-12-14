@@ -7,6 +7,7 @@ export interface BankAccount {
   account_type?: string;
   balance: number;
   currency: string;
+  credit_limit?: number; // Limite de crédito (cartão) ou cheque especial (conta corrente)
   connected_at: number;
   last_sync_at?: number;
   status: 'active' | 'expired' | 'disconnected';

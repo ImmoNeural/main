@@ -7,6 +7,7 @@ export interface BankAccount {
   account_type?: string;
   balance: number;
   currency: string;
+  credit_limit?: number; // Limite de crédito (cartão) ou cheque especial (conta corrente)
   access_token?: string;
   refresh_token?: string;
   token_expires_at?: number;
@@ -78,6 +79,8 @@ export interface OpenBankingAccount {
     amount: number;
     currency: string;
   };
+  credit_limit?: number; // Limite de crédito (cartão de crédito)
+  overdraft_limit?: number; // Limite de cheque especial (conta corrente)
 }
 
 export interface OpenBankingTransaction {
