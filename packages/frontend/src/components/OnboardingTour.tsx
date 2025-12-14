@@ -4,7 +4,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Wallet,
-  Settings,
   CheckCircle,
   ArrowRight,
 } from 'lucide-react';
@@ -15,6 +14,7 @@ interface OnboardingStep {
   description: string;
   icon?: React.ReactNode;
   image?: string; // Caminho para imagem
+  imageSize?: 'small' | 'medium' | 'large'; // Tamanho da imagem
   tips?: string[];
 }
 
@@ -34,7 +34,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'connect-bank',
     title: '1. Conecte sua Conta Bancária',
     description: 'O primeiro passo é conectar sua conta bancária. Usamos Open Finance (regulado pelo Banco Central) para importar suas transações automaticamente.',
-    image: '/bancos_arq.png',
+    image: '/bancos.png',
     tips: [
       'Vá em "Contas" no menu lateral',
       'Clique em "Conectar Banco"',
@@ -83,6 +83,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     title: '5. Dashboard - Visão Geral',
     description: 'O Dashboard mostra um resumo completo das suas finanças: saldo, receitas, despesas e gráficos de evolução.',
     image: '/marketing.png',
+    imageSize: 'small',
     tips: [
       'Veja o saldo atual da conta selecionada',
       'Acompanhe receitas vs despesas',
@@ -106,7 +107,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'plans',
     title: '7. Planos e Assinatura',
     description: 'Você tem 7 dias grátis para testar todas as funcionalidades. Depois, escolha o plano que melhor se adapta às suas necessidades.',
-    icon: <Settings className="w-12 h-12 text-gray-500" />,
+    image: '/Planos.png',
     tips: [
       'Manual (R$ 13,90/mês): Importação manual de transações',
       'Conectado (R$ 29,90/mês): Open Finance + 2 contas',
@@ -206,7 +207,9 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
           {/* Image or Icon */}
           <div className="flex justify-center mb-6">
             {step.image ? (
-              <div className="w-full max-w-sm rounded-xl overflow-hidden shadow-lg border border-gray-200">
+              <div className={`rounded-xl overflow-hidden shadow-lg border border-gray-200 ${
+                step.imageSize === 'small' ? 'max-w-[200px]' : 'w-full max-w-sm'
+              }`}>
                 <img
                   src={step.image}
                   alt={step.title}
