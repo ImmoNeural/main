@@ -19,10 +19,14 @@ import LandingPage from './pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import StructuredData from './components/StructuredData';
+import { Capacitor } from '@capacitor/core';
 
 // Google Analytics Measurement ID
 // IMPORTANTE: Substitua pelo seu próprio ID do Google Analytics
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXXX';
+
+// Detectar se está rodando no mobile (Capacitor)
+const isMobile = Capacitor.isNativePlatform();
 
 function App() {
   return (
@@ -36,8 +40,8 @@ function App() {
           <StructuredData />
 
           <Routes>
-            {/* Rota pública - Homepage */}
-            <Route path="/" element={<LandingPage />} />
+            {/* Rota pública - Homepage (no mobile vai direto para login) */}
+            <Route path="/" element={isMobile ? <Navigate to="/login" replace /> : <LandingPage />} />
 
             {/* Rotas públicas de autenticação */}
             <Route path="/login" element={<Login />} />
