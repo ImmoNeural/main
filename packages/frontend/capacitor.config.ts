@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Guru do Dindin',
   webDir: 'dist',
   android: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#1e40af',
     allowMixedContent: true,
   },
   plugins: {
@@ -13,7 +13,7 @@ const config: CapacitorConfig = {
       launchShowDuration: 3000,
       launchAutoHide: true,
       launchFadeOutDuration: 500,
-      backgroundColor: '#0f172a',
+      backgroundColor: '#1e40af',
       showSpinner: false,
       androidScaleType: 'CENTER_CROP',
       splashFullScreen: true,

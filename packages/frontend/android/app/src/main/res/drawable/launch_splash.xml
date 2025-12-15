@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background color -->
-    <item android:drawable="@color/colorPrimaryDark"/>
+    <!-- Background color - azul escuro brilhante -->
+    <item android:drawable="@color/splash_background"/>
 
     <!-- Splash image centered -->
     <item>
