@@ -11,8 +11,12 @@ import type {
   Category,
 } from '../types';
 
+// API URL para produção/mobile
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? 'https://www.gurudodindin.com.br/api' : '/api');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE_URL,
   timeout: 30000,
 });
 
