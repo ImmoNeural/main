@@ -1,9 +1,14 @@
 import Stripe from 'stripe';
 
-// Inicializar Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-10-29.clover',
-});
+// Inicializar Stripe apenas se a chave estiver configurada
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeKey
+  ? new Stripe(stripeKey, { apiVersion: '2025-10-29.clover' })
+  : null;
+
+if (!stripe) {
+  console.warn('⚠️ Stripe não configurado - funcionalidades de pagamento desabilitadas');
+}
 
 // URLs base para redirecionamento
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -25,11 +30,28 @@ interface CreateCustomerParams {
 
 export class StripeService {
   /**
+   * Verificar se Stripe está configurado
+   */
+  private checkStripeAvailable(): void {
+    if (!stripe) {
+      throw new Error('Stripe não está configurado. Configure STRIPE_SECRET_KEY no .env');
+    }
+  }
+
+  /**
+   * Verificar se Stripe está disponível (sem erro)
+   */
+  isAvailable(): boolean {
+    return stripe !== null;
+  }
+
+  /**
    * Criar cliente no Stripe
    */
   async createCustomer(params: CreateCustomerParams): Promise<Stripe.Customer> {
+    this.checkStripeAvailable();
     try {
-      const customer = await stripe.customers.create({
+      const customer = await stripe!.customers.create({
         email: params.email,
         name: params.name,
         metadata: params.metadata || {},
@@ -45,8 +67,9 @@ export class StripeService {
    * Buscar cliente por email
    */
   async getCustomerByEmail(email: string): Promise<Stripe.Customer | null> {
+    this.checkStripeAvailable();
     try {
-      const customers = await stripe.customers.list({
+      const customers = await stripe!.customers.list({
         email: email,
         limit: 1,
       });
@@ -106,7 +129,7 @@ export class StripeService {
       };
 
       // Criar sessão
-      const session = await stripe.checkout.sessions.create(sessionParams);
+      const session = await stripe!.checkout.sessions.create(sessionParams);
       return session;
     } catch (error: any) {
       console.error('Error creating Stripe checkout session:', error.message);
@@ -123,7 +146,7 @@ export class StripeService {
     metadata?: Record<string, string>
   ): Promise<Stripe.Subscription> {
     try {
-      const subscription = await stripe.subscriptions.create({
+      const subscription = await stripe!.subscriptions.create({
         customer: customerId,
         items: [{ price: priceId }],
         metadata: metadata || {},
@@ -140,7 +163,7 @@ export class StripeService {
    */
   async cancelSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
     try {
-      const subscription = await stripe.subscriptions.cancel(subscriptionId);
+      const subscription = await stripe!.subscriptions.cancel(subscriptionId);
       return subscription;
     } catch (error: any) {
       console.error('Error canceling Stripe subscription:', error.message);
@@ -153,7 +176,7 @@ export class StripeService {
    */
   async getSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
     try {
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const subscription = await stripe!.subscriptions.retrieve(subscriptionId);
       return subscription;
     } catch (error: any) {
       console.error('Error fetching Stripe subscription:', error.message);
@@ -169,7 +192,7 @@ export class StripeService {
     params: Partial<Stripe.SubscriptionUpdateParams>
   ): Promise<Stripe.Subscription> {
     try {
-      const subscription = await stripe.subscriptions.update(subscriptionId, params);
+      const subscription = await stripe!.subscriptions.update(subscriptionId, params);
       return subscription;
     } catch (error: any) {
       console.error('Error updating Stripe subscription:', error.message);
@@ -182,7 +205,7 @@ export class StripeService {
    */
   async getCheckoutSession(sessionId: string): Promise<Stripe.Checkout.Session> {
     try {
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const session = await stripe!.checkout.sessions.retrieve(sessionId);
       return session;
     } catch (error: any) {
       console.error('Error fetching Stripe checkout session:', error.message);
@@ -196,7 +219,7 @@ export class StripeService {
    */
   async createCustomerPortalSession(customerId: string): Promise<Stripe.BillingPortal.Session> {
     try {
-      const session = await stripe.billingPortal.sessions.create({
+      const session = await stripe!.billingPortal.sessions.create({
         customer: customerId,
         return_url: `${FRONTEND_URL}/app/planos`,
       });
