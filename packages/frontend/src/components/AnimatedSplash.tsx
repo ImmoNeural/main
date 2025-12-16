@@ -41,7 +41,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
         {/* Logo with rotation animation */}
         <div className="logo-container">
           <img
-            src="/logobranco.png"
+            src="./logobranco.png"
             alt="Guru do Dindin"
             className="splash-logo"
           />
