@@ -234,9 +234,10 @@ export class StripeService {
    * Construir evento do webhook (valida assinatura)
    */
   constructWebhookEvent(payload: string | Buffer, signature: string): Stripe.Event {
+    this.checkStripeAvailable();
     try {
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
-      const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      const event = stripe!.webhooks.constructEvent(payload, signature, webhookSecret);
       return event;
     } catch (error: any) {
       console.error('Error constructing webhook event:', error.message);
