@@ -14,10 +14,10 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
   const fullText = 'Guru do Dindin';
 
   useEffect(() => {
-    // Start typing after a small delay (200ms)
+    // Start typing after a small delay (300ms)
     const startDelay = setTimeout(() => {
       setStartTyping(true);
-    }, 200);
+    }, 300);
 
     return () => clearTimeout(startDelay);
   }, []);
@@ -26,7 +26,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
     if (!startTyping) return;
 
     // Typing effect - letter by letter
-    // 14 chars * 120ms = 1680ms, starts at 200ms, ends at ~1880ms (synced with 2s logo animation)
+    // 14 chars * 200ms = 2800ms, starts at 300ms, ends at ~3100ms (synced with 4s logo animation)
     let currentIndex = 0;
     const typingInterval = setInterval(() => {
       if (currentIndex <= fullText.length) {
@@ -34,7 +34,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
         currentIndex++;
       } else {
         clearInterval(typingInterval);
-        // Show sparkle effect after text is complete (wait for logo to finish)
+        // Show sparkle effect after text is complete (wait for logo to finish at 3s)
         setTimeout(() => {
           setShowSparkle(true);
 
@@ -43,9 +43,9 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
             setFadeOut(true);
             setTimeout(onFinish, 500);
           }, 800);
-        }, 200); // Small delay to sync with logo end
+        }, 700); // Wait for logo to finish rotating back
       }
-    }, 120);
+    }, 200);
 
     return () => clearInterval(typingInterval);
   }, [onFinish, startTyping]);
