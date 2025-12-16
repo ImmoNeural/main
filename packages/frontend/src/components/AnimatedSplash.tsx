@@ -9,24 +9,12 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
   const [text, setText] = useState('');
   const [showSparkle, setShowSparkle] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
-  const [startTyping, setStartTyping] = useState(false);
 
   const fullText = 'Guru do Dindin';
 
   useEffect(() => {
-    // Start typing after a small delay (300ms)
-    const startDelay = setTimeout(() => {
-      setStartTyping(true);
-    }, 300);
-
-    return () => clearTimeout(startDelay);
-  }, []);
-
-  useEffect(() => {
-    if (!startTyping) return;
-
-    // Typing effect - letter by letter
-    // 14 chars * 200ms = 2800ms, starts at 300ms, ends at ~3100ms (synced with 4s logo animation)
+    // Start typing immediately at t=0
+    // 14 chars * 250ms = 3500ms (synced with 4s logo animation)
     let currentIndex = 0;
     const typingInterval = setInterval(() => {
       if (currentIndex <= fullText.length) {
@@ -34,7 +22,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
         currentIndex++;
       } else {
         clearInterval(typingInterval);
-        // Show sparkle effect after text is complete (wait for logo to finish at 3s)
+        // Show sparkle effect after text is complete
         setTimeout(() => {
           setShowSparkle(true);
 
@@ -43,12 +31,12 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
             setFadeOut(true);
             setTimeout(onFinish, 500);
           }, 800);
-        }, 700); // Wait for logo to finish rotating back
+        }, 300);
       }
-    }, 200);
+    }, 250);
 
     return () => clearInterval(typingInterval);
-  }, [onFinish, startTyping]);
+  }, [onFinish]);
 
   return (
     <div className={`animated-splash ${fadeOut ? 'fade-out' : ''}`}>
@@ -67,7 +55,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
         <div className="splash-text-container">
           <h1 className="splash-text">
             {text}
-            {startTyping && !showSparkle && <span className="cursor">|</span>}
+            {!showSparkle && <span className="cursor">|</span>}
           </h1>
           {showSparkle && (
             <div className="sparkle-effect">

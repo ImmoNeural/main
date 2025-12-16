@@ -17,10 +17,13 @@
 }
 
 .splash-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
 }
 
 /* Logo container with rotation */
@@ -97,10 +100,12 @@
 /* Text container */
 .splash-text-container {
   position: relative;
-  min-height: 60px;
+  height: 60px;
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
 .splash-text {
