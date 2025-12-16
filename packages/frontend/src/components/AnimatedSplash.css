@@ -17,23 +17,17 @@
 }
 
 .splash-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
-  width: 300px;
-  height: 250px;
+  gap: 1rem;
 }
 
 /* Logo container with rotation */
 .logo-container {
+  position: relative;
   width: 150px;
   height: 150px;
-  flex-shrink: 0;
 }
 
 .splash-logo {
@@ -46,78 +40,72 @@
 
 @keyframes rotateGuru {
   0% {
-    transform: rotate(0deg) scale(1);
-    opacity: 1;
+    transform: rotate(0deg);
   }
   25% {
-    transform: rotate(0deg) scale(1);
-    opacity: 1;
+    transform: rotate(0deg);
   }
   37.5% {
-    transform: rotate(180deg) scale(1);
-    opacity: 1;
+    transform: rotate(180deg);
   }
   62.5% {
-    transform: rotate(180deg) scale(1);
-    opacity: 1;
+    transform: rotate(180deg);
   }
   75% {
-    transform: rotate(360deg) scale(1);
-    opacity: 1;
+    transform: rotate(360deg);
   }
   100% {
-    transform: rotate(360deg) scale(1);
-    opacity: 1;
+    transform: rotate(360deg);
   }
 }
 
 /* Sparkle ring around logo */
 .sparkle-ring {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 180px;
-  height: 180px;
+  top: -20px;
+  left: -20px;
+  width: 190px;
+  height: 190px;
   border: 3px solid transparent;
   border-top-color: #fbbf24;
   border-right-color: #fbbf24;
   border-radius: 50%;
   animation: sparkleRing 1s ease-out forwards;
+  pointer-events: none;
 }
 
 @keyframes sparkleRing {
   0% {
-    transform: translate(-50%, -50%) rotate(0deg) scale(0.8);
+    transform: rotate(0deg) scale(0.8);
     opacity: 0;
   }
   50% {
     opacity: 1;
   }
   100% {
-    transform: translate(-50%, -50%) rotate(360deg) scale(1.2);
+    transform: rotate(360deg) scale(1.1);
     opacity: 0;
   }
 }
 
 /* Text container */
 .splash-text-container {
-  height: 60px;
+  height: 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .splash-text {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #ffffff;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   letter-spacing: 2px;
   margin: 0;
+  white-space: nowrap;
 }
 
 /* Blinking cursor */
@@ -138,8 +126,7 @@
 
 /* Sparkle effect */
 .sparkle-effect {
-  position: absolute;
-  bottom: -30px;
+  margin-top: 10px;
   animation: sparkleAppear 0.5s ease-out forwards;
 }
 
@@ -179,11 +166,13 @@
   }
 
   .sparkle-ring {
+    top: -15px;
+    left: -15px;
     width: 150px;
     height: 150px;
   }
 
   .splash-text {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
   }
 }
