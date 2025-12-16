@@ -9,10 +9,22 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
   const [text, setText] = useState('');
   const [showSparkle, setShowSparkle] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  const [startTyping, setStartTyping] = useState(false);
 
   const fullText = 'Guru do Dindin';
 
   useEffect(() => {
+    // Wait for logo rotation (1.5s) + pause (1s) before starting text
+    const startDelay = setTimeout(() => {
+      setStartTyping(true);
+    }, 2500);
+
+    return () => clearTimeout(startDelay);
+  }, []);
+
+  useEffect(() => {
+    if (!startTyping) return;
+
     // Typing effect - letter by letter
     let currentIndex = 0;
     const typingInterval = setInterval(() => {
@@ -33,7 +45,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
     }, 100);
 
     return () => clearInterval(typingInterval);
-  }, [onFinish]);
+  }, [onFinish, startTyping]);
 
   return (
     <div className={`animated-splash ${fadeOut ? 'fade-out' : ''}`}>
@@ -52,7 +64,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
         <div className="splash-text-container">
           <h1 className="splash-text">
             {text}
-            <span className="cursor">|</span>
+            {startTyping && !showSparkle && <span className="cursor">|</span>}
           </h1>
           {showSparkle && (
             <div className="sparkle-effect">
