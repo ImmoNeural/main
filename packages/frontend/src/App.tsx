@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
@@ -19,6 +20,7 @@ import LandingPage from './pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import StructuredData from './components/StructuredData';
+import AnimatedSplash from './components/AnimatedSplash';
 import { Capacitor } from '@capacitor/core';
 
 // Google Analytics Measurement ID
@@ -29,6 +31,17 @@ const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXX
 const isMobile = Capacitor.isNativePlatform();
 
 function App() {
+  const [showSplash, setShowSplash] = useState(isMobile);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
+
+  // Show animated splash on mobile
+  if (showSplash) {
+    return <AnimatedSplash onFinish={handleSplashFinish} />;
+  }
+
   return (
     <HelmetProvider>
       <AuthProvider>
