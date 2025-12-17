@@ -179,7 +179,7 @@ const Layout = () => {
         ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
       `}>
         {/* Page Content */}
-        <main className="flex-1 px-2 sm:px-3 lg:px-6 py-3 sm:py-4 lg:py-8 overflow-x-hidden pb-20 lg:pb-8">
+        <main className="flex-1 ml-14 lg:ml-0 px-2 sm:px-3 lg:px-6 py-3 sm:py-4 lg:py-8 overflow-x-hidden pb-4 lg:pb-8">
           {/* Banner de Status da Assinatura - Aparece em todas as páginas */}
           {isExpired && subscription?.trial_end_date && location.pathname !== '/app/planos' && (
             <div className="mb-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-lg animate-pulse">
@@ -218,9 +218,19 @@ const Layout = () => {
         </main>
       </div>
 
-      {/* Bottom Navigation - Mobile apenas */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-primary-800 to-primary-700 border-t border-primary-600 z-50 safe-area-bottom">
-        <div className="flex items-center justify-around px-2 py-2">
+      {/* Left Sidebar Navigation - Mobile apenas (apenas ícones) */}
+      <nav className="lg:hidden fixed left-0 top-0 bottom-0 w-14 bg-gradient-to-b from-primary-800 to-primary-700 border-r border-primary-600 z-50 flex flex-col items-center py-4">
+        {/* Logo pequeno no topo */}
+        <div className="mb-4 pb-3 border-b border-primary-600 w-full flex justify-center">
+          <img
+            src="/logobranco.png"
+            alt="Guru"
+            className="w-8 h-8 object-contain"
+          />
+        </div>
+
+        {/* Navigation icons */}
+        <div className="flex-1 flex flex-col items-center space-y-2 overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -228,27 +238,29 @@ const Layout = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 min-w-0 flex-1 relative
+                className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200
                   ${
                     isActive
-                      ? 'bg-white text-primary-700'
-                      : 'text-white/80'
+                      ? 'bg-white text-primary-700 shadow-lg'
+                      : 'text-white/80 hover:bg-primary-600'
                   }
                 `}
+                title={item.name}
               >
-                <Icon className={`${isActive ? 'w-5 h-5' : 'w-4 h-4'} flex-shrink-0 mb-0.5`} />
-                <span className={`text-[9px] font-medium truncate w-full text-center ${isActive ? 'font-semibold' : ''}`}>
-                  {item.name}
-                </span>
+                <Icon className={`${isActive ? 'w-5 h-5' : 'w-5 h-5'} flex-shrink-0`} />
               </Link>
             );
           })}
+        </div>
+
+        {/* Logout no fundo */}
+        <div className="pt-3 border-t border-primary-600 w-full flex justify-center">
           <button
             onClick={handleLogout}
-            className="flex flex-col items-center justify-center px-3 py-1.5 rounded-lg text-white/80 min-w-0 flex-1"
+            className="flex items-center justify-center w-10 h-10 rounded-xl text-white/80 hover:bg-primary-600 transition-all duration-200"
+            title="Sair"
           >
-            <LogOut className="w-4 h-4 flex-shrink-0 mb-0.5" />
-            <span className="text-[9px] font-medium truncate w-full text-center">Sair</span>
+            <LogOut className="w-5 h-5 flex-shrink-0" />
           </button>
         </div>
       </nav>
