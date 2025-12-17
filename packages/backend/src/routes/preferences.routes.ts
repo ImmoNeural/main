@@ -320,14 +320,15 @@ router.get('/categories', async (req: Request, res: Response) => {
 /**
  * POST /api/preferences/goal
  * Salva o objetivo financeiro do usuário (onboarding)
- * Body: { goal: 'quitar_dividas' | 'comecar_poupar' | 'evoluir_gestao' }
+ * Body: { goal: string }
  */
 router.post('/goal', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { goal } = req.body;
 
-    if (!goal || !['quitar_dividas', 'comecar_poupar', 'evoluir_gestao'].includes(goal)) {
+    const validGoals = ['entender_gastos', 'gastar_melhor', 'contas_controle', 'evitar_golpes'];
+    if (!goal || !validGoals.includes(goal)) {
       return res.status(400).json({ error: 'Invalid goal' });
     }
 
