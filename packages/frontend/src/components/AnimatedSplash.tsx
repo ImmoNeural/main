@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import './AnimatedSplash.css';
 
 interface AnimatedSplashProps {
   onFinish: () => void;
@@ -13,8 +12,6 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
   const fullText = 'Guru do Dindin';
 
   useEffect(() => {
-    // Start typing immediately at t=0
-    // 14 chars * 250ms = 3500ms (synced with 4s logo animation)
     let currentIndex = 0;
     const typingInterval = setInterval(() => {
       if (currentIndex <= fullText.length) {
@@ -22,11 +19,8 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
         currentIndex++;
       } else {
         clearInterval(typingInterval);
-        // Show sparkle effect after text is complete
         setTimeout(() => {
           setShowSparkle(true);
-
-          // Fade out and finish after sparkle
           setTimeout(() => {
             setFadeOut(true);
             setTimeout(onFinish, 500);
@@ -39,31 +33,134 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
   }, [onFinish]);
 
   return (
-    <div className={`animated-splash ${fadeOut ? 'fade-out' : ''}`}>
-      <div className="splash-content">
-        {/* Logo with rotation animation */}
-        <div className="logo-container">
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1d4ed8 100%)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+      opacity: fadeOut ? 0 : 1,
+      transition: 'opacity 0.5s ease-out',
+    }}>
+      {/* Container com tamanho fixo */}
+      <div style={{
+        width: '300px',
+        height: '280px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        {/* Logo */}
+        <div style={{
+          width: '150px',
+          height: '150px',
+          position: 'relative',
+        }}>
           <img
             src="./logobranco.png"
             alt="Guru do Dindin"
-            className="splash-logo"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              animation: 'rotateGuru 4s ease-in-out forwards',
+              filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))',
+            }}
           />
-          {showSparkle && <div className="sparkle-ring" />}
+          {showSparkle && (
+            <div style={{
+              position: 'absolute',
+              top: '-20px',
+              left: '-20px',
+              width: '190px',
+              height: '190px',
+              border: '3px solid transparent',
+              borderTopColor: '#fbbf24',
+              borderRightColor: '#fbbf24',
+              borderRadius: '50%',
+              animation: 'sparkleRing 1s ease-out forwards',
+              pointerEvents: 'none',
+            }} />
+          )}
         </div>
 
-        {/* Animated text */}
-        <div className="splash-text-container">
-          <h1 className="splash-text">
+        {/* Texto - altura fixa para não mover */}
+        <div style={{
+          height: '80px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          paddingTop: '20px',
+        }}>
+          <h1 style={{
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            fontSize: '1.5rem',
+            fontWeight: 700,
+            color: '#ffffff',
+            textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+            letterSpacing: '2px',
+            margin: 0,
+            whiteSpace: 'nowrap',
+            minWidth: '220px',
+            textAlign: 'center',
+          }}>
             {text}
-            {!showSparkle && <span className="cursor">|</span>}
+            <span style={{
+              animation: 'blink 0.7s infinite',
+              color: '#fbbf24',
+              fontWeight: 300,
+              visibility: showSparkle ? 'hidden' : 'visible',
+            }}>|</span>
           </h1>
           {showSparkle && (
-            <div className="sparkle-effect">
-              <span className="sparkle">✨</span>
+            <div style={{
+              marginTop: '10px',
+              animation: 'sparkleAppear 0.5s ease-out forwards',
+            }}>
+              <span style={{
+                fontSize: '1.5rem',
+                animation: 'sparkleFloat 0.8s ease-in-out infinite',
+              }}>✨</span>
             </div>
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes rotateGuru {
+          0% { transform: rotate(0deg); }
+          25% { transform: rotate(0deg); }
+          37.5% { transform: rotate(180deg); }
+          62.5% { transform: rotate(180deg); }
+          75% { transform: rotate(360deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes sparkleRing {
+          0% { transform: rotate(0deg) scale(0.8); opacity: 0; }
+          50% { opacity: 1; }
+          100% { transform: rotate(360deg) scale(1.1); opacity: 0; }
+        }
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+        @keyframes sparkleAppear {
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.5); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes sparkleFloat {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-5px) rotate(10deg); }
+        }
+      `}</style>
     </div>
   );
 };
