@@ -61,7 +61,7 @@ const MobileRedirect = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1d4ed8 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -69,8 +69,8 @@ const MobileRedirect = () => {
       <div style={{
         width: '40px',
         height: '40px',
-        border: '3px solid rgba(255,255,255,0.1)',
-        borderTopColor: '#22c55e',
+        border: '3px solid rgba(255,255,255,0.3)',
+        borderTopColor: '#ffffff',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
       }} />
