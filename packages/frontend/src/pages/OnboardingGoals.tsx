@@ -11,22 +11,28 @@ interface GoalOption {
 
 const goalOptions: GoalOption[] = [
   {
-    id: 'quitar_dividas',
-    title: 'Quitar dívidas',
-    description: 'Quero me organizar para sair do vermelho e viver mais tranquilo(a).',
-    icon: '💳',
+    id: 'entender_gastos',
+    title: 'Entender para onde meu dinheiro está indo',
+    description: 'No fim do mês, o saldo não reflete o que eu imaginava.',
+    icon: '🔍',
   },
   {
-    id: 'comecar_poupar',
-    title: 'Começar a poupar',
-    description: 'Preciso conhecer melhor meus gastos para começar a economizar.',
-    icon: '🐷',
+    id: 'gastar_melhor',
+    title: 'Gastar melhor e conseguir economizar',
+    description: 'Quero cortar excessos e guardar dinheiro com mais constância.',
+    icon: '💰',
   },
   {
-    id: 'evoluir_gestao',
-    title: 'Evoluir minha gestão',
-    description: 'Quero um controle mais eficiente, para sair da planilha ou caderninho.',
+    id: 'contas_controle',
+    title: 'Manter minhas contas sob controle sem me preocupar',
+    description: 'Quero receber notificações e saber quanto ainda posso gastar com segurança.',
     icon: '📊',
+  },
+  {
+    id: 'evitar_golpes',
+    title: 'Evitar cobranças indevidas e possíveis golpes',
+    description: 'Quero ser avisado rapidamente se algo fora do normal acontecer.',
+    icon: '🛡️',
   },
 ];
 
@@ -75,6 +81,7 @@ const OnboardingGoals = () => {
             width: '100%',
             height: '100%',
             objectFit: 'contain',
+            filter: 'brightness(0) invert(1)',
           }}
         />
       </div>
