@@ -58,6 +58,10 @@
     <script src="https://cdn.pluggy.ai/pluggy-connect/v2.8.2/pluggy-connect.js"></script>
   </head>
   <body>
+    <script>
+      // Garante que inicia em light mode para evitar tela preta
+      document.documentElement.classList.remove('dark');
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -14,18 +14,29 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_KEY = 'guru_theme';
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    try {
-      const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-      return stored || 'light';
-    } catch {
-      return 'light';
-    }
-  });
+  // Sempre iniciar com light para evitar flash de tela preta
+  const [theme, setThemeState] = useState<Theme>('light');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const isDark = theme === 'dark';
 
+  // Carregar tema do localStorage apenas após montar
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem(THEME_KEY) as Theme | null;
+      if (stored === 'dark' || stored === 'light') {
+        setThemeState(stored);
+      }
+    } catch {
+      // Ignorar erro de localStorage
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Aplicar classe dark apenas após inicialização
+  useEffect(() => {
+    if (!isInitialized) return;
+
     try {
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -36,7 +47,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // Ignorar erro
     }
-  }, [theme]);
+  }, [theme, isInitialized]);
 
   const toggleTheme = () => {
     setThemeState(prev => prev === 'light' ? 'dark' : 'light');
