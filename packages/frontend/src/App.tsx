@@ -17,6 +17,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import LandingPage from './pages/LandingPage';
+import OnboardingGoals from './pages/OnboardingGoals';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import StructuredData from './components/StructuredData';
@@ -61,6 +62,16 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Onboarding após cadastro */}
+            <Route
+              path="/onboarding/goals"
+              element={
+                <ProtectedRoute>
+                  <OnboardingGoals />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rotas protegidas */}
             <Route

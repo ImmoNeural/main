@@ -45,9 +45,9 @@ const Register = () => {
       const message = response?.data?.message || 'Conta criada com sucesso! Você ganhou 7 dias grátis para testar.';
       setSuccessMessage(message);
 
-      // Redirecionar novo usuário para dashboard
+      // Redirecionar novo usuário para onboarding de objetivos
       setTimeout(() => {
-        navigate('/app/dashboard');
+        navigate('/onboarding/goals');
       }, 2000); // 2 segundos para ler a mensagem
     } catch (err: any) {
       console.error('Register error:', err);

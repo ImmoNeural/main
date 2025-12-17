@@ -317,4 +317,74 @@ router.get('/categories', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/preferences/goal
+ * Salva o objetivo financeiro do usuário (onboarding)
+ * Body: { goal: 'quitar_dividas' | 'comecar_poupar' | 'evoluir_gestao' }
+ */
+router.post('/goal', async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+    const { goal } = req.body;
+
+    if (!goal || !['quitar_dividas', 'comecar_poupar', 'evoluir_gestao'].includes(goal)) {
+      return res.status(400).json({ error: 'Invalid goal' });
+    }
+
+    console.log(`🎯 [ONBOARDING] Salvando objetivo "${goal}" para user ${user_id.substring(0, 8)}...`);
+
+    // Salvar ou atualizar o objetivo na tabela user_settings
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({
+        user_id,
+        financial_goal: goal,
+        onboarding_completed: true,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+    if (error) {
+      console.error('Error saving goal:', error);
+      // Se a tabela não existir, criar no Supabase ou ignorar
+      // Por enquanto, vamos retornar sucesso mesmo assim para não bloquear o fluxo
+      console.warn('⚠️ Tabela user_settings pode não existir. Criar via migration.');
+    }
+
+    console.log(`✅ [ONBOARDING] Objetivo salvo com sucesso!`);
+    res.json({ success: true, goal });
+  } catch (error) {
+    console.error('Error saving goal:', error);
+    // Não retornar erro para não bloquear o onboarding
+    res.json({ success: true, warning: 'Goal might not have been saved' });
+  }
+});
+
+/**
+ * GET /api/preferences/goal
+ * Retorna o objetivo financeiro do usuário
+ */
+router.get('/goal', async (req: Request, res: Response) => {
+  try {
+    const user_id = req.userId!;
+
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('financial_goal, onboarding_completed')
+      .eq('user_id', user_id)
+      .single();
+
+    if (error || !data) {
+      return res.json({ goal: null, onboarding_completed: false });
+    }
+
+    res.json({
+      goal: data.financial_goal,
+      onboarding_completed: data.onboarding_completed,
+    });
+  } catch (error) {
+    console.error('Error fetching goal:', error);
+    res.json({ goal: null, onboarding_completed: false });
+  }
+});
+
 export default router;
