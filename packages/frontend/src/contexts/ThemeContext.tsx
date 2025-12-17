@@ -11,27 +11,27 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_KEY = 'guru_theme';
-
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  // TEMPORÁRIO: Forçar light mode até dark mode ser implementado em todas as páginas
-  const [theme, setThemeState] = useState<Theme>('light');
-
-  const isDark = theme === 'dark';
+  // TEMPORÁRIO: Forçar light mode - dark mode desabilitado
+  const [theme] = useState<Theme>('light');
+  const isDark = false;
 
   useEffect(() => {
-    // IMPORTANTE: Sempre remover classe dark para evitar tela preta
-    // Dark mode está desabilitado temporariamente
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem(THEME_KEY, 'light');
+    // Garantir que não há classe dark
+    try {
+      document.documentElement.classList.remove('dark');
+    } catch (e) {
+      // Ignorar erro se document não disponível
+    }
   }, []);
 
+  // Funções desabilitadas temporariamente
   const toggleTheme = () => {
-    setThemeState(prev => prev === 'light' ? 'dark' : 'light');
+    // Desabilitado
   };
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
+  const setTheme = () => {
+    // Desabilitado
   };
 
   return (
