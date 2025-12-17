@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings, PlusCircle, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings, PlusCircle, HelpCircle, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { useBudgetNotifications } from '../hooks/useBudgetNotifications';
@@ -12,6 +13,7 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
   const { isTrialActive, daysRemaining, isExpired, subscription } = useSubscription();
   const { showOnboarding, completeOnboarding, skipOnboarding, resetOnboarding } = useOnboarding();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -35,7 +37,7 @@ const Layout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+    <div className={`min-h-screen flex flex-col lg:flex-row ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Onboarding Tour */}
       {showOnboarding && (
         <OnboardingTour
@@ -127,6 +129,14 @@ const Layout = () => {
                 </div>
               </div>
               <button
+                onClick={toggleTheme}
+                className="w-full flex items-center space-x-3 px-3 py-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                title={isDark ? 'Modo claro' : 'Modo escuro'}
+              >
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                <span className="text-sm font-medium">{isDark ? 'Modo Claro' : 'Modo Escuro'}</span>
+              </button>
+              <button
                 onClick={resetOnboarding}
                 className="w-full flex items-center space-x-3 px-3 py-2 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
                 title="Ver tutorial novamente"
@@ -144,6 +154,13 @@ const Layout = () => {
             </div>
           ) : (
             <div className="space-y-2">
+              <button
+                onClick={toggleTheme}
+                className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
+                title={isDark ? 'Modo claro' : 'Modo escuro'}
+              >
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
               <button
                 onClick={resetOnboarding}
                 className="w-full flex items-center justify-center p-3 text-white/80 hover:bg-primary-600 rounded-lg transition-colors"
@@ -257,8 +274,15 @@ const Layout = () => {
           })}
         </div>
 
-        {/* Logout no fundo */}
+        {/* Botões no fundo */}
         <div className="pt-3 border-t border-primary-600 w-full flex flex-col items-center space-y-2">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center w-10 h-10 rounded-xl text-white/80 hover:bg-primary-600 transition-all duration-200"
+            title={isDark ? 'Modo claro' : 'Modo escuro'}
+          >
+            {isDark ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
+          </button>
           <button
             onClick={resetOnboarding}
             className="flex items-center justify-center w-10 h-10 rounded-xl text-white/80 hover:bg-primary-600 transition-all duration-200"

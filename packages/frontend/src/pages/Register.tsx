@@ -45,6 +45,11 @@ const Register = () => {
       const message = response?.data?.message || 'Conta criada com sucesso! Você ganhou 7 dias grátis para testar.';
       setSuccessMessage(message);
 
+      // Limpar flags de onboarding para garantir que o tutorial apareça
+      localStorage.removeItem('guru_onboarding_completed');
+      localStorage.removeItem('guru_onboarding_skipped');
+      localStorage.removeItem('notifications_asked');
+
       // Redirecionar novo usuário para onboarding de objetivos
       setTimeout(() => {
         navigate('/onboarding/goals');

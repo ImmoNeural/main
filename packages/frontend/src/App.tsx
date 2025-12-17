@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -91,9 +92,10 @@ function App() {
   }
 
   return (
-    <HelmetProvider>
-      <AuthProvider>
-        <BrowserRouter>
+    <ThemeProvider>
+      <HelmetProvider>
+        <AuthProvider>
+          <BrowserRouter>
           {/* Google Analytics */}
           <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
 
@@ -154,10 +156,11 @@ function App() {
 
             {/* Rota padrão - manter wildcards funcionando */}
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </HelmetProvider>
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </HelmetProvider>
+    </ThemeProvider>
   );
 }
 

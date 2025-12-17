@@ -72,8 +72,8 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
             width: '190px',
             height: '190px',
             border: '3px solid transparent',
-            borderTopColor: '#fbbf24',
-            borderRightColor: '#fbbf24',
+            borderTopColor: '#ffffff',
+            borderRightColor: '#ffffff',
             borderRadius: '50%',
             animation: 'sparkleRing 1s ease-out forwards',
             pointerEvents: 'none',
@@ -102,7 +102,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
           {text}
           <span style={{
             animation: 'blink 0.7s infinite',
-            color: '#fbbf24',
+            color: '#ffffff',
             fontWeight: 300,
             visibility: showSparkle ? 'hidden' : 'visible',
           }}>|</span>
@@ -115,6 +115,7 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
             <span style={{
               fontSize: '1.5rem',
               animation: 'sparkleFloat 0.8s ease-in-out infinite',
+              filter: 'grayscale(100%) brightness(2)',
             }}>✨</span>
           </div>
         )}
