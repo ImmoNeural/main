@@ -995,17 +995,17 @@ const Transactions = () => {
               </h3>
 
               {expenseDistribution.data.length > 0 ? (
-                <div className="flex flex-col space-y-3">
+                <div className="flex flex-col space-y-2 sm:space-y-3">
                   {expenseDistribution.data.map((item, index) => (
-                    <div key={index} className="flex items-center">
-                      <span className={`w-5 h-5 ${item.color} rounded-full mr-3 flex-shrink-0`}></span>
-                      <div className="flex-grow text-sm text-gray-700">
+                    <div key={index} className="flex items-center gap-2">
+                      <span className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color} rounded-full flex-shrink-0`}></span>
+                      <div className="flex-1 min-w-0 text-xs sm:text-sm text-gray-700 truncate">
                         {item.name}
                       </div>
-                      <div className="text-sm font-semibold text-gray-800 w-24 text-right">
+                      <div className="text-xs sm:text-sm font-semibold text-gray-800 text-right whitespace-nowrap">
                         {item.percentage.toFixed(1)}%
                       </div>
-                      <div className="text-sm text-gray-500 w-32 text-right">
+                      <div className="text-xs sm:text-sm text-gray-500 text-right whitespace-nowrap w-20 sm:w-28">
                         {formatCurrency(item.value)}
                       </div>
                     </div>
@@ -1285,12 +1285,6 @@ const Transactions = () => {
                           )}
                           {/* Mostrar categoria em mobile */}
                           <div className="md:hidden mt-1 flex items-center space-x-1">
-                            {/* Ícone da categoria (mobile) */}
-                            {!isUncategorized && transaction.category && (
-                              <div className="flex-shrink-0">
-                                <CategoryIconSmall category={transaction.category} className="w-4 h-4" />
-                              </div>
-                            )}
                             {isUncategorized && (
                               <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
                             )}

@@ -285,20 +285,20 @@ export const Preferences = () => {
                   const currentTipo = preferences[key] || config.defaultTipo;
 
                   return (
-                    <div key={key} className="px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{config.icon}</span>
-                        <div>
-                          <p className="font-medium text-gray-900">{config.subcategory}</p>
-                          <p className="text-sm text-gray-500">{config.description}</p>
+                    <div key={key} className="px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <span className="text-xl sm:text-2xl flex-shrink-0">{config.icon}</span>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{config.subcategory}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">{config.description}</p>
                         </div>
                       </div>
 
                       {/* Toggle Buttons */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleTipoChange(config.category, config.subcategory, 'fixo')}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                             currentTipo === 'fixo'
                               ? 'bg-blue-600 text-white'
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -308,13 +308,14 @@ export const Preferences = () => {
                         </button>
                         <button
                           onClick={() => handleTipoChange(config.category, config.subcategory, 'variavel')}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                             currentTipo === 'variavel'
                               ? 'bg-orange-500 text-white'
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                           }`}
                         >
-                          Variável
+                          <span className="hidden sm:inline">Variável</span>
+                          <span className="sm:hidden">Var</span>
                         </button>
                       </div>
                     </div>

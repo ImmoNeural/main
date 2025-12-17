@@ -354,16 +354,16 @@ const Accounts = () => {
               </div>
 
               {/* Ícone e nome do banco */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 pr-20">
                 <BankIcon bankName={account.bank_name} isActive={isActive} size="large" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-gray-900 text-lg truncate">{account.bank_name}</h3>
                     {isActive && <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />}
                   </div>
-                  <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
-                    <CreditCard className="w-4 h-4" />
-                    {account.account_type || 'Conta Corrente'}
+                  <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5 truncate">
+                    <CreditCard className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{account.account_type || 'Conta Corrente'}</span>
                   </p>
                   {isActive && (
                     <p className="text-xs text-primary-600 font-medium mt-1">
