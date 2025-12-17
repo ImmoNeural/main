@@ -37,7 +37,7 @@ const Layout = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
       {/* Onboarding Tour */}
       {showOnboarding && (
         <OnboardingTour

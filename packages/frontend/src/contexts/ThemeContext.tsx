@@ -14,24 +14,17 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_KEY = 'guru_theme';
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    // Verificar localStorage - se não tiver, usar light como padrão
-    const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-    if (stored) return stored;
-    return 'light';
-  });
+  // TEMPORÁRIO: Forçar light mode até dark mode ser implementado em todas as páginas
+  const [theme, setThemeState] = useState<Theme>('light');
 
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    // Aplicar classe dark no document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
+    // IMPORTANTE: Sempre remover classe dark para evitar tela preta
+    // Dark mode está desabilitado temporariamente
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem(THEME_KEY, 'light');
+  }, []);
 
   const toggleTheme = () => {
     setThemeState(prev => prev === 'light' ? 'dark' : 'light');
