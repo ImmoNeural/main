@@ -258,7 +258,14 @@ const Layout = () => {
         </div>
 
         {/* Logout no fundo */}
-        <div className="pt-3 border-t border-primary-600 w-full flex justify-center">
+        <div className="pt-3 border-t border-primary-600 w-full flex flex-col items-center space-y-2">
+          <button
+            onClick={resetOnboarding}
+            className="flex items-center justify-center w-10 h-10 rounded-xl text-white/80 hover:bg-primary-600 transition-all duration-200"
+            title="Tutorial"
+          >
+            <HelpCircle className="w-5 h-5 flex-shrink-0" />
+          </button>
           <button
             onClick={handleLogout}
             className="flex items-center justify-center w-10 h-10 rounded-xl text-white/80 hover:bg-primary-600 transition-all duration-200"
