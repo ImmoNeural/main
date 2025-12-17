@@ -56,7 +56,12 @@ body {
   }
 
   .dark .btn-secondary {
-    @apply bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500;
+    background-image: linear-gradient(to right, #334155, #475569);
+    color: #ffffff;
+  }
+
+  .dark .btn-secondary:hover {
+    background-image: linear-gradient(to right, #475569, #64748b);
   }
 
   .btn-danger {
