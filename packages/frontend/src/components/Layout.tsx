@@ -3,6 +3,7 @@ import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRig
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useOnboarding } from '../hooks/useOnboarding';
+import { useBudgetNotifications } from '../hooks/useBudgetNotifications';
 import { useState } from 'react';
 import ImpersonationBanner from './ImpersonationBanner';
 import OnboardingTour from './OnboardingTour';
@@ -14,6 +15,9 @@ const Layout = () => {
   const { isTrialActive, daysRemaining, isExpired, subscription } = useSubscription();
   const { showOnboarding, completeOnboarding, skipOnboarding, resetOnboarding } = useOnboarding();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Verificar budgets e enviar notificações em mobile
+  useBudgetNotifications();
 
   const handleLogout = () => {
     logout();

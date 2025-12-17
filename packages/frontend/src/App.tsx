@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -18,6 +18,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import LandingPage from './pages/LandingPage';
 import OnboardingGoals from './pages/OnboardingGoals';
+import NotificationPermission from './pages/NotificationPermission';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import StructuredData from './components/StructuredData';
@@ -30,6 +31,52 @@ const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXX
 
 // Detectar se está rodando no mobile (Capacitor)
 const isMobile = Capacitor.isNativePlatform();
+
+// Componente para redirecionar após splash no mobile
+const MobileRedirect = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const hasOpenedAppBefore = localStorage.getItem('has_opened_app');
+    const token = localStorage.getItem('token');
+
+    if (isAuthenticated || token) {
+      // Usuário logado → vai para o app
+      navigate('/app/dashboard', { replace: true });
+    } else if (hasOpenedAppBefore) {
+      // Usuário já abriu o app antes mas não está logado → Login
+      navigate('/login', { replace: true });
+    } else {
+      // Primeira vez abrindo o app → Cadastro
+      localStorage.setItem('has_opened_app', 'true');
+      navigate('/register', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  // Mostrar tela de loading enquanto verifica
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        border: '3px solid rgba(255,255,255,0.1)',
+        borderTopColor: '#22c55e',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+      }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+};
 
 function App() {
   const [showSplash, setShowSplash] = useState(isMobile);
@@ -54,8 +101,8 @@ function App() {
           <StructuredData />
 
           <Routes>
-            {/* Rota pública - Homepage (no mobile vai direto para login) */}
-            <Route path="/" element={isMobile ? <Navigate to="/login" replace /> : <LandingPage />} />
+            {/* Rota pública - Homepage (no mobile redireciona baseado no estado) */}
+            <Route path="/" element={isMobile ? <MobileRedirect /> : <LandingPage />} />
 
             {/* Rotas públicas de autenticação */}
             <Route path="/login" element={<Login />} />
@@ -69,6 +116,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <OnboardingGoals />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Permissão de notificações */}
+            <Route
+              path="/onboarding/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationPermission />
                 </ProtectedRoute>
               }
             />

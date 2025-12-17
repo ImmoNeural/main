@@ -48,11 +48,22 @@ const OnboardingGoals = () => {
     try {
       // Save the goal to user preferences
       await api.post('/preferences/goal', { goal: selectedGoal });
-      navigate('/app/dashboard');
+      // Ir para tela de notificações se ainda não perguntou
+      const notificationsAsked = localStorage.getItem('notifications_asked');
+      if (!notificationsAsked) {
+        navigate('/onboarding/notifications');
+      } else {
+        navigate('/app/dashboard');
+      }
     } catch (error) {
       console.error('Error saving goal:', error);
       // Navigate anyway - goal is optional
-      navigate('/app/dashboard');
+      const notificationsAsked = localStorage.getItem('notifications_asked');
+      if (!notificationsAsked) {
+        navigate('/onboarding/notifications');
+      } else {
+        navigate('/app/dashboard');
+      }
     } finally {
       setIsLoading(false);
     }
