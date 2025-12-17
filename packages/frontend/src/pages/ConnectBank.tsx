@@ -225,10 +225,10 @@ const ConnectBank = () => {
                   />
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-900 mb-3">
                   Conectar Banco
                 </h2>
-                <p className="text-gray-600 mb-8 max-w-sm mx-auto leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-600 mb-8 max-w-sm mx-auto leading-relaxed">
                   Importe suas transações automaticamente via Open Finance do Banco Central.
                 </p>
                 <button
@@ -258,25 +258,25 @@ const ConnectBank = () => {
                   <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mb-2">
                     <Lock className="w-5 h-5 text-green-600" />
                   </div>
-                  <span className="text-xs text-gray-600 font-medium">Criptografia<br />de ponta a ponta</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Criptografia<br />de ponta a ponta</span>
                 </div>
                 <div className="flex flex-col items-center text-center p-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-2">
                     <Shield className="w-5 h-5 text-blue-600" />
                   </div>
-                  <span className="text-xs text-gray-600 font-medium">Credenciais<br />nunca armazenadas</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Credenciais<br />nunca armazenadas</span>
                 </div>
                 <div className="flex flex-col items-center text-center p-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mb-2">
                     <CheckCircle className="w-5 h-5 text-purple-600" />
                   </div>
-                  <span className="text-xs text-gray-600 font-medium">Acesso<br />somente leitura</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Acesso<br />somente leitura</span>
                 </div>
                 <div className="flex flex-col items-center text-center p-3">
                   <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-2">
                     <RefreshCw className="w-5 h-5 text-amber-600" />
                   </div>
-                  <span className="text-xs text-gray-600 font-medium">Revogue<br />a qualquer momento</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Revogue<br />a qualquer momento</span>
                 </div>
               </div>
             </div>
@@ -289,10 +289,10 @@ const ConnectBank = () => {
                 <Shield className="w-5 h-5 text-primary-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-900 mb-2">
                   O que é Open Finance?
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-gray-600 dark:text-gray-600 leading-relaxed">
                   Open Finance é um sistema regulamentado pelo Banco Central do Brasil que permite compartilhar seus dados bancários de forma segura com aplicativos autorizados. Todas as conexões são criptografadas e você tem controle total sobre seus dados.
                 </p>
               </div>

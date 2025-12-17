@@ -233,21 +233,21 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
   const monthLabel = format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="card p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-t-4 border-primary-600">
-      <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+    <div className="card p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-t-4 border-primary-600">
+      <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
         📊 Resumo Financeiro - {monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}
       </h2>
 
       {/* Salário */}
-      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white rounded-xl shadow-sm border-l-4 border-green-500">
+      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white dark:bg-slate-700 rounded-xl shadow-sm border-l-4 border-green-500">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
               <span className="text-xl sm:text-2xl">💰</span>
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">Salário / Receitas</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium">Salário / Receitas</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600 dark:text-green-400">
                 R$ {summary.salary.toFixed(2).replace('.', ',')}
               </p>
             </div>
@@ -258,12 +258,12 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       {/* Grid: Tabela + Gráfico */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Visão Geral - Design Profissional */}
-        <div className="bg-white rounded-xl lg:rounded-2xl shadow-md border border-gray-200 p-3 sm:p-4 lg:p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl lg:rounded-2xl shadow-md border border-gray-200 dark:border-slate-600 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center gap-2 mb-3 sm:mb-5">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
               <span className="text-lg sm:text-2xl">📋</span>
             </div>
-            <h3 className="font-bold text-gray-800 text-base sm:text-lg lg:text-xl">Visão Geral</h3>
+            <h3 className="font-bold text-gray-800 dark:text-gray-100 text-base sm:text-lg lg:text-xl">Visão Geral</h3>
           </div>
 
           {/* Grid de 3 colunas x 3 linhas (Mobile: stack vertical) */}
@@ -279,29 +279,29 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
               return (
                 <div key={item.label} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start sm:items-center">
                   {/* Coluna 1: Gasto */}
-                  <div className="bg-blue-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-blue-50 dark:bg-slate-700 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-100 dark:border-slate-600 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-600 flex items-center justify-center shadow-sm border border-gray-100 dark:border-slate-500 flex-shrink-0">
                         <span className="text-lg sm:text-2xl">{item.icon}</span>
                       </div>
-                      <p className="font-bold text-gray-800 text-xs sm:text-sm">{item.label}</p>
+                      <p className="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">{item.label}</p>
                     </div>
-                    <p className="text-xs font-medium text-gray-600 mb-0.5 sm:mb-1">Gasto</p>
-                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-blue-600">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Gasto</p>
+                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-blue-600 dark:text-blue-300">
                       R$ {item.spent.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
 
                   {/* Coluna 2: Budget */}
-                  <div className="bg-purple-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-purple-50 dark:bg-slate-700 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-100 dark:border-slate-600 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-600 flex items-center justify-center shadow-sm border border-gray-100 dark:border-slate-500 flex-shrink-0">
                         <span className="text-lg sm:text-2xl">{item.icon}</span>
                       </div>
-                      <p className="font-bold text-gray-800 text-xs sm:text-sm">{item.label}</p>
+                      <p className="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">{item.label}</p>
                     </div>
-                    <p className="text-xs font-medium text-gray-600 mb-0.5 sm:mb-1">Budget</p>
-                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-purple-600">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Budget</p>
+                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-purple-600 dark:text-purple-300">
                       R$ {item.budget.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
@@ -310,13 +310,13 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                   <div className="flex flex-col justify-center">
                     {/* Texto de Status acima da barra */}
                     <div className="mb-1 sm:mb-2">
-                      <p className={`text-xs sm:text-sm font-bold ${isOver ? 'text-orange-600' : 'text-emerald-600'}`}>
+                      <p className={`text-xs sm:text-sm font-bold ${isOver ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                         {statusText}
                       </p>
                     </div>
 
                     {/* Barra de Progresso */}
-                    <div className="relative h-6 sm:h-8 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
+                    <div className="relative h-6 sm:h-8 rounded-lg bg-gray-100 dark:bg-slate-600 overflow-hidden border border-gray-200 dark:border-slate-500">
                       <div
                         className="absolute h-full rounded-lg transition-all duration-500"
                         style={{
@@ -342,7 +342,7 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
           </div>
 
           {/* Linha de Subtotais */}
-          <div className="border-t-2 border-gray-200 pt-3 sm:pt-5">
+          <div className="border-t-2 border-gray-200 dark:border-slate-600 pt-3 sm:pt-5">
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {/* Total Gasto */}
               <div className="bg-blue-500 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-5 shadow-md text-center transform hover:scale-105 transition-transform">
@@ -389,14 +389,14 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
         </div>
 
         {/* Gráfico de Barras - Design Profissional */}
-        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-gray-200 dark:border-slate-600 p-6">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
               <span className="text-2xl">📊</span>
             </div>
-            <h3 className="font-bold text-gray-800 text-xl">Budget vs Gastos</h3>
+            <h3 className="font-bold text-gray-800 dark:text-gray-100 text-xl">Budget vs Gastos</h3>
           </div>
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <div className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 border border-gray-100 dark:border-slate-600">
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                 <defs>
