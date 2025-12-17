@@ -15,14 +15,9 @@ const THEME_KEY = 'guru_theme';
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Verificar localStorage ou preferência do sistema
+    // Verificar localStorage - se não tiver, usar light como padrão
     const stored = localStorage.getItem(THEME_KEY) as Theme | null;
     if (stored) return stored;
-
-    // Verificar preferência do sistema
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
     return 'light';
   });
 
