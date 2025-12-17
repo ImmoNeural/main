@@ -24,12 +24,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    // Aplicar classe no document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    // Por enquanto, não aplicar dark mode automaticamente
+    // TODO: Implementar dark mode completo em todas as páginas
+    document.documentElement.classList.remove('dark');
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
