@@ -96,9 +96,12 @@ body {
 /* Dark mode - blue/primary text to light blue */
 .dark .text-primary-600,
 .dark .text-primary-700,
+.dark .text-primary-800,
+.dark .text-primary-900,
 .dark .text-blue-600,
 .dark .text-blue-700,
-.dark .text-blue-800 {
+.dark .text-blue-800,
+.dark .text-blue-900 {
   color: #93c5fd !important;
 }
 
@@ -107,15 +110,47 @@ body {
   color: #60a5fa !important;
 }
 
-/* Dark mode - other colored text to lighter versions */
-.dark .text-purple-600,
-.dark .text-purple-700 {
-  color: #c4b5fd !important;
+/* Dark mode - indigo text to light versions */
+.dark .text-indigo-600,
+.dark .text-indigo-700,
+.dark .text-indigo-800,
+.dark .text-indigo-900 {
+  color: #a5b4fc !important;
 }
 
-.dark .text-indigo-600,
-.dark .text-indigo-700 {
-  color: #a5b4fc !important;
+/* Dark mode - green text to light versions */
+.dark .text-green-700,
+.dark .text-green-800,
+.dark .text-green-900,
+.dark .text-emerald-700,
+.dark .text-emerald-800,
+.dark .text-emerald-900 {
+  color: #86efac !important;
+}
+
+/* Dark mode - yellow/amber text to light versions */
+.dark .text-yellow-700,
+.dark .text-yellow-800,
+.dark .text-yellow-900,
+.dark .text-amber-700,
+.dark .text-amber-800,
+.dark .text-amber-900 {
+  color: #fcd34d !important;
+}
+
+/* Dark mode - red text to light versions */
+.dark .text-red-700,
+.dark .text-red-800,
+.dark .text-red-900 {
+  color: #fca5a5 !important;
+}
+
+/* Dark mode - other colored text to lighter versions */
+.dark .text-purple-600,
+.dark .text-purple-700,
+.dark .text-purple-800,
+.dark .text-purple-900 {
+  color: #c4b5fd !important;
 }
 
 /* Dark mode background overrides */
@@ -144,7 +179,9 @@ body {
 }
 
 .dark .bg-green-50,
-.dark .bg-green-100 {
+.dark .bg-green-100,
+.dark .bg-emerald-50,
+.dark .bg-emerald-100 {
   background-color: #14532d !important;
 }
 
@@ -154,13 +191,50 @@ body {
 }
 
 .dark .bg-yellow-50,
-.dark .bg-yellow-100 {
+.dark .bg-yellow-100,
+.dark .bg-amber-50,
+.dark .bg-amber-100 {
   background-color: #422006 !important;
 }
 
 .dark .bg-purple-50,
 .dark .bg-purple-100 {
   background-color: #3b0764 !important;
+}
+
+.dark .bg-indigo-50,
+.dark .bg-indigo-100 {
+  background-color: #312e81 !important;
+}
+
+/* Dark mode - gradient backgrounds */
+.dark .bg-gradient-to-br,
+.dark .bg-gradient-to-r,
+.dark .bg-gradient-to-l {
+  --tw-gradient-from: #1e293b !important;
+  --tw-gradient-to: #334155 !important;
+}
+
+.dark .from-blue-50,
+.dark .from-indigo-50,
+.dark .from-primary-50 {
+  --tw-gradient-from: #1e3a5f !important;
+}
+
+.dark .to-blue-50,
+.dark .to-indigo-50,
+.dark .to-primary-50 {
+  --tw-gradient-to: #1e3a5f !important;
+}
+
+.dark .from-green-50,
+.dark .from-emerald-50 {
+  --tw-gradient-from: #14532d !important;
+}
+
+.dark .to-green-50,
+.dark .to-emerald-50 {
+  --tw-gradient-to: #14532d !important;
 }
 
 /* Dark mode border overrides */
@@ -171,6 +245,20 @@ body {
 
 .dark .border-gray-100 {
   border-color: #334155 !important;
+}
+
+.dark .border-blue-200,
+.dark .border-blue-300,
+.dark .border-indigo-200,
+.dark .border-indigo-300 {
+  border-color: #3b82f6 !important;
+}
+
+.dark .border-green-200,
+.dark .border-green-300,
+.dark .border-emerald-200,
+.dark .border-emerald-300 {
+  border-color: #22c55e !important;
 }
 
 /* Dark mode - ensure shadows are visible */
