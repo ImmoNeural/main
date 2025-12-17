@@ -40,97 +40,84 @@ const AnimatedSplash = ({ onFinish }: AnimatedSplashProps) => {
       width: '100vw',
       height: '100vh',
       background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1d4ed8 100%)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
       zIndex: 9999,
       opacity: fadeOut ? 0 : 1,
       transition: 'opacity 0.5s ease-out',
     }}>
-      {/* Container com tamanho fixo */}
+      {/* Logo - centralizado exatamente no meio da tela */}
       <div style={{
-        width: '300px',
-        height: '280px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '150px',
+        height: '150px',
       }}>
-        {/* Logo */}
-        <div style={{
-          width: '150px',
-          height: '150px',
-          position: 'relative',
-        }}>
-          <img
-            src="./logobranco.png"
-            alt="Guru do Dindin"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              animation: 'rotateGuru 4s ease-in-out forwards',
-              filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))',
-            }}
-          />
-          {showSparkle && (
-            <div style={{
-              position: 'absolute',
-              top: '-20px',
-              left: '-20px',
-              width: '190px',
-              height: '190px',
-              border: '3px solid transparent',
-              borderTopColor: '#fbbf24',
-              borderRightColor: '#fbbf24',
-              borderRadius: '50%',
-              animation: 'sparkleRing 1s ease-out forwards',
-              pointerEvents: 'none',
-            }} />
-          )}
-        </div>
+        <img
+          src="./logobranco.png"
+          alt="Guru do Dindin"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            animation: 'rotateGuru 4s ease-in-out forwards',
+            filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))',
+          }}
+        />
+        {showSparkle && (
+          <div style={{
+            position: 'absolute',
+            top: '-20px',
+            left: '-20px',
+            width: '190px',
+            height: '190px',
+            border: '3px solid transparent',
+            borderTopColor: '#fbbf24',
+            borderRightColor: '#fbbf24',
+            borderRadius: '50%',
+            animation: 'sparkleRing 1s ease-out forwards',
+            pointerEvents: 'none',
+          }} />
+        )}
+      </div>
 
-        {/* Texto - altura fixa para não mover */}
-        <div style={{
-          height: '80px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          paddingTop: '20px',
+      {/* Texto - posicionado abaixo do guru */}
+      <div style={{
+        position: 'absolute',
+        top: 'calc(50% + 100px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+      }}>
+        <h1 style={{
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          color: '#ffffff',
+          textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+          letterSpacing: '2px',
+          margin: 0,
+          whiteSpace: 'nowrap',
         }}>
-          <h1 style={{
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            color: '#ffffff',
-            textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
-            letterSpacing: '2px',
-            margin: 0,
-            whiteSpace: 'nowrap',
-            minWidth: '220px',
-            textAlign: 'center',
+          {text}
+          <span style={{
+            animation: 'blink 0.7s infinite',
+            color: '#fbbf24',
+            fontWeight: 300,
+            visibility: showSparkle ? 'hidden' : 'visible',
+          }}>|</span>
+        </h1>
+        {showSparkle && (
+          <div style={{
+            marginTop: '15px',
+            animation: 'sparkleAppear 0.5s ease-out forwards',
           }}>
-            {text}
             <span style={{
-              animation: 'blink 0.7s infinite',
-              color: '#fbbf24',
-              fontWeight: 300,
-              visibility: showSparkle ? 'hidden' : 'visible',
-            }}>|</span>
-          </h1>
-          {showSparkle && (
-            <div style={{
-              marginTop: '10px',
-              animation: 'sparkleAppear 0.5s ease-out forwards',
-            }}>
-              <span style={{
-                fontSize: '1.5rem',
-                animation: 'sparkleFloat 0.8s ease-in-out infinite',
-              }}>✨</span>
-            </div>
-          )}
-        </div>
+              fontSize: '1.5rem',
+              animation: 'sparkleFloat 0.8s ease-in-out infinite',
+            }}>✨</span>
+          </div>
+        )}
       </div>
 
       <style>{`
