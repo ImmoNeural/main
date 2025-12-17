@@ -17,6 +17,13 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark mode root styles */
+.dark {
+  color-scheme: dark;
+  color: #ffffff;
+  background-color: #0f172a;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -32,6 +39,10 @@ body {
     @apply bg-white rounded-lg shadow-md p-6;
   }
 
+  .dark .card {
+    @apply bg-slate-800 text-white border border-slate-700;
+  }
+
   .btn {
     @apply px-4 py-2 rounded-2xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md;
   }
@@ -44,6 +55,10 @@ body {
     @apply btn bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 hover:from-gray-200 hover:to-gray-300;
   }
 
+  .dark .btn-secondary {
+    @apply bg-gradient-to-r from-slate-700 to-slate-600 text-white hover:from-slate-600 hover:to-slate-500;
+  }
+
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700;
   }
@@ -51,4 +66,42 @@ body {
   .input {
     @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900;
   }
+
+  .dark .input {
+    @apply bg-slate-800 border-slate-600 text-white placeholder-gray-400;
+  }
+}
+
+/* Dark mode text overrides */
+.dark .text-gray-900 {
+  color: #ffffff !important;
+}
+
+.dark .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+/* Dark mode background overrides */
+.dark .bg-white {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1e293b !important;
 }
