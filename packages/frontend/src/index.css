@@ -93,6 +93,31 @@ body {
   color: #94a3b8 !important;
 }
 
+/* Dark mode - blue/primary text to light blue */
+.dark .text-primary-600,
+.dark .text-primary-700,
+.dark .text-blue-600,
+.dark .text-blue-700,
+.dark .text-blue-800 {
+  color: #93c5fd !important;
+}
+
+.dark .text-primary-500,
+.dark .text-blue-500 {
+  color: #60a5fa !important;
+}
+
+/* Dark mode - other colored text to lighter versions */
+.dark .text-purple-600,
+.dark .text-purple-700 {
+  color: #c4b5fd !important;
+}
+
+.dark .text-indigo-600,
+.dark .text-indigo-700 {
+  color: #a5b4fc !important;
+}
+
 /* Dark mode background overrides */
 .dark .bg-white {
   background-color: #1e293b !important;
@@ -104,4 +129,65 @@ body {
 
 .dark .bg-gray-100 {
   background-color: #1e293b !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: #334155 !important;
+}
+
+/* Dark mode - light colored backgrounds to dark */
+.dark .bg-blue-50,
+.dark .bg-blue-100,
+.dark .bg-primary-50,
+.dark .bg-primary-100 {
+  background-color: #1e3a5f !important;
+}
+
+.dark .bg-green-50,
+.dark .bg-green-100 {
+  background-color: #14532d !important;
+}
+
+.dark .bg-red-50,
+.dark .bg-red-100 {
+  background-color: #450a0a !important;
+}
+
+.dark .bg-yellow-50,
+.dark .bg-yellow-100 {
+  background-color: #422006 !important;
+}
+
+.dark .bg-purple-50,
+.dark .bg-purple-100 {
+  background-color: #3b0764 !important;
+}
+
+/* Dark mode border overrides */
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: #475569 !important;
+}
+
+.dark .border-gray-100 {
+  border-color: #334155 !important;
+}
+
+/* Dark mode - ensure shadows are visible */
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-sm {
+  --tw-shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Dark mode - select/dropdown */
+.dark select {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #475569 !important;
+}
+
+.dark select option {
+  background-color: #1e293b;
+  color: #ffffff;
 }
