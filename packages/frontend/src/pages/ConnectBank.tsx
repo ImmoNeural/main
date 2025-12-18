@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Shield, Lock, RefreshCw, Landmark, CreditCard, Wallet, PiggyBank } from 'lucide-react';
+import { CheckCircle, Shield, Lock, RefreshCw, Landmark } from 'lucide-react';
 import { bankApi } from '../services/api';
 
 // Declaração TypeScript para o Pluggy Connect SDK v2
@@ -58,13 +58,6 @@ const loadPluggySDK = (): Promise<void> => {
     check();
   });
 };
-
-// Componente de ícone flutuante decorativo
-const FloatingIcon = ({ icon: Icon, className }: { icon: any; className: string }) => (
-  <div className={`absolute opacity-10 ${className}`}>
-    <Icon className="w-full h-full text-primary-600" />
-  </div>
-);
 
 const ConnectBank = () => {
   const navigate = useNavigate();
@@ -191,50 +184,42 @@ const ConnectBank = () => {
 
   return (
     <div className="min-h-[calc(100vh-200px)] relative overflow-hidden">
-      {/* Background decorativo com ícones flutuantes */}
+      {/* Background decorativo sutil */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <FloatingIcon icon={Landmark} className="w-32 h-32 -top-4 -left-8 rotate-12" />
-        <FloatingIcon icon={CreditCard} className="w-24 h-24 top-20 right-10 -rotate-12" />
-        <FloatingIcon icon={Wallet} className="w-20 h-20 bottom-40 -left-4 rotate-6" />
-        <FloatingIcon icon={PiggyBank} className="w-28 h-28 bottom-20 right-0 -rotate-6" />
-        <FloatingIcon icon={Shield} className="w-16 h-16 top-1/3 right-1/4 rotate-12" />
-        <FloatingIcon icon={Landmark} className="w-20 h-20 bottom-10 left-1/3 -rotate-12" />
-
-        {/* Círculos decorativos de gradiente */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-primary-200 to-primary-100 rounded-full opacity-30 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-gradient-to-tr from-green-200 to-emerald-100 rounded-full opacity-30 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-600/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-800/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {/* Card Principal - Conexão */}
-        <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-8">
-            {/* Área Principal com Botão */}
-            <div className="relative bg-gradient-to-br from-primary-50 via-white to-green-50 p-8 sm:p-12">
+        <div className="rounded-3xl shadow-2xl overflow-hidden mb-6">
+            {/* Área Principal com Botão - Gradiente escuro elegante */}
+            <div className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-primary-900 p-8 sm:p-10">
               {/* Padrão decorativo de fundo */}
-              <div className="absolute inset-0 opacity-[0.03]" style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              <div className="absolute inset-0 opacity-5" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
               }} />
 
               <div className="relative text-center">
                 {/* Imagem hero com banco e logos */}
-                <div className="mb-6">
+                <div className="mb-5">
                   <img
                     src="/bancos_arq.png"
                     alt="Banco com logos dos principais bancos brasileiros"
-                    className="w-48 sm:w-56 md:w-64 h-auto mx-auto drop-shadow-lg"
+                    className="w-40 sm:w-48 md:w-56 h-auto mx-auto drop-shadow-2xl"
                   />
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-900 mb-3">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                   Conectar Banco
                 </h2>
-                <p className="text-gray-600 dark:text-gray-600 mb-8 max-w-sm mx-auto leading-relaxed">
+                <p className="text-slate-300 mb-6 max-w-sm mx-auto leading-relaxed text-sm sm:text-base">
                   Importe suas transações automaticamente via Open Finance do Banco Central.
                 </p>
                 <button
                   onClick={handleDirectConnect}
                   disabled={connecting}
-                  className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white text-lg font-semibold px-10 py-4 rounded-2xl shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="inline-flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-primary-700 text-lg font-bold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {connecting ? (
                     <>
@@ -252,47 +237,47 @@ const ConnectBank = () => {
             </div>
 
             {/* Segurança - Features Grid */}
-            <div className="bg-gray-50/50 border-t border-gray-100 px-6 sm:px-8 py-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="flex flex-col items-center text-center p-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mb-2">
-                    <Lock className="w-5 h-5 text-green-600" />
+            <div className="bg-slate-50 px-4 sm:px-6 py-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="flex flex-col items-center text-center p-2">
+                  <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center mb-2 shadow-md">
+                    <Lock className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Criptografia<br />de ponta a ponta</span>
+                  <span className="text-xs text-slate-600 font-medium leading-tight">Criptografia<br />de ponta a ponta</span>
                 </div>
-                <div className="flex flex-col items-center text-center p-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-2">
-                    <Shield className="w-5 h-5 text-blue-600" />
+                <div className="flex flex-col items-center text-center p-2">
+                  <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center mb-2 shadow-md">
+                    <Shield className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Credenciais<br />nunca armazenadas</span>
+                  <span className="text-xs text-slate-600 font-medium leading-tight">Credenciais<br />nunca armazenadas</span>
                 </div>
-                <div className="flex flex-col items-center text-center p-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mb-2">
-                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                <div className="flex flex-col items-center text-center p-2">
+                  <div className="w-9 h-9 bg-purple-500 rounded-xl flex items-center justify-center mb-2 shadow-md">
+                    <CheckCircle className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Acesso<br />somente leitura</span>
+                  <span className="text-xs text-slate-600 font-medium leading-tight">Acesso<br />somente leitura</span>
                 </div>
-                <div className="flex flex-col items-center text-center p-3">
-                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-2">
-                    <RefreshCw className="w-5 h-5 text-amber-600" />
+                <div className="flex flex-col items-center text-center p-2">
+                  <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center mb-2 shadow-md">
+                    <RefreshCw className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-600 font-medium">Revogue<br />a qualquer momento</span>
+                  <span className="text-xs text-slate-600 font-medium leading-tight">Revogue<br />a qualquer momento</span>
                 </div>
               </div>
             </div>
           </div>
 
         {/* Info Card - O que é Open Finance */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6">
+        <div className="bg-slate-800 rounded-2xl p-5 shadow-lg">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Shield className="w-5 h-5 text-primary-600" />
+              <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                <Shield className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-900 mb-2">
+                <h3 className="font-semibold text-white mb-2">
                   O que é Open Finance?
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-600 leading-relaxed">
+                <p className="text-sm text-slate-300 leading-relaxed">
                   Open Finance é um sistema regulamentado pelo Banco Central do Brasil que permite compartilhar seus dados bancários de forma segura com aplicativos autorizados. Todas as conexões são criptografadas e você tem controle total sobre seus dados.
                 </p>
               </div>
