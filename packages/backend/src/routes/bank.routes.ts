@@ -171,14 +171,14 @@ router.get('/available', async (req: Request, res: Response) => {
 function getMaxConnectionsForPlan(planType: string | null, status: string | null = 'active'): number {
   // Durante o trial, acesso total como Conectado Plus
   if (status === 'trial') {
-    return 10; // Acesso total durante trial
+    return 4; // Igual Conectado Plus
   }
 
   switch (planType) {
     case 'conectado':
       return 3;
     case 'conectado_plus':
-      return 10;
+      return 4;
     case 'manual':
     default:
       return 0; // Manual plan cannot use Open Finance
@@ -251,7 +251,7 @@ async function checkConnectionLimit(userId: string): Promise<{ canConnect: boole
     const planName = planType === 'conectado' ? 'Conectado' : 'Conectado Plus';
     return {
       canConnect: false,
-      message: `Limite de ${maxConnections} conexões atingido no Plano ${planName}. ${planType === 'conectado' ? 'Faça upgrade para o Plano Conectado Plus para conectar até 10 contas.' : 'Desconecte uma conta para adicionar outra.'}`,
+      message: `Limite de ${maxConnections} conexões atingido no Plano ${planName}. ${planType === 'conectado' ? 'Faça upgrade para o Plano Conectado Plus para conectar até 4 contas.' : 'Desconecte uma conta para adicionar outra.'}`,
       currentCount,
       maxAllowed: maxConnections,
       isTrialUser: false

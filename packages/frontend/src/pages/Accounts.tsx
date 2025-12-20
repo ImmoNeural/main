@@ -112,10 +112,10 @@ const Accounts = () => {
 
   // Get max allowed accounts based on plan
   const getMaxAccounts = () => {
-    if (isTrialActive) return 10; // Trial tem acesso total
+    if (isTrialActive) return 4; // Trial = Conectado Plus
     if (isManualPlan) return 0;
     if (isConectadoPlan) return 3;
-    if (isConectadoPlusPlan) return 10;
+    if (isConectadoPlusPlan) return 4;
     return 0; // Default: no accounts allowed
   };
 
