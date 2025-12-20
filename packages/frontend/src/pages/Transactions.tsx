@@ -27,15 +27,17 @@ const Transactions = () => {
   const [accountInitialized, setAccountInitialized] = useState(false);
 
   // Get subscription info for plan-based restrictions
-  const { planType } = useSubscription();
+  // Durante trial, acesso total como Conectado Plus
+  const { planType, isTrialActive } = useSubscription();
 
   // Plan-based feature flags
-  const isManualPlan = planType === 'manual';
-  const isConectadoPlan = planType === 'conectado';
-  const isConectadoPlusPlan = planType === 'conectado_plus';
+  // Durante trial, usuário tem acesso total (como Conectado Plus)
+  const isManualPlan = planType === 'manual' && !isTrialActive;
+  const isConectadoPlan = planType === 'conectado' && !isTrialActive;
+  const isConectadoPlusPlan = planType === 'conectado_plus' || isTrialActive; // Trial = Conectado Plus
 
   // Categorize button: disabled for manual, enabled without AI for conectado, full AI for conectado_plus
-  const canUseAI = isConectadoPlusPlan;
+  const canUseAI = isConectadoPlusPlan || isTrialActive;
 
   // Mapeamento de subcategorias por categoria
   const subcategoriesMap: Record<string, string[]> = {

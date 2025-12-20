@@ -84,8 +84,9 @@ const Dashboard = () => {
   const [showImportModal, setShowImportModal] = useState(false);
 
   // Get subscription info for plan-based restrictions
-  const { planType } = useSubscription();
-  const isManualPlan = planType === 'manual';
+  // Durante trial, acesso total como Conectado Plus
+  const { planType, isTrialActive } = useSubscription();
+  const isManualPlan = planType === 'manual' && !isTrialActive;
   const [selectedPeriod, setSelectedPeriod] = useState<{
     type: 'week' | 'month' | null;
     weekNumber?: number;

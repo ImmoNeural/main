@@ -102,23 +102,25 @@ const Accounts = () => {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
 
   // Get subscription info for plan-based restrictions
-  const { planType } = useSubscription();
+  const { planType, isTrialActive } = useSubscription();
 
   // Determine if Open Finance connection is allowed based on plan
-  const isManualPlan = planType === 'manual';
-  const isConectadoPlan = planType === 'conectado';
-  const isConectadoPlusPlan = planType === 'conectado_plus';
+  // Durante trial, acesso total como Conectado Plus
+  const isManualPlan = planType === 'manual' && !isTrialActive;
+  const isConectadoPlan = planType === 'conectado' && !isTrialActive;
+  const isConectadoPlusPlan = planType === 'conectado_plus' || isTrialActive; // Trial = Conectado Plus
 
   // Get max allowed accounts based on plan
   const getMaxAccounts = () => {
+    if (isTrialActive) return 10; // Trial tem acesso total
     if (isManualPlan) return 0;
-    if (isConectadoPlan) return 2;
-    if (isConectadoPlusPlan) return 4;
+    if (isConectadoPlan) return 3;
+    if (isConectadoPlusPlan) return 10;
     return 0; // Default: no accounts allowed
   };
 
   const maxAccounts = getMaxAccounts();
-  const canConnectMore = !isManualPlan && accounts.length < maxAccounts;
+  const canConnectMore = (isTrialActive || !isManualPlan) && accounts.length < maxAccounts;
 
   useEffect(() => {
     // Inicializar banco ativo do localStorage ANTES de carregar

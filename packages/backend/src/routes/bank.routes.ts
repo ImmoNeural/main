@@ -166,13 +166,19 @@ router.get('/available', async (req: Request, res: Response) => {
 
 /**
  * Helper function to get connection limits based on plan type
+ * Durante o trial, usuário tem acesso total (como Conectado Plus)
  */
-function getMaxConnectionsForPlan(planType: string | null): number {
+function getMaxConnectionsForPlan(planType: string | null, status: string | null = 'active'): number {
+  // Durante o trial, acesso total como Conectado Plus
+  if (status === 'trial') {
+    return 10; // Acesso total durante trial
+  }
+
   switch (planType) {
     case 'conectado':
-      return 2;
+      return 3;
     case 'conectado_plus':
-      return 4;
+      return 10;
     case 'manual':
     default:
       return 0; // Manual plan cannot use Open Finance
@@ -182,7 +188,7 @@ function getMaxConnectionsForPlan(planType: string | null): number {
 /**
  * Helper function to check if user can connect more accounts
  */
-async function checkConnectionLimit(userId: string): Promise<{ canConnect: boolean; message?: string; currentCount: number; maxAllowed: number }> {
+async function checkConnectionLimit(userId: string): Promise<{ canConnect: boolean; message?: string; currentCount: number; maxAllowed: number; isTrialUser?: boolean }> {
   // Get user's subscription
   const { data: subscription, error: subError } = await supabase
     .from('subscriptions')
@@ -197,7 +203,9 @@ async function checkConnectionLimit(userId: string): Promise<{ canConnect: boole
   }
 
   const planType = subscription?.plan_type || 'manual';
-  const maxConnections = getMaxConnectionsForPlan(planType);
+  const status = subscription?.status || 'active';
+  const isTrialUser = status === 'trial';
+  const maxConnections = getMaxConnectionsForPlan(planType, status);
 
   // Count current active connections
   const { data: accounts, error: accountsError } = await supabase
@@ -213,13 +221,28 @@ async function checkConnectionLimit(userId: string): Promise<{ canConnect: boole
 
   const currentCount = accounts?.length || 0;
 
-  // Check if manual plan (no Open Finance allowed)
+  // Durante o trial, permite acesso total
+  if (isTrialUser) {
+    if (currentCount >= maxConnections) {
+      return {
+        canConnect: false,
+        message: `Limite de ${maxConnections} conexões atingido durante o período de teste.`,
+        currentCount,
+        maxAllowed: maxConnections,
+        isTrialUser: true
+      };
+    }
+    return { canConnect: true, currentCount, maxAllowed: maxConnections, isTrialUser: true };
+  }
+
+  // Check if manual plan (no Open Finance allowed) - only after trial ends
   if (planType === 'manual') {
     return {
       canConnect: false,
       message: 'Open Finance não está disponível no Plano Manual. Faça upgrade para o Plano Conectado ou Conectado Plus.',
       currentCount,
-      maxAllowed: 0
+      maxAllowed: 0,
+      isTrialUser: false
     };
   }
 
@@ -228,13 +251,14 @@ async function checkConnectionLimit(userId: string): Promise<{ canConnect: boole
     const planName = planType === 'conectado' ? 'Conectado' : 'Conectado Plus';
     return {
       canConnect: false,
-      message: `Limite de ${maxConnections} conexões atingido no Plano ${planName}. ${planType === 'conectado' ? 'Faça upgrade para o Plano Conectado Plus para conectar até 4 contas.' : 'Desconecte uma conta para adicionar outra.'}`,
+      message: `Limite de ${maxConnections} conexões atingido no Plano ${planName}. ${planType === 'conectado' ? 'Faça upgrade para o Plano Conectado Plus para conectar até 10 contas.' : 'Desconecte uma conta para adicionar outra.'}`,
       currentCount,
-      maxAllowed: maxConnections
+      maxAllowed: maxConnections,
+      isTrialUser: false
     };
   }
 
-  return { canConnect: true, currentCount, maxAllowed: maxConnections };
+  return { canConnect: true, currentCount, maxAllowed: maxConnections, isTrialUser: false };
 }
 
 /**
