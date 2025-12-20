@@ -7,7 +7,9 @@ import {
   Shield,
   Loader2,
   Zap,
-  Crown
+  Crown,
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { subscriptionApi } from '../services/api';
@@ -33,6 +35,9 @@ const Plans = () => {
   const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [stripeSubscriptionId, setStripeSubscriptionId] = useState<string | null>(null);
 
   const plans: Plan[] = [
     {
@@ -159,11 +164,13 @@ const Plans = () => {
         setSubscriptionStatus(data.subscription.status);
         setTrialEndDate(data.subscription.trial_end_date);
         setEndDate(data.subscription.end_date);
+        setStripeSubscriptionId(data.subscription.payment_processor_subscription_id);
         console.log('✅ [Plans] Subscription set:', {
           plan: data.subscription.plan_type,
           status: data.subscription.status,
           trialEndDate: data.subscription.trial_end_date,
-          endDate: data.subscription.end_date
+          endDate: data.subscription.end_date,
+          stripeId: data.subscription.payment_processor_subscription_id
         });
       } else {
         // Não tem assinatura
@@ -171,12 +178,32 @@ const Plans = () => {
         setSubscriptionStatus(null);
         setTrialEndDate(null);
         setEndDate(null);
+        setStripeSubscriptionId(null);
         console.log('⚠️ [Plans] No subscription found');
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
     } finally {
       setInitializing(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (canceling) return;
+
+    setCanceling(true);
+    try {
+      const { data } = await subscriptionApi.cancelSubscription();
+      console.log('✅ Subscription canceled:', data);
+      alert('✅ Assinatura cancelada com sucesso!');
+      setShowCancelConfirm(false);
+      // Recarregar dados
+      fetchCurrentSubscription();
+    } catch (error: any) {
+      console.error('Error canceling subscription:', error);
+      alert('❌ Erro ao cancelar assinatura. Tente novamente.');
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -317,6 +344,29 @@ const Plans = () => {
                 <p className="text-center text-green-600 text-sm mt-1">
                   Você pode fazer upgrade para outro plano a qualquer momento
                 </p>
+                {endDate && (
+                  <p className="text-center text-green-600 text-xs mt-1">
+                    Próxima cobrança: {new Date(endDate).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
+                <button
+                  onClick={() => setShowCancelConfirm(true)}
+                  className="mt-3 mx-auto block text-sm text-red-600 hover:text-red-700 underline"
+                >
+                  Cancelar assinatura
+                </button>
+              </div>
+            )}
+
+            {/* Botão de cancelar para TRIAL/PENDING */}
+            {!processingPayment && !initializing && (isOnTrial || isPending) && daysRemaining > 0 && stripeSubscriptionId && (
+              <div className="mt-3 text-center">
+                <button
+                  onClick={() => setShowCancelConfirm(true)}
+                  className="text-sm text-gray-500 hover:text-red-600 underline"
+                >
+                  Cancelar trial (não será cobrado)
+                </button>
               </div>
             )}
           </div>
@@ -479,6 +529,69 @@ const Plans = () => {
             <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
           </div>
         </div>
+
+        {/* Modal de Confirmação de Cancelamento */}
+        {showCancelConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-slide-up">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+
+              <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
+                Cancelar {isOnTrial || isPending ? 'Trial' : 'Assinatura'}?
+              </h3>
+
+              <p className="text-center text-gray-600 mb-4">
+                {isOnTrial || isPending ? (
+                  <>
+                    Você está no período de teste gratuito. Se cancelar agora,
+                    <strong className="text-green-600"> não será cobrado</strong>.
+                  </>
+                ) : (
+                  <>
+                    Sua assinatura será cancelada e você perderá acesso às
+                    funcionalidades premium no fim do período atual.
+                  </>
+                )}
+              </p>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>⚠️ Atenção:</strong> Suas contas bancárias conectadas serão
+                  desativadas, mas seus dados serão mantidos caso você volte.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  disabled={canceling}
+                  className="flex-1 py-3 px-4 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                >
+                  Manter {isOnTrial || isPending ? 'Trial' : 'Assinatura'}
+                </button>
+                <button
+                  onClick={handleCancelSubscription}
+                  disabled={canceling}
+                  className="flex-1 py-3 px-4 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  {canceling ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Cancelando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-5 h-5" />
+                      <span>Sim, Cancelar</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <style>{`
           @keyframes fade-in {

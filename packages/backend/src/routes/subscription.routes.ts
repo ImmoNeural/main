@@ -172,30 +172,40 @@ router.post('/cancel-checkout', authMiddleware, async (req: Request, res: Respon
 
 /**
  * POST /api/subscriptions/cancel
- * Cancelar assinatura
+ * Cancelar assinatura (ativa ou trial)
  */
 router.post('/cancel', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.userId!;
 
-    // Buscar assinatura ativa
+    // Buscar assinatura ativa OU trial
     const { data: subscription, error: fetchError } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .eq('status', 'active')
+      .in('status', ['active', 'trial', 'pending'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (fetchError || !subscription) {
-      return res.status(404).json({ error: 'Assinatura ativa não encontrada' });
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
     }
 
-    // Cancelar no Stripe (se for recorrente)
-    if (subscription.payment_processor_subscription_id && subscription.auto_renew) {
+    console.log('🔄 Canceling subscription:', subscription.id, 'status:', subscription.status);
+
+    // Cancelar no Stripe (se tiver ID do Stripe e for recorrente)
+    if (subscription.payment_processor_subscription_id) {
       try {
         await stripeService.cancelSubscription(subscription.payment_processor_subscription_id);
-      } catch (error) {
-        console.error('Error canceling Stripe subscription:', error);
+        console.log('✅ Canceled on Stripe:', subscription.payment_processor_subscription_id);
+      } catch (error: any) {
+        // Se o erro for porque não existe no Stripe, continua
+        if (error.message?.includes('No such subscription')) {
+          console.log('⚠️ Subscription not found on Stripe, continuing...');
+        } else {
+          console.error('Error canceling Stripe subscription:', error);
+        }
         // Continua mesmo se falhar no Stripe
       }
     }
@@ -212,7 +222,11 @@ router.post('/cancel', authMiddleware, async (req: Request, res: Response) => {
 
     if (updateError) throw updateError;
 
-    res.json({ message: 'Assinatura cancelada com sucesso' });
+    console.log('✅ Subscription canceled in database');
+    res.json({
+      message: 'Assinatura cancelada com sucesso',
+      wasTrialOrPending: subscription.status === 'trial' || subscription.status === 'pending'
+    });
   } catch (error: any) {
     console.error('Error canceling subscription:', error);
     res.status(500).json({ error: 'Erro ao cancelar assinatura' });
@@ -290,6 +304,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
           planType: planType,
           customerEmail: session.customer_email,
           paymentStatus: session.payment_status,
+          mode: session.mode,
         });
 
         if (!userId) {
@@ -326,27 +341,32 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
         console.log('✅ Found subscription:', userSub.id, 'with status:', userSub.status);
 
-        // Calcular data de término (1 ano a partir de agora)
+        // Calcular data de término (1 MÊS a partir de agora para cobrança mensal)
         const endDate = new Date();
-        endDate.setFullYear(endDate.getFullYear() + 1);
+        endDate.setMonth(endDate.getMonth() + 1);
+
+        // Determinar se é assinatura recorrente (subscription) ou pagamento único (payment)
+        const isRecurring = session.mode === 'subscription';
 
         // Atualizar a subscription do usuário com o novo plano
-        console.log('📝 Updating subscription to active with plan:', planType);
+        console.log('📝 Updating subscription to active with plan:', planType, 'recurring:', isRecurring);
         const { data: updated, error: updateError } = await supabase
           .from('subscriptions')
           .update({
             status: 'active',
             plan_type: planType,
             plan_name: planConfig.name,
-            plan_price: planConfig.yearlyPrice,
+            plan_price: planConfig.monthlyPrice,
             start_date: new Date().toISOString(),
             end_date: endDate.toISOString(),
+            next_billing_date: isRecurring ? endDate.toISOString() : null,
             trial_end_date: null, // Remove trial quando ativa plano pago
             max_connected_accounts: planConfig.maxAccounts,
             payment_method: 'credit_card',
             payment_processor: 'stripe',
             payment_processor_subscription_id: session.subscription || session.id,
             payment_processor_customer_id: session.customer,
+            auto_renew: isRecurring,
           })
           .eq('id', userSub.id)
           .select();
@@ -358,16 +378,18 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
         console.log('✅ Subscription updated to active with plan:', planType, updated);
 
-        // Atualizar pagamento - buscar por user_id ao invés de subscription_id
-        const { data: payment, error: paymentFetchError } = await supabase
+        // Buscar ou CRIAR pagamento
+        const { data: existingPayment, error: paymentFetchError } = await supabase
           .from('subscription_payments')
           .select('*')
           .eq('user_id', userId)
+          .eq('payment_status', 'pending')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (payment) {
+        if (existingPayment) {
+          // Atualizar pagamento existente
           await supabase
             .from('subscription_payments')
             .update({
@@ -375,11 +397,31 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
               payment_status: 'paid',
               payment_date: new Date().toISOString(),
               payment_processor_payment_id: session.payment_intent || session.id,
+              amount: planConfig.monthlyPrice,
             })
-            .eq('id', payment.id);
+            .eq('id', existingPayment.id);
           console.log('✅ Payment updated to paid');
         } else {
-          console.warn('⚠️ No payment found for user:', userId);
+          // CRIAR novo registro de pagamento
+          const { error: insertError } = await supabase
+            .from('subscription_payments')
+            .insert({
+              subscription_id: userSub.id,
+              user_id: userId,
+              amount: planConfig.monthlyPrice,
+              payment_method: 'credit_card',
+              payment_status: 'paid',
+              payment_processor: 'stripe',
+              payment_processor_payment_id: session.payment_intent || session.id,
+              payment_date: new Date().toISOString(),
+              due_date: new Date().toISOString(),
+            });
+
+          if (insertError) {
+            console.error('❌ Error creating payment record:', insertError);
+          } else {
+            console.log('✅ Payment record CREATED');
+          }
         }
 
         // REATIVAR CONEXÕES BANCÁRIAS
@@ -405,8 +447,76 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
         break;
       }
 
+      case 'invoice.paid': {
+        // Pagamento recorrente mensal bem-sucedido
+        const invoice = event.data.object as any;
+        const customerId = invoice.customer;
+        const subscriptionId = invoice.subscription;
+        const amountPaid = (invoice.amount_paid || 0) / 100; // Converter de centavos
+
+        console.log('📦 Invoice Paid (Recurring):', {
+          invoiceId: invoice.id,
+          customerId,
+          subscriptionId,
+          amountPaid,
+        });
+
+        // Buscar subscription pelo payment_processor_customer_id
+        const { data: subscription, error: subError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('payment_processor_customer_id', customerId)
+          .in('status', ['active', 'trial', 'pending'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (subError || !subscription) {
+          console.warn('⚠️ Subscription not found for customer:', customerId);
+          break;
+        }
+
+        // Atualizar end_date da subscription (+1 mês)
+        const newEndDate = new Date();
+        newEndDate.setMonth(newEndDate.getMonth() + 1);
+
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: 'active',
+            end_date: newEndDate.toISOString(),
+            next_billing_date: newEndDate.toISOString(),
+          })
+          .eq('id', subscription.id);
+
+        // Criar registro de pagamento
+        const { error: paymentError } = await supabase
+          .from('subscription_payments')
+          .insert({
+            subscription_id: subscription.id,
+            user_id: subscription.user_id,
+            amount: amountPaid,
+            payment_method: 'credit_card',
+            payment_status: 'paid',
+            payment_processor: 'stripe',
+            payment_processor_payment_id: invoice.payment_intent || invoice.id,
+            payment_date: new Date().toISOString(),
+            due_date: new Date().toISOString(),
+          });
+
+        if (paymentError) {
+          console.error('❌ Error recording recurring payment:', paymentError);
+        } else {
+          console.log('✅ Recurring payment recorded for subscription:', subscription.id);
+        }
+
+        break;
+      }
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object as any;
+
+        console.log('❌ Invoice Payment Failed:', invoice.id);
 
         // Atualizar pagamento como falho
         await supabase
@@ -416,6 +526,30 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
             error_message: 'Pagamento falhou'
           })
           .eq('payment_processor_payment_id', invoice.id);
+
+        // Também buscar por subscription ID e marcar como falho se necessário
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('payment_processor_subscription_id', invoice.subscription)
+          .single();
+
+        if (subscription) {
+          // Criar registro de pagamento falho
+          await supabase
+            .from('subscription_payments')
+            .insert({
+              subscription_id: subscription.id,
+              user_id: subscription.user_id,
+              amount: (invoice.amount_due || 0) / 100,
+              payment_method: 'credit_card',
+              payment_status: 'failed',
+              payment_processor: 'stripe',
+              payment_processor_payment_id: invoice.id,
+              due_date: new Date().toISOString(),
+              error_message: 'Pagamento recusado pelo cartão',
+            });
+        }
 
         console.log('Payment failed for invoice:', invoice.id);
         break;
