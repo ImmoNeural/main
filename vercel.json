@@ -7,6 +7,14 @@
     {
       "source": "/api/:path*",
       "destination": "/api"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api|assets|.*\\..*).*)",
+      "destination": "/index.html"
     }
   ]
 }
