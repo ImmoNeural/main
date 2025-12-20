@@ -58,6 +58,33 @@ const AdminTransactions = () => {
     window.location.href = '/app/dashboard';
   };
 
+  // Carregar dados quando tiver userId
+  useEffect(() => {
+    if (userId && user?.email && ADMIN_EMAILS.includes(user.email)) {
+      loadData();
+    }
+  }, [userId, user?.email]);
+
+  const loadData = async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Buscar transações do usuário específico
+      const response = await api.get('/admin/transactions', {
+        params: { user_id: userId, limit: 10000 },
+      });
+
+      setTransactions(response.data.transactions || []);
+      setUserInfo(response.data.user || null);
+    } catch (err: any) {
+      console.error('Erro ao carregar dados:', err);
+      setError(err.response?.data?.error || 'Erro ao carregar transações');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Função para corrigir cartões de crédito (dry run primeiro)
   const previewCreditCardFix = async () => {
     setIsFixingCreditCards(true);
@@ -141,31 +168,6 @@ const AdminTransactions = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (userId) {
-      loadData();
-    }
-  }, [userId]);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Buscar transações do usuário específico
-      const response = await api.get('/admin/transactions', {
-        params: { user_id: userId, limit: 10000 },
-      });
-
-      setTransactions(response.data.transactions || []);
-      setUserInfo(response.data.user || null);
-    } catch (err: any) {
-      console.error('Erro ao carregar dados:', err);
-      setError(err.response?.data?.error || 'Erro ao carregar transações');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
