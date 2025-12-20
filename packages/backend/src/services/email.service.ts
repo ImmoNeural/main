@@ -62,7 +62,7 @@ class EmailService {
    * Email de boas-vindas no cadastro
    */
   async sendWelcomeEmail(to: string, userName: string): Promise<boolean> {
-    const subject = 'Bem-vindo ao Guru do Dindin! Você fez a escolha certa';
+    const subject = 'Você deu o primeiro passo! Bem-vindo ao Guru do Dindin';
 
     const html = `
 <!DOCTYPE html>
@@ -93,53 +93,15 @@ class EmailService {
           <tr>
             <td style="padding: 40px;">
               <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">
-                Olá, ${userName || 'novo usuário'}!
+                Oi, ${userName || 'novo usuário'}!
               </h2>
 
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                <strong>Parabéns pela excelente escolha!</strong> Você acabou de dar o primeiro passo para transformar sua vida financeira.
+                Organizar as finanças pode parecer complicado no início, mas você já deu o passo mais importante: <strong>começar</strong> 👏
               </p>
 
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Com o Guru do Dindin, você terá:
-              </p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
-                <tr>
-                  <td style="padding: 15px; background-color: #f0fdf4; border-radius: 8px; margin-bottom: 10px;">
-                    <p style="margin: 0; color: #166534; font-size: 14px;">
-                      ✅ <strong>Conexão automática</strong> com seus bancos via Open Finance
-                    </p>
-                  </td>
-                </tr>
-                <tr><td style="height: 10px;"></td></tr>
-                <tr>
-                  <td style="padding: 15px; background-color: #f0fdf4; border-radius: 8px;">
-                    <p style="margin: 0; color: #166534; font-size: 14px;">
-                      ✅ <strong>Categorização inteligente</strong> com IA
-                    </p>
-                  </td>
-                </tr>
-                <tr><td style="height: 10px;"></td></tr>
-                <tr>
-                  <td style="padding: 15px; background-color: #f0fdf4; border-radius: 8px;">
-                    <p style="margin: 0; color: #166534; font-size: 14px;">
-                      ✅ <strong>Visão completa</strong> das suas finanças em um só lugar
-                    </p>
-                  </td>
-                </tr>
-                <tr><td style="height: 10px;"></td></tr>
-                <tr>
-                  <td style="padding: 15px; background-color: #f0fdf4; border-radius: 8px;">
-                    <p style="margin: 0; color: #166534; font-size: 14px;">
-                      ✅ <strong>7 dias grátis</strong> para testar todas as funcionalidades
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                Comece agora mesmo conectando sua primeira conta bancária e veja a mágica acontecer!
+                Para seguir pelo caminho certo, complete o card <strong>"Primeiros Passos"</strong> que aparece na tela inicial. É rápido e ajuda muito a ganhar controle do seu dinheiro desde o começo.
               </p>
 
               <!-- CTA Button -->
@@ -148,14 +110,29 @@ class EmailService {
                   <td align="center">
                     <a href="https://gurudodindin.com.br/app/dashboard"
                        style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                      Acessar meu Dashboard
+                      👉 Acessar Primeiros Passos
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; text-align: center;">
-                Dúvidas? Responda este email ou entre em contato conosco.
+              <!-- Trial Info Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                <tr>
+                  <td style="padding: 20px; background-color: #f0fdf4; border-radius: 12px; border: 1px solid #bbf7d0;">
+                    <p style="margin: 0; color: #166534; font-size: 15px; line-height: 1.6;">
+                      🎉 <strong>Seu teste grátis de 7 dias já está ativo.</strong><br>
+                      Aproveite para explorar os recursos e ver como o Guru do Dindin pode facilitar sua vida financeira.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 25px 0 5px 0;">
+                Nos vemos por aqui!
+              </p>
+              <p style="color: #10b981; font-size: 16px; font-weight: bold; margin: 0;">
+                Equipe Guru do Dindin 💰
               </p>
             </td>
           </tr>
@@ -180,21 +157,18 @@ class EmailService {
     `;
 
     const text = `
-Olá, ${userName || 'novo usuário'}!
+Oi, ${userName || 'novo usuário'}!
 
-Parabéns pela excelente escolha! Você acabou de dar o primeiro passo para transformar sua vida financeira.
+Organizar as finanças pode parecer complicado no início, mas você já deu o passo mais importante: começar 👏
 
-Com o Guru do Dindin, você terá:
-- Conexão automática com seus bancos via Open Finance
-- Categorização inteligente com IA
-- Visão completa das suas finanças em um só lugar
-- 7 dias grátis para testar todas as funcionalidades
+Para seguir pelo caminho certo, complete o card "Primeiros Passos" que aparece na tela inicial. É rápido e ajuda muito a ganhar controle do seu dinheiro desde o começo.
 
-Comece agora mesmo conectando sua primeira conta bancária!
+👉 Acessar Primeiros Passos: https://gurudodindin.com.br/app/dashboard
 
-Acesse: https://gurudodindin.com.br/app/dashboard
+🎉 Seu teste grátis de 7 dias já está ativo. Aproveite para explorar os recursos e ver como o Guru do Dindin pode facilitar sua vida financeira.
 
-Dúvidas? Responda este email ou entre em contato conosco.
+Nos vemos por aqui!
+Equipe Guru do Dindin 💰
 
 ---
 © ${new Date().getFullYear()} Guru do Dindin. Todos os direitos reservados.
