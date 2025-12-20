@@ -126,7 +126,20 @@ export class StripeService {
           },
         ],
         payment_method_types: ['card'], // Cartão de crédito
+        // Adicionar 7 dias de trial para assinaturas recorrentes
+        ...(params.paymentMode === 'subscription' && {
+          subscription_data: {
+            trial_period_days: 7,
+          },
+        }),
       };
+
+      console.log('📝 Creating Stripe checkout session:', {
+        customer: customer.id,
+        mode: params.paymentMode,
+        planType: params.planType,
+        trialDays: params.paymentMode === 'subscription' ? 7 : 0,
+      });
 
       // Criar sessão
       const session = await stripe!.checkout.sessions.create(sessionParams);
