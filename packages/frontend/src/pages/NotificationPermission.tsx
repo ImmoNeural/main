@@ -58,7 +58,7 @@ const NotificationPermission = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -70,19 +70,19 @@ const NotificationPermission = () => {
         width: '120px',
         height: '120px',
         borderRadius: '50%',
-        background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: '30px',
-        boxShadow: '0 10px 40px rgba(34, 197, 94, 0.3)',
+        boxShadow: '0 10px 40px rgba(16, 185, 129, 0.3)',
       }}>
         <Bell size={60} color="#ffffff" />
       </div>
 
       {/* Title */}
       <h1 style={{
-        color: '#ffffff',
+        color: '#166534',
         fontSize: 'clamp(1.5rem, 4vw, 2rem)',
         fontWeight: 700,
         textAlign: 'center',
@@ -94,7 +94,7 @@ const NotificationPermission = () => {
 
       {/* Subtitle */}
       <p style={{
-        color: '#94a3b8',
+        color: '#4b5563',
         fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
         textAlign: 'center',
         marginBottom: '40px',
@@ -122,26 +122,27 @@ const NotificationPermission = () => {
                 alignItems: 'flex-start',
                 gap: '16px',
                 padding: '16px',
-                background: 'rgba(30, 41, 59, 0.6)',
+                background: '#ffffff',
                 borderRadius: '12px',
-                border: '1px solid #334155',
+                border: '1px solid #d1d5db',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
               }}
             >
               <div style={{
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: 'rgba(34, 197, 94, 0.15)',
+                background: 'rgba(16, 185, 129, 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <Icon size={20} color="#22c55e" />
+                <Icon size={20} color="#10b981" />
               </div>
               <div>
                 <h3 style={{
-                  color: '#ffffff',
+                  color: '#1f2937',
                   fontSize: '1rem',
                   fontWeight: 600,
                   marginBottom: '4px',
@@ -149,7 +150,7 @@ const NotificationPermission = () => {
                   {benefit.title}
                 </h3>
                 <p style={{
-                  color: '#94a3b8',
+                  color: '#6b7280',
                   fontSize: '0.875rem',
                   lineHeight: 1.4,
                   margin: 0,
@@ -174,7 +175,7 @@ const NotificationPermission = () => {
           width: '100%',
           maxWidth: '400px',
           padding: '18px 32px',
-          background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
           border: 'none',
           borderRadius: '12px',
           color: '#ffffff',
@@ -183,6 +184,7 @@ const NotificationPermission = () => {
           cursor: isRequesting ? 'wait' : 'pointer',
           transition: 'all 0.2s ease',
           opacity: isRequesting ? 0.7 : 1,
+          boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
         }}
       >
         <Bell size={20} />
@@ -200,7 +202,7 @@ const NotificationPermission = () => {
           gap: '8px',
           background: 'transparent',
           border: 'none',
-          color: '#64748b',
+          color: '#6b7280',
           fontSize: '0.9rem',
           cursor: 'pointer',
         }}

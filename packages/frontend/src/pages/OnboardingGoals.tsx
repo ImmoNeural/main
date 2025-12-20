@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import api from '../services/api';
 
 interface GoalOption {
@@ -48,20 +49,25 @@ const OnboardingGoals = () => {
     try {
       // Save the goal to user preferences
       await api.post('/preferences/goal', { goal: selectedGoal });
-      // Ir para tela de notificações se ainda não perguntou
+      // Ir para tela de notificações APENAS em celular e se ainda não perguntou
       const notificationsAsked = localStorage.getItem('notifications_asked');
-      if (!notificationsAsked) {
+      const isMobile = Capacitor.isNativePlatform();
+      if (!notificationsAsked && isMobile) {
         navigate('/onboarding/notifications');
       } else {
+        // No desktop, marcar como já perguntado e ir direto para dashboard
+        localStorage.setItem('notifications_asked', 'true');
         navigate('/app/dashboard');
       }
     } catch (error) {
       console.error('Error saving goal:', error);
       // Navigate anyway - goal is optional
       const notificationsAsked = localStorage.getItem('notifications_asked');
-      if (!notificationsAsked) {
+      const isMobile = Capacitor.isNativePlatform();
+      if (!notificationsAsked && isMobile) {
         navigate('/onboarding/notifications');
       } else {
+        localStorage.setItem('notifications_asked', 'true');
         navigate('/app/dashboard');
       }
     } finally {
@@ -72,7 +78,7 @@ const OnboardingGoals = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -92,14 +98,13 @@ const OnboardingGoals = () => {
             width: '100%',
             height: '100%',
             objectFit: 'contain',
-            filter: 'brightness(0) invert(1)',
           }}
         />
       </div>
 
       {/* Title */}
       <h1 style={{
-        color: '#ffffff',
+        color: '#166534',
         fontSize: 'clamp(1.5rem, 4vw, 2rem)',
         fontWeight: 700,
         textAlign: 'center',
@@ -111,7 +116,7 @@ const OnboardingGoals = () => {
 
       {/* Subtitle */}
       <p style={{
-        color: '#94a3b8',
+        color: '#4b5563',
         fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
         textAlign: 'center',
         marginBottom: '40px',
@@ -139,15 +144,16 @@ const OnboardingGoals = () => {
               gap: '16px',
               padding: '20px',
               background: selectedGoal === goal.id
-                ? 'rgba(34, 197, 94, 0.1)'
-                : 'rgba(30, 41, 59, 0.8)',
+                ? 'rgba(16, 185, 129, 0.15)'
+                : '#ffffff',
               border: selectedGoal === goal.id
-                ? '2px solid #22c55e'
-                : '2px solid #334155',
+                ? '2px solid #10b981'
+                : '2px solid #d1d5db',
               borderRadius: '16px',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               textAlign: 'left',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
             }}
           >
             {/* Radio button */}
@@ -156,20 +162,21 @@ const OnboardingGoals = () => {
               height: '24px',
               borderRadius: '50%',
               border: selectedGoal === goal.id
-                ? '2px solid #22c55e'
-                : '2px solid #64748b',
+                ? '2px solid #10b981'
+                : '2px solid #9ca3af',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
               marginTop: '2px',
+              background: '#ffffff',
             }}>
               {selectedGoal === goal.id && (
                 <div style={{
                   width: '12px',
                   height: '12px',
                   borderRadius: '50%',
-                  background: '#22c55e',
+                  background: '#10b981',
                 }} />
               )}
             </div>
@@ -177,7 +184,7 @@ const OnboardingGoals = () => {
             {/* Content */}
             <div>
               <h3 style={{
-                color: '#ffffff',
+                color: '#1f2937',
                 fontSize: '1.1rem',
                 fontWeight: 600,
                 marginBottom: '6px',
@@ -185,7 +192,7 @@ const OnboardingGoals = () => {
                 {goal.title}
               </h3>
               <p style={{
-                color: '#94a3b8',
+                color: '#6b7280',
                 fontSize: '0.95rem',
                 lineHeight: 1.5,
                 margin: 0,
@@ -210,8 +217,8 @@ const OnboardingGoals = () => {
           maxWidth: '500px',
           padding: '18px 32px',
           background: selectedGoal
-            ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-            : '#334155',
+            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+            : '#d1d5db',
           border: 'none',
           borderRadius: '12px',
           color: '#ffffff',
@@ -220,6 +227,7 @@ const OnboardingGoals = () => {
           cursor: selectedGoal ? 'pointer' : 'not-allowed',
           transition: 'all 0.2s ease',
           opacity: isLoading ? 0.7 : 1,
+          boxShadow: selectedGoal ? '0 4px 15px rgba(16, 185, 129, 0.4)' : 'none',
         }}
       >
         {isLoading ? 'Salvando...' : 'Confirmar e continuar'}
@@ -244,7 +252,7 @@ const OnboardingGoals = () => {
           marginTop: '20px',
           background: 'transparent',
           border: 'none',
-          color: '#64748b',
+          color: '#6b7280',
           fontSize: '0.9rem',
           cursor: 'pointer',
           textDecoration: 'underline',
