@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { stripeService } from '../services/stripe.service';
+import { emailService } from '../services/email.service';
 import { supabase } from '../config/supabase';
 import { handleSubscriptionActivated } from '../middleware/subscription.middleware';
 
@@ -122,6 +123,34 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
     const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
     if (userError || !user) throw new Error('Usuário não encontrado');
 
+    // Buscar subscription atual para calcular dias restantes do trial
+    const { data: currentSub } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .in('status', ['trial', 'pending'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    // Calcular dias restantes do trial do sistema
+    let trialDaysRemaining = 0;
+    let chargeDate: Date | null = null;
+
+    if (currentSub && currentSub.trial_end_date) {
+      const now = new Date();
+      const trialEndDate = new Date(currentSub.trial_end_date);
+      const diffTime = trialEndDate.getTime() - now.getTime();
+      trialDaysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      trialDaysRemaining = Math.max(0, trialDaysRemaining); // Não pode ser negativo
+
+      if (trialDaysRemaining > 0) {
+        chargeDate = trialEndDate;
+      }
+    }
+
+    console.log('📅 Trial days remaining:', trialDaysRemaining, 'Charge date:', chargeDate);
+
     // Criar sessão de checkout do Stripe
     // O webhook vai atualizar a subscription quando o pagamento for confirmado
     const checkoutSession = await stripeService.createCheckoutSession({
@@ -131,6 +160,7 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
       userId: userId,
       userEmail: user.email!,
       paymentMode: isYearly ? 'payment' : 'subscription',
+      trialDaysRemaining: isYearly ? 0 : trialDaysRemaining, // Trial só para mensal
     });
 
     console.log('✅ Checkout session created:', checkoutSession.id);
@@ -140,10 +170,14 @@ router.post('/create', authMiddleware, async (req: Request, res: Response) => {
     // A subscription só será atualizada pelo webhook quando o pagamento for confirmado
     // Isso evita o problema de dados "sumirem" se o usuário cancelar o checkout
 
-    // Retornar URL do Stripe Checkout
+    // Retornar URL do Stripe Checkout com informação sobre quando será cobrado
     res.json({
       checkoutUrl: checkoutSession.url,
-      message: 'Redirecionando para pagamento seguro do Stripe...'
+      message: trialDaysRemaining > 0
+        ? `Seu cartão será cobrado em ${trialDaysRemaining} dia(s), no dia ${chargeDate?.toLocaleDateString('pt-BR')}.`
+        : 'Redirecionando para pagamento seguro do Stripe...',
+      trialDaysRemaining,
+      chargeDate: chargeDate?.toISOString() || null,
     });
   } catch (error: any) {
     console.error('Error creating subscription:', error);
@@ -678,6 +712,41 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
         // REATIVAR CONEXÕES BANCÁRIAS
         await handleSubscriptionActivated(userId);
+
+        // Enviar email de confirmação de compra
+        try {
+          // Verificar se estava no trial (session.subscription indica trial ativo)
+          const stripeSubscription = session.subscription ? await stripeService.getSubscription(session.subscription) : null;
+          const isTrialActive = stripeSubscription?.trial_end ? new Date(stripeSubscription.trial_end * 1000) > new Date() : false;
+          const trialDaysRemaining = isTrialActive && stripeSubscription?.trial_end
+            ? Math.ceil((stripeSubscription.trial_end * 1000 - Date.now()) / (1000 * 60 * 60 * 24))
+            : 0;
+
+          // Buscar nome do usuário
+          const { data: userData } = await supabase.auth.admin.getUserById(userId);
+          const userName = userData?.user?.user_metadata?.name || userData?.user?.email?.split('@')[0] || 'Usuário';
+
+          // Data da próxima cobrança
+          const nextBillingDate = isTrialActive && stripeSubscription?.trial_end
+            ? new Date(stripeSubscription.trial_end * 1000)
+            : endDate;
+
+          emailService.sendPurchaseConfirmationEmail(
+            session.customer_email || userData?.user?.email,
+            userName,
+            planConfig.name,
+            planConfig.monthlyPrice,
+            nextBillingDate,
+            isTrialActive,
+            trialDaysRemaining
+          ).catch((err) => {
+            console.error('⚠️ Error sending purchase confirmation email:', err);
+          });
+
+          console.log('📧 Purchase confirmation email queued for:', session.customer_email);
+        } catch (emailError) {
+          console.error('⚠️ Error preparing purchase email:', emailError);
+        }
 
         break;
       }

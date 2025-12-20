@@ -20,6 +20,7 @@ interface CreateCheckoutSessionParams {
   userId: string;
   userEmail: string;
   paymentMode: 'payment' | 'subscription';
+  trialDaysRemaining?: number; // Dias restantes do trial do sistema
 }
 
 interface CreateCustomerParams {
@@ -126,10 +127,10 @@ export class StripeService {
           },
         ],
         payment_method_types: ['card'], // Cartão de crédito
-        // Adicionar 7 dias de trial para assinaturas recorrentes
-        ...(params.paymentMode === 'subscription' && {
+        // Adicionar dias restantes do trial do sistema (se houver)
+        ...(params.paymentMode === 'subscription' && params.trialDaysRemaining && params.trialDaysRemaining > 0 && {
           subscription_data: {
-            trial_period_days: 7,
+            trial_period_days: params.trialDaysRemaining,
           },
         }),
       };
@@ -138,7 +139,7 @@ export class StripeService {
         customer: customer.id,
         mode: params.paymentMode,
         planType: params.planType,
-        trialDays: params.paymentMode === 'subscription' ? 7 : 0,
+        trialDaysRemaining: params.trialDaysRemaining || 0,
       });
 
       // Criar sessão

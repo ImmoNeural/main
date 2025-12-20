@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { supabaseAuth, supabase } from '../config/supabase';
+import { emailService } from '../services/email.service';
 
 const router = Router();
 
@@ -100,6 +101,11 @@ router.post('/register', async (req: Request, res: Response) => {
       console.error('⚠️ Error creating trial:', trialError);
       // Não bloqueia o cadastro
     }
+
+    // Enviar email de boas-vindas (assíncrono, não bloqueia)
+    emailService.sendWelcomeEmail(email, name).catch((err) => {
+      console.error('⚠️ Error sending welcome email:', err);
+    });
 
     res.status(201).json({
       message: 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.',
