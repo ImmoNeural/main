@@ -257,6 +257,90 @@ export class StripeService {
       throw new Error('Webhook signature verification failed');
     }
   }
+
+  /**
+   * Criar reembolso de um pagamento
+   * @param paymentIntentId - ID do PaymentIntent ou Charge
+   * @param amount - Valor em centavos (opcional, se não informado reembolsa tudo)
+   * @param reason - Motivo do reembolso
+   */
+  async createRefund(
+    paymentIntentId: string,
+    amount?: number,
+    reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer'
+  ): Promise<Stripe.Refund> {
+    this.checkStripeAvailable();
+    try {
+      const refundParams: Stripe.RefundCreateParams = {
+        payment_intent: paymentIntentId,
+        reason: reason || 'requested_by_customer',
+      };
+
+      // Se amount for especificado, reembolso parcial
+      if (amount) {
+        refundParams.amount = amount;
+      }
+
+      const refund = await stripe!.refunds.create(refundParams);
+      console.log('💸 Refund created:', refund.id, 'amount:', refund.amount / 100);
+      return refund;
+    } catch (error: any) {
+      console.error('Error creating refund:', error.message);
+      throw new Error(`Falha ao criar reembolso: ${error.message}`);
+    }
+  }
+
+  /**
+   * Listar cobranças (charges) de um cliente
+   * @param customerId - ID do cliente no Stripe
+   * @param limit - Quantidade máxima de cobranças
+   */
+  async listCharges(customerId: string, limit: number = 10): Promise<Stripe.Charge[]> {
+    this.checkStripeAvailable();
+    try {
+      const charges = await stripe!.charges.list({
+        customer: customerId,
+        limit: limit,
+      });
+      return charges.data;
+    } catch (error: any) {
+      console.error('Error listing charges:', error.message);
+      throw new Error('Falha ao buscar cobranças');
+    }
+  }
+
+  /**
+   * Listar PaymentIntents de um cliente
+   * @param customerId - ID do cliente no Stripe
+   * @param limit - Quantidade máxima
+   */
+  async listPaymentIntents(customerId: string, limit: number = 10): Promise<Stripe.PaymentIntent[]> {
+    this.checkStripeAvailable();
+    try {
+      const paymentIntents = await stripe!.paymentIntents.list({
+        customer: customerId,
+        limit: limit,
+      });
+      return paymentIntents.data;
+    } catch (error: any) {
+      console.error('Error listing payment intents:', error.message);
+      throw new Error('Falha ao buscar pagamentos');
+    }
+  }
+
+  /**
+   * Buscar detalhes de um reembolso
+   */
+  async getRefund(refundId: string): Promise<Stripe.Refund> {
+    this.checkStripeAvailable();
+    try {
+      const refund = await stripe!.refunds.retrieve(refundId);
+      return refund;
+    } catch (error: any) {
+      console.error('Error fetching refund:', error.message);
+      throw new Error('Falha ao buscar reembolso');
+    }
+  }
 }
 
 export const stripeService = new StripeService();

@@ -277,6 +277,215 @@ router.post('/cancel', authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/subscriptions/refund
+ * Reembolsar pagamento de um usuário (admin only ou próprio usuário)
+ *
+ * Body params:
+ * - user_id (opcional): ID do usuário para reembolsar (admin only)
+ * - payment_intent_id (opcional): ID específico do PaymentIntent para reembolsar
+ * - amount (opcional): Valor em centavos para reembolso parcial
+ */
+router.post('/refund', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const requesterId = req.userId!;
+    const { user_id, payment_intent_id, amount } = req.body;
+
+    // Determinar qual usuário será reembolsado
+    const targetUserId = user_id || requesterId;
+
+    // Se for para outro usuário, verificar se é admin
+    if (user_id && user_id !== requesterId) {
+      // Verificar se o solicitante é admin
+      const { data: { user: requesterUser } } = await supabase.auth.admin.getUserById(requesterId);
+      const adminEmails = ['neurekaai@gmail.com'];
+
+      if (!requesterUser?.email || !adminEmails.includes(requesterUser.email)) {
+        return res.status(403).json({ error: 'Apenas administradores podem reembolsar outros usuários' });
+      }
+    }
+
+    console.log('💸 Processing refund request:', { targetUserId, payment_intent_id, amount });
+
+    // Buscar assinatura do usuário
+    const { data: subscription, error: fetchError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', targetUserId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (fetchError || !subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    if (!subscription.payment_processor_customer_id) {
+      return res.status(400).json({ error: 'Usuário não possui customer ID no Stripe' });
+    }
+
+    let paymentIntentToRefund = payment_intent_id;
+
+    // Se não foi especificado um payment_intent, buscar o mais recente
+    if (!paymentIntentToRefund) {
+      const paymentIntents = await stripeService.listPaymentIntents(
+        subscription.payment_processor_customer_id,
+        5
+      );
+
+      // Encontrar o pagamento mais recente que foi bem-sucedido
+      const successfulPayment = paymentIntents.find(pi => pi.status === 'succeeded');
+
+      if (!successfulPayment) {
+        return res.status(404).json({
+          error: 'Nenhum pagamento encontrado para reembolsar',
+          hint: 'O usuário pode estar no período de trial (7 dias) e ainda não foi cobrado'
+        });
+      }
+
+      paymentIntentToRefund = successfulPayment.id;
+      console.log('💸 Found payment to refund:', paymentIntentToRefund);
+    }
+
+    // Criar o reembolso
+    const refund = await stripeService.createRefund(
+      paymentIntentToRefund,
+      amount, // undefined = reembolso total
+      'requested_by_customer'
+    );
+
+    // Atualizar subscription_payments no Supabase
+    const { error: updateError } = await supabase
+      .from('subscription_payments')
+      .update({
+        payment_status: 'refunded',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', targetUserId)
+      .eq('payment_processor_payment_id', paymentIntentToRefund);
+
+    if (updateError) {
+      console.warn('⚠️ Could not update subscription_payments:', updateError);
+    }
+
+    // Atualizar status da subscription para trial ou canceled
+    const createdAt = new Date(subscription.created_at);
+    const now = new Date();
+    const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    const stillInTrialPeriod = daysSinceCreation < 7;
+
+    if (stillInTrialPeriod) {
+      const trialEndDate = new Date(createdAt);
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+      await supabase
+        .from('subscriptions')
+        .update({
+          status: 'trial',
+          plan_name: null,
+          plan_price: null,
+          trial_end_date: trialEndDate.toISOString(),
+          end_date: trialEndDate.toISOString(),
+          start_date: null,
+          next_billing_date: null,
+          auto_renew: false,
+          payment_processor_subscription_id: null,
+          payment_method: null,
+        })
+        .eq('id', subscription.id);
+    } else {
+      await supabase
+        .from('subscriptions')
+        .update({
+          status: 'canceled',
+          canceled_at: new Date().toISOString(),
+          auto_renew: false,
+          payment_processor_subscription_id: null,
+        })
+        .eq('id', subscription.id);
+    }
+
+    // Cancelar assinatura no Stripe também
+    if (subscription.payment_processor_subscription_id) {
+      try {
+        await stripeService.cancelSubscription(subscription.payment_processor_subscription_id);
+      } catch (e) {
+        console.warn('⚠️ Could not cancel Stripe subscription:', e);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Reembolso processado com sucesso',
+      refund: {
+        id: refund.id,
+        amount: refund.amount / 100, // Converter de centavos para reais
+        currency: refund.currency,
+        status: refund.status,
+      },
+      revertedToTrial: stillInTrialPeriod,
+    });
+  } catch (error: any) {
+    console.error('Error processing refund:', error);
+    res.status(500).json({ error: error.message || 'Erro ao processar reembolso' });
+  }
+});
+
+/**
+ * GET /api/subscriptions/payments
+ * Listar pagamentos de um usuário (para admin ver histórico)
+ */
+router.get('/payments', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const targetUserId = (req.query.user_id as string) || userId;
+
+    // Se for para outro usuário, verificar se é admin
+    if (targetUserId !== userId) {
+      const { data: { user: requesterUser } } = await supabase.auth.admin.getUserById(userId);
+      const adminEmails = ['neurekaai@gmail.com'];
+
+      if (!requesterUser?.email || !adminEmails.includes(requesterUser.email)) {
+        return res.status(403).json({ error: 'Apenas administradores podem ver pagamentos de outros usuários' });
+      }
+    }
+
+    // Buscar assinatura
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('payment_processor_customer_id')
+      .eq('user_id', targetUserId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!subscription?.payment_processor_customer_id) {
+      return res.json({ payments: [], message: 'Usuário sem histórico de pagamentos no Stripe' });
+    }
+
+    // Buscar pagamentos no Stripe
+    const paymentIntents = await stripeService.listPaymentIntents(
+      subscription.payment_processor_customer_id,
+      20
+    );
+
+    const payments = paymentIntents.map(pi => ({
+      id: pi.id,
+      amount: pi.amount / 100,
+      currency: pi.currency,
+      status: pi.status,
+      created: new Date(pi.created * 1000).toISOString(),
+      description: pi.description,
+      canRefund: pi.status === 'succeeded',
+    }));
+
+    res.json({ payments });
+  } catch (error: any) {
+    console.error('Error listing payments:', error);
+    res.status(500).json({ error: 'Erro ao listar pagamentos' });
+  }
+});
+
+/**
  * GET /api/subscriptions/portal
  * Criar sessão do Customer Portal do Stripe
  * Permite usuário gerenciar sua assinatura (cancelar, ver faturas, etc)
