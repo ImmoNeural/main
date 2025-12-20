@@ -173,6 +173,7 @@ router.post('/cancel-checkout', authMiddleware, async (req: Request, res: Respon
 /**
  * POST /api/subscriptions/cancel
  * Cancelar assinatura (ativa ou trial)
+ * Se ainda estiver dentro dos 7 dias de registro, volta para trial
  */
 router.post('/cancel', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -194,7 +195,7 @@ router.post('/cancel', authMiddleware, async (req: Request, res: Response) => {
 
     console.log('🔄 Canceling subscription:', subscription.id, 'status:', subscription.status);
 
-    // Cancelar no Stripe (se tiver ID do Stripe e for recorrente)
+    // Cancelar no Stripe (se tiver ID do Stripe)
     if (subscription.payment_processor_subscription_id) {
       try {
         await stripeService.cancelSubscription(subscription.payment_processor_subscription_id);
@@ -210,22 +211,64 @@ router.post('/cancel', authMiddleware, async (req: Request, res: Response) => {
       }
     }
 
+    // Verificar se usuário ainda está dentro dos 7 dias desde o registro
+    const createdAt = new Date(subscription.created_at);
+    const now = new Date();
+    const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    const stillInTrialPeriod = daysSinceCreation < 7;
+
+    console.log('📅 Days since creation:', daysSinceCreation, 'Still in trial period:', stillInTrialPeriod);
+
+    let updateData: any;
+    let responseMessage: string;
+
+    if (stillInTrialPeriod) {
+      // Voltar para trial - calcular dias restantes
+      const trialEndDate = new Date(createdAt);
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+      updateData = {
+        status: 'trial',
+        plan_type: subscription.plan_type, // Manter o tipo do plano
+        plan_name: null,
+        plan_price: null,
+        trial_end_date: trialEndDate.toISOString(),
+        end_date: trialEndDate.toISOString(),
+        start_date: null,
+        next_billing_date: null,
+        canceled_at: new Date().toISOString(),
+        auto_renew: false,
+        payment_processor_subscription_id: null,
+        payment_processor_customer_id: subscription.payment_processor_customer_id, // Manter customer ID
+        payment_method: null,
+      };
+      responseMessage = `Assinatura cancelada. Você voltou para o período de teste (${7 - daysSinceCreation} dias restantes).`;
+      console.log('✅ Reverting to trial status');
+    } else {
+      // Fora do período de trial - cancelar definitivamente
+      updateData = {
+        status: 'canceled',
+        canceled_at: new Date().toISOString(),
+        auto_renew: false,
+        payment_processor_subscription_id: null,
+      };
+      responseMessage = 'Assinatura cancelada com sucesso.';
+      console.log('✅ Subscription fully canceled (outside trial period)');
+    }
+
     // Atualizar no Supabase
     const { error: updateError } = await supabase
       .from('subscriptions')
-      .update({
-        status: 'canceled',
-        canceled_at: new Date().toISOString(),
-        auto_renew: false
-      })
+      .update(updateData)
       .eq('id', subscription.id);
 
     if (updateError) throw updateError;
 
-    console.log('✅ Subscription canceled in database');
+    console.log('✅ Subscription updated in database');
     res.json({
-      message: 'Assinatura cancelada com sucesso',
-      wasTrialOrPending: subscription.status === 'trial' || subscription.status === 'pending'
+      message: responseMessage,
+      revertedToTrial: stillInTrialPeriod,
+      daysRemaining: stillInTrialPeriod ? 7 - daysSinceCreation : 0
     });
   } catch (error: any) {
     console.error('Error canceling subscription:', error);
