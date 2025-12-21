@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { authApi } from '../services/api';
 import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
+import { App, URLOpenListenerEvent } from '@capacitor/app';
 
 interface User {
   id: string;
@@ -56,8 +57,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
+    // Listener para deep links no mobile (OAuth callback)
+    let appUrlListener: any = null;
+    if (Capacitor.isNativePlatform()) {
+      appUrlListener = App.addListener('appUrlOpen', async (event: URLOpenListenerEvent) => {
+        console.log('📱 Deep link received:', event.url);
+
+        // Verificar se é um callback de OAuth
+        if (event.url.includes('login-callback')) {
+          try {
+            // Extrair os parâmetros da URL
+            const url = new URL(event.url.replace('com.gurudodindin.app://', 'https://app/'));
+            const accessToken = url.searchParams.get('access_token') || url.hash?.match(/access_token=([^&]*)/)?.[1];
+            const refreshToken = url.searchParams.get('refresh_token') || url.hash?.match(/refresh_token=([^&]*)/)?.[1];
+
+            if (accessToken) {
+              // Definir a sessão no Supabase
+              const { data, error } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken || '',
+              });
+
+              if (error) {
+                console.error('Error setting session:', error);
+                return;
+              }
+
+              if (data.session?.user) {
+                // Sincronizar com backend
+                const response = await authApi.oauthCallback({
+                  provider_id: data.session.user.id,
+                  email: data.session.user.email || '',
+                  name: data.session.user.user_metadata?.full_name ||
+                        data.session.user.user_metadata?.name ||
+                        data.session.user.email?.split('@')[0] || 'Usuário',
+                  avatar_url: data.session.user.user_metadata?.avatar_url ||
+                              data.session.user.user_metadata?.picture,
+                  provider: data.session.user.app_metadata?.provider || 'oauth',
+                });
+
+                localStorage.setItem('token', accessToken);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                setUser(response.data.user);
+
+                // Redirecionar para dashboard ou onboarding
+                if (response.data.isNewUser) {
+                  window.location.href = '/onboarding/goals';
+                } else {
+                  window.location.href = '/app/dashboard';
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error handling deep link:', error);
+          }
+        }
+      });
+    }
+
     return () => {
       subscription.unsubscribe();
+      if (appUrlListener) {
+        appUrlListener.remove();
+      }
     };
   }, []);
 
