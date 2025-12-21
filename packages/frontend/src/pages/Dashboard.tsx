@@ -7,6 +7,7 @@ import { CategoryIcon } from '../components/CategoryIcons';
 import { BudgetRadarChart } from '../components/BudgetRadarChart';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { useSubscription } from '../hooks/useSubscription';
+import { useAuth } from '../contexts/AuthContext';
 import {
   BarChart,
   Bar,
@@ -21,6 +22,20 @@ import {
 } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
+
+// Função para obter saudação baseada na hora do dia
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'Bom dia';
+  if (hour >= 12 && hour < 18) return 'Boa tarde';
+  return 'Boa noite';
+};
+
+// Função para obter o primeiro nome
+const getFirstName = (fullName: string | undefined) => {
+  if (!fullName) return '';
+  return fullName.split(' ')[0];
+};
 
 // Componente para estado vazio dos gráficos
 const EmptyChartState = ({ message = "Você ainda não tem dados", isManualPlan = false }: { message?: string; isManualPlan?: boolean }) => (
@@ -87,6 +102,9 @@ const Dashboard = () => {
   // Durante trial, acesso total como Conectado Plus
   const { planType, isTrialActive } = useSubscription();
   const isManualPlan = planType === 'manual' && !isTrialActive;
+
+  // Get user info for greeting
+  const { user } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState<{
     type: 'week' | 'month' | null;
     weekNumber?: number;
@@ -606,11 +624,13 @@ const Dashboard = () => {
   return (
     <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
       <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Greeting */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">
+              {getGreeting()}, {getFirstName(user?.name) || 'usuário'}! 👋
+            </h1>
             <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
           </div>
           {/* Period selector and refresh - always visible on right */}
