@@ -78,7 +78,7 @@ const OnboardingGoals = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%)',
+      background: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #0284c7 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -98,13 +98,14 @@ const OnboardingGoals = () => {
             width: '100%',
             height: '100%',
             objectFit: 'contain',
+            filter: 'brightness(0) invert(1)',
           }}
         />
       </div>
 
       {/* Title */}
       <h1 style={{
-        color: '#166534',
+        color: '#ffffff',
         fontSize: 'clamp(1.5rem, 4vw, 2rem)',
         fontWeight: 700,
         textAlign: 'center',
@@ -116,7 +117,7 @@ const OnboardingGoals = () => {
 
       {/* Subtitle */}
       <p style={{
-        color: '#4b5563',
+        color: 'rgba(255, 255, 255, 0.85)',
         fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
         textAlign: 'center',
         marginBottom: '40px',
@@ -144,16 +145,18 @@ const OnboardingGoals = () => {
               gap: '16px',
               padding: '20px',
               background: selectedGoal === goal.id
-                ? 'rgba(16, 185, 129, 0.15)'
-                : '#ffffff',
+                ? 'rgba(255, 255, 255, 1)'
+                : 'rgba(255, 255, 255, 0.95)',
               border: selectedGoal === goal.id
-                ? '2px solid #10b981'
-                : '2px solid #d1d5db',
+                ? '3px solid #0ea5e9'
+                : '2px solid transparent',
               borderRadius: '16px',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               textAlign: 'left',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+              boxShadow: selectedGoal === goal.id
+                ? '0 8px 25px rgba(0, 0, 0, 0.15)'
+                : '0 4px 15px rgba(0, 0, 0, 0.1)',
             }}
           >
             {/* Radio button */}
@@ -162,7 +165,7 @@ const OnboardingGoals = () => {
               height: '24px',
               borderRadius: '50%',
               border: selectedGoal === goal.id
-                ? '2px solid #10b981'
+                ? '2px solid #0ea5e9'
                 : '2px solid #9ca3af',
               display: 'flex',
               alignItems: 'center',
@@ -176,7 +179,7 @@ const OnboardingGoals = () => {
                   width: '12px',
                   height: '12px',
                   borderRadius: '50%',
-                  background: '#10b981',
+                  background: '#0ea5e9',
                 }} />
               )}
             </div>
@@ -217,17 +220,17 @@ const OnboardingGoals = () => {
           maxWidth: '500px',
           padding: '18px 32px',
           background: selectedGoal
-            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-            : '#d1d5db',
+            ? '#ffffff'
+            : 'rgba(255, 255, 255, 0.5)',
           border: 'none',
           borderRadius: '12px',
-          color: '#ffffff',
+          color: selectedGoal ? '#0284c7' : '#94a3b8',
           fontSize: '1.1rem',
           fontWeight: 600,
           cursor: selectedGoal ? 'pointer' : 'not-allowed',
           transition: 'all 0.2s ease',
           opacity: isLoading ? 0.7 : 1,
-          boxShadow: selectedGoal ? '0 4px 15px rgba(16, 185, 129, 0.4)' : 'none',
+          boxShadow: selectedGoal ? '0 4px 15px rgba(0, 0, 0, 0.2)' : 'none',
         }}
       >
         {isLoading ? 'Salvando...' : 'Confirmar e continuar'}
@@ -247,12 +250,15 @@ const OnboardingGoals = () => {
 
       {/* Skip option */}
       <button
-        onClick={() => navigate('/app/dashboard')}
+        onClick={() => {
+          localStorage.setItem('notifications_asked', 'true');
+          navigate('/app/dashboard');
+        }}
         style={{
           marginTop: '20px',
           background: 'transparent',
           border: 'none',
-          color: '#6b7280',
+          color: 'rgba(255, 255, 255, 0.8)',
           fontSize: '0.9rem',
           cursor: 'pointer',
           textDecoration: 'underline',
