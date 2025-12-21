@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi } from '../services/api';
+import { supabase } from '../lib/supabase';
+import { Capacitor } from '@capacitor/core';
 
 interface User {
   id: string;
@@ -13,6 +15,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<any>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -26,6 +30,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Verificar autenticação no carregamento inicial
   useEffect(() => {
     checkAuth();
+
+    // Listener para mudanças de autenticação do Supabase (OAuth callback)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth state change:', event);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Usuário logou via OAuth - sincronizar com nosso backend
+        try {
+          const response = await authApi.oauthCallback({
+            provider_id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
+            avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+            provider: session.user.app_metadata?.provider || 'oauth',
+          });
+
+          const { token, user: userData } = response.data;
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(userData));
+          setUser(userData);
+        } catch (error) {
+          console.error('Error syncing OAuth user:', error);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkAuth = async () => {
@@ -69,6 +102,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return response; // Retornar response para acessar mensagem de trial
   };
 
+  const loginWithGoogle = async () => {
+    const redirectUrl = Capacitor.isNativePlatform()
+      ? 'com.gurudodindin.app://login-callback'
+      : `${window.location.origin}/auth/callback`;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) {
+      console.error('Google login error:', error);
+      throw new Error(error.message);
+    }
+  };
+
+  const loginWithFacebook = async () => {
+    const redirectUrl = Capacitor.isNativePlatform()
+      ? 'com.gurudodindin.app://login-callback'
+      : `${window.location.origin}/auth/callback`;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: redirectUrl,
+        scopes: 'email,public_profile',
+      },
+    });
+
+    if (error) {
+      console.error('Facebook login error:', error);
+      throw new Error(error.message);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -95,6 +169,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     login,
     register,
+    loginWithGoogle,
+    loginWithFacebook,
     logout,
     refreshUser,
   };

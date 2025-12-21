@@ -90,6 +90,15 @@ export const authApi = {
 
   getMe: () =>
     api.get('/auth/me'),
+
+  oauthCallback: (data: {
+    provider_id: string;
+    email: string;
+    name: string;
+    avatar_url?: string;
+    provider: string;
+  }) =>
+    api.post('/auth/oauth-callback', data),
 };
 
 // Bank APIs
