@@ -626,19 +626,19 @@ const Dashboard = () => {
       <div className="space-y-6">
       {/* Header with Greeting */}
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">
               {getGreeting()}, {getFirstName(user?.name) || 'usuário'}! 👋
             </h1>
             <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
           </div>
-          {/* Period selector and refresh - always visible on right */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Period selector, refresh and action buttons - all on same line */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <select
               value={period}
               onChange={(e) => setPeriod(Number(e.target.value))}
-              className="input text-xs sm:text-sm flex-1 sm:flex-none"
+              className="input text-xs sm:text-sm"
             >
               <option value={30}>1 mês</option>
               <option value={60}>2 meses</option>
@@ -649,38 +649,35 @@ const Dashboard = () => {
             <button onClick={loadDashboardData} className="btn-primary p-2 sm:p-3 flex-shrink-0">
               <RefreshCw className="w-4 sm:w-5 h-4 sm:h-5" />
             </button>
-          </div>
-        </div>
-        {/* Action buttons - 2 column grid on mobile */}
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
-          {isManualPlan ? (
-            <div className="relative group">
-              <button
-                disabled
-                className="btn-secondary w-full flex items-center justify-center space-x-2 opacity-60 cursor-not-allowed text-xs sm:text-sm py-2 sm:py-2.5"
-              >
-                <Lock className="w-4 h-4" />
-                <span>Conectar Banco</span>
-              </button>
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
-                Disponível apenas nos planos Conectado ou Conectado Plus
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+            {isManualPlan ? (
+              <div className="relative group">
+                <button
+                  disabled
+                  className="btn-secondary flex items-center justify-center space-x-2 opacity-60 cursor-not-allowed text-xs sm:text-sm px-3 py-2 sm:py-2.5"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Conectar Banco</span>
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                  Disponível apenas nos planos Conectado ou Conectado Plus
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <Link to="/app/connect-bank" className="btn-primary w-full flex items-center justify-center space-x-2 text-xs sm:text-sm py-2 sm:py-2.5">
-              <Wallet className="w-4 h-4" />
-              <span>Conectar Banco</span>
-            </Link>
-          )}
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="btn-secondary w-full flex items-center justify-center space-x-2 text-xs sm:text-sm py-2 sm:py-2.5"
-            title="Importar transações CSV"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Importar CSV</span>
-          </button>
+            ) : (
+              <Link to="/app/connect-bank" className="btn-primary flex items-center justify-center space-x-2 text-xs sm:text-sm px-3 py-2 sm:py-2.5">
+                <Wallet className="w-4 h-4" />
+                <span>Conectar Banco</span>
+              </Link>
+            )}
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="btn-secondary flex items-center justify-center space-x-2 text-xs sm:text-sm px-3 py-2 sm:py-2.5"
+              title="Importar transações CSV"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Importar CSV</span>
+            </button>
+          </div>
         </div>
       </div>
 
