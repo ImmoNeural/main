@@ -39,6 +39,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (event === 'SIGNED_IN' && session?.user) {
         // Usuário logou via OAuth - sincronizar com nosso backend
         try {
+          // IMPORTANTE: Usar o access_token do Supabase, não o token do backend
+          const supabaseToken = session.access_token;
+
+          // Salvar token ANTES de chamar o backend (para o interceptor usar)
+          localStorage.setItem('token', supabaseToken);
+
           const response = await authApi.oauthCallback({
             provider_id: session.user.id,
             email: session.user.email || '',
@@ -47,8 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             provider: session.user.app_metadata?.provider || 'oauth',
           });
 
-          const { token, user: userData } = response.data;
-          localStorage.setItem('token', token);
+          const { user: userData } = response.data;
           localStorage.setItem('user', JSON.stringify(userData));
           setUser(userData);
         } catch (error) {
