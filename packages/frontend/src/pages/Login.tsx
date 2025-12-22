@@ -15,19 +15,14 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const FacebookIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-);
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithFacebook, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
+  const [socialLoading, setSocialLoading] = useState<'google' | null>(null);
   const [error, setError] = useState('');
 
   // Mostrar loading enquanto verifica autenticação
@@ -103,18 +98,6 @@ const Login = () => {
     } catch (err: any) {
       console.error('Google login error:', err);
       setError(err.message || 'Erro ao fazer login com Google');
-      setSocialLoading(null);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    setError('');
-    setSocialLoading('facebook');
-    try {
-      await loginWithFacebook();
-    } catch (err: any) {
-      console.error('Facebook login error:', err);
-      setError(err.message || 'Erro ao fazer login com Facebook');
       setSocialLoading(null);
     }
   };
@@ -240,33 +223,20 @@ const Login = () => {
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
-          {/* Botões de login social */}
-          <div className="mt-4 flex gap-3">
+          {/* Botão de login social */}
+          <div className="mt-4">
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading || socialLoading !== null}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {socialLoading === 'google' ? (
                 <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <GoogleIcon />
               )}
-              <span className="text-sm font-medium text-gray-700">Google</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleFacebookLogin}
-              disabled={loading || socialLoading !== null}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {socialLoading === 'facebook' ? (
-                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <FacebookIcon />
-              )}
-              <span className="text-sm font-medium text-gray-700">Facebook</span>
+              <span className="text-sm font-medium text-gray-700">Continuar com Google</span>
             </button>
           </div>
 
