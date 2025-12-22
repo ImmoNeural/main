@@ -12,8 +12,8 @@ if (!resend) {
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Guru do Dindin <noreply@gurudodindin.com.br>';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'suporte@gurudodindin.com.br';
 
-// URL do logo para emails (hospedado no site)
-const LOGO_URL = 'https://gurudodindin.com.br/logo.png';
+// URL do logo branco para emails (hospedado no site)
+const LOGO_URL = 'https://gurudodindin.com.br/logobranco.png';
 
 interface SendEmailParams {
   to: string;
@@ -54,7 +54,7 @@ const getEmailTemplate = (content: string, preheader: string = '') => `
                 alt="Guru do Dindin"
                 width="60"
                 height="60"
-                style="display: block; margin: 0 auto 15px auto; filter: brightness(0) invert(1);"
+                style="display: block; margin: 0 auto 15px auto;"
               />
               <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">
                 Guru do Dindin
