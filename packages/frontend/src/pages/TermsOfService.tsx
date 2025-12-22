@@ -84,6 +84,7 @@ const TermsOfService = () => {
 
               <section>
                 <h2 className="text-base font-semibold text-gray-900 mb-2">3. Cadastro e Conta</h2>
+                <p className="text-gray-600 mb-2">Ao criar sua conta no Guru do Dindin, você declara e concorda que:</p>
                 <ul className="list-disc list-inside space-y-1 text-gray-600 text-xs">
                   <li>Você deve ter pelo menos 18 anos para usar o serviço</li>
                   <li>As informações de cadastro devem ser verdadeiras e atualizadas</li>
@@ -111,9 +112,8 @@ const TermsOfService = () => {
 
               <section>
                 <h2 className="text-base font-semibold text-gray-900 mb-2">5. Planos e Pagamentos</h2>
+                <p className="text-gray-600 mb-2">Em relação aos planos e pagamentos, aplicam-se as seguintes condições:</p>
                 <ul className="list-disc list-inside space-y-1 text-gray-600 text-xs">
-                  <li>Oferecemos planos gratuitos com funcionalidades básicas</li>
-                  <li>Planos pagos (Premium) oferecem recursos avançados e conexões bancárias ilimitadas</li>
                   <li>Novos usuários recebem 7 dias de trial gratuito do plano Premium</li>
                   <li>Pagamentos são processados de forma segura via gateway de pagamento</li>
                   <li>A cobrança é recorrente (mensal ou anual) conforme o plano escolhido</li>
