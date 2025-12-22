@@ -21,6 +21,7 @@ import LandingPage from './pages/LandingPage';
 import OnboardingGoals from './pages/OnboardingGoals';
 import NotificationPermission from './pages/NotificationPermission';
 import AuthCallback from './pages/AuthCallback';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import StructuredData from './components/StructuredData';
@@ -113,6 +114,9 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+
+            {/* Páginas públicas legais */}
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
 
             {/* Onboarding após cadastro */}
             <Route
