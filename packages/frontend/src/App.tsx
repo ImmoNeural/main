@@ -22,6 +22,7 @@ import OnboardingGoals from './pages/OnboardingGoals';
 import NotificationPermission from './pages/NotificationPermission';
 import AuthCallback from './pages/AuthCallback';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import DataDeletion from './pages/DataDeletion';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import StructuredData from './components/StructuredData';
@@ -117,6 +118,7 @@ function App() {
 
             {/* Páginas públicas legais */}
             <Route path="/privacidade" element={<PrivacyPolicy />} />
+            <Route path="/exclusao-dados" element={<DataDeletion />} />
 
             {/* Onboarding após cadastro */}
             <Route
