@@ -37,6 +37,9 @@ const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXX
 // Detectar se está rodando no mobile (Capacitor)
 const isMobile = Capacitor.isNativePlatform();
 
+// Verificar se usuário já está autenticado (para pular splash)
+const hasAuthToken = () => !!localStorage.getItem('token');
+
 // Componente para redirecionar após splash no mobile
 const MobileRedirect = () => {
   const navigate = useNavigate();
@@ -84,7 +87,9 @@ const MobileRedirect = () => {
 };
 
 function App() {
-  const [showSplash, setShowSplash] = useState(isMobile);
+  // No mobile, mostrar splash apenas se NÃO estiver autenticado
+  // Isso evita que a animação rode novamente após OAuth
+  const [showSplash, setShowSplash] = useState(isMobile && !hasAuthToken());
 
   const handleSplashFinish = () => {
     setShowSplash(false);
