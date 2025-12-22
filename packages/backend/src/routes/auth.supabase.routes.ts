@@ -4,6 +4,14 @@ import { emailService } from '../services/email.service';
 
 const router = Router();
 
+interface OAuthCallbackRequest {
+  provider_id: string;
+  email: string;
+  name: string;
+  avatar_url?: string;
+  provider: string;
+}
+
 /**
  * POST /api/auth/register
  * Registra um novo usuário usando Supabase Auth
@@ -197,6 +205,112 @@ router.post('/login', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('❌ Error logging in:', error);
     res.status(500).json({ error: 'Erro ao fazer login' });
+  }
+});
+
+/**
+ * POST /api/auth/oauth-callback
+ * Processa callback de OAuth (Google/Facebook)
+ * Cria ou atualiza usuário com base no provedor
+ */
+router.post('/oauth-callback', async (req: Request, res: Response) => {
+  try {
+    const { provider_id, email, name, avatar_url, provider }: OAuthCallbackRequest = req.body;
+
+    console.log('🔐 OAuth callback for:', email, 'provider:', provider);
+
+    // Validação
+    if (!provider_id || !email) {
+      return res.status(400).json({ error: 'Provider ID e email são obrigatórios' });
+    }
+
+    // Check if user has a subscription already
+    const { data: existingSubscription } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', provider_id)
+      .limit(1);
+
+    let isNewUser = false;
+
+    if (!existingSubscription || existingSubscription.length === 0) {
+      // New user - create trial subscription
+      isNewUser = true;
+      console.log('🆕 New OAuth user detected:', email);
+
+      try {
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
+
+        const { error: subscriptionError } = await supabase
+          .from('subscriptions')
+          .insert({
+            user_id: provider_id,
+            plan_type: 'manual',
+            plan_name: 'Trial - Plano Manual',
+            plan_price: 0,
+            status: 'trial',
+            start_date: new Date().toISOString(),
+            end_date: trialEndDate.toISOString(),
+            trial_end_date: trialEndDate.toISOString(),
+            payment_method: null,
+            payment_processor: null,
+            max_connected_accounts: 0,
+            auto_renew: false,
+            metadata: {
+              trial_days: 7,
+              created_on_signup: true,
+              oauth_provider: provider
+            }
+          });
+
+        if (subscriptionError) {
+          console.error('⚠️ Error creating trial subscription:', subscriptionError);
+        } else {
+          console.log('✅ Trial subscription created for OAuth user:', provider_id);
+        }
+      } catch (trialError) {
+        console.error('⚠️ Error creating trial:', trialError);
+      }
+
+      // Send welcome email for new users
+      emailService.sendWelcomeEmail(email, name).catch((err) => {
+        console.error('⚠️ Error sending welcome email:', err);
+      });
+    } else {
+      console.log('👤 Existing OAuth user:', email);
+    }
+
+    // Get the session token from the Authorization header (if present)
+    const authHeader = req.headers.authorization;
+    let token = '';
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+
+    console.log('✅ OAuth user processed:', provider_id);
+
+    res.json({
+      message: isNewUser ? 'Usuário criado com sucesso! Você ganhou 7 dias grátis para testar.' : 'Login realizado com sucesso',
+      token: token,
+      user: {
+        id: provider_id,
+        name: name || email.split('@')[0],
+        email: email,
+        avatar_url: avatar_url,
+        provider: provider,
+      },
+      isNewUser,
+      trial: isNewUser ? {
+        active: true,
+        days: 7,
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      } : undefined
+    });
+  } catch (error) {
+    console.error('❌ Error processing OAuth callback:', error);
+    res.status(500).json({ error: 'Erro ao processar autenticação' });
   }
 });
 
