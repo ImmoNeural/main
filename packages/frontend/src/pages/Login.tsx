@@ -55,6 +55,12 @@ const Login = () => {
 
   // Redirecionar IMEDIATAMENTE se já estiver autenticado (sem render)
   if (isAuthenticated) {
+    // Verificar se é novo usuário OAuth (precisa ir pro onboarding)
+    const isNewOAuthUser = localStorage.getItem('oauth_new_user');
+    if (isNewOAuthUser) {
+      localStorage.removeItem('oauth_new_user');
+      return <Navigate to="/onboarding/goals" replace />;
+    }
     return <Navigate to="/app/dashboard" replace />;
   }
 

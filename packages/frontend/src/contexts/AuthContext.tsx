@@ -176,20 +176,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 localStorage.setItem('token', accessToken);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
 
+                // Marcar se é novo usuário para redirecionar corretamente
+                if (response.data.isNewUser) {
+                  localStorage.setItem('oauth_new_user', 'true');
+                }
+
                 if (isMounted) {
                   setUser(response.data.user);
                   setIsLoading(false);
                 }
 
-                // Redirecionar imediatamente para dashboard ou onboarding
-                // Marcar que OAuth foi completado para evitar splash
-                localStorage.setItem('oauth_completed', 'true');
-
-                if (response.data.isNewUser) {
-                  window.location.href = '/onboarding/goals';
-                } else {
-                  window.location.href = '/app/dashboard';
-                }
+                // NÃO usar window.location.href - deixar React Router navegar via estado
+                // A mudança de isAuthenticated vai triggar o redirect em Login/Register
               }
             }
           } catch (error) {

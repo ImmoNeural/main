@@ -37,15 +37,8 @@ const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXX
 // Detectar se está rodando no mobile (Capacitor)
 const isMobile = Capacitor.isNativePlatform();
 
-// Verificar se deve pular o splash (autenticado ou voltando de OAuth)
+// Verificar se deve pular o splash (já está autenticado)
 const shouldSkipSplash = () => {
-  // Verificar se acabou de completar OAuth
-  const oauthCompleted = localStorage.getItem('oauth_completed');
-  if (oauthCompleted) {
-    localStorage.removeItem('oauth_completed');
-    return true;
-  }
-  // Verificar se já tem token (já está logado)
   return !!localStorage.getItem('token');
 };
 
