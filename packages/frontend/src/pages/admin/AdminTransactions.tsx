@@ -6,10 +6,16 @@ import { Search, RefreshCw, ArrowLeft, User, Calendar, DollarSign, Eye, CreditCa
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
-// Lista de emails de administradores
+// Lista de emails de administradores (lowercase para comparação)
 const ADMIN_EMAILS = [
   'neurekaai@gmail.com',
 ];
+
+// Função para verificar se é admin (case-insensitive)
+const isAdminEmail = (email: string | undefined): boolean => {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+};
 
 interface Transaction {
   id: string;
@@ -60,7 +66,7 @@ const AdminTransactions = () => {
 
   // Carregar dados quando tiver userId
   useEffect(() => {
-    if (userId && user?.email && ADMIN_EMAILS.includes(user.email)) {
+    if (userId && isAdminEmail(user?.email)) {
       loadData();
     }
   }, [userId, user?.email]);
@@ -132,8 +138,8 @@ const AdminTransactions = () => {
     }
   };
 
-  // Verificar se é admin
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+  // Verificar se é admin (case-insensitive)
+  const isAdmin = isAdminEmail(user?.email);
 
   // Mostrar loading enquanto auth carrega
   if (authLoading) {
