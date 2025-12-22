@@ -639,6 +639,7 @@ const Dashboard = () => {
               value={period}
               onChange={(e) => setPeriod(Number(e.target.value))}
               className="input text-xs sm:text-sm"
+              data-tour="period-selector"
             >
               <option value={30}>1 mês</option>
               <option value={60}>2 meses</option>
@@ -664,7 +665,7 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : (
-              <Link to="/app/connect-bank" className="btn-primary flex items-center justify-center space-x-2 text-xs sm:text-sm px-3 py-2 sm:py-2.5">
+              <Link to="/app/connect-bank" className="btn-primary flex items-center justify-center space-x-2 text-xs sm:text-sm px-3 py-2 sm:py-2.5" data-tour="connect-bank-btn">
                 <Wallet className="w-4 h-4" />
                 <span>Conectar Banco</span>
               </Link>
@@ -682,7 +683,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6" data-tour="stats-cards">
         <div className="card hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
@@ -817,7 +818,7 @@ const Dashboard = () => {
         {/* Charts */}
         <div className="xl:col-span-3 space-y-6 order-1 xl:order-2">
           {/* Monthly Bar Chart */}
-          <div className="card overflow-hidden">
+          <div className="card overflow-hidden" data-tour="monthly-chart">
             <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary-600" />
               Receitas vs Despesas Mensal (em Reais R$)

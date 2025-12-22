@@ -1,0 +1,541 @@
+import { useState, useEffect, useCallback } from 'react';
+import Joyride, { CallBackProps, STATUS, EVENTS, ACTIONS, Step } from 'react-joyride';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+// Componente de animação de categorização
+const CategorizationAnimation = () => {
+  const [animationStep, setAnimationStep] = useState(0);
+
+  const transactions = [
+    { id: 1, description: 'UBER *TRIP', from: 'Não Categorizado', to: 'Transporte', icon: '🚗' },
+    { id: 2, description: 'IFOOD *RESTAURANTE', from: 'Não Categorizado', to: 'Alimentação', icon: '🍕' },
+    { id: 3, description: 'NETFLIX.COM', from: 'Não Categorizado', to: 'Entretenimento', icon: '📺' },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimationStep((prev) => (prev + 1) % (transactions.length + 1));
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="bg-white rounded-lg p-4 shadow-lg border border-gray-200 max-w-sm mx-auto">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+          <span className="text-white text-sm">✨</span>
+        </div>
+        <span className="font-semibold text-gray-800 text-sm">Categorizando com IA...</span>
+      </div>
+
+      <div className="space-y-2">
+        {transactions.map((tx, index) => {
+          const isProcessed = animationStep > index;
+          const isProcessing = animationStep === index;
+
+          return (
+            <div
+              key={tx.id}
+              className={`flex items-center justify-between p-2 rounded-lg transition-all duration-500 ${
+                isProcessed
+                  ? 'bg-green-50 border border-green-200'
+                  : isProcessing
+                    ? 'bg-purple-50 border border-purple-200 animate-pulse'
+                    : 'bg-gray-50 border border-gray-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`text-lg transition-transform duration-300 ${isProcessing ? 'scale-125' : ''}`}>
+                  {isProcessed ? tx.icon : '❓'}
+                </span>
+                <span className="text-xs font-medium text-gray-700">{tx.description}</span>
+              </div>
+              <div className={`text-xs font-semibold transition-all duration-300 ${
+                isProcessed ? 'text-green-600' : isProcessing ? 'text-purple-600' : 'text-gray-400'
+              }`}>
+                {isProcessed ? tx.to : isProcessing ? 'Processando...' : tx.from}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">Progresso</span>
+          <span className="font-semibold text-purple-600">
+            {Math.min(animationStep, transactions.length)}/{transactions.length}
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-1 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-500"
+            style={{ width: `${(Math.min(animationStep, transactions.length) / transactions.length) * 100}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Componente de simulação de criação de budget
+const BudgetCreationAnimation = () => {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStep((prev) => (prev + 1) % 4);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const budgetSteps = [
+    { label: 'Selecione categoria', value: 'Alimentação', icon: '🍕' },
+    { label: 'Defina o limite', value: 'R$ 800,00', icon: '💰' },
+    { label: 'Escolha o período', value: 'Mensal', icon: '📅' },
+    { label: 'Budget criado!', value: 'Sucesso!', icon: '✅' },
+  ];
+
+  return (
+    <div className="bg-white rounded-lg p-4 shadow-lg border border-gray-200 max-w-xs mx-auto">
+      <div className="text-center mb-3">
+        <span className="text-3xl">{budgetSteps[step].icon}</span>
+      </div>
+      <div className="text-center">
+        <p className="text-xs text-gray-500">{budgetSteps[step].label}</p>
+        <p className="font-bold text-gray-800 mt-1">{budgetSteps[step].value}</p>
+      </div>
+      <div className="flex justify-center gap-1 mt-3">
+        {budgetSteps.map((_, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 rounded-full transition-all ${
+              index === step ? 'bg-primary-600 w-4' : index < step ? 'bg-green-500' : 'bg-gray-300'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface InteractiveTourProps {
+  run: boolean;
+  onFinish: () => void;
+}
+
+const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [stepIndex, setStepIndex] = useState(0);
+  const [isReady, setIsReady] = useState(false);
+
+  // Definição dos 15 passos do tutorial
+  const steps: Step[] = [
+    // 1. Boas-vindas no Dashboard
+    {
+      target: 'body',
+      content: (
+        <div className="text-center">
+          <div className="text-5xl mb-4">👋</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Bem-vindo ao Guru do Dindin!</h2>
+          <p className="text-gray-600 text-sm">
+            Vamos fazer um tour rápido pelas principais funcionalidades.
+            Este tutorial vai te guiar passo a passo pela plataforma.
+          </p>
+          <p className="text-primary-600 text-xs mt-3 font-medium">
+            Tempo estimado: 2 minutos
+          </p>
+        </div>
+      ),
+      placement: 'center',
+      disableBeacon: true,
+    },
+    // 2. Cards de resumo no Dashboard
+    {
+      target: '[data-tour="stats-cards"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📊 Visão Geral Financeira</h3>
+          <p className="text-gray-600 text-sm">
+            Aqui você vê seu <strong>saldo total</strong>, <strong>receitas</strong>,
+            <strong> despesas</strong> e <strong>saldo inicial</strong> do período.
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Os valores são atualizados automaticamente conforme você conecta contas e categoriza transações.
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 3. Seletor de período
+    {
+      target: '[data-tour="period-selector"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📅 Período de Análise</h3>
+          <p className="text-gray-600 text-sm">
+            Escolha o período que deseja analisar: <strong>1, 2, 3, 6 ou 12 meses</strong>.
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Todos os gráficos e cards serão atualizados para o período selecionado.
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 4. Gráfico de barras mensal
+    {
+      target: '[data-tour="monthly-chart"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📈 Receitas vs Despesas</h3>
+          <p className="text-gray-600 text-sm">
+            Visualize a evolução das suas <span className="text-green-600 font-semibold">receitas</span> e
+            <span className="text-red-600 font-semibold"> despesas</span> mês a mês.
+          </p>
+          <p className="text-xs text-primary-600 mt-2 font-medium">
+            💡 Clique em uma barra para ver as transações daquele mês!
+          </p>
+        </div>
+      ),
+      placement: 'top',
+    },
+    // 5. Navegar para Contas - explicar conexão bancária
+    {
+      target: '[data-tour="connect-bank-btn"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">🏦 Conectar Banco</h3>
+          <p className="text-gray-600 text-sm">
+            Conecte sua conta bancária via <strong>Open Finance</strong> para importar transações automaticamente.
+          </p>
+          <ul className="text-xs text-gray-500 mt-2 space-y-1">
+            <li>• Seguro e regulamentado pelo Banco Central</li>
+            <li>• Suas credenciais não são armazenadas</li>
+            <li>• Sincronização automática de transações</li>
+          </ul>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 6. Navegar para Transações
+    {
+      target: '[data-tour="transactions-page"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📋 Página de Transações</h3>
+          <p className="text-gray-600 text-sm">
+            Aqui você visualiza <strong>todas as suas transações</strong>,
+            pode filtrá-las por categoria, tipo e período.
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 7. Filtros de transações
+    {
+      target: '[data-tour="transactions-filters"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">🔍 Filtros Avançados</h3>
+          <p className="text-gray-600 text-sm">
+            Use os filtros para encontrar transações específicas:
+          </p>
+          <ul className="text-xs text-gray-500 mt-2 space-y-1">
+            <li>• <strong>Busca:</strong> Pesquise por descrição ou merchant</li>
+            <li>• <strong>Categoria:</strong> Filtre por categoria</li>
+            <li>• <strong>Tipo de Custo:</strong> Fixos, Variáveis ou Investimentos</li>
+          </ul>
+        </div>
+      ),
+      placement: 'left',
+    },
+    // 8. Botão de categorizar (com animação)
+    {
+      target: '[data-tour="categorize-btn"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">✨ Categorizar com IA</h3>
+          <p className="text-gray-600 text-sm mb-3">
+            Clique aqui para categorizar automaticamente suas transações usando
+            <strong> inteligência artificial</strong>.
+          </p>
+          <CategorizationAnimation />
+          <p className="text-xs text-gray-500 mt-3">
+            A IA analisa a descrição e classifica em categorias como Alimentação, Transporte, etc.
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 9. Categorização manual
+    {
+      target: '[data-tour="category-dropdown"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">🏷️ Categorização Manual</h3>
+          <p className="text-gray-600 text-sm">
+            Você também pode <strong>alterar a categoria manualmente</strong> clicando no dropdown.
+          </p>
+          <p className="text-xs text-primary-600 mt-2 font-medium">
+            💡 Ao mudar uma categoria, o sistema sugere aplicar a mesma mudança em transações similares!
+          </p>
+        </div>
+      ),
+      placement: 'left',
+    },
+    // 10. Navegar para Budgets
+    {
+      target: '[data-tour="budgets-page"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">💰 Página de Orçamentos</h3>
+          <p className="text-gray-600 text-sm">
+            Gerencie seus <strong>orçamentos mensais</strong> por categoria e acompanhe seus gastos.
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 11. Resumo financeiro em Budgets
+    {
+      target: '[data-tour="financial-summary"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📊 Resumo Financeiro</h3>
+          <p className="text-gray-600 text-sm">
+            Veja seu <strong>salário</strong>, quanto está gastando em <strong>custos fixos</strong>,
+            <strong> variáveis</strong> e <strong>investimentos</strong>.
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            O gráfico compara seu orçamento planejado com o gasto real.
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 12. Como criar um budget
+    {
+      target: '[data-tour="budget-config"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">⚙️ Configurar Orçamentos</h3>
+          <p className="text-gray-600 text-sm mb-3">
+            Clique no ícone de engrenagem para definir limites de gastos por categoria.
+          </p>
+          <BudgetCreationAnimation />
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 13. Cards de budget com barras mensais
+    {
+      target: '[data-tour="budget-cards"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📊 Acompanhamento de Gastos</h3>
+          <p className="text-gray-600 text-sm">
+            Cada card mostra o <strong>progresso do gasto</strong> em relação ao orçamento.
+          </p>
+          <div className="mt-3 bg-gray-50 rounded-lg p-3">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-green-600 font-semibold">R$ 200 disponível</span>
+              <span className="text-gray-500">Budget: R$ 800</span>
+            </div>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full w-3/4 bg-green-500 rounded-full" />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">Gasto: R$ 600 (75%)</p>
+          </div>
+          <p className="text-xs text-orange-600 mt-2">
+            ⚠️ A barra fica laranja quando você excede o orçamento!
+          </p>
+        </div>
+      ),
+      placement: 'top',
+    },
+    // 14. Custos Fixos vs Variáveis
+    {
+      target: '[data-tour="cost-types"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">🔧 Fixos vs 🛒 Variáveis</h3>
+          <p className="text-gray-600 text-sm">
+            Entenda a diferença e mantenha sua saúde financeira:
+          </p>
+          <div className="mt-2 space-y-2 text-xs">
+            <div className="bg-blue-50 p-2 rounded">
+              <strong className="text-blue-700">🔧 Custos Fixos:</strong>
+              <span className="text-gray-600"> Aluguel, internet, streaming, seguros</span>
+              <p className="text-blue-600 mt-1">Ideal: até 50% do salário</p>
+            </div>
+            <div className="bg-orange-50 p-2 rounded">
+              <strong className="text-orange-700">🛒 Custos Variáveis:</strong>
+              <span className="text-gray-600"> Alimentação, transporte, compras</span>
+              <p className="text-orange-600 mt-1">Ideal: até 30% do salário</p>
+            </div>
+            <div className="bg-green-50 p-2 rounded">
+              <strong className="text-green-700">📈 Investimentos:</strong>
+              <span className="text-gray-600"> Poupança, ações, fundos</span>
+              <p className="text-green-600 mt-1">Meta: pelo menos 20% do salário</p>
+            </div>
+          </div>
+        </div>
+      ),
+      placement: 'top',
+    },
+    // 15. Conclusão
+    {
+      target: 'body',
+      content: (
+        <div className="text-center">
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Tutorial Concluído!</h2>
+          <p className="text-gray-600 text-sm">
+            Agora você conhece as principais funcionalidades do Guru do Dindin.
+          </p>
+          <div className="mt-4 bg-primary-50 rounded-lg p-3 text-left">
+            <p className="text-xs font-semibold text-primary-700 mb-2">Próximos passos:</p>
+            <ul className="text-xs text-primary-600 space-y-1">
+              <li>✅ Conecte sua conta bancária</li>
+              <li>✅ Categorize suas transações</li>
+              <li>✅ Defina seus orçamentos</li>
+              <li>✅ Acompanhe seus gastos diariamente</li>
+            </ul>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
+            Você pode reiniciar este tutorial a qualquer momento no menu lateral.
+          </p>
+        </div>
+      ),
+      placement: 'center',
+      disableBeacon: true,
+    },
+  ];
+
+  // Mapeamento de qual página cada step deve estar
+  const stepPageMap: Record<number, string> = {
+    0: '/app/dashboard',
+    1: '/app/dashboard',
+    2: '/app/dashboard',
+    3: '/app/dashboard',
+    4: '/app/dashboard',
+    5: '/app/transactions',
+    6: '/app/transactions',
+    7: '/app/transactions',
+    8: '/app/transactions',
+    9: '/app/budgets',
+    10: '/app/budgets',
+    11: '/app/budgets',
+    12: '/app/budgets',
+    13: '/app/budgets',
+    14: '/app/dashboard',
+  };
+
+  // Navegar para a página correta quando o step mudar
+  useEffect(() => {
+    if (run && stepIndex >= 0) {
+      const targetPage = stepPageMap[stepIndex];
+      if (targetPage && location.pathname !== targetPage) {
+        navigate(targetPage);
+        // Aguardar a página carregar antes de mostrar o step
+        setIsReady(false);
+        setTimeout(() => setIsReady(true), 500);
+      } else {
+        setIsReady(true);
+      }
+    }
+  }, [stepIndex, run, navigate, location.pathname]);
+
+  // Callback do Joyride
+  const handleJoyrideCallback = useCallback((data: CallBackProps) => {
+    const { action, index, status, type } = data;
+
+    // Log para debug
+    console.log('🎯 Tour callback:', { action, index, status, type });
+
+    if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+      // Avançar ou voltar
+      if (action === ACTIONS.NEXT) {
+        setStepIndex(index + 1);
+      } else if (action === ACTIONS.PREV) {
+        setStepIndex(index - 1);
+      }
+    }
+
+    // Finalizar tour
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setStepIndex(0);
+      onFinish();
+    }
+  }, [onFinish]);
+
+  if (!run) return null;
+
+  return (
+    <Joyride
+      steps={steps}
+      stepIndex={stepIndex}
+      run={run && isReady}
+      callback={handleJoyrideCallback}
+      continuous
+      showProgress
+      showSkipButton
+      disableScrolling={false}
+      spotlightClicks={false}
+      styles={{
+        options: {
+          primaryColor: '#4F46E5',
+          zIndex: 10000,
+          arrowColor: '#fff',
+          backgroundColor: '#fff',
+          textColor: '#374151',
+          overlayColor: 'rgba(0, 0, 0, 0.6)',
+        },
+        tooltip: {
+          borderRadius: 16,
+          padding: 20,
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        },
+        tooltipContainer: {
+          textAlign: 'left',
+        },
+        buttonNext: {
+          backgroundColor: '#4F46E5',
+          borderRadius: 8,
+          padding: '10px 20px',
+          fontSize: 14,
+          fontWeight: 600,
+        },
+        buttonBack: {
+          color: '#6B7280',
+          marginRight: 10,
+          fontSize: 14,
+        },
+        buttonSkip: {
+          color: '#9CA3AF',
+          fontSize: 13,
+        },
+        spotlight: {
+          borderRadius: 12,
+        },
+        beacon: {
+          display: 'none',
+        },
+      }}
+      locale={{
+        back: 'Anterior',
+        close: 'Fechar',
+        last: 'Finalizar',
+        next: 'Próximo',
+        skip: 'Pular tutorial',
+      }}
+      floaterProps={{
+        disableAnimation: false,
+      }}
+    />
+  );
+};
+
+export default InteractiveTour;

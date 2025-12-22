@@ -7,7 +7,7 @@ import { useOnboarding } from '../hooks/useOnboarding';
 import { useBudgetNotifications } from '../hooks/useBudgetNotifications';
 import { useState } from 'react';
 import ImpersonationBanner from './ImpersonationBanner';
-import OnboardingTour from './OnboardingTour';
+import InteractiveTour from './InteractiveTour';
 
 const Layout = () => {
   const location = useLocation();
@@ -15,7 +15,7 @@ const Layout = () => {
   const { user, logout } = useAuth();
   const { toggleTheme, isDark } = useTheme();
   const { isTrialActive, daysRemaining, isExpired, subscription } = useSubscription();
-  const { showOnboarding, completeOnboarding, skipOnboarding, resetOnboarding } = useOnboarding();
+  const { showOnboarding, completeOnboarding, resetOnboarding } = useOnboarding();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Verificar budgets e enviar notificações em mobile
@@ -27,10 +27,10 @@ const Layout = () => {
   };
 
   const navigation = [
-    { name: 'Dashboard', path: '/app/dashboard', icon: LayoutDashboard },
-    { name: 'Budgets', path: '/app/budgets', icon: Target },
-    { name: 'Transações', path: '/app/transactions', icon: Receipt },
-    { name: 'Contas', path: '/app/accounts', icon: Wallet },
+    { name: 'Dashboard', path: '/app/dashboard', icon: LayoutDashboard, tourId: 'dashboard-page' },
+    { name: 'Budgets', path: '/app/budgets', icon: Target, tourId: 'budgets-page' },
+    { name: 'Transações', path: '/app/transactions', icon: Receipt, tourId: 'transactions-page' },
+    { name: 'Contas', path: '/app/accounts', icon: Wallet, tourId: 'accounts-page' },
     { name: 'Preferências', path: '/app/preferences', icon: Settings },
     { name: 'Planos', path: '/app/planos', icon: CreditCard },
     { name: 'Conectar Banco', path: '/app/connect-bank', icon: PlusCircle },
@@ -38,13 +38,11 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50 dark:bg-slate-900 dark:text-white transition-colors duration-200">
-      {/* Onboarding Tour */}
-      {showOnboarding && (
-        <OnboardingTour
-          onComplete={completeOnboarding}
-          onSkip={skipOnboarding}
-        />
-      )}
+      {/* Interactive Tour */}
+      <InteractiveTour
+        run={showOnboarding}
+        onFinish={completeOnboarding}
+      />
       {/* Sidebar - Desktop apenas */}
       <aside
         className={`hidden lg:flex bg-gradient-to-b from-primary-700 to-primary-900 text-white transition-all duration-300 fixed left-0 top-0 bottom-0 z-40 flex-col
@@ -103,6 +101,7 @@ const Layout = () => {
                       ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}
                     `}
                     title={item.name}
+                    data-tour={item.tourId}
                   >
                     <Icon className={`${isActive ? 'w-7 h-7' : 'w-6 h-6'} flex-shrink-0`} />
                     {!sidebarCollapsed && (
@@ -267,6 +266,7 @@ const Layout = () => {
                   }
                 `}
                 title={item.name}
+                data-tour={item.tourId}
               >
                 <Icon className={`${isActive ? 'w-5 h-5' : 'w-5 h-5'} flex-shrink-0`} />
               </Link>

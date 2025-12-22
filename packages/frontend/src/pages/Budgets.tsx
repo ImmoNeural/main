@@ -233,7 +233,7 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
   const monthLabel = format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="card p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-t-4 border-primary-600">
+    <div className="card p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-t-4 border-primary-600" data-tour="financial-summary">
       <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
         📊 Resumo Financeiro - {monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}
       </h2>
@@ -1390,6 +1390,7 @@ export default function Budgets() {
               <Link
                 to="/app/preferences"
                 className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 mt-1 transition-colors"
+                data-tour="budget-config"
               >
                 <Settings className="w-4 h-4" />
                 Configurar Preferências
@@ -1457,7 +1458,7 @@ export default function Budgets() {
         <FinancialSummary summary={monthSummary} selectedMonth={selectedMonth} />
 
         {/* Categorias */}
-        <main className="space-y-8 sm:space-y-12">
+        <main className="space-y-8 sm:space-y-12" data-tour="cost-types">
           {costTypes.map((costType) => (
             <section key={costType}>
               <h2
@@ -1484,7 +1485,7 @@ export default function Budgets() {
                 )}
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6" data-tour="budget-cards">
                 {Object.entries(categoryData[costType]).map(([categoryName, data]) => {
                   // Determinar o tipo de custo baseado no costType
                   // Para Movimentações (Receitas, Investimentos, etc), usar 'variavel'

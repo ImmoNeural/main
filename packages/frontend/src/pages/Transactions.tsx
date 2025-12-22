@@ -827,6 +827,7 @@ const Transactions = () => {
                       }`}
                       disabled={isAILoading || isLoading}
                       title={canUseAI ? "Usar IA para categorizar transações" : "Categorização automática (sem IA)"}
+                      data-tour="categorize-btn"
                     >
                       {isAILoading ? (
                         <Loader2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 animate-spin" />
@@ -1055,7 +1056,7 @@ const Transactions = () => {
             </div>
 
             {/* Barra de Busca Consolidada */}
-            <div className="p-4 bg-white rounded-xl shadow-md border border-gray-200">
+            <div className="p-4 bg-white rounded-xl shadow-md border border-gray-200" data-tour="transactions-filters">
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Busca e Filtros</h3>
 
               {/* Campo de Busca por Texto */}
@@ -1328,7 +1329,7 @@ const Transactions = () => {
                       </div>
                     </td>
                     <td className="hidden md:table-cell px-2 py-2">
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1" data-tour="category-dropdown">
                         {/* Ícone da categoria */}
                         {!isUncategorized && transaction.category && (
                           <div className="flex-shrink-0">
