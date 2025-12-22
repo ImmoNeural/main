@@ -38,6 +38,18 @@ const DataDeletion = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
             <div className="space-y-6 text-gray-700 text-sm leading-relaxed">
 
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-gray-700 text-xs">
+                  <strong>Controlador dos dados:</strong>
+                </p>
+                <p className="text-gray-900 font-medium text-xs mt-1">
+                  MY CLEVER BOT TECNOLOGIA EM INTELIGENCIA ARTIFICIAL LTDA
+                </p>
+                <p className="text-gray-600 text-xs">
+                  CNPJ: 62.050.286/0001-77
+                </p>
+              </div>
+
               <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
                 <Trash2 className="w-5 h-5 text-red-500 flex-shrink-0" />
                 <p className="text-red-700 text-xs">

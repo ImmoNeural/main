@@ -38,6 +38,18 @@ const TermsOfService = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
             <div className="space-y-6 text-gray-700 text-sm leading-relaxed">
 
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-gray-700 text-xs">
+                  <strong>Guru do Dindin</strong> é uma plataforma de propriedade exclusiva de:
+                </p>
+                <p className="text-gray-900 font-medium text-xs mt-1">
+                  MY CLEVER BOT TECNOLOGIA EM INTELIGENCIA ARTIFICIAL LTDA
+                </p>
+                <p className="text-gray-600 text-xs">
+                  CNPJ: 62.050.286/0001-77
+                </p>
+              </div>
+
               <p>
                 Bem-vindo ao <strong>Guru do Dindin</strong>. Ao usar nossa plataforma, você concorda com estes termos. Leia atentamente.
               </p>
@@ -177,6 +189,12 @@ const TermsOfService = () => {
                   <li>Eliminação dos dados pessoais tratados com consentimento</li>
                   <li>Revogação do consentimento a qualquer momento</li>
                 </ul>
+                <p className="text-gray-600 mt-2 text-xs">
+                  Para solicitar a exclusão dos seus dados, acesse nossa{' '}
+                  <Link to="/exclusao-dados" className="text-primary-600 font-medium hover:underline">
+                    página de exclusão de dados
+                  </Link>.
+                </p>
               </section>
 
               <section>

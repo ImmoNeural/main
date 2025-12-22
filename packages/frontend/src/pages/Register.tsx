@@ -317,11 +317,31 @@ const Register = () => {
               </Link>
             </p>
           </div>
+
+          {/* Links legais */}
+          <div className="mt-3 pt-3 border-t border-gray-200 text-center">
+            <p className="text-gray-500 text-xs">
+              Ao criar sua conta, você concorda com nossos{' '}
+              <Link to="/termos" className="text-primary-600 hover:underline">
+                Termos de Uso
+              </Link>
+              {' '}e{' '}
+              <Link to="/privacidade" className="text-primary-600 hover:underline">
+                Política de Privacidade
+              </Link>
+            </p>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-4 text-center text-white/60 text-xs">
+        <div className="mt-4 text-center text-white/70 text-xs space-y-1">
           <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
+          <p className="text-white/50 text-[10px]">
+            MY CLEVER BOT TECNOLOGIA EM INTELIGENCIA ARTIFICIAL LTDA
+          </p>
+          <p className="text-white/50 text-[10px]">
+            CNPJ: 62.050.286/0001-77
+          </p>
         </div>
       </div>
 

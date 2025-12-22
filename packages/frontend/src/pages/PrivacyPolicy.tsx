@@ -38,8 +38,23 @@ const PrivacyPolicy = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
             <div className="space-y-6 text-gray-700 text-sm leading-relaxed">
 
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-gray-700 text-xs">
+                  <strong>Controlador dos dados:</strong>
+                </p>
+                <p className="text-gray-900 font-medium text-xs mt-1">
+                  MY CLEVER BOT TECNOLOGIA EM INTELIGENCIA ARTIFICIAL LTDA
+                </p>
+                <p className="text-gray-600 text-xs">
+                  CNPJ: 62.050.286/0001-77
+                </p>
+                <p className="text-gray-600 text-xs mt-1">
+                  E-mail: contato@gurudodindin.com.br
+                </p>
+              </div>
+
               <p>
-                O <strong>Guru do Dindin</strong> está comprometido em proteger sua privacidade. Esta política explica como coletamos, usamos e protegemos suas informações.
+                O <strong>Guru do Dindin</strong> está comprometido em proteger sua privacidade. Esta política explica como coletamos, usamos e protegemos suas informações, em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).
               </p>
 
               <section>
@@ -79,8 +94,22 @@ const PrivacyPolicy = () => {
 
               <section>
                 <h2 className="text-base font-semibold text-gray-900 mb-2">5. Seus Direitos (LGPD)</h2>
-                <p className="text-gray-600">
-                  Você pode acessar, corrigir, excluir seus dados ou revogar consentimento a qualquer momento. Entre em contato pelo e-mail abaixo.
+                <p className="text-gray-600 mb-2">
+                  Conforme a LGPD, você tem direito a:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-gray-600 text-xs">
+                  <li>Acessar seus dados pessoais</li>
+                  <li>Corrigir dados incompletos ou desatualizados</li>
+                  <li>Solicitar a exclusão dos seus dados</li>
+                  <li>Revogar consentimento a qualquer momento</li>
+                  <li>Solicitar portabilidade dos dados</li>
+                </ul>
+                <p className="text-gray-600 mt-2 text-xs">
+                  Para exercer seus direitos ou solicitar a exclusão de dados, acesse nossa{' '}
+                  <Link to="/exclusao-dados" className="text-primary-600 font-medium hover:underline">
+                    página de exclusão de dados
+                  </Link>
+                  {' '}ou entre em contato pelo e-mail abaixo.
                 </p>
               </section>
 
