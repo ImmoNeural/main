@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { authApi } from '../services/api';
 import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
@@ -28,36 +28,101 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Refs para evitar race conditions e chamadas duplicadas
+  const isProcessingOAuth = useRef(false);
+  const hasProcessedSession = useRef(false);
+
   // Verificar autenticação no carregamento inicial
   useEffect(() => {
-    checkAuth();
+    let isMounted = true;
 
-    // Listener para mudanças de autenticação do Supabase (OAuth callback)
+    const initAuth = async () => {
+      // Verificar se já tem sessão do Supabase (para OAuth)
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user && !hasProcessedSession.current) {
+        hasProcessedSession.current = true;
+        // Já tem sessão OAuth, usar ela
+        const supabaseToken = session.access_token;
+        localStorage.setItem('token', supabaseToken);
+
+        try {
+          const response = await authApi.oauthCallback({
+            provider_id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name ||
+                  session.user.user_metadata?.name ||
+                  session.user.email?.split('@')[0] || 'Usuário',
+            avatar_url: session.user.user_metadata?.avatar_url ||
+                        session.user.user_metadata?.picture,
+            provider: session.user.app_metadata?.provider || 'oauth',
+          });
+
+          if (isMounted) {
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            setUser(response.data.user);
+          }
+        } catch (error) {
+          console.error('Error syncing OAuth session:', error);
+          // Tentar fallback para checkAuth normal
+          await checkAuth();
+        }
+      } else {
+        // Sem sessão OAuth, verificar token local
+        await checkAuth();
+      }
+
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listener para mudanças de autenticação do Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth state change:', event);
 
-      if (event === 'SIGNED_IN' && session?.user) {
-        // Usuário logou via OAuth - sincronizar com nosso backend
-        try {
-          // IMPORTANTE: Usar o access_token do Supabase, não o token do backend
-          const supabaseToken = session.access_token;
+      // Evitar processar se já está processando ou se já processou
+      if (isProcessingOAuth.current || hasProcessedSession.current) {
+        return;
+      }
 
-          // Salvar token ANTES de chamar o backend (para o interceptor usar)
+      if (event === 'SIGNED_IN' && session?.user) {
+        isProcessingOAuth.current = true;
+        hasProcessedSession.current = true;
+
+        try {
+          const supabaseToken = session.access_token;
           localStorage.setItem('token', supabaseToken);
 
           const response = await authApi.oauthCallback({
             provider_id: session.user.id,
             email: session.user.email || '',
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário',
-            avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+            name: session.user.user_metadata?.full_name ||
+                  session.user.user_metadata?.name ||
+                  session.user.email?.split('@')[0] || 'Usuário',
+            avatar_url: session.user.user_metadata?.avatar_url ||
+                        session.user.user_metadata?.picture,
             provider: session.user.app_metadata?.provider || 'oauth',
           });
 
-          const { user: userData } = response.data;
-          localStorage.setItem('user', JSON.stringify(userData));
-          setUser(userData);
+          if (isMounted) {
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            setUser(response.data.user);
+            setIsLoading(false);
+          }
         } catch (error) {
           console.error('Error syncing OAuth user:', error);
+        } finally {
+          isProcessingOAuth.current = false;
+        }
+      } else if (event === 'SIGNED_OUT') {
+        hasProcessedSession.current = false;
+        if (isMounted) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
         }
       }
     });
@@ -69,12 +134,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('📱 Deep link received:', event.url);
 
         // Verificar se é um callback de OAuth
-        if (event.url.includes('login-callback')) {
+        if (event.url.includes('login-callback') && !isProcessingOAuth.current) {
+          isProcessingOAuth.current = true;
+
           try {
             // Extrair os parâmetros da URL
             const url = new URL(event.url.replace('com.gurudodindin.app://', 'https://app/'));
-            const accessToken = url.searchParams.get('access_token') || url.hash?.match(/access_token=([^&]*)/)?.[1];
-            const refreshToken = url.searchParams.get('refresh_token') || url.hash?.match(/refresh_token=([^&]*)/)?.[1];
+            const accessToken = url.searchParams.get('access_token') ||
+                               url.hash?.match(/access_token=([^&]*)/)?.[1];
+            const refreshToken = url.searchParams.get('refresh_token') ||
+                                url.hash?.match(/refresh_token=([^&]*)/)?.[1];
 
             if (accessToken) {
               // Definir a sessão no Supabase
@@ -85,10 +154,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               if (error) {
                 console.error('Error setting session:', error);
+                isProcessingOAuth.current = false;
                 return;
               }
 
               if (data.session?.user) {
+                hasProcessedSession.current = true;
+
                 // Sincronizar com backend
                 const response = await authApi.oauthCallback({
                   provider_id: data.session.user.id,
@@ -103,24 +175,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                 localStorage.setItem('token', accessToken);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
-                setUser(response.data.user);
+
+                if (isMounted) {
+                  setUser(response.data.user);
+                  setIsLoading(false);
+                }
 
                 // Redirecionar para dashboard ou onboarding
-                if (response.data.isNewUser) {
-                  window.location.href = '/onboarding/goals';
-                } else {
-                  window.location.href = '/app/dashboard';
-                }
+                // Usar setTimeout para garantir que o estado foi atualizado
+                setTimeout(() => {
+                  if (response.data.isNewUser) {
+                    window.location.href = '/onboarding/goals';
+                  } else {
+                    window.location.href = '/app/dashboard';
+                  }
+                }, 100);
               }
             }
           } catch (error) {
             console.error('Error handling deep link:', error);
+          } finally {
+            isProcessingOAuth.current = false;
           }
         }
       });
     }
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
       if (appUrlListener) {
         appUrlListener.remove();
@@ -144,8 +226,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -166,10 +246,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
 
-    return response; // Retornar response para acessar mensagem de trial
+    return response;
   };
 
   const loginWithGoogle = async () => {
+    // Reset flags antes de iniciar novo OAuth
+    isProcessingOAuth.current = false;
+    hasProcessedSession.current = false;
+
     const redirectUrl = Capacitor.isNativePlatform()
       ? 'com.gurudodindin.app://login-callback'
       : `${window.location.origin}/auth/callback`;
@@ -192,6 +276,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loginWithFacebook = async () => {
+    // Reset flags antes de iniciar novo OAuth
+    isProcessingOAuth.current = false;
+    hasProcessedSession.current = false;
+
     const redirectUrl = Capacitor.isNativePlatform()
       ? 'com.gurudodindin.app://login-callback'
       : `${window.location.origin}/auth/callback`;
@@ -210,12 +298,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Limpar flags
+    hasProcessedSession.current = false;
+    isProcessingOAuth.current = false;
+
+    // Logout do Supabase
+    await supabase.auth.signOut();
+
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
 
-    // Chamar endpoint de logout (opcional, apenas para registro)
+    // Chamar endpoint de logout (opcional)
     authApi.logout().catch(console.error);
   };
 
