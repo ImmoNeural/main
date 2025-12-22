@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
@@ -35,13 +35,6 @@ const Register = () => {
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Redirecionar se já estiver autenticado
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate('/app/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, authLoading, navigate]);
-
   // Mostrar loading enquanto verifica autenticação
   if (authLoading) {
     return (
@@ -63,6 +56,11 @@ const Register = () => {
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
+  }
+
+  // Redirecionar IMEDIATAMENTE se já estiver autenticado (sem render)
+  if (isAuthenticated) {
+    return <Navigate to="/app/dashboard" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

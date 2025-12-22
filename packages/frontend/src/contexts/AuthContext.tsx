@@ -181,15 +181,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   setIsLoading(false);
                 }
 
-                // Redirecionar para dashboard ou onboarding
-                // Usar setTimeout para garantir que o estado foi atualizado
-                setTimeout(() => {
-                  if (response.data.isNewUser) {
-                    window.location.href = '/onboarding/goals';
-                  } else {
-                    window.location.href = '/app/dashboard';
-                  }
-                }, 100);
+                // Redirecionar imediatamente para dashboard ou onboarding
+                // Marcar que OAuth foi completado para evitar splash
+                localStorage.setItem('oauth_completed', 'true');
+
+                if (response.data.isNewUser) {
+                  window.location.href = '/onboarding/goals';
+                } else {
+                  window.location.href = '/app/dashboard';
+                }
               }
             }
           } catch (error) {
