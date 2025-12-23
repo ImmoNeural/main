@@ -493,11 +493,13 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       const targetPage = stepPageMap[stepIndex];
       if (targetPage && location.pathname !== targetPage) {
         navigate(targetPage);
-        // Aguardar a página carregar antes de mostrar o step
+        // Aguardar a página carregar e os dados demo serem aplicados
         setIsReady(false);
-        setTimeout(() => setIsReady(true), 500);
+        setTimeout(() => setIsReady(true), 800);
       } else {
-        setIsReady(true);
+        // Mesmo na mesma página, dar um pequeno delay para garantir que elementos existam
+        setIsReady(false);
+        setTimeout(() => setIsReady(true), 100);
       }
     }
   }, [stepIndex, run, navigate, location.pathname]);
@@ -509,8 +511,8 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     // Log para debug
     console.log('🎯 Tour callback:', { action, index, status, type });
 
-    if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
-      // Avançar ou voltar
+    // Só avançar/voltar no evento STEP_AFTER (não em TARGET_NOT_FOUND)
+    if (type === EVENTS.STEP_AFTER) {
       if (action === ACTIONS.NEXT) {
         setStepIndex(index + 1);
       } else if (action === ACTIONS.PREV) {
@@ -537,7 +539,9 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       showProgress={false}
       showSkipButton={false}
       disableScrolling={false}
+      disableOverlayClose={true}
       spotlightClicks={false}
+      scrollToFirstStep={true}
       tooltipComponent={CustomTooltip}
       styles={{
         options: {

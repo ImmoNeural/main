@@ -1599,7 +1599,7 @@ export default function Budgets() {
 
         {/* Categorias */}
         <main className="space-y-8 sm:space-y-12" data-tour="cost-types">
-          {costTypes.map((costType) => (
+          {costTypes.map((costType, costTypeIndex) => (
             <section key={costType}>
               <h2
                 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 pb-2 border-b-2 text-gray-700"
@@ -1625,7 +1625,11 @@ export default function Budgets() {
                 )}
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6" data-tour="budget-cards">
+              {/* Só adicionar data-tour no primeiro grupo de cards para evitar duplicação */}
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+                {...(costTypeIndex === 0 ? { 'data-tour': 'budget-cards' } : {})}
+              >
                 {Object.entries(categoryData[costType]).map(([categoryName, data]) => {
                   // Determinar o tipo de custo baseado no costType
                   // Para Movimentações (Receitas, Investimentos, etc), usar 'variavel'
