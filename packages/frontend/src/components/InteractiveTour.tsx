@@ -483,7 +483,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   ], []);
 
   // Mapeamento de qual página cada step deve estar (índice do passo -> página)
-  const stepPageMap: Record<number, string> = {
+  const stepPageMap: Record<number, string> = useMemo(() => ({
     // Dashboard (Passos 1-5: índices 0-4)
     0: '/app/dashboard',
     1: '/app/dashboard',
@@ -508,7 +508,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     15: '/app/dashboard',
     // Conclusão (Passo 17: índice 16)
     16: '/app/dashboard',
-  };
+  }), []);
 
   // Track previous step to avoid unnecessary updates
   const prevStepRef = useRef<number>(-1);
@@ -595,7 +595,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     console.log('🎯 Tour callback:', { action, index, status, type, isNavigating: isNavigatingRef.current });
 
     // CRITICAL: Ignorar TODOS os eventos durante navegação entre páginas
-    // Usar ref porque é síncrono, enquanto state pode estar desatualizado
     if (isNavigatingRef.current) {
       console.log('🚫 Ignoring callback during navigation');
       return;
@@ -610,17 +609,36 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     // Só avançar/voltar no evento STEP_AFTER
     if (type === EVENTS.STEP_AFTER) {
       if (action === ACTIONS.NEXT) {
-        setStepIndex(index + 1);
+        const nextIndex = index + 1;
+        const currentPage = stepPageMap[index];
+        const nextPage = stepPageMap[nextIndex];
+
+        // Se vai mudar de página, marcar como navegando ANTES de mudar o step
+        if (nextPage && currentPage !== nextPage) {
+          console.log('🚀 Will navigate from', currentPage, 'to', nextPage);
+          isNavigatingRef.current = true;
+        }
+
+        setStepIndex(nextIndex);
       } else if (action === ACTIONS.PREV) {
-        setStepIndex(index - 1);
+        const prevIndex = index - 1;
+        const currentPage = stepPageMap[index];
+        const prevPage = stepPageMap[prevIndex];
+
+        // Se vai mudar de página, marcar como navegando ANTES de mudar o step
+        if (prevPage && currentPage !== prevPage) {
+          console.log('🚀 Will navigate from', currentPage, 'to', prevPage);
+          isNavigatingRef.current = true;
+        }
+
+        setStepIndex(prevIndex);
       }
     }
 
     // Finalizar tour APENAS quando:
     // 1. Status é FINISHED
     // 2. Estamos no último passo
-    // 3. NÃO estamos navegando
-    // 4. Action é NEXT (usuário clicou no botão Finalizar)
+    // 3. Action é NEXT (usuário clicou no botão Finalizar)
     if (status === STATUS.FINISHED && index === steps.length - 1 && action === ACTIONS.NEXT) {
       console.log('✅ Tutorial finished on last step - calling onFinish');
       setStepIndex(0);
@@ -631,7 +649,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     if (status === STATUS.SKIPPED || status === STATUS.ERROR) {
       console.log('⚠️ Tutorial status:', status, '- NOT finishing, ignoring');
     }
-  }, [onFinish, steps.length]);
+  }, [onFinish, steps.length, stepPageMap]);
 
   if (!run) return null;
 
