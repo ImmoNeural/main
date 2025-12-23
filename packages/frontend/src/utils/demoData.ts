@@ -1,72 +1,74 @@
 // Demo data for tutorial - simple utility file
 import type { Transaction, DashboardStats, CategoryStats } from '../types';
 
-// Demo transactions based on realistic Brazilian financial data
-const csvData = [
-  { date: '04.06.2025', description: 'FINANCIAMENTO VEICULAR', amount: -2103.53, category: 'Empréstimos e Financiamentos' },
-  { date: '04.06.2025', description: 'NETFLIX.COM', amount: -22.90, category: 'Lazer e Entretenimento' },
-  { date: '05.06.2025', description: 'Crédito PIX', amount: 1500.00, category: 'Receitas' },
-  { date: '06.06.2025', description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
-  { date: '10.06.2025', description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
-  { date: '10.06.2025', description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
-  { date: '15.06.2025', description: 'IFOOD *RESTAURANTE', amount: -45.90, category: 'Alimentação' },
-  { date: '16.06.2025', description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
-  { date: '18.06.2025', description: 'POSTO IPIRANGA', amount: -250.00, category: 'Transporte' },
-  { date: '20.06.2025', description: 'SUPERMERCADO EXTRA', amount: -680.50, category: 'Alimentação' },
-  { date: '22.06.2025', description: 'FARMACIA DROGASIL', amount: -89.90, category: 'Saúde e Bem-Estar' },
-  { date: '25.06.2025', description: 'UBER *TRIP', amount: -32.50, category: 'Transporte' },
-  { date: '04.07.2025', description: 'FINANCIAMENTO VEICULAR', amount: -2103.53, category: 'Empréstimos e Financiamentos' },
-  { date: '04.07.2025', description: 'NETFLIX.COM', amount: -22.90, category: 'Lazer e Entretenimento' },
-  { date: '05.07.2025', description: 'Crédito PIX', amount: 2000.00, category: 'Receitas' },
-  { date: '06.07.2025', description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
-  { date: '10.07.2025', description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
-  { date: '10.07.2025', description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
-  { date: '15.07.2025', description: 'IFOOD *HAMBURGUER', amount: -58.90, category: 'Alimentação' },
-  { date: '16.07.2025', description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
-  { date: '18.07.2025', description: 'POSTO SHELL', amount: -280.00, category: 'Transporte' },
-  { date: '20.07.2025', description: 'SUPERMERCADO CARREFOUR', amount: -720.30, category: 'Alimentação' },
-  { date: '25.07.2025', description: '99 *CORRIDA', amount: -28.00, category: 'Transporte' },
-  { date: '04.08.2025', description: 'FINANCIAMENTO VEICULAR', amount: -2103.53, category: 'Empréstimos e Financiamentos' },
-  { date: '04.08.2025', description: 'NETFLIX.COM', amount: -22.90, category: 'Lazer e Entretenimento' },
-  { date: '05.08.2025', description: 'Crédito PIX', amount: 1800.00, category: 'Receitas' },
-  { date: '06.08.2025', description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
-  { date: '10.08.2025', description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
-  { date: '10.08.2025', description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
-  { date: '14.08.2025', description: 'IFOOD *PIZZA', amount: -72.00, category: 'Alimentação' },
-  { date: '16.08.2025', description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
-  { date: '18.08.2025', description: 'POSTO IPIRANGA', amount: -260.00, category: 'Transporte' },
-  { date: '20.08.2025', description: 'SUPERMERCADO EXTRA', amount: -695.80, category: 'Alimentação' },
-  { date: '04.09.2025', description: 'FINANCIAMENTO VEICULAR', amount: -2103.53, category: 'Empréstimos e Financiamentos' },
-  { date: '04.09.2025', description: 'NETFLIX.COM', amount: -22.90, category: 'Lazer e Entretenimento' },
-  { date: '05.09.2025', description: 'Crédito PIX', amount: 3000.00, category: 'Receitas' },
-  { date: '06.09.2025', description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
-  { date: '10.09.2025', description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
-  { date: '10.09.2025', description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
-  { date: '15.09.2025', description: 'OUTBACK STEAKHOUSE', amount: -189.00, category: 'Alimentação' },
-  { date: '16.09.2025', description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
-  { date: '18.09.2025', description: 'POSTO BR', amount: -290.00, category: 'Transporte' },
-  { date: '20.09.2025', description: 'SUPERMERCADO PÃO DE AÇÚCAR', amount: -850.00, category: 'Alimentação' },
-  { date: '04.10.2025', description: 'FINANCIAMENTO VEICULAR', amount: -2103.53, category: 'Empréstimos e Financiamentos' },
-  { date: '04.10.2025', description: 'NETFLIX.COM', amount: -22.90, category: 'Lazer e Entretenimento' },
-  { date: '05.10.2025', description: 'Crédito PIX', amount: 1200.00, category: 'Receitas' },
-  { date: '06.10.2025', description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
-  { date: '10.10.2025', description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
-  { date: '10.10.2025', description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
-  { date: '14.10.2025', description: 'IFOOD *SUSHI', amount: -120.00, category: 'Alimentação' },
-  { date: '16.10.2025', description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
-  { date: '18.10.2025', description: 'POSTO SHELL', amount: -275.00, category: 'Transporte' },
-  { date: '20.10.2025', description: 'SUPERMERCADO EXTRA', amount: -710.00, category: 'Alimentação' },
-  { date: '04.11.2025', description: 'FINANCIAMENTO VEICULAR', amount: -2103.53, category: 'Empréstimos e Financiamentos' },
-  { date: '04.11.2025', description: 'NETFLIX.COM', amount: -22.90, category: 'Lazer e Entretenimento' },
-  { date: '05.11.2025', description: 'Crédito PIX', amount: 2500.00, category: 'Receitas' },
-  { date: '06.11.2025', description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
-  { date: '10.11.2025', description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
-  { date: '10.11.2025', description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
-  { date: '15.11.2025', description: 'IFOOD *RESTAURANTE', amount: -95.00, category: 'Alimentação' },
-  { date: '16.11.2025', description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
-  { date: '18.11.2025', description: 'POSTO IPIRANGA', amount: -300.00, category: 'Transporte' },
-  { date: '20.11.2025', description: 'SUPERMERCADO CARREFOUR', amount: -780.00, category: 'Alimentação' },
-];
+// Generate demo transactions based on realistic Brazilian financial data
+// Uses relative dates (last 6 months) so data always appears in current period
+const generateDemoData = () => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+
+  // Generate data for current month and 5 previous months
+  const months: Array<{ year: number; month: number }> = [];
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(currentYear, currentMonth - i, 1);
+    months.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
+  }
+
+  const baseTransactions = [
+    { day: 4, description: 'FINANCIAMENTO VEICULAR', amount: -2103.53, category: 'Empréstimos e Financiamentos' },
+    { day: 4, description: 'NETFLIX.COM', amount: -22.90, category: 'Lazer e Entretenimento' },
+    { day: 5, description: 'Crédito PIX', amount: 1500.00, category: 'Receitas' },
+    { day: 6, description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
+    { day: 10, description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
+    { day: 10, description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
+    { day: 15, description: 'IFOOD *RESTAURANTE', amount: -45.90, category: 'Alimentação' },
+    { day: 16, description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
+    { day: 18, description: 'POSTO IPIRANGA', amount: -250.00, category: 'Transporte' },
+    { day: 20, description: 'SUPERMERCADO EXTRA', amount: -680.50, category: 'Alimentação' },
+    { day: 22, description: 'FARMACIA DROGASIL', amount: -89.90, category: 'Saúde e Bem-Estar' },
+    { day: 25, description: 'UBER *TRIP', amount: -32.50, category: 'Transporte' },
+  ];
+
+  // Add some variation to make each month slightly different
+  const variations = [
+    { description: 'IFOOD *HAMBURGUER', amount: -58.90 },
+    { description: 'POSTO SHELL', amount: -280.00 },
+    { description: 'SUPERMERCADO CARREFOUR', amount: -720.30 },
+    { description: '99 *CORRIDA', amount: -28.00 },
+    { description: 'OUTBACK STEAKHOUSE', amount: -189.00 },
+    { description: 'SUPERMERCADO PÃO DE AÇÚCAR', amount: -850.00 },
+  ];
+
+  const allTransactions: Array<{
+    date: string;
+    description: string;
+    amount: number;
+    category: string;
+  }> = [];
+
+  months.forEach((m, monthIndex) => {
+    baseTransactions.forEach((tx, txIndex) => {
+      // Use variation for some transactions
+      let finalTx = { ...tx };
+      if (txIndex === 6 && monthIndex > 0) { // IFOOD variation
+        finalTx = { ...tx, ...variations[monthIndex % variations.length] };
+      }
+
+      const dateStr = `${String(finalTx.day).padStart(2, '0')}.${String(m.month).padStart(2, '0')}.${m.year}`;
+      allTransactions.push({
+        date: dateStr,
+        description: finalTx.description,
+        amount: finalTx.amount,
+        category: finalTx.category,
+      });
+    });
+  });
+
+  return allTransactions;
+};
+
+const csvData = generateDemoData();
 
 // Parse date string to timestamp
 const parseDate = (dateStr: string): number => {
@@ -99,14 +101,20 @@ export const getDemoStats = (): DashboardStats => {
   const totalIncome = transactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
 
+  // Calculate dynamic date range
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const periodStart = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}-01`;
+  const periodEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
   return {
     total_balance: totalIncome - totalExpenses,
     total_income: totalIncome,
     total_expenses: totalExpenses,
     initial_balance: 5000,
     transaction_count: transactions.length,
-    period_start: '2025-06-01',
-    period_end: '2025-11-30',
+    period_start: periodStart,
+    period_end: periodEnd,
   };
 };
 

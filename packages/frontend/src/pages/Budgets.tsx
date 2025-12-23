@@ -636,66 +636,95 @@ export default function Budgets() {
   const processTransactionsForDemo = (txs: Transaction[]) => {
     console.log('🎮 [BUDGETS] Processing demo transactions:', txs.length);
 
-    // Calculate totals from demo data
-    let totalIncome = 0;
-    let totalFixedExpenses = 0;
-    let totalVariableExpenses = 0;
-
-    // Demo budgets (suggested amounts based on demo data)
-    const demoBudgets: Record<string, number> = {
-      'Empréstimos e Financiamentos': 2500,
-      'Lazer e Entretenimento': 100,
-      'Seguros': 300,
-      'Moradia': 1500,
-      'Saúde e Bem-Estar': 300,
-      'Alimentação': 1000,
-      'Transporte': 600,
+    // Demo category configuration
+    const demoCategoryConfig: Record<string, { icon: string; color: string; type: 'fixo' | 'variavel'; budget: number }> = {
+      'Empréstimos e Financiamentos': { icon: '💰', color: '#673AB7', type: 'fixo', budget: 2500 },
+      'Seguros': { icon: '🛡️', color: '#673AB7', type: 'fixo', budget: 300 },
+      'Moradia': { icon: '🏠', color: '#795548', type: 'fixo', budget: 1500 },
+      'Lazer e Entretenimento': { icon: '🎮', color: '#9C27B0', type: 'variavel', budget: 100 },
+      'Saúde e Bem-Estar': { icon: '💊', color: '#009688', type: 'variavel', budget: 300 },
+      'Alimentação': { icon: '🍕', color: '#FF5722', type: 'variavel', budget: 1000 },
+      'Transporte': { icon: '🚗', color: '#2196F3', type: 'variavel', budget: 600 },
     };
 
-    // Fixed vs Variable categories mapping
-    const fixedCategories = new Set(['Empréstimos e Financiamentos', 'Seguros', 'Moradia']);
-    const variableCategories = new Set(['Lazer e Entretenimento', 'Saúde e Bem-Estar', 'Alimentação', 'Transporte']);
+    // Calculate spending by category (average per month)
+    const categorySpending: Record<string, number> = {};
+    let totalIncome = 0;
 
     txs.forEach(tx => {
       if (tx.type === 'credit') {
         totalIncome += tx.amount;
       } else {
         const category = tx.category || 'Outros';
-        if (fixedCategories.has(category)) {
-          totalFixedExpenses += tx.amount;
-        } else {
-          totalVariableExpenses += tx.amount;
-        }
+        categorySpending[category] = (categorySpending[category] || 0) + tx.amount;
       }
     });
 
-    // Calculate budgets
+    // Average per month (6 months of data)
+    Object.keys(categorySpending).forEach(cat => {
+      categorySpending[cat] = categorySpending[cat] / 6;
+    });
+
+    // Build categoryData structure for cards
+    const demoData: Record<string, Record<string, GroupedCategory>> = {
+      'Despesas Fixas': {},
+      'Despesas Variáveis': {},
+    };
+
+    let totalFixedSpent = 0;
     let totalFixedBudget = 0;
+    let totalVariableSpent = 0;
     let totalVariableBudget = 0;
 
-    Object.entries(demoBudgets).forEach(([cat, budget]) => {
-      if (fixedCategories.has(cat)) {
-        totalFixedBudget += budget;
+    Object.entries(demoCategoryConfig).forEach(([category, config]) => {
+      const spent = categorySpending[category] || 0;
+      const type = config.type === 'fixo' ? 'Despesas Fixas' : 'Despesas Variáveis';
+
+      demoData[type][category] = {
+        icon: config.icon,
+        color: config.color,
+        totalSpent: spent,
+        totalBudget: config.budget,
+        subcategories: [{
+          type: type,
+          category: category,
+          subcategory: category,
+          icon: config.icon,
+          color: config.color,
+          note: '',
+          currentSpent: spent,
+          suggestedBudget: config.budget,
+          monthsWithData: 6,
+        }],
+      };
+
+      if (config.type === 'fixo') {
+        totalFixedSpent += spent;
+        totalFixedBudget += config.budget;
       } else {
-        totalVariableBudget += budget;
+        totalVariableSpent += spent;
+        totalVariableBudget += config.budget;
       }
     });
+
+    setCategoryData(demoData);
 
     // Set month summary with demo data
     setMonthSummary({
-      salary: totalIncome / 6, // Average per month (6 months of demo data)
+      salary: totalIncome / 6,
       fixedBudget: totalFixedBudget,
-      fixedSpent: totalFixedExpenses / 6,
+      fixedSpent: totalFixedSpent,
       variableBudget: totalVariableBudget,
-      variableSpent: totalVariableExpenses / 6,
+      variableSpent: totalVariableSpent,
       investmentsBudget: 500,
       investmentsSpent: 0,
     });
 
-    console.log('🎮 [BUDGETS] Demo summary set:', {
+    console.log('🎮 [BUDGETS] Demo data set:', {
       income: totalIncome / 6,
-      fixedSpent: totalFixedExpenses / 6,
-      variableSpent: totalVariableExpenses / 6,
+      fixedSpent: totalFixedSpent,
+      variableSpent: totalVariableSpent,
+      categories: Object.keys(demoData['Despesas Fixas']).length + Object.keys(demoData['Despesas Variáveis']).length,
     });
   };
 
@@ -1471,7 +1500,8 @@ export default function Budgets() {
     }
   };
 
-  if (loading) {
+  // Skip loading spinner during tutorial - show demo data instead
+  if (loading && !showOnboarding) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

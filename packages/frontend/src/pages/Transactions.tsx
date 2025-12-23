@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -9,6 +9,8 @@ import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { CategoryIconSmall } from '../components/CategoryIcons';
 import { useSubscription } from '../hooks/useSubscription';
+import { useOnboarding } from '../hooks/useOnboarding';
+import { getDemoTransactions } from '../utils/demoData';
 
 const Transactions = () => {
   const navigate = useNavigate();
@@ -25,6 +27,10 @@ const Transactions = () => {
     return localStorage.getItem('activeAccountId');
   });
   const [accountInitialized, setAccountInitialized] = useState(false);
+
+  // Check if tutorial is active for demo data
+  const { showOnboarding } = useOnboarding();
+  const prevShowOnboarding = useRef(showOnboarding);
 
   // Get subscription info for plan-based restrictions
   // Durante trial, acesso total como Conectado Plus
@@ -101,6 +107,12 @@ const Transactions = () => {
 
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
+    // Skip validation during tutorial
+    if (showOnboarding) {
+      console.log('🎮 Transactions: Tutorial mode - skipping account validation');
+      return;
+    }
+
     // IMPORTANTE: Validar se o activeAccountId do localStorage existe para este usuário
     const validateActiveAccount = async () => {
       const savedAccountId = localStorage.getItem('activeAccountId');
@@ -149,15 +161,49 @@ const Transactions = () => {
     return () => {
       window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
     };
-  }, []);
+  }, [showOnboarding]);
+
+  // Apply demo data when tutorial is active, reload real data when it ends
+  useEffect(() => {
+    if (showOnboarding) {
+      console.log('🎮 Transactions: Tutorial active - applying demo data');
+      const demoTransactions = getDemoTransactions();
+      setTransactions(demoTransactions);
+      setInitialBalance(5000);
+      setInitialBalanceDate(null);
+      // Set default categories for demo
+      setCategories([
+        { category: 'Alimentação', icon: '🍕', color: '#FF5722' },
+        { category: 'Transporte', icon: '🚗', color: '#2196F3' },
+        { category: 'Moradia', icon: '🏠', color: '#795548' },
+        { category: 'Saúde e Bem-Estar', icon: '💊', color: '#009688' },
+        { category: 'Empréstimos e Financiamentos', icon: '💰', color: '#673AB7' },
+        { category: 'Seguros', icon: '🛡️', color: '#673AB7' },
+        { category: 'Lazer e Entretenimento', icon: '🎮', color: '#9C27B0' },
+        { category: 'Receitas', icon: '💹', color: '#4CAF50' },
+        { category: 'Não Categorizado', icon: '❓', color: '#9CA3AF' },
+      ]);
+      setIsLoading(false);
+    } else if (prevShowOnboarding.current && !showOnboarding) {
+      // Tutorial just ended - reload real data
+      console.log('🔄 Transactions: Tutorial ended - reloading real data');
+      setAccountInitialized(false);
+      setIsLoading(true);
+    }
+    prevShowOnboarding.current = showOnboarding;
+  }, [showOnboarding]);
 
   useEffect(() => {
+    // Skip API calls during tutorial
+    if (showOnboarding) {
+      return;
+    }
     // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
     if (accountInitialized) {
       console.log(`🔄 Transactions: Carregando dados com conta=${activeAccountId || 'TODAS'}`);
       loadData();
     }
-  }, [selectedCategory, selectedType, activeAccountId, accountInitialized]);
+  }, [selectedCategory, selectedType, activeAccountId, accountInitialized, showOnboarding]);
 
   const loadData = async () => {
     setIsLoading(true);
