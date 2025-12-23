@@ -2,10 +2,11 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings, PlusCircle, HelpCircle, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useDemoData } from '../contexts/DemoDataContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { useBudgetNotifications } from '../hooks/useBudgetNotifications';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ImpersonationBanner from './ImpersonationBanner';
 import InteractiveTour from './InteractiveTour';
 
@@ -14,12 +15,18 @@ const Layout = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { toggleTheme, isDark } = useTheme();
+  const { setDemoMode } = useDemoData();
   const { isTrialActive, daysRemaining, isExpired, subscription } = useSubscription();
   const { showOnboarding, completeOnboarding, resetOnboarding } = useOnboarding();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Verificar budgets e enviar notificações em mobile
   useBudgetNotifications();
+
+  // Sync demo mode with onboarding state
+  useEffect(() => {
+    setDemoMode(showOnboarding);
+  }, [showOnboarding, setDemoMode]);
 
   const handleLogout = () => {
     logout();
