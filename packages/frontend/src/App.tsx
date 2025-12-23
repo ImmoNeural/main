@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { DemoDataProvider } from './contexts/DemoDataContext';
+// DemoDataProvider is now used inside Layout component only
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -107,7 +107,6 @@ function App() {
     <ThemeProvider>
       <HelmetProvider>
         <AuthProvider>
-          <DemoDataProvider>
           <BrowserRouter>
           {/* Google Analytics */}
           <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
@@ -177,7 +176,6 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
-          </DemoDataProvider>
         </AuthProvider>
       </HelmetProvider>
     </ThemeProvider>

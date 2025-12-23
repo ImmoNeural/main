@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Receipt, Wallet, LogOut, User, ChevronLeft, ChevronRight, Target, CreditCard, Settings, PlusCircle, HelpCircle, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useDemoData } from '../contexts/DemoDataContext';
+import { DemoDataProvider, useDemoData } from '../contexts/DemoDataContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { useBudgetNotifications } from '../hooks/useBudgetNotifications';
@@ -10,7 +10,8 @@ import { useState, useEffect } from 'react';
 import ImpersonationBanner from './ImpersonationBanner';
 import InteractiveTour from './InteractiveTour';
 
-const Layout = () => {
+// Inner component that uses demo data context
+const LayoutContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -307,6 +308,15 @@ const Layout = () => {
         </div>
       </nav>
     </div>
+  );
+};
+
+// Outer component that provides demo data context
+const Layout = () => {
+  return (
+    <DemoDataProvider>
+      <LayoutContent />
+    </DemoDataProvider>
   );
 };
 
