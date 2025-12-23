@@ -296,7 +296,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 8 (índice 7): Filtros de transações
     {
@@ -312,7 +312,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 9 (índice 8): Botão de categorizar
     {
@@ -330,7 +330,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 10 (índice 9): Categorização manual
     {
@@ -346,7 +346,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 11 (índice 10): Página de orçamentos
     {
@@ -359,7 +359,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 12 (índice 11): Resumo financeiro
     {
@@ -372,7 +372,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 13 (índice 12): Cards de budget
     {
@@ -398,7 +398,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 14 (índice 13): Custos Fixos vs Variáveis
     {
@@ -416,7 +416,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </div>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 15 (índice 14): Página de Preferências
     {
@@ -429,7 +429,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 16 (índice 15): Página de Contas
     {
@@ -442,7 +442,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'auto',
     },
     // Passo 17 (índice 16): Conclusão
     {
