@@ -1,6 +1,56 @@
 import { useState, useEffect, useCallback } from 'react';
-import Joyride, { CallBackProps, STATUS, EVENTS, ACTIONS, Step } from 'react-joyride';
+import Joyride, { CallBackProps, STATUS, EVENTS, ACTIONS, Step, TooltipRenderProps } from 'react-joyride';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+// Custom tooltip component with Portuguese step counter
+const CustomTooltip = ({
+  continuous,
+  index,
+  step,
+  backProps,
+  closeProps,
+  primaryProps,
+  skipProps,
+  tooltipProps,
+  size,
+}: TooltipRenderProps) => (
+  <div
+    {...tooltipProps}
+    className="bg-white rounded-2xl shadow-2xl max-w-md"
+    style={{ padding: 20, borderRadius: 16, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
+  >
+    {step.content}
+    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+      <div className="flex items-center gap-2">
+        {index > 0 && (
+          <button
+            {...backProps}
+            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+          >
+            Anterior
+          </button>
+        )}
+      </div>
+      <div className="text-xs text-gray-400">
+        Passo {index + 1} de {size}
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          {...skipProps}
+          className="text-gray-400 hover:text-gray-600 text-xs"
+        >
+          Pular
+        </button>
+        <button
+          {...primaryProps}
+          className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+        >
+          {continuous ? (index === size - 1 ? 'Finalizar' : 'Próximo') : 'Fechar'}
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 // Componente de animação de categorização
 const CategorizationAnimation = () => {
@@ -480,10 +530,11 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       run={run && isReady}
       callback={handleJoyrideCallback}
       continuous
-      showProgress
-      showSkipButton
+      showProgress={false}
+      showSkipButton={false}
       disableScrolling={false}
       spotlightClicks={false}
+      tooltipComponent={CustomTooltip}
       styles={{
         options: {
           primaryColor: '#4F46E5',
@@ -493,43 +544,12 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           textColor: '#374151',
           overlayColor: 'rgba(0, 0, 0, 0.6)',
         },
-        tooltip: {
-          borderRadius: 16,
-          padding: 20,
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        },
-        tooltipContainer: {
-          textAlign: 'left',
-        },
-        buttonNext: {
-          backgroundColor: '#4F46E5',
-          borderRadius: 8,
-          padding: '10px 20px',
-          fontSize: 14,
-          fontWeight: 600,
-        },
-        buttonBack: {
-          color: '#6B7280',
-          marginRight: 10,
-          fontSize: 14,
-        },
-        buttonSkip: {
-          color: '#9CA3AF',
-          fontSize: 13,
-        },
         spotlight: {
           borderRadius: 12,
         },
         beacon: {
           display: 'none',
         },
-      }}
-      locale={{
-        back: 'Anterior',
-        close: 'Fechar',
-        last: 'Finalizar',
-        next: 'Próximo',
-        skip: 'Pular tutorial',
       }}
       floaterProps={{
         disableAnimation: false,

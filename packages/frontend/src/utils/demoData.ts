@@ -7,12 +7,17 @@ const generateDemoData = () => {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-indexed
+  const currentDay = now.getDate();
 
   // Generate data for current month and 5 previous months
-  const months: Array<{ year: number; month: number }> = [];
+  const months: Array<{ year: number; month: number; maxDay: number }> = [];
   for (let i = 5; i >= 0; i--) {
     const date = new Date(currentYear, currentMonth - i, 1);
-    months.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
+    // For current month, only use days up to current day
+    // For past months, use all days
+    const isCurrentMonth = i === 0;
+    const maxDay = isCurrentMonth ? currentDay : 31;
+    months.push({ year: date.getFullYear(), month: date.getMonth() + 1, maxDay });
   }
 
   const baseTransactions = [
@@ -22,12 +27,12 @@ const generateDemoData = () => {
     { day: 6, description: 'BRADESCO SEGUROS', amount: -233.01, category: 'Seguros' },
     { day: 10, description: 'Débito Automático', amount: -1200.00, category: 'Moradia' },
     { day: 10, description: 'SMART FIT', amount: -102.90, category: 'Saúde e Bem-Estar' },
-    { day: 15, description: 'IFOOD *RESTAURANTE', amount: -45.90, category: 'Alimentação' },
-    { day: 16, description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
-    { day: 18, description: 'POSTO IPIRANGA', amount: -250.00, category: 'Transporte' },
-    { day: 20, description: 'SUPERMERCADO EXTRA', amount: -680.50, category: 'Alimentação' },
-    { day: 22, description: 'FARMACIA DROGASIL', amount: -89.90, category: 'Saúde e Bem-Estar' },
-    { day: 25, description: 'UBER *TRIP', amount: -32.50, category: 'Transporte' },
+    { day: 12, description: 'IFOOD *RESTAURANTE', amount: -45.90, category: 'Alimentação' },
+    { day: 13, description: 'Crédito PIX', amount: 8500.00, category: 'Receitas' },
+    { day: 14, description: 'POSTO IPIRANGA', amount: -250.00, category: 'Transporte' },
+    { day: 15, description: 'SUPERMERCADO EXTRA', amount: -680.50, category: 'Alimentação' },
+    { day: 17, description: 'FARMACIA DROGASIL', amount: -89.90, category: 'Saúde e Bem-Estar' },
+    { day: 19, description: 'UBER *TRIP', amount: -32.50, category: 'Transporte' },
   ];
 
   // Add some variation to make each month slightly different
@@ -49,6 +54,11 @@ const generateDemoData = () => {
 
   months.forEach((m, monthIndex) => {
     baseTransactions.forEach((tx, txIndex) => {
+      // Skip transactions for days that haven't happened yet in current month
+      if (tx.day > m.maxDay) {
+        return;
+      }
+
       // Use variation for some transactions
       let finalTx = { ...tx };
       if (txIndex === 6 && monthIndex > 0) { // IFOOD variation
@@ -68,7 +78,21 @@ const generateDemoData = () => {
   return allTransactions;
 };
 
-const csvData = generateDemoData();
+// Regenerate demo data on each call to ensure dates are always current
+const getDemoDataCached = (() => {
+  let cache: ReturnType<typeof generateDemoData> | null = null;
+  let lastGenerated: number = 0;
+
+  return () => {
+    const now = Date.now();
+    // Regenerate if more than 1 minute has passed
+    if (!cache || now - lastGenerated > 60000) {
+      cache = generateDemoData();
+      lastGenerated = now;
+    }
+    return cache;
+  };
+})();
 
 // Parse date string to timestamp
 const parseDate = (dateStr: string): number => {
@@ -78,6 +102,7 @@ const parseDate = (dateStr: string): number => {
 
 // Generate demo transactions
 export const getDemoTransactions = (): Transaction[] => {
+  const csvData = getDemoDataCached();
   return csvData.map((item, index) => ({
     id: `demo-${index + 1}`,
     account_id: 'demo-account',
