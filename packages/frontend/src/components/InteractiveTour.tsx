@@ -568,10 +568,18 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       }
     }
 
-    // Finalizar tour
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+    // Finalizar tour apenas quando realmente terminado (não quando pulado por target não encontrado)
+    // FINISHED = usuário completou todos os passos
+    // SKIPPED = usuário clicou em skip (não temos skip button, então isso não deve acontecer)
+    if (status === STATUS.FINISHED) {
+      console.log('✅ Tutorial finished - calling onFinish');
       setStepIndex(0);
       onFinish();
+    }
+
+    // Log quando algo inesperado acontece
+    if (status === STATUS.SKIPPED) {
+      console.log('⚠️ Tutorial skipped unexpectedly - NOT finishing');
     }
   }, [onFinish]);
 

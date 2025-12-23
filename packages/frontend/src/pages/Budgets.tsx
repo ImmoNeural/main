@@ -1517,7 +1517,7 @@ export default function Budgets() {
   const isCurrentMonth = format(selectedMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
 
   return (
-    <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+    <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4" data-tour="budgets-page">
       <header className="mb-4 sm:mb-6 lg:mb-8">
         {/* Banner de Preferências */}
         <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">

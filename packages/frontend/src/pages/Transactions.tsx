@@ -827,7 +827,7 @@ const Transactions = () => {
   };
 
   return (
-    <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+    <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4" data-tour="transactions-page">
       <div className="space-y-6">
 
         {/* Header */}
