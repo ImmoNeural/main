@@ -2,14 +2,17 @@ import { useState, useCallback } from 'react';
 
 const ONBOARDING_KEY = 'guru_onboarding_completed';
 const ONBOARDING_SKIPPED_KEY = 'guru_onboarding_skipped';
+const GOALS_COMPLETED_KEY = 'guru_goals_completed';
 
 interface UseOnboardingReturn {
   showOnboarding: boolean;
   isCompleted: boolean;
   isSkipped: boolean;
+  goalsCompleted: boolean;
   completeOnboarding: () => void;
   skipOnboarding: () => void;
   resetOnboarding: () => void;
+  completeGoals: () => void;
 }
 
 /**
@@ -25,8 +28,20 @@ export const useOnboarding = (): UseOnboardingReturn => {
     return localStorage.getItem(ONBOARDING_SKIPPED_KEY) === 'true';
   });
 
-  // Mostrar onboarding se não foi completado nem pulado
-  const showOnboarding = !isCompleted && !isSkipped;
+  const [goalsCompleted, setGoalsCompleted] = useState<boolean>(() => {
+    return localStorage.getItem(GOALS_COMPLETED_KEY) === 'true';
+  });
+
+  // Mostrar tutorial apenas se:
+  // 1. Goals foram completados
+  // 2. Tutorial não foi completado nem pulado
+  const showOnboarding = goalsCompleted && !isCompleted && !isSkipped;
+
+  const completeGoals = useCallback(() => {
+    localStorage.setItem(GOALS_COMPLETED_KEY, 'true');
+    setGoalsCompleted(true);
+    console.log('🎯 Goals completed');
+  }, []);
 
   const completeOnboarding = useCallback(() => {
     localStorage.setItem(ONBOARDING_KEY, 'true');
@@ -45,8 +60,10 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const resetOnboarding = useCallback(() => {
     localStorage.removeItem(ONBOARDING_KEY);
     localStorage.removeItem(ONBOARDING_SKIPPED_KEY);
+    localStorage.removeItem(GOALS_COMPLETED_KEY);
     setIsCompleted(false);
     setIsSkipped(false);
+    setGoalsCompleted(false);
     console.log('🔄 Onboarding reset');
   }, []);
 
@@ -54,9 +71,11 @@ export const useOnboarding = (): UseOnboardingReturn => {
     showOnboarding,
     isCompleted,
     isSkipped,
+    goalsCompleted,
     completeOnboarding,
     skipOnboarding,
     resetOnboarding,
+    completeGoals,
   };
 };
 

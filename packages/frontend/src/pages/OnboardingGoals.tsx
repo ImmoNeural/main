@@ -49,6 +49,8 @@ const OnboardingGoals = () => {
     try {
       // Save the goal to user preferences
       await api.post('/preferences/goal', { goal: selectedGoal });
+      // Marcar goals como completados para liberar o tutorial
+      localStorage.setItem('guru_goals_completed', 'true');
       // Ir para tela de notificações APENAS em celular e se ainda não perguntou
       const notificationsAsked = localStorage.getItem('notifications_asked');
       const isMobile = Capacitor.isNativePlatform();
@@ -62,6 +64,8 @@ const OnboardingGoals = () => {
     } catch (error) {
       console.error('Error saving goal:', error);
       // Navigate anyway - goal is optional
+      // Marcar goals como completados mesmo em caso de erro
+      localStorage.setItem('guru_goals_completed', 'true');
       const notificationsAsked = localStorage.getItem('notifications_asked');
       const isMobile = Capacitor.isNativePlatform();
       if (!notificationsAsked && isMobile) {
@@ -251,6 +255,7 @@ const OnboardingGoals = () => {
       {/* Skip option */}
       <button
         onClick={() => {
+          localStorage.setItem('guru_goals_completed', 'true');
           localStorage.setItem('notifications_asked', 'true');
           navigate('/app/dashboard');
         }}
