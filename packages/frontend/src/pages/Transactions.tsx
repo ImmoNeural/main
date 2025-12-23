@@ -1336,7 +1336,7 @@ const Transactions = () => {
                             <div className="text-xs text-gray-500 truncate">{transaction.reference}</div>
                           )}
                           {/* Mostrar categoria em mobile */}
-                          <div className="md:hidden mt-1 flex items-center space-x-1">
+                          <div className="md:hidden mt-1 flex items-center space-x-1" data-tour="category-dropdown">
                             {isUncategorized && (
                               <AlertCircle className="w-3 h-3 text-orange-600 flex-shrink-0" />
                             )}
