@@ -286,7 +286,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     },
     // Passo 7 (índice 6): Página de transações
     {
-      target: '[data-tour="transactions-page"]',
+      target: 'body',
       content: (
         <div>
           <h3 className="font-bold text-gray-900 mb-2">📋 Página de Transações</h3>
@@ -296,7 +296,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'center',
     },
     // Passo 8 (índice 7): Filtros de transações
     {
@@ -350,7 +350,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     },
     // Passo 11 (índice 10): Página de orçamentos
     {
-      target: '[data-tour="budgets-page"]',
+      target: 'body',
       content: (
         <div>
           <h3 className="font-bold text-gray-900 mb-2">💰 Página de Orçamentos</h3>
@@ -359,7 +359,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'center',
     },
     // Passo 12 (índice 11): Resumo financeiro
     {
