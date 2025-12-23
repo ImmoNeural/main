@@ -514,6 +514,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   const prevStepRef = useRef<number>(-1);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef<boolean>(true);
+  const isNavigatingRef = useRef<boolean>(false); // Track navigation state
 
   // Navegar para a página correta quando o step mudar
   useEffect(() => {
@@ -545,7 +546,10 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     const checkAndSetReady = () => {
       if (!isMountedRef.current) return;
 
+      isNavigatingRef.current = false; // Navigation complete
+
       if (!targetSelector || targetSelector === 'body') {
+        console.log('✅ Step ready (body target)');
         setIsReady(true);
         return;
       }
@@ -560,9 +564,12 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       }
     };
 
+    // Mark as navigating BEFORE changing state
+    isNavigatingRef.current = true;
     setIsReady(false);
 
     if (targetPage && location.pathname !== targetPage) {
+      console.log('🚀 Navigating to:', targetPage);
       navigate(targetPage);
       // Aguardar a página carregar
       timeoutRef.current = setTimeout(checkAndSetReady, 1200);
@@ -585,15 +592,22 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     const { action, index, status, type } = data;
 
     // Log para debug
-    console.log('🎯 Tour callback:', { action, index, status, type, stepIndex: index });
+    console.log('🎯 Tour callback:', { action, index, status, type, isNavigating: isNavigatingRef.current });
 
-    // Ignorar eventos quando não estamos prontos (navegando entre páginas)
-    if (!isReady) {
-      console.log('⏳ Tour not ready, ignoring event');
+    // CRITICAL: Ignorar TODOS os eventos durante navegação entre páginas
+    // Usar ref porque é síncrono, enquanto state pode estar desatualizado
+    if (isNavigatingRef.current) {
+      console.log('🚫 Ignoring callback during navigation');
       return;
     }
 
-    // Só avançar/voltar no evento STEP_AFTER (não em TARGET_NOT_FOUND ou ERROR)
+    // Ignorar TARGET_NOT_FOUND - apenas logar para debug
+    if (type === EVENTS.TARGET_NOT_FOUND) {
+      console.log('⚠️ Target not found for step', index, '- ignoring');
+      return;
+    }
+
+    // Só avançar/voltar no evento STEP_AFTER
     if (type === EVENTS.STEP_AFTER) {
       if (action === ACTIONS.NEXT) {
         setStepIndex(index + 1);
@@ -602,15 +616,12 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       }
     }
 
-    // Ignorar TARGET_NOT_FOUND - apenas logar para debug
-    if (type === EVENTS.TARGET_NOT_FOUND) {
-      console.log('⚠️ Target not found for step', index, '- waiting for element');
-      return;
-    }
-
-    // Finalizar tour APENAS quando o usuário clica no último botão "Finalizar"
-    // Isso acontece quando status é FINISHED e estamos no último passo
-    if (status === STATUS.FINISHED && index === steps.length - 1) {
+    // Finalizar tour APENAS quando:
+    // 1. Status é FINISHED
+    // 2. Estamos no último passo
+    // 3. NÃO estamos navegando
+    // 4. Action é NEXT (usuário clicou no botão Finalizar)
+    if (status === STATUS.FINISHED && index === steps.length - 1 && action === ACTIONS.NEXT) {
       console.log('✅ Tutorial finished on last step - calling onFinish');
       setStepIndex(0);
       onFinish();
@@ -620,7 +631,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     if (status === STATUS.SKIPPED || status === STATUS.ERROR) {
       console.log('⚠️ Tutorial status:', status, '- NOT finishing, ignoring');
     }
-  }, [onFinish, isReady, steps.length]);
+  }, [onFinish, steps.length]);
 
   if (!run) return null;
 
