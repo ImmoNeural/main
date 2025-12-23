@@ -8,6 +8,8 @@ import { BudgetRadarChart } from '../components/BudgetRadarChart';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { useSubscription } from '../hooks/useSubscription';
 import { useAuth } from '../contexts/AuthContext';
+import { useOnboarding } from '../hooks/useOnboarding';
+import { getDemoStats, getDemoCategoryStats, getDemoMonthlyStats, getDemoTransactions } from '../utils/demoData';
 import {
   BarChart,
   Bar,
@@ -105,6 +107,10 @@ const Dashboard = () => {
 
   // Get user info for greeting
   const { user } = useAuth();
+
+  // Check if onboarding is active for demo data
+  const { showOnboarding } = useOnboarding();
+
   const [selectedPeriod, setSelectedPeriod] = useState<{
     type: 'week' | 'month' | null;
     weekNumber?: number;
@@ -203,7 +209,24 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Apply demo data when onboarding is active
   useEffect(() => {
+    if (showOnboarding) {
+      console.log('🎮 Tutorial active - applying demo data');
+      setStats(getDemoStats());
+      setCategoryStats(getDemoCategoryStats());
+      setMonthlyStats(getDemoMonthlyStats());
+      setRecentTransactions(getDemoTransactions().slice(0, 10));
+      setLoading(false);
+    }
+  }, [showOnboarding]);
+
+  useEffect(() => {
+    // Skip API calls when onboarding is active (using demo data)
+    if (showOnboarding) {
+      return;
+    }
+
     // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
     if (accountInitialized) {
       console.log(`🔄 Dashboard: Carregando dados com conta=${activeAccountId || 'TODAS'}`);
@@ -211,7 +234,7 @@ const Dashboard = () => {
       // Resetar período selecionado quando mudar o período ou conta
       setSelectedPeriod({ type: null });
     }
-  }, [activeAccountId, period, accountInitialized]);
+  }, [activeAccountId, period, accountInitialized, showOnboarding]);
 
   // Inicializar categoria selecionada com a de maior gasto
   useEffect(() => {
