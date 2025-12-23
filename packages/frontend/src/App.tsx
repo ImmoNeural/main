@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-// DemoDataProvider is now used inside Layout component only
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
