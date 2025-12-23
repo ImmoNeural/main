@@ -110,16 +110,28 @@ const LandingPage = () => {
 
   const faqItems = [
     {
-      question: 'Qual o desconto real ao optar pela assinatura Anual?',
-      answer: 'Ao optar pelo pagamento anual à vista, você economiza significativamente. Dependendo do plano, o desconto chega a 30% em comparação com o pagamento mensal.'
+      question: 'O que é a Conexão Bancária?',
+      answer: 'A Conexão Bancária é a funcionalidade que conecta seu banco à sua conta no Guru do Dindin utilizando a tecnologia segura do Open Finance. Com ela, você importa seus lançamentos com apenas 1 clique, mantendo seu controle financeiro sempre atualizado e fiel à sua realidade.'
     },
     {
-      question: 'Quais são as formas de pagamento disponíveis?',
-      answer: 'Você pode pagar com cartão de crédito em até 12x sem juros ou via PIX/boleto à vista, garantindo o desconto máximo.'
+      question: 'Posso usar o Guru do Dindin no celular e no computador?',
+      answer: 'Sim! O Guru do Dindin está disponível como aplicativo para celular (Android) e também via navegador web. Você pode gerenciar suas finanças de forma prática em qualquer dispositivo, com sincronização automática entre eles.'
     },
     {
-      question: 'Já sou assinante. Posso mudar de plano?',
-      answer: 'Sim! A promoção é válida para novos usuários, ex-assinantes e assinantes atuais que desejem renovar ou fazer upgrade. Entre em contato com nosso suporte para realizar a transição.'
+      question: 'O Guru do Dindin vende dados financeiros para terceiros?',
+      answer: 'Jamais. Nossa única fonte de receita é a sua assinatura. Isso nos permite manter o foco total em nosso propósito: ajudar você a organizar suas finanças. Sua privacidade e segurança são prioridades absolutas - seus dados financeiros nunca serão compartilhados com terceiros.'
+    },
+    {
+      question: 'Posso cancelar a assinatura a qualquer momento?',
+      answer: 'Sim, você pode cancelar a renovação da sua assinatura quando quiser. Se solicitar o cancelamento em até 7 dias após a compra, você terá direito ao reembolso integral do valor. Sem burocracia ou letras miúdas.'
+    },
+    {
+      question: 'Como a categorização automática funciona?',
+      answer: 'Nossa inteligência artificial analisa a descrição de cada transação e a classifica automaticamente em categorias como Alimentação, Transporte, Lazer, etc. Se preferir outra categoria, basta alterar com 1 clique e o sistema aprende suas preferências para transações similares.'
+    },
+    {
+      question: 'Como entro em contato com o suporte?',
+      answer: 'Falar com nosso time é muito fácil! Você pode enviar um email para contato@gurudodindin.com.br ou utilizar o chat disponível dentro do próprio sistema. Respondemos o mais rápido possível para ajudar você.'
     }
   ];
 
@@ -514,8 +526,27 @@ const LandingPage = () => {
 
             {/* Bloco Categorização: Features lado a lado com imagem no centro */}
             <div className="grid lg:grid-cols-[1fr_2fr_1fr] gap-6 items-center mb-24">
-              {/* Features Esquerda */}
-              <div className="space-y-8">
+              {/* Features Esquerda com setas curvas */}
+              <div className="space-y-8 relative">
+                {/* Setas curvas decorativas - visíveis apenas em desktop */}
+                <div className="hidden lg:block absolute -right-4 top-0 bottom-0 w-8">
+                  {/* Seta 1 - topo */}
+                  <svg className="absolute top-8 right-0 w-16 h-16 text-primary-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M0 30 Q30 30 50 50" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="48,45 55,55 45,52" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 2 - meio */}
+                  <svg className="absolute top-1/2 -translate-y-1/2 right-0 w-16 h-8 text-primary-300" viewBox="0 0 60 30" fill="none">
+                    <path d="M0 15 Q30 15 55 15" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="50,10 60,15 50,20" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 3 - baixo */}
+                  <svg className="absolute bottom-8 right-0 w-16 h-16 text-primary-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M0 30 Q30 30 50 10" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="48,15 55,5 45,8" fill="currentColor"/>
+                  </svg>
+                </div>
+
                 <div className="text-right lg:text-right">
                   <div className="flex items-center justify-end gap-3 mb-2">
                     <h3 className="text-lg font-bold text-gray-900">Categorização Inteligente</h3>
@@ -556,8 +587,27 @@ const LandingPage = () => {
                 />
               </div>
 
-              {/* Features Direita */}
-              <div className="space-y-8">
+              {/* Features Direita com setas curvas */}
+              <div className="space-y-8 relative">
+                {/* Setas curvas decorativas - visíveis apenas em desktop */}
+                <div className="hidden lg:block absolute -left-4 top-0 bottom-0 w-8">
+                  {/* Seta 1 - topo */}
+                  <svg className="absolute top-8 left-0 w-16 h-16 text-primary-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M60 30 Q30 30 10 50" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="12,45 5,55 15,52" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 2 - meio */}
+                  <svg className="absolute top-1/2 -translate-y-1/2 left-0 w-16 h-8 text-primary-300" viewBox="0 0 60 30" fill="none">
+                    <path d="M60 15 Q30 15 5 15" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="10,10 0,15 10,20" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 3 - baixo */}
+                  <svg className="absolute bottom-8 left-0 w-16 h-16 text-primary-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M60 30 Q30 30 10 10" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="12,15 5,5 15,8" fill="currentColor"/>
+                  </svg>
+                </div>
+
                 <div className="text-left">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="bg-primary-100 text-primary-600 w-10 h-10 rounded-lg flex items-center justify-center">
@@ -601,8 +651,27 @@ const LandingPage = () => {
 
             {/* Bloco Budget: Features lado a lado com imagem no centro */}
             <div className="grid lg:grid-cols-[1fr_2fr_1fr] gap-6 items-center">
-              {/* Features Esquerda */}
-              <div className="space-y-8">
+              {/* Features Esquerda com setas curvas */}
+              <div className="space-y-8 relative">
+                {/* Setas curvas decorativas - visíveis apenas em desktop */}
+                <div className="hidden lg:block absolute -right-4 top-0 bottom-0 w-8">
+                  {/* Seta 1 - topo */}
+                  <svg className="absolute top-8 right-0 w-16 h-16 text-green-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M0 30 Q30 30 50 50" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="48,45 55,55 45,52" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 2 - meio */}
+                  <svg className="absolute top-1/2 -translate-y-1/2 right-0 w-16 h-8 text-green-300" viewBox="0 0 60 30" fill="none">
+                    <path d="M0 15 Q30 15 55 15" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="50,10 60,15 50,20" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 3 - baixo */}
+                  <svg className="absolute bottom-8 right-0 w-16 h-16 text-green-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M0 30 Q30 30 50 10" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="48,15 55,5 45,8" fill="currentColor"/>
+                  </svg>
+                </div>
+
                 <div className="text-right lg:text-right">
                   <div className="flex items-center justify-end gap-3 mb-2">
                     <h3 className="text-lg font-bold text-gray-900">Custos Fixos e Variáveis</h3>
@@ -643,8 +712,27 @@ const LandingPage = () => {
                 />
               </div>
 
-              {/* Features Direita */}
-              <div className="space-y-8">
+              {/* Features Direita com setas curvas */}
+              <div className="space-y-8 relative">
+                {/* Setas curvas decorativas - visíveis apenas em desktop */}
+                <div className="hidden lg:block absolute -left-4 top-0 bottom-0 w-8">
+                  {/* Seta 1 - topo */}
+                  <svg className="absolute top-8 left-0 w-16 h-16 text-green-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M60 30 Q30 30 10 50" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="12,45 5,55 15,52" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 2 - meio */}
+                  <svg className="absolute top-1/2 -translate-y-1/2 left-0 w-16 h-8 text-green-300" viewBox="0 0 60 30" fill="none">
+                    <path d="M60 15 Q30 15 5 15" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="10,10 0,15 10,20" fill="currentColor"/>
+                  </svg>
+                  {/* Seta 3 - baixo */}
+                  <svg className="absolute bottom-8 left-0 w-16 h-16 text-green-300" viewBox="0 0 60 60" fill="none">
+                    <path d="M60 30 Q30 30 10 10" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" fill="none"/>
+                    <polygon points="12,15 5,5 15,8" fill="currentColor"/>
+                  </svg>
+                </div>
+
                 <div className="text-left">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="bg-green-100 text-green-600 w-10 h-10 rounded-lg flex items-center justify-center">
