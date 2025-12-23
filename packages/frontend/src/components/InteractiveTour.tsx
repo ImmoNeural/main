@@ -126,24 +126,25 @@ interface InteractiveTourProps {
 }
 
 // Mapeamento de qual página cada step deve estar (índice do passo -> página)
+// REORGANIZADO: Radar chart agora é passo 5 (índice 4)
 const STEP_PAGE_MAP: Record<number, string> = {
-  0: '/app/dashboard',
-  1: '/app/dashboard',
-  2: '/app/dashboard',
-  3: '/app/dashboard',
-  4: '/app/dashboard',
-  5: '/app/transactions',
-  6: '/app/transactions',
-  7: '/app/transactions',
-  8: '/app/transactions',
-  9: '/app/budgets',
-  10: '/app/budgets',
-  11: '/app/budgets',
-  12: '/app/budgets',
-  13: '/app/preferences',
-  14: '/app/accounts',
-  15: '/app/dashboard',
-  16: '/app/dashboard',
+  0: '/app/dashboard',  // Boas-vindas
+  1: '/app/dashboard',  // Stats cards
+  2: '/app/dashboard',  // Period selector
+  3: '/app/dashboard',  // Monthly chart
+  4: '/app/dashboard',  // Radar chart (MOVIDO PARA CÁ)
+  5: '/app/dashboard',  // Connect bank button
+  6: '/app/transactions',  // Transactions page
+  7: '/app/transactions',  // Filters
+  8: '/app/transactions',  // Categorize button
+  9: '/app/transactions',  // Category dropdown
+  10: '/app/budgets',   // Budgets page
+  11: '/app/budgets',   // Financial summary
+  12: '/app/budgets',   // Budget cards
+  13: '/app/budgets',   // Cost types
+  14: '/app/preferences', // Preferences
+  15: '/app/accounts',  // Accounts
+  16: '/app/dashboard', // Conclusion
 };
 
 const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
@@ -156,9 +157,10 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   const isProcessingRef = useRef(false);
   const pendingStepRef = useRef<number | null>(null);
 
-  // Definição dos passos do tutorial
+  // Definição dos passos do tutorial (17 passos)
+  // REORGANIZADO: Radar chart agora é passo 5
   const steps: Step[] = useMemo(() => [
-    // Passo 1: Boas-vindas
+    // Passo 1 (índice 0): Boas-vindas
     {
       target: 'body',
       content: (
@@ -177,7 +179,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'center',
       disableBeacon: true,
     },
-    // Passo 2: Cards de resumo
+    // Passo 2 (índice 1): Cards de resumo
     {
       target: '[data-tour="stats-cards"]',
       content: (
@@ -194,7 +196,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 3: Seletor de período
+    // Passo 3 (índice 2): Seletor de período
     {
       target: '[data-tour="period-selector"]',
       content: (
@@ -210,7 +212,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 4: Gráfico de barras mensal
+    // Passo 4 (índice 3): Gráfico de barras mensal
     {
       target: '[data-tour="monthly-chart"]',
       content: (
@@ -227,7 +229,34 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'top',
     },
-    // Passo 5: Botão de conectar banco
+    // Passo 5 (índice 4): Gráfico Radar - MOVIDO PARA CÁ
+    {
+      target: '[data-tour="radar-chart"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📊 Gráfico Radar de Orçamento</h3>
+          <p className="text-gray-600 text-sm">
+            O <strong>gráfico radar</strong> compara visualmente seu orçamento planejado com os gastos reais por categoria.
+          </p>
+          <div className="mt-3 bg-gray-50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded bg-blue-500"></div>
+              <span className="text-xs text-gray-600">Área azul: Orçamento planejado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-red-500"></div>
+              <span className="text-xs text-gray-600">Área vermelha/colorida: Gasto real</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Quando a área colorida ultrapassa a azul, você gastou mais que o orçado naquela categoria.
+          </p>
+        </div>
+      ),
+      placement: 'top',
+      disableScrolling: true,
+    },
+    // Passo 6 (índice 5): Botão de conectar banco
     {
       target: '[data-tour="connect-bank-btn"]',
       content: (
@@ -245,7 +274,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 6: Página de transações
+    // Passo 7 (índice 6): Página de transações
     {
       target: '[data-tour="transactions-page"]',
       content: (
@@ -259,7 +288,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 7: Filtros de transações
+    // Passo 8 (índice 7): Filtros de transações
     {
       target: '[data-tour="transactions-filters"]',
       content: (
@@ -277,7 +306,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'left',
     },
-    // Passo 8: Botão de categorizar
+    // Passo 9 (índice 8): Botão de categorizar
     {
       target: '[data-tour="categorize-btn"]',
       content: (
@@ -295,7 +324,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 9: Categorização manual
+    // Passo 10 (índice 9): Categorização manual
     {
       target: '[data-tour="category-dropdown"]',
       content: (
@@ -311,7 +340,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'left',
     },
-    // Passo 10: Página de orçamentos
+    // Passo 11 (índice 10): Página de orçamentos
     {
       target: '[data-tour="budgets-page"]',
       content: (
@@ -324,7 +353,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 11: Resumo financeiro
+    // Passo 12 (índice 11): Resumo financeiro
     {
       target: '[data-tour="financial-summary"]',
       content: (
@@ -342,7 +371,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'bottom',
       disableScrolling: true,
     },
-    // Passo 12: Cards de budget
+    // Passo 13 (índice 12): Cards de budget
     {
       target: '[data-tour="budget-cards"]',
       content: (
@@ -369,7 +398,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'top',
       disableScrolling: true,
     },
-    // Passo 13: Custos Fixos vs Variáveis
+    // Passo 14 (índice 13): Custos Fixos vs Variáveis
     {
       target: '[data-tour="cost-types"]',
       content: (
@@ -400,7 +429,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'top',
       disableScrolling: true,
     },
-    // Passo 14: Página de Preferências
+    // Passo 15 (índice 14): Página de Preferências
     {
       target: '[data-tour="preferences-page"]',
       content: (
@@ -421,7 +450,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 15: Página de Contas
+    // Passo 16 (índice 15): Página de Contas
     {
       target: '[data-tour="accounts-page-content"]',
       content: (
@@ -442,33 +471,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 16: Gráfico Radar
-    {
-      target: '[data-tour="radar-chart"]',
-      content: (
-        <div>
-          <h3 className="font-bold text-gray-900 mb-2">📊 Gráfico Radar de Orçamento</h3>
-          <p className="text-gray-600 text-sm">
-            O <strong>gráfico radar</strong> compara visualmente seu orçamento planejado com os gastos reais por categoria.
-          </p>
-          <div className="mt-3 bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 rounded bg-blue-500"></div>
-              <span className="text-xs text-gray-600">Área azul: Orçamento planejado</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-red-500"></div>
-              <span className="text-xs text-gray-600">Área vermelha/colorida: Gasto real</span>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Quando a área colorida ultrapassa a azul, você gastou mais que o orçado naquela categoria.
-          </p>
-        </div>
-      ),
-      placement: 'left',
-    },
-    // Passo 17: Conclusão
+    // Passo 17 (índice 16): Conclusão
     {
       target: 'body',
       content: (
@@ -512,7 +515,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     setShowTour(false);
 
     const targetPage = STEP_PAGE_MAP[newStepIndex];
-    // Usar ref para evitar dependência de location.pathname
     const currentPath = locationRef.current;
     const needsNavigation = targetPage && currentPath !== targetPage;
 
@@ -521,7 +523,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       navigate(targetPage);
     }
 
-    // Aguardar a página carregar antes de mostrar o tour
     const delay = needsNavigation ? 1500 : 300;
 
     setTimeout(() => {
@@ -529,7 +530,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       setShowTour(true);
       isProcessingRef.current = false;
 
-      // Processar step pendente se houver
       if (pendingStepRef.current !== null) {
         const pending = pendingStepRef.current;
         pendingStepRef.current = null;
@@ -546,13 +546,12 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     }
   }, [run, showTour, stepIndex, goToStep]);
 
-  // Callback do Joyride - SIMPLIFICADO
+  // Callback do Joyride
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { action, index, status, type } = data;
 
     console.log('🎯 Joyride callback:', { action, index, status, type });
 
-    // Ignorar se não estamos mostrando o tour
     if (!showTour) {
       console.log('🚫 Tour not showing, ignoring callback');
       return;
@@ -562,9 +561,15 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     if (type === EVENTS.STEP_AFTER) {
       if (action === ACTIONS.NEXT) {
         const nextStep = index + 1;
-        if (nextStep < steps.length) {
-          goToStep(nextStep);
+        // Se é o último passo, finalizar
+        if (nextStep >= steps.length) {
+          console.log('✅ Tutorial completed! Calling onFinish...');
+          setShowTour(false);
+          setStepIndex(0);
+          onFinish();
+          return;
         }
+        goToStep(nextStep);
       } else if (action === ACTIONS.PREV) {
         const prevStep = index - 1;
         if (prevStep >= 0) {
@@ -573,22 +578,19 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       }
     }
 
-    // Finalizar APENAS no último step com ação NEXT
-    if (status === STATUS.FINISHED && action === ACTIONS.NEXT && index === steps.length - 1) {
-      console.log('✅ Tutorial completed!');
+    // Também verificar STATUS.FINISHED como backup
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      console.log('✅ Tour status finished/skipped, calling onFinish...');
       setShowTour(false);
       setStepIndex(0);
       onFinish();
     }
   }, [showTour, steps.length, goToStep, onFinish]);
 
-  // Não renderizar nada se não estiver rodando
   if (!run) {
     return null;
   }
 
-  // Não renderizar Joyride durante navegação (showTour = false)
-  // Isso PREVINE qualquer callback de ser disparado durante a transição
   if (!showTour) {
     return (
       <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
