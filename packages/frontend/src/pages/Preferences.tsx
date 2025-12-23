@@ -212,7 +212,7 @@ export const Preferences = () => {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto" data-tour="preferences-page">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">

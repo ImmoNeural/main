@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -14,6 +14,8 @@ import { startOfMonth, endOfMonth, format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { getCategoryColor } from '../utils/colors';
+import { useOnboarding } from '../hooks/useOnboarding';
+import { getDemoTransactions } from '../utils/demoData';
 
 // 🗺️ MAPEAMENTO DE SUBCATEGORIAS → CATEGORIAS
 // Usado para corrigir transações/budgets que têm subcategoria no campo category
@@ -146,6 +148,10 @@ export const BudgetRadarChart = () => {
     desvioGeral: 0,
   });
 
+  // Check if tutorial is active for demo data
+  const { showOnboarding, shouldShowDemoData } = useOnboarding();
+  const prevShowOnboarding = useRef(showOnboarding);
+
   // Gerar lista dos últimos 12 meses
   const getMonthsList = () => {
     const months = [];
@@ -157,6 +163,12 @@ export const BudgetRadarChart = () => {
 
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
+    // Skip validation during tutorial
+    if (showOnboarding) {
+      console.log('🎮 BudgetRadarChart: Tutorial mode - skipping account validation');
+      return;
+    }
+
     // Marcar como inicializado após carregar do localStorage
     setAccountInitialized(true);
 
@@ -171,15 +183,118 @@ export const BudgetRadarChart = () => {
     return () => {
       window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
     };
-  }, []);
+  }, [showOnboarding]);
+
+  // Apply demo data when tutorial is active
+  useEffect(() => {
+    if (shouldShowDemoData) {
+      console.log('🎮 BudgetRadarChart: Tutorial active - applying demo data');
+      loadDemoRadarData();
+    } else if (prevShowOnboarding.current && !showOnboarding) {
+      // Tutorial just ended - clear demo data and reload real data
+      console.log('🔄 BudgetRadarChart: Tutorial ended - clearing demo data and reloading real data');
+      setData([]);
+      setAccountInitialized(false);
+      setLoading(true);
+    }
+    prevShowOnboarding.current = showOnboarding;
+  }, [showOnboarding, shouldShowDemoData]);
+
+  // Function to load demo data for radar chart
+  const loadDemoRadarData = () => {
+    const demoTransactions = getDemoTransactions();
+
+    // Demo budgets configuration
+    const demoBudgets: Record<string, number> = {
+      'Empréstimos e Financiamentos': 2500,
+      'Moradia': 1500,
+      'Alimentação': 1000,
+      'Transporte': 600,
+      'Saúde e Bem-Estar': 300,
+      'Seguros': 300,
+      'Lazer e Entretenimento': 150,
+    };
+
+    // Calculate expenses by category from demo transactions
+    const expensesByCategory: Record<string, number> = {};
+    demoTransactions.forEach(tx => {
+      if (tx.type === 'debit' && tx.category) {
+        const category = normalizeCategory(tx.category);
+        expensesByCategory[category] = (expensesByCategory[category] || 0) + tx.amount;
+      }
+    });
+
+    // Average per month (6 months of demo data)
+    Object.keys(expensesByCategory).forEach(cat => {
+      expensesByCategory[cat] = expensesByCategory[cat] / 6;
+    });
+
+    // Create radar data
+    const radarData: RadarData[] = [];
+    const allCategories = Array.from(new Set([
+      ...Object.keys(demoBudgets),
+      ...Object.keys(expensesByCategory),
+    ]));
+
+    allCategories.forEach((category, index) => {
+      const orcado = demoBudgets[category] || 0;
+      const realizado = expensesByCategory[category] || 0;
+
+      if (orcado > 0 || realizado > 0) {
+        const desvio = realizado - orcado;
+        let desvioPercentual = 0;
+        if (orcado > 0) {
+          desvioPercentual = (desvio / orcado) * 100;
+        } else if (realizado > 0) {
+          desvioPercentual = 100;
+        }
+
+        radarData.push({
+          category,
+          orcado,
+          realizado,
+          desvio,
+          desvioPercentual,
+          color: getCategoryColor(category, index),
+        });
+      }
+    });
+
+    radarData.sort((a, b) => b.realizado - a.realizado);
+    setData(radarData);
+
+    // Calculate analysis
+    if (radarData.length > 0) {
+      const totalOrcado = radarData.reduce((sum, item) => sum + item.orcado, 0);
+      const totalRealizado = radarData.reduce((sum, item) => sum + item.realizado, 0);
+      const desvioGeral = totalRealizado - totalOrcado;
+      const maxDesvio = radarData.reduce((prev, current) =>
+        Math.abs(current.desvio) > Math.abs(prev.desvio) ? current : prev
+      );
+
+      setAnalysis({
+        maxDesvio,
+        totalOrcado,
+        totalRealizado,
+        desvioGeral,
+      });
+    }
+
+    setLoading(false);
+    console.log('🎮 BudgetRadarChart: Demo data applied', { categories: radarData.length });
+  };
 
   useEffect(() => {
+    // Skip API calls during tutorial
+    if (showOnboarding) {
+      return;
+    }
     // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
     if (accountInitialized) {
       console.log(`🔄 BudgetRadarChart: Carregando dados com conta=${activeAccountId || 'TODAS'}`);
       loadRadarData();
     }
-  }, [selectedMonth, activeAccountId, accountInitialized]);
+  }, [selectedMonth, activeAccountId, accountInitialized, showOnboarding]);
 
   const loadRadarData = async () => {
     setLoading(true);
@@ -616,7 +731,8 @@ export const BudgetRadarChart = () => {
     return null;
   };
 
-  if (loading) {
+  // Skip loading spinner during tutorial
+  if (loading && !showOnboarding) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="animate-pulse">

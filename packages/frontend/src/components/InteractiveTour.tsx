@@ -8,7 +8,6 @@ const CustomTooltip = ({
   index,
   step,
   backProps,
-  closeProps,
   primaryProps,
   skipProps,
   tooltipProps,
@@ -123,47 +122,6 @@ const CategorizationAnimation = () => {
             style={{ width: `${(Math.min(animationStep, transactions.length) / transactions.length) * 100}%` }}
           />
         </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente de simulação de criação de budget
-const BudgetCreationAnimation = () => {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStep((prev) => (prev + 1) % 4);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const budgetSteps = [
-    { label: 'Selecione categoria', value: 'Alimentação', icon: '🍕' },
-    { label: 'Defina o limite', value: 'R$ 800,00', icon: '💰' },
-    { label: 'Escolha o período', value: 'Mensal', icon: '📅' },
-    { label: 'Budget criado!', value: 'Sucesso!', icon: '✅' },
-  ];
-
-  return (
-    <div className="bg-white rounded-lg p-4 shadow-lg border border-gray-200 max-w-xs mx-auto">
-      <div className="text-center mb-3">
-        <span className="text-3xl">{budgetSteps[step].icon}</span>
-      </div>
-      <div className="text-center">
-        <p className="text-xs text-gray-500">{budgetSteps[step].label}</p>
-        <p className="font-bold text-gray-800 mt-1">{budgetSteps[step].value}</p>
-      </div>
-      <div className="flex justify-center gap-1 mt-3">
-        {budgetSteps.map((_, index) => (
-          <div
-            key={index}
-            className={`w-2 h-2 rounded-full transition-all ${
-              index === step ? 'bg-primary-600 w-4' : index < step ? 'bg-green-500' : 'bg-gray-300'
-            }`}
-          />
-        ))}
       </div>
     </div>
   );
@@ -348,7 +306,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // 11. Resumo financeiro em Budgets
+    // 11. Resumo financeiro em Budgets (com scroll desabilitado)
     {
       target: '[data-tour="financial-summary"]',
       content: (
@@ -361,25 +319,15 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           <p className="text-xs text-gray-500 mt-2">
             O gráfico compara seu orçamento planejado com o gasto real.
           </p>
-        </div>
-      ),
-      placement: 'bottom',
-    },
-    // 12. Como criar um budget
-    {
-      target: '[data-tour="budget-config"]',
-      content: (
-        <div>
-          <h3 className="font-bold text-gray-900 mb-2">⚙️ Configurar Orçamentos</h3>
-          <p className="text-gray-600 text-sm mb-3">
-            Clique no ícone de engrenagem para definir limites de gastos por categoria.
+          <p className="text-xs text-primary-600 mt-2 font-medium">
+            💡 Role a página para ver mais detalhes!
           </p>
-          <BudgetCreationAnimation />
         </div>
       ),
       placement: 'bottom',
+      disableScrolling: true,
     },
-    // 13. Cards de budget com barras mensais
+    // 12. Cards de budget com barras mensais
     {
       target: '[data-tour="budget-cards"]',
       content: (
@@ -404,8 +352,9 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         </div>
       ),
       placement: 'top',
+      disableScrolling: true,
     },
-    // 14. Custos Fixos vs Variáveis
+    // 13. Custos Fixos vs Variáveis
     {
       target: '[data-tour="cost-types"]',
       content: (
@@ -434,8 +383,56 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         </div>
       ),
       placement: 'top',
+      disableScrolling: true,
     },
-    // 15. Conclusão
+    // 14. Gráfico Radar de Orçamento
+    {
+      target: 'body',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">📊 Gráfico Radar de Orçamento</h3>
+          <p className="text-gray-600 text-sm">
+            O <strong>gráfico radar</strong> compara visualmente seu orçamento planejado com os gastos reais por categoria.
+          </p>
+          <div className="mt-3 bg-gray-50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded bg-blue-500"></div>
+              <span className="text-xs text-gray-600">Área azul: Orçamento planejado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-red-500"></div>
+              <span className="text-xs text-gray-600">Área vermelha: Gasto real</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Quando a área vermelha ultrapassa a azul, você gastou mais que o orçado naquela categoria.
+          </p>
+        </div>
+      ),
+      placement: 'center',
+      disableBeacon: true,
+    },
+    // 15. Página de Preferências
+    {
+      target: '[data-tour="preferences-page"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">⚙️ Preferências</h3>
+          <p className="text-gray-600 text-sm">
+            Configure como cada categoria de despesa é classificada:
+          </p>
+          <ul className="text-xs text-gray-500 mt-2 space-y-1">
+            <li>• <strong>Custo Fixo:</strong> Despesas recorrentes (aluguel, assinaturas)</li>
+            <li>• <strong>Custo Variável:</strong> Despesas que variam (alimentação, lazer)</li>
+          </ul>
+          <p className="text-xs text-primary-600 mt-2 font-medium">
+            💡 Isso ajuda a organizar melhor seus orçamentos!
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // 16. Conclusão
     {
       target: 'body',
       content: (
@@ -480,7 +477,8 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     11: '/app/budgets',
     12: '/app/budgets',
     13: '/app/budgets',
-    14: '/app/dashboard',
+    14: '/app/preferences',
+    15: '/app/dashboard',
   };
 
   // Navegar para a página correta quando o step mudar

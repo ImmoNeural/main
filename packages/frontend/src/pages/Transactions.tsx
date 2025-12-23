@@ -29,7 +29,7 @@ const Transactions = () => {
   const [accountInitialized, setAccountInitialized] = useState(false);
 
   // Check if tutorial is active for demo data
-  const { showOnboarding } = useOnboarding();
+  const { showOnboarding, shouldShowDemoData } = useOnboarding();
   const prevShowOnboarding = useRef(showOnboarding);
 
   // Get subscription info for plan-based restrictions
@@ -165,7 +165,7 @@ const Transactions = () => {
 
   // Apply demo data when tutorial is active, reload real data when it ends
   useEffect(() => {
-    if (showOnboarding) {
+    if (shouldShowDemoData) {
       console.log('🎮 Transactions: Tutorial active - applying demo data');
       const demoTransactions = getDemoTransactions();
       setTransactions(demoTransactions);
@@ -185,13 +185,16 @@ const Transactions = () => {
       ]);
       setIsLoading(false);
     } else if (prevShowOnboarding.current && !showOnboarding) {
-      // Tutorial just ended - reload real data
-      console.log('🔄 Transactions: Tutorial ended - reloading real data');
+      // Tutorial just ended - clear demo data and reload real data
+      console.log('🔄 Transactions: Tutorial ended - clearing demo data and reloading real data');
+      setTransactions([]);
+      setCategories([]);
+      setInitialBalance(null);
       setAccountInitialized(false);
       setIsLoading(true);
     }
     prevShowOnboarding.current = showOnboarding;
-  }, [showOnboarding]);
+  }, [showOnboarding, shouldShowDemoData]);
 
   useEffect(() => {
     // Skip API calls during tutorial

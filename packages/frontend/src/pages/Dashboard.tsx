@@ -109,7 +109,7 @@ const Dashboard = () => {
   const { user } = useAuth();
 
   // Check if tutorial is active for demo data
-  const { showOnboarding } = useOnboarding();
+  const { showOnboarding, shouldShowDemoData } = useOnboarding();
 
   const [selectedPeriod, setSelectedPeriod] = useState<{
     type: 'week' | 'month' | null;
@@ -215,10 +215,10 @@ const Dashboard = () => {
     };
   }, [showOnboarding]);
 
-  // Apply demo data when tutorial is active, reload real data when it ends
+  // Apply demo data when tutorial is active and user has no real data
   const prevShowOnboarding = useRef(showOnboarding);
   useEffect(() => {
-    if (showOnboarding) {
+    if (shouldShowDemoData) {
       console.log('🎮 Tutorial active - applying demo data');
       const demoStats = getDemoStats();
       const demoCategoryStats = getDemoCategoryStats();
@@ -231,13 +231,20 @@ const Dashboard = () => {
       setRecentTransactions(demoTransactions.slice(0, 10));
       setLoading(false);
     } else if (prevShowOnboarding.current && !showOnboarding) {
-      // Tutorial just ended - reload real data
-      console.log('🔄 Tutorial ended - reloading real data');
-      setAccountInitialized(false); // Reset to trigger validation
+      // Tutorial just ended - clear demo data and reload real data
+      console.log('🔄 Tutorial ended - clearing demo data and reloading real data');
+      // Clear all data immediately
+      setStats(null);
+      setCategoryStats([]);
+      setMonthlyStats([]);
+      setWeeklyStats([]);
+      setRecentTransactions([]);
+      // Reset state to trigger reload
+      setAccountInitialized(false);
       setLoading(true);
     }
     prevShowOnboarding.current = showOnboarding;
-  }, [showOnboarding]);
+  }, [showOnboarding, shouldShowDemoData]);
 
   useEffect(() => {
     // Skip API calls when tutorial is active (using demo data)

@@ -561,7 +561,7 @@ export default function Budgets() {
   const [budgetsLoaded, setBudgetsLoaded] = useState(false);
 
   // Check if tutorial is active for demo data
-  const { showOnboarding } = useOnboarding();
+  const { showOnboarding, shouldShowDemoData } = useOnboarding();
   const prevShowOnboarding = useRef(showOnboarding);
 
   // Carregar conta ativa do localStorage e ouvir mudanças
@@ -600,15 +600,17 @@ export default function Budgets() {
 
   // Apply demo data when tutorial is active, reload real data when it ends
   useEffect(() => {
-    if (showOnboarding) {
+    if (shouldShowDemoData) {
       console.log('🎮 Budgets: Tutorial active - applying demo data');
       const demoTransactions = getDemoTransactions();
       // Process demo transactions
       processTransactionsForDemo(demoTransactions);
       setLoading(false);
     } else if (prevShowOnboarding.current && !showOnboarding) {
-      // Tutorial just ended - reload real data
-      console.log('🔄 Budgets: Tutorial ended - reloading real data');
+      // Tutorial just ended - clear demo data and reload real data
+      console.log('🔄 Budgets: Tutorial ended - clearing demo data and reloading real data');
+      // Clear all category data
+      setCategoryData({});
       setAccountInitialized(false);
       setBudgetsLoaded(false);
       setLoading(true);
@@ -616,7 +618,7 @@ export default function Budgets() {
     }
     prevShowOnboarding.current = showOnboarding;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showOnboarding]);
+  }, [showOnboarding, shouldShowDemoData]);
 
   // Carregar transações quando os budgets estiverem prontos, o mês mudar ou a conta mudar
   useEffect(() => {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Shield, Lock, RefreshCw, Landmark } from 'lucide-react';
 import { bankApi } from '../services/api';
+import { useOnboarding } from '../hooks/useOnboarding';
 
 // Declaração TypeScript para o Pluggy Connect SDK v2
 declare global {
@@ -62,6 +63,7 @@ const loadPluggySDK = (): Promise<void> => {
 const ConnectBank = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { markHasRealData } = useOnboarding();
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
 
@@ -78,6 +80,8 @@ const ConnectBank = () => {
     if (code && state && bankName) {
       try {
         await bankApi.handleCallback(code, state, bankName);
+        // Mark that user has real data so demo data won't show on tutorial re-run
+        markHasRealData();
         alert('✅ Conta conectada!');
         navigate('/accounts');
       } catch (error) {
@@ -123,6 +127,8 @@ const ConnectBank = () => {
               'Banco'
             );
 
+            // Mark that user has real data so demo data won't show on tutorial re-run
+            markHasRealData();
             // Mostrar mensagem do backend (inclui dica de sincronizar)
             const message = response.data?.message || 'Conta conectada com sucesso!';
             alert(`✅ ${message}`);

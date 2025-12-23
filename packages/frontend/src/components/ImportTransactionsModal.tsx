@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Upload, FileText, Info, Check, AlertCircle, Download, Sparkles } from 'lucide-react';
 import { transactionApi } from '../services/api';
+import { useOnboarding } from '../hooks/useOnboarding';
 
 interface ImportTransactionsModalProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface ImportTransactionsModalProps {
 }
 
 const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModalProps) => {
+  const { markHasRealData } = useOnboarding();
   const [importMode, setImportMode] = useState<'csv' | 'manual'>('csv');
   const [csvContent, setCsvContent] = useState('');
   const [manualTransaction, setManualTransaction] = useState({
@@ -226,6 +228,8 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       setResult(response.data);
 
       if (response.data.success) {
+        // Mark that user has real data so demo data won't show on tutorial re-run
+        markHasRealData();
         setTimeout(() => {
           onSuccess();
         }, 2000);
@@ -285,6 +289,8 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
       setResult(response.data);
 
       if (response.data.success) {
+        // Mark that user has real data so demo data won't show on tutorial re-run
+        markHasRealData();
         // Limpar formulário
         setManualTransaction({
           date: new Date().toISOString().split('T')[0],

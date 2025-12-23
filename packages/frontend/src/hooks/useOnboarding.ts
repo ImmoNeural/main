@@ -3,16 +3,20 @@ import { useState, useCallback } from 'react';
 const ONBOARDING_KEY = 'guru_onboarding_completed';
 const ONBOARDING_SKIPPED_KEY = 'guru_onboarding_skipped';
 const GOALS_COMPLETED_KEY = 'guru_goals_completed';
+const HAS_REAL_DATA_KEY = 'guru_has_real_data';
 
 interface UseOnboardingReturn {
   showOnboarding: boolean;
   isCompleted: boolean;
   isSkipped: boolean;
   goalsCompleted: boolean;
+  hasRealData: boolean;
+  shouldShowDemoData: boolean;
   completeOnboarding: () => void;
   skipOnboarding: () => void;
   resetOnboarding: () => void;
   completeGoals: () => void;
+  markHasRealData: () => void;
 }
 
 /**
@@ -32,10 +36,19 @@ export const useOnboarding = (): UseOnboardingReturn => {
     return localStorage.getItem(GOALS_COMPLETED_KEY) === 'true';
   });
 
+  const [hasRealData, setHasRealData] = useState<boolean>(() => {
+    return localStorage.getItem(HAS_REAL_DATA_KEY) === 'true';
+  });
+
   // Mostrar tutorial apenas se:
   // 1. Goals foram completados
   // 2. Tutorial não foi completado nem pulado
   const showOnboarding = goalsCompleted && !isCompleted && !isSkipped;
+
+  // Mostrar dados demo apenas se:
+  // 1. Tutorial está ativo
+  // 2. Usuário não tem dados reais importados
+  const shouldShowDemoData = showOnboarding && !hasRealData;
 
   const completeGoals = useCallback(() => {
     localStorage.setItem(GOALS_COMPLETED_KEY, 'true');
@@ -60,11 +73,20 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const resetOnboarding = useCallback(() => {
     localStorage.removeItem(ONBOARDING_KEY);
     localStorage.removeItem(ONBOARDING_SKIPPED_KEY);
-    localStorage.removeItem(GOALS_COMPLETED_KEY);
+    // Note: Não removemos GOALS_COMPLETED_KEY nem HAS_REAL_DATA_KEY
+    // para que o usuário vá direto ao tutorial quando clicar em "Tutorial" no menu
     setIsCompleted(false);
     setIsSkipped(false);
-    setGoalsCompleted(false);
+    // Resetar goalsCompleted para permitir tutorial
+    localStorage.setItem(GOALS_COMPLETED_KEY, 'true');
+    setGoalsCompleted(true);
     console.log('🔄 Onboarding reset');
+  }, []);
+
+  const markHasRealData = useCallback(() => {
+    localStorage.setItem(HAS_REAL_DATA_KEY, 'true');
+    setHasRealData(true);
+    console.log('📊 User has real data now');
   }, []);
 
   return {
@@ -72,10 +94,13 @@ export const useOnboarding = (): UseOnboardingReturn => {
     isCompleted,
     isSkipped,
     goalsCompleted,
+    hasRealData,
+    shouldShowDemoData,
     completeOnboarding,
     skipOnboarding,
     resetOnboarding,
     completeGoals,
+    markHasRealData,
   };
 };
 
