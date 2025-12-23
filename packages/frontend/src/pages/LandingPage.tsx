@@ -260,9 +260,15 @@ const LandingPage = () => {
                 </div>
 
                 {/* Título Principal */}
-                <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-                  Importe suas finanças<br />
-                  com um clique
+                <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-6 leading-tight tracking-tight">
+                  <span className="relative inline-block">
+                    <span className="relative z-10">Importe suas finanças</span>
+                    <span className="absolute bottom-2 left-0 w-full h-4 bg-yellow-300 -z-0 -skew-y-1"></span>
+                  </span><br />
+                  <span className="relative inline-block">
+                    <span className="relative z-10">com um clique</span>
+                    <span className="absolute bottom-2 left-0 w-full h-4 bg-yellow-300 -z-0 skew-y-1"></span>
+                  </span>
                 </h2>
 
                 {/* Subtítulo */}
@@ -866,7 +872,6 @@ const LandingPage = () => {
                 <h4 className="text-white font-semibold mb-4">Produto</h4>
                 <ul className="space-y-2">
                   <li><a href="#recursos" className="hover:text-white transition-colors">Recursos</a></li>
-                  <li><a href="#planos" className="hover:text-white transition-colors">Planos</a></li>
                   <li><Link to="/register" className="hover:text-white transition-colors">Começar</Link></li>
                 </ul>
               </div>
@@ -876,6 +881,8 @@ const LandingPage = () => {
                 <ul className="space-y-2">
                   <li><Link to="/login" className="hover:text-white transition-colors">Login</Link></li>
                   <li><a href="mailto:contato@gurudodindin.com.br" className="hover:text-white transition-colors">Contato</a></li>
+                  <li><Link to="/privacidade" className="hover:text-white transition-colors">Política de Privacidade</Link></li>
+                  <li><Link to="/termos" className="hover:text-white transition-colors">Termos de Uso</Link></li>
                 </ul>
               </div>
             </div>
