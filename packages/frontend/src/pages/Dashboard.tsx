@@ -122,6 +122,12 @@ const Dashboard = () => {
   }>({ type: null });
 
   useEffect(() => {
+    // Skip validation when tutorial is active (using demo data)
+    if (showOnboarding) {
+      console.log('🎮 Tutorial mode - skipping account validation');
+      return;
+    }
+
     // IMPORTANTE: Validar se o activeAccountId do localStorage existe para este usuário
     // antes de carregar os dados. Isso evita mostrar dados vazios quando o ID é inválido.
     const validateActiveAccount = async () => {
@@ -207,17 +213,23 @@ const Dashboard = () => {
     return () => {
       window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
     };
-  }, []);
+  }, [showOnboarding]);
 
-  // Apply demo data when tutorial is active
+  // Apply demo data when tutorial is active (runs on mount and when showOnboarding changes)
   useEffect(() => {
     if (showOnboarding) {
       console.log('🎮 Tutorial active - applying demo data');
-      setStats(getDemoStats());
-      setCategoryStats(getDemoCategoryStats());
-      setMonthlyStats(getDemoMonthlyStats());
-      setRecentTransactions(getDemoTransactions().slice(0, 10));
+      const demoStats = getDemoStats();
+      const demoCategoryStats = getDemoCategoryStats();
+      const demoMonthlyStats = getDemoMonthlyStats();
+      const demoTransactions = getDemoTransactions();
+      console.log('📊 Demo data:', { demoStats, categories: demoCategoryStats.length, months: demoMonthlyStats.length, transactions: demoTransactions.length });
+      setStats(demoStats);
+      setCategoryStats(demoCategoryStats);
+      setMonthlyStats(demoMonthlyStats);
+      setRecentTransactions(demoTransactions.slice(0, 10));
       setLoading(false);
+      setAccountInitialized(true); // Mark as initialized so we don't trigger API calls
     }
   }, [showOnboarding]);
 

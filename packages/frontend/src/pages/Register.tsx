@@ -53,7 +53,8 @@ const Register = () => {
   }
 
   // Redirecionar IMEDIATAMENTE se já estiver autenticado (sem render)
-  if (isAuthenticated) {
+  // Mas não redirecionar se acabou de registrar (success = true)
+  if (isAuthenticated && !success) {
     // Verificar se é novo usuário OAuth (precisa ir pro onboarding)
     const isNewOAuthUser = localStorage.getItem('oauth_new_user');
     if (isNewOAuthUser) {
@@ -90,9 +91,10 @@ const Register = () => {
       const message = response?.data?.message || 'Conta criada com sucesso! Você ganhou 7 dias grátis para testar.';
       setSuccessMessage(message);
 
-      // Limpar flags de onboarding para garantir que o tutorial apareça
+      // Limpar flags de onboarding para garantir que o tutorial apareça após goals
       localStorage.removeItem('guru_onboarding_completed');
       localStorage.removeItem('guru_onboarding_skipped');
+      localStorage.removeItem('guru_goals_completed');
       localStorage.removeItem('notifications_asked');
 
       // Redirecionar novo usuário para onboarding de objetivos
