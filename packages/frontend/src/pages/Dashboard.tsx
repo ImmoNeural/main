@@ -215,7 +215,8 @@ const Dashboard = () => {
     };
   }, [showOnboarding]);
 
-  // Apply demo data when tutorial is active (runs on mount and when showOnboarding changes)
+  // Apply demo data when tutorial is active, reload real data when it ends
+  const prevShowOnboarding = useRef(showOnboarding);
   useEffect(() => {
     if (showOnboarding) {
       console.log('🎮 Tutorial active - applying demo data');
@@ -229,8 +230,13 @@ const Dashboard = () => {
       setMonthlyStats(demoMonthlyStats);
       setRecentTransactions(demoTransactions.slice(0, 10));
       setLoading(false);
-      setAccountInitialized(true); // Mark as initialized so we don't trigger API calls
+    } else if (prevShowOnboarding.current && !showOnboarding) {
+      // Tutorial just ended - reload real data
+      console.log('🔄 Tutorial ended - reloading real data');
+      setAccountInitialized(false); // Reset to trigger validation
+      setLoading(true);
     }
+    prevShowOnboarding.current = showOnboarding;
   }, [showOnboarding]);
 
   useEffect(() => {
@@ -455,6 +461,11 @@ const Dashboard = () => {
     week.expenses.byCategory.forEach((cat) => allCategories.add(cat.category));
     week.income.byCategory.forEach((cat) => allCategories.add(cat.category));
   });
+  // Also collect from monthlyStats (important for demo mode where weeklyStats is empty)
+  monthlyStats.forEach((month) => {
+    month.expenses.byCategory.forEach((cat) => allCategories.add(cat.category));
+    month.income.byCategory.forEach((cat) => allCategories.add(cat.category));
+  });
   categoryStats.forEach((cat) => allCategories.add(cat.category));
 
   // Criar mapa de cores ÚNICO para todas as categorias
@@ -483,11 +494,18 @@ const Dashboard = () => {
   });
 
   // Categorias de despesas e receitas (filtrar desabilitadas)
+  // Use both weeklyStats and monthlyStats to support demo mode
   const expenseCategories = Array.from(
-    new Set(weeklyStats.flatMap((w) => w.expenses.byCategory.map((c) => c.category)))
+    new Set([
+      ...weeklyStats.flatMap((w) => w.expenses.byCategory.map((c) => c.category)),
+      ...monthlyStats.flatMap((m) => m.expenses.byCategory.map((c) => c.category))
+    ])
   ).filter(cat => !disabledCategories.has(cat));
   const incomeCategories = Array.from(
-    new Set(weeklyStats.flatMap((w) => w.income.byCategory.map((c) => c.category)))
+    new Set([
+      ...weeklyStats.flatMap((w) => w.income.byCategory.map((c) => c.category)),
+      ...monthlyStats.flatMap((m) => m.income.byCategory.map((c) => c.category))
+    ])
   ).filter(cat => !disabledCategories.has(cat));
 
   // Função para mostrar anos centralizados no eixo X

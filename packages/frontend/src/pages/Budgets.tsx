@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { transactionApi, budgetApi, preferencesApi, PreferenceItem } from '../services/api';
 import type { Transaction } from '../types';
@@ -6,6 +6,8 @@ import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Settings, Info, Upload, Wallet } from 'lucide-react';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
+import { useOnboarding } from '../hooks/useOnboarding';
+import { getDemoTransactions } from '../utils/demoData';
 import {
   BarChart,
   Bar,
@@ -558,8 +560,17 @@ export default function Budgets() {
   // Flag para controlar carregamento inicial
   const [budgetsLoaded, setBudgetsLoaded] = useState(false);
 
+  // Check if tutorial is active for demo data
+  const { showOnboarding } = useOnboarding();
+  const prevShowOnboarding = useRef(showOnboarding);
+
   // Carregar conta ativa do localStorage e ouvir mudanças
   useEffect(() => {
+    // Skip account validation when tutorial is active
+    if (showOnboarding) {
+      console.log('🎮 Budgets: Tutorial mode - skipping account validation');
+      return;
+    }
     // Marcar como inicializado após carregar do localStorage
     setAccountInitialized(true);
 
@@ -574,22 +585,119 @@ export default function Budgets() {
     return () => {
       window.removeEventListener('activeAccountChanged', handleActiveAccountChange);
     };
-  }, []);
+  }, [showOnboarding]);
 
   // Carregar budgets e preferências na inicialização
   useEffect(() => {
+    // Skip loading budgets during tutorial - we'll use defaults
+    if (showOnboarding) {
+      console.log('🎮 Budgets: Tutorial mode - using default budgets');
+      setBudgetsLoaded(true);
+      return;
+    }
     loadBudgets();
-  }, []);
+  }, [showOnboarding]);
+
+  // Apply demo data when tutorial is active, reload real data when it ends
+  useEffect(() => {
+    if (showOnboarding) {
+      console.log('🎮 Budgets: Tutorial active - applying demo data');
+      const demoTransactions = getDemoTransactions();
+      // Process demo transactions
+      processTransactionsForDemo(demoTransactions);
+      setLoading(false);
+    } else if (prevShowOnboarding.current && !showOnboarding) {
+      // Tutorial just ended - reload real data
+      console.log('🔄 Budgets: Tutorial ended - reloading real data');
+      setAccountInitialized(false);
+      setBudgetsLoaded(false);
+      setLoading(true);
+      loadBudgets();
+    }
+    prevShowOnboarding.current = showOnboarding;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showOnboarding]);
 
   // Carregar transações quando os budgets estiverem prontos, o mês mudar ou a conta mudar
   useEffect(() => {
+    // Skip API calls when tutorial is active (using demo data)
+    if (showOnboarding) {
+      return;
+    }
     // CORRIGIDO: Só carregar dados após a conta ter sido inicializada
     if (budgetsLoaded && accountInitialized) {
       console.log(`🔄 Budgets: Carregando transações com conta=${activeAccountId || 'TODAS'}`);
       loadTransactions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth, budgetsLoaded, activeAccountId, accountInitialized]);
+  }, [selectedMonth, budgetsLoaded, activeAccountId, accountInitialized, showOnboarding]);
+
+  // Simplified processing for demo data during tutorial
+  const processTransactionsForDemo = (txs: Transaction[]) => {
+    console.log('🎮 [BUDGETS] Processing demo transactions:', txs.length);
+
+    // Calculate totals from demo data
+    let totalIncome = 0;
+    let totalFixedExpenses = 0;
+    let totalVariableExpenses = 0;
+
+    // Demo budgets (suggested amounts based on demo data)
+    const demoBudgets: Record<string, number> = {
+      'Empréstimos e Financiamentos': 2500,
+      'Lazer e Entretenimento': 100,
+      'Seguros': 300,
+      'Moradia': 1500,
+      'Saúde e Bem-Estar': 300,
+      'Alimentação': 1000,
+      'Transporte': 600,
+    };
+
+    // Fixed vs Variable categories mapping
+    const fixedCategories = new Set(['Empréstimos e Financiamentos', 'Seguros', 'Moradia']);
+    const variableCategories = new Set(['Lazer e Entretenimento', 'Saúde e Bem-Estar', 'Alimentação', 'Transporte']);
+
+    txs.forEach(tx => {
+      if (tx.type === 'credit') {
+        totalIncome += tx.amount;
+      } else {
+        const category = tx.category || 'Outros';
+        if (fixedCategories.has(category)) {
+          totalFixedExpenses += tx.amount;
+        } else {
+          totalVariableExpenses += tx.amount;
+        }
+      }
+    });
+
+    // Calculate budgets
+    let totalFixedBudget = 0;
+    let totalVariableBudget = 0;
+
+    Object.entries(demoBudgets).forEach(([cat, budget]) => {
+      if (fixedCategories.has(cat)) {
+        totalFixedBudget += budget;
+      } else {
+        totalVariableBudget += budget;
+      }
+    });
+
+    // Set month summary with demo data
+    setMonthSummary({
+      salary: totalIncome / 6, // Average per month (6 months of demo data)
+      fixedBudget: totalFixedBudget,
+      fixedSpent: totalFixedExpenses / 6,
+      variableBudget: totalVariableBudget,
+      variableSpent: totalVariableExpenses / 6,
+      investmentsBudget: 500,
+      investmentsSpent: 0,
+    });
+
+    console.log('🎮 [BUDGETS] Demo summary set:', {
+      income: totalIncome / 6,
+      fixedSpent: totalFixedExpenses / 6,
+      variableSpent: totalVariableExpenses / 6,
+    });
+  };
 
   const loadBudgets = async () => {
     try {
