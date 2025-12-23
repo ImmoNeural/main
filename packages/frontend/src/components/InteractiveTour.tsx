@@ -609,10 +609,12 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           arrowColor: '#fff',
           backgroundColor: '#fff',
           textColor: '#374151',
-          overlayColor: 'rgba(0, 0, 0, 0.6)',
+          overlayColor: 'rgba(0, 0, 0, 0.7)',
         },
         spotlight: {
           borderRadius: 12,
+          border: '3px solid #4F46E5',
+          boxShadow: '0 0 0 4px rgba(79, 70, 229, 0.4), 0 0 30px rgba(79, 70, 229, 0.6)',
         },
         beacon: {
           display: 'none',
