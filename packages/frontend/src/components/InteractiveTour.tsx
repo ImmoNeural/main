@@ -497,6 +497,10 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     },
   ], []);
 
+  // Ref para acessar pathname atual sem causar re-render
+  const locationRef = useRef(location.pathname);
+  locationRef.current = location.pathname;
+
   // Função para navegar para o step correto
   const goToStep = useCallback((newStepIndex: number) => {
     if (isProcessingRef.current) {
@@ -508,10 +512,12 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     setShowTour(false);
 
     const targetPage = STEP_PAGE_MAP[newStepIndex];
-    const needsNavigation = targetPage && location.pathname !== targetPage;
+    // Usar ref para evitar dependência de location.pathname
+    const currentPath = locationRef.current;
+    const needsNavigation = targetPage && currentPath !== targetPage;
 
     if (needsNavigation) {
-      console.log(`🚀 Navigating to ${targetPage} for step ${newStepIndex}`);
+      console.log(`🚀 Navigating from ${currentPath} to ${targetPage} for step ${newStepIndex}`);
       navigate(targetPage);
     }
 
@@ -530,7 +536,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         goToStep(pending);
       }
     }, delay);
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
   // Inicializar o tour quando run muda para true
   useEffect(() => {
