@@ -550,7 +550,20 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { action, index, status, type } = data;
 
-    console.log('🎯 Joyride callback:', { action, index, status, type });
+    console.log('🎯 Joyride callback:', { action, index, status, type, stepsLength: steps.length });
+
+    // Verificar se o tour terminou (várias formas de detectar)
+    const isLastStep = index === steps.length - 1;
+    const isFinishAction = type === EVENTS.STEP_AFTER && action === ACTIONS.NEXT && isLastStep;
+    const isFinishStatus = status === STATUS.FINISHED || status === STATUS.SKIPPED;
+
+    if (isFinishAction || isFinishStatus) {
+      console.log('✅ Tutorial completed! Reason:', isFinishAction ? 'finish action' : 'finish status');
+      setShowTour(false);
+      setStepIndex(0);
+      onFinish();
+      return;
+    }
 
     if (!showTour) {
       console.log('🚫 Tour not showing, ignoring callback');
@@ -560,30 +573,10 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     // Processar navegação entre steps
     if (type === EVENTS.STEP_AFTER) {
       if (action === ACTIONS.NEXT) {
-        const nextStep = index + 1;
-        // Se é o último passo, finalizar
-        if (nextStep >= steps.length) {
-          console.log('✅ Tutorial completed! Calling onFinish...');
-          setShowTour(false);
-          setStepIndex(0);
-          onFinish();
-          return;
-        }
-        goToStep(nextStep);
-      } else if (action === ACTIONS.PREV) {
-        const prevStep = index - 1;
-        if (prevStep >= 0) {
-          goToStep(prevStep);
-        }
+        goToStep(index + 1);
+      } else if (action === ACTIONS.PREV && index > 0) {
+        goToStep(index - 1);
       }
-    }
-
-    // Também verificar STATUS.FINISHED como backup
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      console.log('✅ Tour status finished/skipped, calling onFinish...');
-      setShowTour(false);
-      setStepIndex(0);
-      onFinish();
     }
   }, [showTour, steps.length, goToStep, onFinish]);
 
