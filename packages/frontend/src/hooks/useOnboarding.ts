@@ -1,9 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const ONBOARDING_KEY = 'guru_onboarding_completed';
 const ONBOARDING_SKIPPED_KEY = 'guru_onboarding_skipped';
 const GOALS_COMPLETED_KEY = 'guru_goals_completed';
 const HAS_REAL_DATA_KEY = 'guru_has_real_data';
+
+// Custom event name for cross-component communication
+const ONBOARDING_STATE_CHANGE_EVENT = 'guru_onboarding_state_change';
 
 interface UseOnboardingReturn {
   showOnboarding: boolean;
@@ -19,9 +22,15 @@ interface UseOnboardingReturn {
   markHasRealData: () => void;
 }
 
+// Helper to dispatch state change event
+const dispatchStateChange = () => {
+  window.dispatchEvent(new CustomEvent(ONBOARDING_STATE_CHANGE_EVENT));
+};
+
 /**
  * Hook para gerenciar o estado do onboarding/tour
  * Armazena no localStorage se o usuário já completou ou pulou o tour
+ * Uses custom events to sync state across all components using this hook
  */
 export const useOnboarding = (): UseOnboardingReturn => {
   const [isCompleted, setIsCompleted] = useState<boolean>(() => {
@@ -40,6 +49,22 @@ export const useOnboarding = (): UseOnboardingReturn => {
     return localStorage.getItem(HAS_REAL_DATA_KEY) === 'true';
   });
 
+  // Listen for state changes from other components
+  useEffect(() => {
+    const handleStateChange = () => {
+      // Re-read all values from localStorage
+      setIsCompleted(localStorage.getItem(ONBOARDING_KEY) === 'true');
+      setIsSkipped(localStorage.getItem(ONBOARDING_SKIPPED_KEY) === 'true');
+      setGoalsCompleted(localStorage.getItem(GOALS_COMPLETED_KEY) === 'true');
+      setHasRealData(localStorage.getItem(HAS_REAL_DATA_KEY) === 'true');
+    };
+
+    window.addEventListener(ONBOARDING_STATE_CHANGE_EVENT, handleStateChange);
+    return () => {
+      window.removeEventListener(ONBOARDING_STATE_CHANGE_EVENT, handleStateChange);
+    };
+  }, []);
+
   // Mostrar tutorial apenas se:
   // 1. Goals foram completados
   // 2. Tutorial não foi completado nem pulado
@@ -54,6 +79,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
     localStorage.setItem(GOALS_COMPLETED_KEY, 'true');
     setGoalsCompleted(true);
     console.log('🎯 Goals completed');
+    dispatchStateChange();
   }, []);
 
   const completeOnboarding = useCallback(() => {
@@ -61,13 +87,15 @@ export const useOnboarding = (): UseOnboardingReturn => {
     localStorage.removeItem(ONBOARDING_SKIPPED_KEY);
     setIsCompleted(true);
     setIsSkipped(false);
-    console.log('✅ Onboarding completed');
+    console.log('✅ Onboarding completed - dispatching state change');
+    dispatchStateChange();
   }, []);
 
   const skipOnboarding = useCallback(() => {
     localStorage.setItem(ONBOARDING_SKIPPED_KEY, 'true');
     setIsSkipped(true);
     console.log('⏭️ Onboarding skipped');
+    dispatchStateChange();
   }, []);
 
   const resetOnboarding = useCallback(() => {
@@ -81,12 +109,14 @@ export const useOnboarding = (): UseOnboardingReturn => {
     localStorage.setItem(GOALS_COMPLETED_KEY, 'true');
     setGoalsCompleted(true);
     console.log('🔄 Onboarding reset');
+    dispatchStateChange();
   }, []);
 
   const markHasRealData = useCallback(() => {
     localStorage.setItem(HAS_REAL_DATA_KEY, 'true');
     setHasRealData(true);
     console.log('📊 User has real data now');
+    dispatchStateChange();
   }, []);
 
   return {

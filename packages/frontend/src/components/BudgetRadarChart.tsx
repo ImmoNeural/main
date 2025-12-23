@@ -760,7 +760,7 @@ export const BudgetRadarChart = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow p-6" data-tour="radar-chart">
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Seletor de Mês - Lado Esquerdo */}
         <div className="lg:w-48 flex-shrink-0">

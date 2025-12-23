@@ -9,7 +9,6 @@ const CustomTooltip = ({
   step,
   backProps,
   primaryProps,
-  skipProps,
   tooltipProps,
   size,
 }: TooltipRenderProps) => (
@@ -34,12 +33,6 @@ const CustomTooltip = ({
         Passo {index + 1} de {size}
       </div>
       <div className="flex items-center gap-2">
-        <button
-          {...skipProps}
-          className="text-gray-400 hover:text-gray-600 text-xs"
-        >
-          Pular
-        </button>
         <button
           {...primaryProps}
           className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
@@ -138,9 +131,10 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
-  // Definição dos 15 passos do tutorial
+  // Definição dos passos do tutorial (15 passos)
   const steps: Step[] = [
-    // 1. Boas-vindas no Dashboard
+    // === DASHBOARD (Passos 1-5) ===
+    // Passo 1: Boas-vindas
     {
       target: 'body',
       content: (
@@ -159,7 +153,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'center',
       disableBeacon: true,
     },
-    // 2. Cards de resumo no Dashboard
+    // Passo 2: Cards de resumo
     {
       target: '[data-tour="stats-cards"]',
       content: (
@@ -176,7 +170,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // 3. Seletor de período
+    // Passo 3: Seletor de período
     {
       target: '[data-tour="period-selector"]',
       content: (
@@ -192,7 +186,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // 4. Gráfico de barras mensal
+    // Passo 4: Gráfico de barras mensal
     {
       target: '[data-tour="monthly-chart"]',
       content: (
@@ -209,7 +203,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'top',
     },
-    // 5. Navegar para Contas - explicar conexão bancária
+    // Passo 5: Botão de conectar banco
     {
       target: '[data-tour="connect-bank-btn"]',
       content: (
@@ -227,7 +221,9 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // 6. Navegar para Transações
+
+    // === TRANSAÇÕES (Passos 6-9) ===
+    // Passo 6: Página de transações
     {
       target: '[data-tour="transactions-page"]',
       content: (
@@ -241,7 +237,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // 7. Filtros de transações
+    // Passo 7: Filtros de transações
     {
       target: '[data-tour="transactions-filters"]',
       content: (
@@ -259,7 +255,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'left',
     },
-    // 8. Botão de categorizar (com animação)
+    // Passo 8: Botão de categorizar
     {
       target: '[data-tour="categorize-btn"]',
       content: (
@@ -277,7 +273,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // 9. Categorização manual
+    // Passo 9: Categorização manual
     {
       target: '[data-tour="category-dropdown"]',
       content: (
@@ -293,7 +289,9 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'left',
     },
-    // 10. Navegar para Budgets
+
+    // === ORÇAMENTOS (Passos 10-13) ===
+    // Passo 10: Página de orçamentos
     {
       target: '[data-tour="budgets-page"]',
       content: (
@@ -306,7 +304,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // 11. Resumo financeiro em Budgets (com scroll desabilitado)
+    // Passo 11: Resumo financeiro (com scroll desabilitado para foco na janela)
     {
       target: '[data-tour="financial-summary"]',
       content: (
@@ -320,14 +318,14 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
             O gráfico compara seu orçamento planejado com o gasto real.
           </p>
           <p className="text-xs text-primary-600 mt-2 font-medium">
-            💡 Role a página para ver mais detalhes!
+            💡 Role a página para ver mais detalhes dos orçamentos!
           </p>
         </div>
       ),
       placement: 'bottom',
       disableScrolling: true,
     },
-    // 12. Cards de budget com barras mensais
+    // Passo 12: Cards de budget
     {
       target: '[data-tour="budget-cards"]',
       content: (
@@ -354,7 +352,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'top',
       disableScrolling: true,
     },
-    // 13. Custos Fixos vs Variáveis
+    // Passo 13: Custos Fixos vs Variáveis
     {
       target: '[data-tour="cost-types"]',
       content: (
@@ -385,9 +383,32 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'top',
       disableScrolling: true,
     },
-    // 14. Gráfico Radar de Orçamento
+
+    // === PREFERÊNCIAS E RADAR (Passos 14-15) ===
+    // Passo 14: Página de Preferências
     {
-      target: 'body',
+      target: '[data-tour="preferences-page"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">⚙️ Preferências</h3>
+          <p className="text-gray-600 text-sm">
+            Configure como cada categoria de despesa é classificada:
+          </p>
+          <ul className="text-xs text-gray-500 mt-2 space-y-1">
+            <li>• <strong>Custo Fixo:</strong> Despesas recorrentes (aluguel, assinaturas)</li>
+            <li>• <strong>Custo Variável:</strong> Despesas que variam (alimentação, lazer)</li>
+            <li>• <strong>Investimento:</strong> Aplicações financeiras</li>
+          </ul>
+          <p className="text-xs text-primary-600 mt-2 font-medium">
+            💡 Isso ajuda a organizar melhor seus orçamentos e relatórios!
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // Passo 15: Gráfico Radar (voltando ao Dashboard)
+    {
+      target: '[data-tour="radar-chart"]',
       content: (
         <div>
           <h3 className="font-bold text-gray-900 mb-2">📊 Gráfico Radar de Orçamento</h3>
@@ -401,38 +422,17 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-red-500"></div>
-              <span className="text-xs text-gray-600">Área vermelha: Gasto real</span>
+              <span className="text-xs text-gray-600">Área vermelha/colorida: Gasto real</span>
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Quando a área vermelha ultrapassa a azul, você gastou mais que o orçado naquela categoria.
+            Quando a área colorida ultrapassa a azul, você gastou mais que o orçado naquela categoria.
           </p>
         </div>
       ),
-      placement: 'center',
-      disableBeacon: true,
+      placement: 'left',
     },
-    // 15. Página de Preferências
-    {
-      target: '[data-tour="preferences-page"]',
-      content: (
-        <div>
-          <h3 className="font-bold text-gray-900 mb-2">⚙️ Preferências</h3>
-          <p className="text-gray-600 text-sm">
-            Configure como cada categoria de despesa é classificada:
-          </p>
-          <ul className="text-xs text-gray-500 mt-2 space-y-1">
-            <li>• <strong>Custo Fixo:</strong> Despesas recorrentes (aluguel, assinaturas)</li>
-            <li>• <strong>Custo Variável:</strong> Despesas que variam (alimentação, lazer)</li>
-          </ul>
-          <p className="text-xs text-primary-600 mt-2 font-medium">
-            💡 Isso ajuda a organizar melhor seus orçamentos!
-          </p>
-        </div>
-      ),
-      placement: 'bottom',
-    },
-    // 16. Conclusão
+    // Passo 16: Conclusão
     {
       target: 'body',
       content: (
@@ -461,23 +461,29 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     },
   ];
 
-  // Mapeamento de qual página cada step deve estar
+  // Mapeamento de qual página cada step deve estar (índice do passo -> página)
   const stepPageMap: Record<number, string> = {
+    // Dashboard (Passos 1-5: índices 0-4)
     0: '/app/dashboard',
     1: '/app/dashboard',
     2: '/app/dashboard',
     3: '/app/dashboard',
     4: '/app/dashboard',
+    // Transações (Passos 6-9: índices 5-8)
     5: '/app/transactions',
     6: '/app/transactions',
     7: '/app/transactions',
     8: '/app/transactions',
+    // Orçamentos (Passos 10-13: índices 9-12)
     9: '/app/budgets',
     10: '/app/budgets',
     11: '/app/budgets',
     12: '/app/budgets',
-    13: '/app/budgets',
-    14: '/app/preferences',
+    // Preferências (Passo 14: índice 13)
+    13: '/app/preferences',
+    // Dashboard - Radar Chart (Passo 15: índice 14)
+    14: '/app/dashboard',
+    // Conclusão (Passo 16: índice 15)
     15: '/app/dashboard',
   };
 
