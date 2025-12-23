@@ -152,6 +152,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   const location = useLocation();
   const [stepIndex, setStepIndex] = useState(0);
   const [showTour, setShowTour] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   // Refs para controle de estado
   const isProcessingRef = useRef(false);
@@ -542,29 +543,45 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   useEffect(() => {
     if (run && !showTour && !isProcessingRef.current) {
       console.log('🎬 Starting tour at step', stepIndex);
+      setIsFinishing(false); // Resetar flag de finalização
       goToStep(stepIndex);
     }
   }, [run, showTour, stepIndex, goToStep]);
 
-  // Callback do Joyride
+  // Callback do Joyride - ref para evitar stale closures
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
+
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { action, index, status, type } = data;
+    const totalSteps = 17; // Número fixo de passos
 
-    console.log('🎯 Joyride callback:', { action, index, status, type, stepsLength: steps.length });
+    console.log('🎯 Joyride callback:', { action, index, status, type, totalSteps });
 
-    // Verificar se o tour terminou (várias formas de detectar)
-    const isLastStep = index === steps.length - 1;
-    const isFinishAction = type === EVENTS.STEP_AFTER && action === ACTIONS.NEXT && isLastStep;
-    const isFinishStatus = status === STATUS.FINISHED || status === STATUS.SKIPPED;
-
-    if (isFinishAction || isFinishStatus) {
-      console.log('✅ Tutorial completed! Reason:', isFinishAction ? 'finish action' : 'finish status');
+    // Primeiro: verificar se o status indica término
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      console.log('✅ Tutorial completed via status:', status);
+      // Marcar como finalizando e chamar onFinish
+      setIsFinishing(true);
       setShowTour(false);
       setStepIndex(0);
-      onFinish();
+      onFinishRef.current();
       return;
     }
 
+    // Segundo: verificar se clicou em próximo no último passo
+    const isLastStep = index === totalSteps - 1;
+    if (type === EVENTS.STEP_AFTER && action === ACTIONS.NEXT && isLastStep) {
+      console.log('✅ Tutorial completed via last step next action');
+      // Marcar como finalizando e chamar onFinish
+      setIsFinishing(true);
+      setShowTour(false);
+      setStepIndex(0);
+      onFinishRef.current();
+      return;
+    }
+
+    // Se tour não está visível, ignorar outros callbacks
     if (!showTour) {
       console.log('🚫 Tour not showing, ignoring callback');
       return;
@@ -578,12 +595,14 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         goToStep(index - 1);
       }
     }
-  }, [showTour, steps.length, goToStep, onFinish]);
+  }, [showTour, goToStep]);
 
-  if (!run) {
+  // Se não está rodando ou está finalizando, não renderizar nada
+  if (!run || isFinishing) {
     return null;
   }
 
+  // Se está navegando entre páginas, mostrar loading
   if (!showTour) {
     return (
       <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
