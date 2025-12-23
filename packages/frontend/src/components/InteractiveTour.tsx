@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Joyride, { CallBackProps, STATUS, EVENTS, ACTIONS, Step, TooltipRenderProps } from 'react-joyride';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -131,8 +131,8 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
-  // Definição dos passos do tutorial (15 passos)
-  const steps: Step[] = [
+  // Definição dos passos do tutorial (17 passos) - memoizado para evitar re-renders
+  const steps: Step[] = useMemo(() => [
     // === DASHBOARD (Passos 1-5) ===
     // Passo 1: Boas-vindas
     {
@@ -480,7 +480,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'center',
       disableBeacon: true,
     },
-  ];
+  ], []);
 
   // Mapeamento de qual página cada step deve estar (índice do passo -> página)
   const stepPageMap: Record<number, string> = {
@@ -513,15 +513,18 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   // Track previous step to avoid unnecessary updates
   const prevStepRef = useRef<number>(-1);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   // Navegar para a página correta quando o step mudar
   useEffect(() => {
+    isMountedRef.current = true;
+
     // Only run when stepIndex actually changes
     if (!run || stepIndex < 0) {
       return;
     }
 
-    // Skip if stepIndex hasn't changed (except for initial render when prevStepRef is -1)
+    // Skip if stepIndex hasn't changed
     if (stepIndex === prevStepRef.current) {
       return;
     }
@@ -531,47 +534,48 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     // Clear any pending timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
     const targetPage = stepPageMap[stepIndex];
     const currentStep = steps[stepIndex];
     const targetSelector = typeof currentStep?.target === 'string' ? currentStep.target : null;
 
-    // Função para verificar se o elemento alvo existe
-    const waitForTarget = (selector: string | null, maxAttempts: number = 10, attempt: number = 0) => {
-      if (!selector || selector === 'body') {
+    // Função para verificar se o elemento alvo existe (não recursiva)
+    const checkAndSetReady = () => {
+      if (!isMountedRef.current) return;
+
+      if (!targetSelector || targetSelector === 'body') {
         setIsReady(true);
         return;
       }
 
-      const element = document.querySelector(selector);
+      const element = document.querySelector(targetSelector);
       if (element) {
-        console.log('✅ Target found:', selector);
+        console.log('✅ Target found:', targetSelector);
         setIsReady(true);
-      } else if (attempt < maxAttempts) {
-        console.log(`⏳ Waiting for target (${attempt + 1}/${maxAttempts}):`, selector);
-        timeoutRef.current = setTimeout(() => waitForTarget(selector, maxAttempts, attempt + 1), 200);
       } else {
-        console.log('⚠️ Target not found after max attempts, proceeding anyway:', selector);
+        console.log('⚠️ Target not found, proceeding anyway:', targetSelector);
         setIsReady(true);
       }
     };
 
+    setIsReady(false);
+
     if (targetPage && location.pathname !== targetPage) {
       navigate(targetPage);
-      // Aguardar a página carregar e os dados demo serem aplicados
-      setIsReady(false);
-      // Esperar 1 segundo para navegação, depois verificar se o elemento existe
-      timeoutRef.current = setTimeout(() => waitForTarget(targetSelector), 1000);
+      // Aguardar a página carregar
+      timeoutRef.current = setTimeout(checkAndSetReady, 1200);
     } else {
-      // Já estamos na página correta, verificar se o elemento existe
-      setIsReady(false);
-      timeoutRef.current = setTimeout(() => waitForTarget(targetSelector), 100);
+      // Já estamos na página correta
+      timeoutRef.current = setTimeout(checkAndSetReady, 150);
     }
 
     return () => {
+      isMountedRef.current = false;
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, [stepIndex, run, navigate, location.pathname, steps]);
