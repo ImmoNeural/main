@@ -296,7 +296,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'auto',
+      placement: 'bottom',
     },
     // Passo 8 (índice 7): Filtros de transações
     {
@@ -346,7 +346,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'auto',
+      placement: 'bottom',
     },
     // Passo 11 (índice 10): Página de orçamentos
     {
@@ -359,7 +359,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'auto',
+      placement: 'bottom',
     },
     // Passo 12 (índice 11): Resumo financeiro
     {
