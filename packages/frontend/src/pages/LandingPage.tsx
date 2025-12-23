@@ -110,8 +110,16 @@ const LandingPage = () => {
 
   const faqItems = [
     {
-      question: 'O que é a Conexão Bancária?',
-      answer: 'A Conexão Bancária é a funcionalidade que conecta seu banco à sua conta no Guru do Dindin utilizando a tecnologia segura do Open Finance. Com ela, você importa seus lançamentos com apenas 1 clique, mantendo seu controle financeiro sempre atualizado e fiel à sua realidade.'
+      question: 'Consigo importar meus extratos bancários?',
+      answer: 'Sim. O Guru do Dindin permite importar e conciliar lançamentos através de extratos bancários em formato CSV.'
+    },
+    {
+      question: 'Consigo fazer backup dos meus dados?',
+      answer: 'Sim. Apesar de não ser necessário, o Guru do Dindin permite exportar seus lançamentos financeiros para planilhas em formato Excel.'
+    },
+    {
+      question: 'Minhas informações estão seguras?',
+      answer: 'Sim, as informações trafegam criptografadas em servidores dedicados de alta performance e com backups automáticos. O acesso ao sistema é feito por meio de login e senhas individuais, apenas por usuários autorizados e todas as operações são auditadas, mostrando quem, onde, quando cada operação foi realizada.'
     },
     {
       question: 'Posso usar o Guru do Dindin no celular e no computador?',
