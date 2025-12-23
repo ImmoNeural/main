@@ -534,15 +534,39 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     }
 
     const targetPage = stepPageMap[stepIndex];
+    const currentStep = steps[stepIndex];
+    const targetSelector = typeof currentStep?.target === 'string' ? currentStep.target : null;
+
+    // Função para verificar se o elemento alvo existe
+    const waitForTarget = (selector: string | null, maxAttempts: number = 10, attempt: number = 0) => {
+      if (!selector || selector === 'body') {
+        setIsReady(true);
+        return;
+      }
+
+      const element = document.querySelector(selector);
+      if (element) {
+        console.log('✅ Target found:', selector);
+        setIsReady(true);
+      } else if (attempt < maxAttempts) {
+        console.log(`⏳ Waiting for target (${attempt + 1}/${maxAttempts}):`, selector);
+        timeoutRef.current = setTimeout(() => waitForTarget(selector, maxAttempts, attempt + 1), 200);
+      } else {
+        console.log('⚠️ Target not found after max attempts, proceeding anyway:', selector);
+        setIsReady(true);
+      }
+    };
+
     if (targetPage && location.pathname !== targetPage) {
       navigate(targetPage);
       // Aguardar a página carregar e os dados demo serem aplicados
       setIsReady(false);
-      timeoutRef.current = setTimeout(() => setIsReady(true), 800);
+      // Esperar 1 segundo para navegação, depois verificar se o elemento existe
+      timeoutRef.current = setTimeout(() => waitForTarget(targetSelector), 1000);
     } else {
-      // Já estamos na página correta, só precisa de um pequeno delay na primeira vez
+      // Já estamos na página correta, verificar se o elemento existe
       setIsReady(false);
-      timeoutRef.current = setTimeout(() => setIsReady(true), 100);
+      timeoutRef.current = setTimeout(() => waitForTarget(targetSelector), 100);
     }
 
     return () => {
@@ -550,16 +574,22 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [stepIndex, run, navigate, location.pathname]);
+  }, [stepIndex, run, navigate, location.pathname, steps]);
 
   // Callback do Joyride
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { action, index, status, type } = data;
 
     // Log para debug
-    console.log('🎯 Tour callback:', { action, index, status, type });
+    console.log('🎯 Tour callback:', { action, index, status, type, stepIndex: index });
 
-    // Só avançar/voltar no evento STEP_AFTER (não em TARGET_NOT_FOUND)
+    // Ignorar eventos quando não estamos prontos (navegando entre páginas)
+    if (!isReady) {
+      console.log('⏳ Tour not ready, ignoring event');
+      return;
+    }
+
+    // Só avançar/voltar no evento STEP_AFTER (não em TARGET_NOT_FOUND ou ERROR)
     if (type === EVENTS.STEP_AFTER) {
       if (action === ACTIONS.NEXT) {
         setStepIndex(index + 1);
@@ -568,20 +598,25 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       }
     }
 
-    // Finalizar tour apenas quando realmente terminado (não quando pulado por target não encontrado)
-    // FINISHED = usuário completou todos os passos
-    // SKIPPED = usuário clicou em skip (não temos skip button, então isso não deve acontecer)
-    if (status === STATUS.FINISHED) {
-      console.log('✅ Tutorial finished - calling onFinish');
+    // Ignorar TARGET_NOT_FOUND - apenas logar para debug
+    if (type === EVENTS.TARGET_NOT_FOUND) {
+      console.log('⚠️ Target not found for step', index, '- waiting for element');
+      return;
+    }
+
+    // Finalizar tour APENAS quando o usuário clica no último botão "Finalizar"
+    // Isso acontece quando status é FINISHED e estamos no último passo
+    if (status === STATUS.FINISHED && index === steps.length - 1) {
+      console.log('✅ Tutorial finished on last step - calling onFinish');
       setStepIndex(0);
       onFinish();
     }
 
-    // Log quando algo inesperado acontece
-    if (status === STATUS.SKIPPED) {
-      console.log('⚠️ Tutorial skipped unexpectedly - NOT finishing');
+    // Log quando algo inesperado acontece (mas NÃO finalizar)
+    if (status === STATUS.SKIPPED || status === STATUS.ERROR) {
+      console.log('⚠️ Tutorial status:', status, '- NOT finishing, ignoring');
     }
-  }, [onFinish]);
+  }, [onFinish, isReady, steps.length]);
 
   if (!run) return null;
 
