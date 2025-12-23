@@ -734,7 +734,7 @@ export const BudgetRadarChart = () => {
   // Skip loading spinner during tutorial
   if (loading && !showOnboarding) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6" data-tour="radar-chart">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -745,7 +745,7 @@ export const BudgetRadarChart = () => {
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6" data-tour="radar-chart">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Orçamento vs Realizado
         </h3>

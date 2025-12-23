@@ -384,7 +384,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       disableScrolling: true,
     },
 
-    // === PREFERÊNCIAS E RADAR (Passos 14-15) ===
+    // === PREFERÊNCIAS, CONTAS E RADAR (Passos 14-17) ===
     // Passo 14: Página de Preferências
     {
       target: '[data-tour="preferences-page"]',
@@ -406,7 +406,28 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 15: Gráfico Radar (voltando ao Dashboard)
+    // Passo 15: Página de Contas
+    {
+      target: '[data-tour="accounts-page-content"]',
+      content: (
+        <div>
+          <h3 className="font-bold text-gray-900 mb-2">🏦 Contas Bancárias</h3>
+          <p className="text-gray-600 text-sm">
+            Aqui você gerencia suas <strong>contas conectadas</strong> via Open Finance.
+          </p>
+          <ul className="text-xs text-gray-500 mt-2 space-y-1">
+            <li>• <strong>Sincronizar:</strong> Atualiza as transações da conta</li>
+            <li>• <strong>Visualizar:</strong> Veja saldo e última atualização</li>
+            <li>• <strong>Remover:</strong> Desconecte contas que não usa mais</li>
+          </ul>
+          <p className="text-xs text-primary-600 mt-2 font-medium">
+            💡 Você pode conectar várias contas de diferentes bancos!
+          </p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    // Passo 16: Gráfico Radar (voltando ao Dashboard)
     {
       target: '[data-tour="radar-chart"]',
       content: (
@@ -432,7 +453,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'left',
     },
-    // Passo 16: Conclusão
+    // Passo 17: Conclusão
     {
       target: 'body',
       content: (
@@ -481,10 +502,12 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     12: '/app/budgets',
     // Preferências (Passo 14: índice 13)
     13: '/app/preferences',
-    // Dashboard - Radar Chart (Passo 15: índice 14)
-    14: '/app/dashboard',
-    // Conclusão (Passo 16: índice 15)
+    // Contas (Passo 15: índice 14)
+    14: '/app/accounts',
+    // Dashboard - Radar Chart (Passo 16: índice 15)
     15: '/app/dashboard',
+    // Conclusão (Passo 17: índice 16)
+    16: '/app/dashboard',
   };
 
   // Navegar para a página correta quando o step mudar
