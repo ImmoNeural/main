@@ -125,15 +125,39 @@ interface InteractiveTourProps {
   onFinish: () => void;
 }
 
+// Mapeamento de qual página cada step deve estar (índice do passo -> página)
+const STEP_PAGE_MAP: Record<number, string> = {
+  0: '/app/dashboard',
+  1: '/app/dashboard',
+  2: '/app/dashboard',
+  3: '/app/dashboard',
+  4: '/app/dashboard',
+  5: '/app/transactions',
+  6: '/app/transactions',
+  7: '/app/transactions',
+  8: '/app/transactions',
+  9: '/app/budgets',
+  10: '/app/budgets',
+  11: '/app/budgets',
+  12: '/app/budgets',
+  13: '/app/preferences',
+  14: '/app/accounts',
+  15: '/app/dashboard',
+  16: '/app/dashboard',
+};
+
 const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [stepIndex, setStepIndex] = useState(0);
-  const [isReady, setIsReady] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
-  // Definição dos passos do tutorial (17 passos) - memoizado para evitar re-renders
+  // Refs para controle de estado
+  const isProcessingRef = useRef(false);
+  const pendingStepRef = useRef<number | null>(null);
+
+  // Definição dos passos do tutorial
   const steps: Step[] = useMemo(() => [
-    // === DASHBOARD (Passos 1-5) ===
     // Passo 1: Boas-vindas
     {
       target: 'body',
@@ -221,8 +245,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-
-    // === TRANSAÇÕES (Passos 6-9) ===
     // Passo 6: Página de transações
     {
       target: '[data-tour="transactions-page"]',
@@ -289,8 +311,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'left',
     },
-
-    // === ORÇAMENTOS (Passos 10-13) ===
     // Passo 10: Página de orçamentos
     {
       target: '[data-tour="budgets-page"]',
@@ -304,7 +324,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 11: Resumo financeiro (com scroll desabilitado para foco na janela)
+    // Passo 11: Resumo financeiro
     {
       target: '[data-tour="financial-summary"]',
       content: (
@@ -316,9 +336,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
           <p className="text-xs text-gray-500 mt-2">
             O gráfico compara seu orçamento planejado com o gasto real.
-          </p>
-          <p className="text-xs text-primary-600 mt-2 font-medium">
-            💡 Role a página para ver mais detalhes dos orçamentos!
           </p>
         </div>
       ),
@@ -383,8 +400,6 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'top',
       disableScrolling: true,
     },
-
-    // === PREFERÊNCIAS, CONTAS E RADAR (Passos 14-17) ===
     // Passo 14: Página de Preferências
     {
       target: '[data-tour="preferences-page"]',
@@ -427,7 +442,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       ),
       placement: 'bottom',
     },
-    // Passo 16: Gráfico Radar (voltando ao Dashboard)
+    // Passo 16: Gráfico Radar
     {
       target: '[data-tour="radar-chart"]',
       content: (
@@ -482,182 +497,110 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     },
   ], []);
 
-  // Mapeamento de qual página cada step deve estar (índice do passo -> página)
-  const stepPageMap: Record<number, string> = useMemo(() => ({
-    // Dashboard (Passos 1-5: índices 0-4)
-    0: '/app/dashboard',
-    1: '/app/dashboard',
-    2: '/app/dashboard',
-    3: '/app/dashboard',
-    4: '/app/dashboard',
-    // Transações (Passos 6-9: índices 5-8)
-    5: '/app/transactions',
-    6: '/app/transactions',
-    7: '/app/transactions',
-    8: '/app/transactions',
-    // Orçamentos (Passos 10-13: índices 9-12)
-    9: '/app/budgets',
-    10: '/app/budgets',
-    11: '/app/budgets',
-    12: '/app/budgets',
-    // Preferências (Passo 14: índice 13)
-    13: '/app/preferences',
-    // Contas (Passo 15: índice 14)
-    14: '/app/accounts',
-    // Dashboard - Radar Chart (Passo 16: índice 15)
-    15: '/app/dashboard',
-    // Conclusão (Passo 17: índice 16)
-    16: '/app/dashboard',
-  }), []);
-
-  // Track previous step to avoid unnecessary updates
-  const prevStepRef = useRef<number>(-1);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isMountedRef = useRef<boolean>(true);
-  const isNavigatingRef = useRef<boolean>(false); // Track navigation state
-
-  // Navegar para a página correta quando o step mudar
-  useEffect(() => {
-    isMountedRef.current = true;
-
-    // Only run when stepIndex actually changes
-    if (!run || stepIndex < 0) {
+  // Função para navegar para o step correto
+  const goToStep = useCallback((newStepIndex: number) => {
+    if (isProcessingRef.current) {
+      pendingStepRef.current = newStepIndex;
       return;
     }
 
-    // Skip if stepIndex hasn't changed
-    if (stepIndex === prevStepRef.current) {
-      return;
-    }
+    isProcessingRef.current = true;
+    setShowTour(false);
 
-    prevStepRef.current = stepIndex;
+    const targetPage = STEP_PAGE_MAP[newStepIndex];
+    const needsNavigation = targetPage && location.pathname !== targetPage;
 
-    // Clear any pending timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    const targetPage = stepPageMap[stepIndex];
-    const currentStep = steps[stepIndex];
-    const targetSelector = typeof currentStep?.target === 'string' ? currentStep.target : null;
-
-    // Função para verificar se o elemento alvo existe (não recursiva)
-    const checkAndSetReady = () => {
-      if (!isMountedRef.current) return;
-
-      isNavigatingRef.current = false; // Navigation complete
-
-      if (!targetSelector || targetSelector === 'body') {
-        console.log('✅ Step ready (body target)');
-        setIsReady(true);
-        return;
-      }
-
-      const element = document.querySelector(targetSelector);
-      if (element) {
-        console.log('✅ Target found:', targetSelector);
-        setIsReady(true);
-      } else {
-        console.log('⚠️ Target not found, proceeding anyway:', targetSelector);
-        setIsReady(true);
-      }
-    };
-
-    // Mark as navigating BEFORE changing state
-    isNavigatingRef.current = true;
-    setIsReady(false);
-
-    if (targetPage && location.pathname !== targetPage) {
-      console.log('🚀 Navigating to:', targetPage);
+    if (needsNavigation) {
+      console.log(`🚀 Navigating to ${targetPage} for step ${newStepIndex}`);
       navigate(targetPage);
-      // Aguardar a página carregar
-      timeoutRef.current = setTimeout(checkAndSetReady, 1200);
-    } else {
-      // Já estamos na página correta
-      timeoutRef.current = setTimeout(checkAndSetReady, 150);
     }
 
-    return () => {
-      isMountedRef.current = false;
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, [stepIndex, run, navigate, location.pathname, steps]);
+    // Aguardar a página carregar antes de mostrar o tour
+    const delay = needsNavigation ? 1500 : 300;
 
-  // Callback do Joyride
+    setTimeout(() => {
+      setStepIndex(newStepIndex);
+      setShowTour(true);
+      isProcessingRef.current = false;
+
+      // Processar step pendente se houver
+      if (pendingStepRef.current !== null) {
+        const pending = pendingStepRef.current;
+        pendingStepRef.current = null;
+        goToStep(pending);
+      }
+    }, delay);
+  }, [navigate, location.pathname]);
+
+  // Inicializar o tour quando run muda para true
+  useEffect(() => {
+    if (run && !showTour && !isProcessingRef.current) {
+      console.log('🎬 Starting tour at step', stepIndex);
+      goToStep(stepIndex);
+    }
+  }, [run, showTour, stepIndex, goToStep]);
+
+  // Callback do Joyride - SIMPLIFICADO
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { action, index, status, type } = data;
 
-    // Log para debug
-    console.log('🎯 Tour callback:', { action, index, status, type, isNavigating: isNavigatingRef.current });
+    console.log('🎯 Joyride callback:', { action, index, status, type });
 
-    // CRITICAL: Ignorar TODOS os eventos durante navegação entre páginas
-    if (isNavigatingRef.current) {
-      console.log('🚫 Ignoring callback during navigation');
+    // Ignorar se não estamos mostrando o tour
+    if (!showTour) {
+      console.log('🚫 Tour not showing, ignoring callback');
       return;
     }
 
-    // Ignorar TARGET_NOT_FOUND - apenas logar para debug
-    if (type === EVENTS.TARGET_NOT_FOUND) {
-      console.log('⚠️ Target not found for step', index, '- ignoring');
-      return;
-    }
-
-    // Só avançar/voltar no evento STEP_AFTER
+    // Processar navegação entre steps
     if (type === EVENTS.STEP_AFTER) {
       if (action === ACTIONS.NEXT) {
-        const nextIndex = index + 1;
-        const currentPage = stepPageMap[index];
-        const nextPage = stepPageMap[nextIndex];
-
-        // Se vai mudar de página, marcar como navegando ANTES de mudar o step
-        if (nextPage && currentPage !== nextPage) {
-          console.log('🚀 Will navigate from', currentPage, 'to', nextPage);
-          isNavigatingRef.current = true;
+        const nextStep = index + 1;
+        if (nextStep < steps.length) {
+          goToStep(nextStep);
         }
-
-        setStepIndex(nextIndex);
       } else if (action === ACTIONS.PREV) {
-        const prevIndex = index - 1;
-        const currentPage = stepPageMap[index];
-        const prevPage = stepPageMap[prevIndex];
-
-        // Se vai mudar de página, marcar como navegando ANTES de mudar o step
-        if (prevPage && currentPage !== prevPage) {
-          console.log('🚀 Will navigate from', currentPage, 'to', prevPage);
-          isNavigatingRef.current = true;
+        const prevStep = index - 1;
+        if (prevStep >= 0) {
+          goToStep(prevStep);
         }
-
-        setStepIndex(prevIndex);
       }
     }
 
-    // Finalizar tour APENAS quando:
-    // 1. Status é FINISHED
-    // 2. Estamos no último passo
-    // 3. Action é NEXT (usuário clicou no botão Finalizar)
-    if (status === STATUS.FINISHED && index === steps.length - 1 && action === ACTIONS.NEXT) {
-      console.log('✅ Tutorial finished on last step - calling onFinish');
+    // Finalizar APENAS no último step com ação NEXT
+    if (status === STATUS.FINISHED && action === ACTIONS.NEXT && index === steps.length - 1) {
+      console.log('✅ Tutorial completed!');
+      setShowTour(false);
       setStepIndex(0);
       onFinish();
     }
+  }, [showTour, steps.length, goToStep, onFinish]);
 
-    // Log quando algo inesperado acontece (mas NÃO finalizar)
-    if (status === STATUS.SKIPPED || status === STATUS.ERROR) {
-      console.log('⚠️ Tutorial status:', status, '- NOT finishing, ignoring');
-    }
-  }, [onFinish, steps.length, stepPageMap]);
+  // Não renderizar nada se não estiver rodando
+  if (!run) {
+    return null;
+  }
 
-  if (!run) return null;
+  // Não renderizar Joyride durante navegação (showTour = false)
+  // Isso PREVINE qualquer callback de ser disparado durante a transição
+  if (!showTour) {
+    return (
+      <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
+        <div className="bg-white rounded-xl p-6 shadow-2xl">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+            <span className="text-gray-700">Carregando...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Joyride
       steps={steps}
       stepIndex={stepIndex}
-      run={run && isReady}
+      run={true}
       callback={handleJoyrideCallback}
       continuous
       showProgress={false}
