@@ -110,6 +110,10 @@ const LandingPage = () => {
 
   const faqItems = [
     {
+      question: 'Como funciona a Conexão Bancária via Open Finance?',
+      answer: 'O Open Finance é um sistema regulamentado pelo Banco Central do Brasil que permite compartilhar seus dados bancários de forma segura. Com ele, você conecta sua conta bancária ao Guru do Dindin e importa suas transações automaticamente com apenas 1 clique. Suas credenciais nunca são armazenadas e você pode revogar o acesso a qualquer momento.'
+    },
+    {
       question: 'Consigo importar meus extratos bancários?',
       answer: 'Sim. O Guru do Dindin permite importar e conciliar lançamentos através de extratos bancários em formato CSV.'
     },
