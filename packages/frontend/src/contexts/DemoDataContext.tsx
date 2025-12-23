@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import type { Transaction, DashboardStats, CategoryStats, WeeklyStats } from '../types';
 
 // Demo transactions parsed from CSV data
@@ -236,41 +236,61 @@ const DemoDataContext = createContext<DemoDataContextType | null>(null);
 export const DemoDataProvider = ({ children }: { children: ReactNode }) => {
   const [isDemoMode, setIsDemoMode] = useState(false);
 
-  // Generate demo data once
-  const demoTransactions = generateDemoTransactions();
-  const demoStats = calculateDemoStats(demoTransactions);
-  const demoCategoryStats = calculateDemoCategoryStats(demoTransactions);
-  const demoMonthlyStats = calculateDemoMonthlyStats(demoTransactions);
-
-  // Generate weekly stats (simplified version)
-  const demoWeeklyStats: WeeklyStats[] = [];
+  // Generate demo data once and memoize
+  const demoData = useMemo(() => {
+    const transactions = generateDemoTransactions();
+    return {
+      demoTransactions: transactions,
+      demoStats: calculateDemoStats(transactions),
+      demoCategoryStats: calculateDemoCategoryStats(transactions),
+      demoMonthlyStats: calculateDemoMonthlyStats(transactions),
+      demoWeeklyStats: [] as WeeklyStats[],
+    };
+  }, []);
 
   const setDemoMode = useCallback((active: boolean) => {
     console.log(`🎮 Demo mode ${active ? 'activated' : 'deactivated'}`);
     setIsDemoMode(active);
   }, []);
 
+  const value = useMemo(() => ({
+    isDemoMode,
+    setDemoMode,
+    ...demoData,
+  }), [isDemoMode, setDemoMode, demoData]);
+
   return (
-    <DemoDataContext.Provider
-      value={{
-        isDemoMode,
-        setDemoMode,
-        demoTransactions,
-        demoStats,
-        demoCategoryStats,
-        demoMonthlyStats,
-        demoWeeklyStats,
-      }}
-    >
+    <DemoDataContext.Provider value={value}>
       {children}
     </DemoDataContext.Provider>
   );
 };
 
+// Default values for when context is not available (fallback)
+const defaultDemoData: DemoDataContextType = {
+  isDemoMode: false,
+  setDemoMode: () => {},
+  demoTransactions: [],
+  demoStats: {
+    total_balance: 0,
+    total_income: 0,
+    total_expenses: 0,
+    initial_balance: 0,
+    transaction_count: 0,
+    period_start: '',
+    period_end: '',
+  },
+  demoCategoryStats: [],
+  demoMonthlyStats: [],
+  demoWeeklyStats: [],
+};
+
 export const useDemoData = () => {
   const context = useContext(DemoDataContext);
+  // Return default values if context is not available (prevents crash)
   if (!context) {
-    throw new Error('useDemoData must be used within a DemoDataProvider');
+    console.warn('useDemoData: Context not available, using defaults');
+    return defaultDemoData;
   }
   return context;
 };
