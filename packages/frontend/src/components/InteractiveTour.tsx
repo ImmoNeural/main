@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Joyride, { CallBackProps, STATUS, EVENTS, ACTIONS, Step, TooltipRenderProps } from 'react-joyride';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -510,21 +510,46 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     16: '/app/dashboard',
   };
 
+  // Track previous step to avoid unnecessary updates
+  const prevStepRef = useRef<number>(-1);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Navegar para a página correta quando o step mudar
   useEffect(() => {
-    if (run && stepIndex >= 0) {
-      const targetPage = stepPageMap[stepIndex];
-      if (targetPage && location.pathname !== targetPage) {
-        navigate(targetPage);
-        // Aguardar a página carregar e os dados demo serem aplicados
-        setIsReady(false);
-        setTimeout(() => setIsReady(true), 800);
-      } else {
-        // Mesmo na mesma página, dar um pequeno delay para garantir que elementos existam
-        setIsReady(false);
-        setTimeout(() => setIsReady(true), 100);
-      }
+    // Only run when stepIndex actually changes
+    if (!run || stepIndex < 0) {
+      return;
     }
+
+    // Skip if stepIndex hasn't changed (except for initial render when prevStepRef is -1)
+    if (stepIndex === prevStepRef.current) {
+      return;
+    }
+
+    prevStepRef.current = stepIndex;
+
+    // Clear any pending timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    const targetPage = stepPageMap[stepIndex];
+    if (targetPage && location.pathname !== targetPage) {
+      navigate(targetPage);
+      // Aguardar a página carregar e os dados demo serem aplicados
+      setIsReady(false);
+      timeoutRef.current = setTimeout(() => setIsReady(true), 800);
+    } else {
+      // Já estamos na página correta, só precisa de um pequeno delay na primeira vez
+      setIsReady(false);
+      timeoutRef.current = setTimeout(() => setIsReady(true), 100);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [stepIndex, run, navigate, location.pathname]);
 
   // Callback do Joyride
