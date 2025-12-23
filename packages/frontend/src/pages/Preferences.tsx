@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Settings, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { preferencesApi, PreferenceItem } from '../services/api';
+import { useOnboarding } from '../hooks/useOnboarding';
 
 // Definição de todas as subcategorias do sistema com sua classificação padrão
 interface SubcategoryConfig {
@@ -98,6 +99,9 @@ export const Preferences = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Check if tutorial is active - skip API calls during tutorial
+  const { showOnboarding } = useOnboarding();
+
   // Agrupar subcategorias por categoria
   const groupedSubcategories = SUBCATEGORIES_CONFIG.reduce((acc, config) => {
     if (!acc[config.category]) {
@@ -108,8 +112,21 @@ export const Preferences = () => {
   }, {} as Record<string, SubcategoryConfig[]>);
 
   useEffect(() => {
+    // Durante tutorial, pular chamadas de API e usar configurações padrão
+    if (showOnboarding) {
+      console.log('🎮 Preferences: Tutorial mode - using default preferences');
+      // Usar valores padrão do config
+      const defaultPrefs: PreferenceState = {};
+      SUBCATEGORIES_CONFIG.forEach((config) => {
+        const key = `${config.category}|${config.subcategory}`;
+        defaultPrefs[key] = config.defaultTipo;
+      });
+      setPreferences(defaultPrefs);
+      setLoading(false);
+      return;
+    }
     loadPreferences();
-  }, []);
+  }, [showOnboarding]);
 
   const loadPreferences = async () => {
     setLoading(true);

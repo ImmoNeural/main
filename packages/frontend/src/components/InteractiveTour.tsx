@@ -254,8 +254,8 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'top',
-      disableScrolling: true,
+      placement: 'bottom',
+      // Permitir scroll para que o gráfico fique visível
     },
     // Passo 6 (índice 5): Botão de conectar banco
     {

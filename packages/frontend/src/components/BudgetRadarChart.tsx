@@ -194,8 +194,8 @@ export const BudgetRadarChart = () => {
       // Tutorial just ended - clear demo data and reload real data
       console.log('🔄 BudgetRadarChart: Tutorial ended - clearing demo data and reloading real data');
       setData([]);
-      setAccountInitialized(false);
       setLoading(true);
+      // NÃO resetar accountInitialized - deixar o outro effect cuidar da inicialização
     }
     prevShowOnboarding.current = showOnboarding;
   }, [showOnboarding, shouldShowDemoData]);

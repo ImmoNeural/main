@@ -190,8 +190,8 @@ const Transactions = () => {
       setTransactions([]);
       setCategories([]);
       setInitialBalance(null);
-      setAccountInitialized(false);
       setIsLoading(true);
+      // NÃO resetar accountInitialized - deixar o outro effect cuidar da inicialização
     }
     prevShowOnboarding.current = showOnboarding;
   }, [showOnboarding, shouldShowDemoData]);

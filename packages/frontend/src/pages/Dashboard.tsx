@@ -239,9 +239,8 @@ const Dashboard = () => {
       setMonthlyStats([]);
       setWeeklyStats([]);
       setRecentTransactions([]);
-      // Reset state to trigger reload
-      setAccountInitialized(false);
       setLoading(true);
+      // NÃO resetar accountInitialized - deixar o outro effect cuidar da inicialização
     }
     prevShowOnboarding.current = showOnboarding;
   }, [showOnboarding, shouldShowDemoData]);

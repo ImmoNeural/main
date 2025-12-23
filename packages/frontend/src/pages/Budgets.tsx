@@ -611,10 +611,10 @@ export default function Budgets() {
       console.log('🔄 Budgets: Tutorial ended - clearing demo data and reloading real data');
       // Clear all category data
       setCategoryData({});
-      setAccountInitialized(false);
       setBudgetsLoaded(false);
       setLoading(true);
       loadBudgets();
+      // NÃO resetar accountInitialized - deixar o outro effect cuidar da inicialização
     }
     prevShowOnboarding.current = showOnboarding;
     // eslint-disable-next-line react-hooks/exhaustive-deps

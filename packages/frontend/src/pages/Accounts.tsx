@@ -5,6 +5,7 @@ import { Wallet, RefreshCw, Trash2, AlertCircle, CheckCircle, Plus, CreditCard, 
 import { bankApi } from '../services/api';
 import type { BankAccount } from '../types';
 import { useSubscription } from '../hooks/useSubscription';
+import { useOnboarding } from '../hooks/useOnboarding';
 
 // Mapa de logos de bancos brasileiros conhecidos
 const bankLogos: Record<string, string> = {
@@ -101,6 +102,9 @@ const Accounts = () => {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
 
+  // Check if tutorial is active - skip API calls during tutorial
+  const { showOnboarding } = useOnboarding();
+
   // Get subscription info for plan-based restrictions
   const { planType, isTrialActive } = useSubscription();
 
@@ -123,6 +127,13 @@ const Accounts = () => {
   const canConnectMore = (isTrialActive || !isManualPlan) && accounts.length < maxAccounts;
 
   useEffect(() => {
+    // Durante tutorial, pular chamadas de API e mostrar estado vazio rapidamente
+    if (showOnboarding) {
+      console.log('🎮 Accounts: Tutorial mode - skipping API calls');
+      setLoading(false);
+      return;
+    }
+
     // Inicializar banco ativo do localStorage ANTES de carregar
     const savedActiveAccount = localStorage.getItem('activeAccountId');
     if (savedActiveAccount) {
@@ -143,7 +154,7 @@ const Accounts = () => {
         console.log('✅ Proteção removida com sucesso');
       }, 2000);
     }
-  }, []);
+  }, [showOnboarding]);
 
   const loadAccounts = async () => {
     setLoading(true);
