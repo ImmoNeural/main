@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Joyride, { CallBackProps, STATUS, EVENTS, ACTIONS, Step, TooltipRenderProps } from 'react-joyride';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-// Custom tooltip component with Portuguese step counter
+// Custom tooltip component with Portuguese step counter - Mobile friendly
 const CustomTooltip = ({
   continuous,
   index,
@@ -14,25 +14,34 @@ const CustomTooltip = ({
 }: TooltipRenderProps) => (
   <div
     {...tooltipProps}
-    className="bg-white rounded-2xl shadow-2xl max-w-md"
-    style={{ padding: 20, borderRadius: 16, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
+    className="bg-white rounded-2xl shadow-2xl w-[90vw] max-w-sm sm:max-w-md mx-2"
+    style={{
+      padding: '16px',
+      borderRadius: 16,
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    }}
   >
     {step.content}
-    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-      <div className="flex items-center gap-2">
+    {/* Step counter - above buttons on mobile for better visibility */}
+    <div className="text-xs text-gray-400 text-center mt-3 mb-2 sm:hidden">
+      Passo {index + 1} de {size}
+    </div>
+    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="flex items-center">
         {index > 0 && (
           <button
             {...backProps}
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            className="text-gray-500 hover:text-gray-700 text-sm font-medium px-2 py-1"
           >
             Anterior
           </button>
         )}
       </div>
-      <div className="text-xs text-gray-400">
+      {/* Step counter - inline on desktop */}
+      <div className="text-xs text-gray-400 hidden sm:block">
         Passo {index + 1} de {size}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <button
           {...primaryProps}
           className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
@@ -287,7 +296,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'center',
     },
     // Passo 8 (índice 7): Filtros de transações
     {
@@ -296,16 +305,14 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         <div>
           <h3 className="font-bold text-gray-900 mb-2">🔍 Filtros Avançados</h3>
           <p className="text-gray-600 text-sm">
-            Use os filtros para encontrar transações específicas:
+            Use os filtros para encontrar transações específicas.
           </p>
-          <ul className="text-xs text-gray-500 mt-2 space-y-1">
-            <li>• <strong>Busca:</strong> Pesquise por descrição ou merchant</li>
-            <li>• <strong>Categoria:</strong> Filtre por categoria</li>
-            <li>• <strong>Tipo de Custo:</strong> Fixos, Variáveis ou Investimentos</li>
-          </ul>
+          <p className="text-xs text-gray-500 mt-2">
+            Pesquise por descrição, filtre por categoria ou tipo de custo.
+          </p>
         </div>
       ),
-      placement: 'left',
+      placement: 'center',
     },
     // Passo 9 (índice 8): Botão de categorizar
     {
@@ -323,7 +330,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'center',
     },
     // Passo 10 (índice 9): Categorização manual
     {
@@ -335,11 +342,11 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
             Você também pode <strong>alterar a categoria manualmente</strong> clicando no dropdown.
           </p>
           <p className="text-xs text-primary-600 mt-2 font-medium">
-            💡 Ao mudar uma categoria, o sistema sugere aplicar a mesma mudança em transações similares!
+            💡 O sistema sugere aplicar a mesma mudança em transações similares!
           </p>
         </div>
       ),
-      placement: 'left',
+      placement: 'center',
     },
     // Passo 11 (índice 10): Página de orçamentos
     {
@@ -352,7 +359,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'center',
     },
     // Passo 12 (índice 11): Resumo financeiro
     {
@@ -361,16 +368,11 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         <div>
           <h3 className="font-bold text-gray-900 mb-2">📊 Resumo Financeiro</h3>
           <p className="text-gray-600 text-sm">
-            Veja seu <strong>salário</strong>, quanto está gastando em <strong>custos fixos</strong>,
-            <strong> variáveis</strong> e <strong>investimentos</strong>.
-          </p>
-          <p className="text-xs text-gray-500 mt-2">
-            O gráfico compara seu orçamento planejado com o gasto real.
+            Veja seu <strong>salário</strong> e quanto está gastando em <strong>custos fixos</strong> e <strong>variáveis</strong>.
           </p>
         </div>
       ),
-      placement: 'bottom',
-      disableScrolling: true,
+      placement: 'center',
     },
     // Passo 13 (índice 12): Cards de budget
     {
@@ -396,8 +398,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           </p>
         </div>
       ),
-      placement: 'top',
-      disableScrolling: true,
+      placement: 'center',
     },
     // Passo 14 (índice 13): Custos Fixos vs Variáveis
     {
@@ -405,30 +406,17 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       content: (
         <div>
           <h3 className="font-bold text-gray-900 mb-2">🔧 Fixos vs 🛒 Variáveis</h3>
-          <p className="text-gray-600 text-sm">
-            Entenda a diferença e mantenha sua saúde financeira:
+          <p className="text-gray-600 text-sm mb-2">
+            Entenda a diferença:
           </p>
-          <div className="mt-2 space-y-2 text-xs">
-            <div className="bg-blue-50 p-2 rounded">
-              <strong className="text-blue-700">🔧 Custos Fixos:</strong>
-              <span className="text-gray-600"> Aluguel, internet, streaming, seguros</span>
-              <p className="text-blue-600 mt-1">Ideal: até 50% do salário</p>
-            </div>
-            <div className="bg-orange-50 p-2 rounded">
-              <strong className="text-orange-700">🛒 Custos Variáveis:</strong>
-              <span className="text-gray-600"> Alimentação, transporte, compras</span>
-              <p className="text-orange-600 mt-1">Ideal: até 30% do salário</p>
-            </div>
-            <div className="bg-green-50 p-2 rounded">
-              <strong className="text-green-700">📈 Investimentos:</strong>
-              <span className="text-gray-600"> Poupança, ações, fundos</span>
-              <p className="text-green-600 mt-1">Meta: pelo menos 20% do salário</p>
-            </div>
+          <div className="space-y-1 text-xs">
+            <p><strong className="text-blue-700">🔧 Fixos:</strong> Aluguel, internet (até 50%)</p>
+            <p><strong className="text-orange-700">🛒 Variáveis:</strong> Alimentação, transporte (até 30%)</p>
+            <p><strong className="text-green-700">📈 Investimentos:</strong> Poupança, ações (20%+)</p>
           </div>
         </div>
       ),
-      placement: 'top',
-      disableScrolling: true,
+      placement: 'center',
     },
     // Passo 15 (índice 14): Página de Preferências
     {
@@ -437,19 +425,11 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         <div>
           <h3 className="font-bold text-gray-900 mb-2">⚙️ Preferências</h3>
           <p className="text-gray-600 text-sm">
-            Configure como cada categoria de despesa é classificada:
-          </p>
-          <ul className="text-xs text-gray-500 mt-2 space-y-1">
-            <li>• <strong>Custo Fixo:</strong> Despesas recorrentes (aluguel, assinaturas)</li>
-            <li>• <strong>Custo Variável:</strong> Despesas que variam (alimentação, lazer)</li>
-            <li>• <strong>Investimento:</strong> Aplicações financeiras</li>
-          </ul>
-          <p className="text-xs text-primary-600 mt-2 font-medium">
-            💡 Isso ajuda a organizar melhor seus orçamentos e relatórios!
+            Configure como cada categoria de despesa é classificada entre <strong>custos fixos</strong>, <strong>variáveis</strong> ou <strong>investimentos</strong>.
           </p>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'center',
     },
     // Passo 16 (índice 15): Página de Contas
     {
@@ -458,19 +438,11 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         <div>
           <h3 className="font-bold text-gray-900 mb-2">🏦 Contas Bancárias</h3>
           <p className="text-gray-600 text-sm">
-            Aqui você gerencia suas <strong>contas conectadas</strong> via Open Finance.
-          </p>
-          <ul className="text-xs text-gray-500 mt-2 space-y-1">
-            <li>• <strong>Sincronizar:</strong> Atualiza as transações da conta</li>
-            <li>• <strong>Visualizar:</strong> Veja saldo e última atualização</li>
-            <li>• <strong>Remover:</strong> Desconecte contas que não usa mais</li>
-          </ul>
-          <p className="text-xs text-primary-600 mt-2 font-medium">
-            💡 Você pode conectar várias contas de diferentes bancos!
+            Gerencie suas <strong>contas conectadas</strong> via Open Finance. Sincronize, visualize saldos e conecte múltiplos bancos.
           </p>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'center',
     },
     // Passo 17 (índice 16): Conclusão
     {

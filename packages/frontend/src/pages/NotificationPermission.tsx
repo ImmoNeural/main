@@ -65,7 +65,7 @@ const NotificationPermission = () => {
         {/* Benefits - Simple flowing list */}
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-10">
           <p className="text-white/90 text-sm font-medium mb-4">
-            Com as notificações você poderá:
+            Com as notificações:
           </p>
           <ul className="space-y-3">
             {benefits.map((benefit, index) => (
