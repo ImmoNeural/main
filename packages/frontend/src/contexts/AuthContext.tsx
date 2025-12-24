@@ -3,6 +3,7 @@ import { authApi } from '../services/api';
 import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { App, URLOpenListenerEvent } from '@capacitor/app';
+import { SocialLogin } from '@capgo/capacitor-social-login';
 
 interface User {
   id: string;
@@ -35,6 +36,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Verificar autenticação no carregamento inicial
   useEffect(() => {
     let isMounted = true;
+
+    // Inicializar Social Login no mobile
+    if (Capacitor.isNativePlatform()) {
+      SocialLogin.initialize({
+        google: {
+          webClientId: '1052845276050-cl9ic8288m776q01fjlqo7b3q91ljvut.apps.googleusercontent.com',
+        },
+      });
+    }
 
     const initAuth = async () => {
       // Verificar se já tem sessão do Supabase (para OAuth)
@@ -252,24 +262,89 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isProcessingOAuth.current = false;
     hasProcessedSession.current = false;
 
-    const redirectUrl = Capacitor.isNativePlatform()
-      ? 'com.gurudodindin.app://login-callback'
-      : `${window.location.origin}/auth/callback`;
+    // No mobile, usar Google Sign-In nativo (abre dentro do app)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        isProcessingOAuth.current = true;
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+        // Login nativo com Google usando @capgo/capacitor-social-login
+        const result = await SocialLogin.login({
+          provider: 'google',
+          options: {
+            scopes: ['email', 'profile'],
+          },
+        });
+
+        console.log('📱 Google native sign-in result:', result);
+
+        if (result.provider === 'google' && result.result) {
+          const googleResult = result.result as any;
+          const idToken = googleResult.idToken;
+
+          if (idToken) {
+            // Usar o idToken para autenticar com Supabase
+            const { data, error } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: idToken,
+            });
+
+            if (error) {
+              console.error('Supabase auth error:', error);
+              throw new Error(error.message);
+            }
+
+            if (data.session?.user) {
+              hasProcessedSession.current = true;
+
+              // Sincronizar com backend
+              const response = await authApi.oauthCallback({
+                provider_id: data.session.user.id,
+                email: data.session.user.email || googleResult.email || '',
+                name: data.session.user.user_metadata?.full_name ||
+                      googleResult.name ||
+                      googleResult.givenName ||
+                      data.session.user.email?.split('@')[0] || 'Usuário',
+                avatar_url: data.session.user.user_metadata?.avatar_url ||
+                            googleResult.imageUrl,
+                provider: 'google',
+              });
+
+              localStorage.setItem('token', data.session.access_token);
+              localStorage.setItem('user', JSON.stringify(response.data.user));
+              setUser(response.data.user);
+
+              if (response.data.isNewUser) {
+                localStorage.setItem('oauth_new_user', 'true');
+              }
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error('Google native login error:', error);
+        isProcessingOAuth.current = false;
+        throw new Error(error.message || 'Erro ao fazer login com Google');
+      } finally {
+        isProcessingOAuth.current = false;
+      }
+    } else {
+      // No web, usar OAuth redirect normal
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      console.error('Google login error:', error);
-      throw new Error(error.message);
+      if (error) {
+        console.error('Google login error:', error);
+        throw new Error(error.message);
+      }
     }
   };
 
