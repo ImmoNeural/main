@@ -11,6 +11,13 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
   },
+  plugins: {
+    SocialLogin: {
+      google: {
+        webClientId: '1052845276050-cl9ic8288m776q01fjlqo7b3q91ljvut.apps.googleusercontent.com',
+      },
+    },
+  },
 };
 
 export default config;
