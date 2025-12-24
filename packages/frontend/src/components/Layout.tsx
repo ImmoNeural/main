@@ -199,7 +199,7 @@ const Layout = () => {
         ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
       `}>
         {/* Page Content */}
-        <main className="flex-1 ml-14 lg:ml-0 px-2 sm:px-3 lg:px-6 py-3 sm:py-4 lg:py-8 overflow-x-hidden pb-4 lg:pb-8 dark:text-white">
+        <main className="flex-1 ml-14 lg:ml-0 px-2 sm:px-3 lg:px-6 pt-10 sm:pt-4 lg:pt-8 pb-3 sm:pb-4 lg:pb-8 overflow-x-hidden dark:text-white">
           {/* Banner de Status da Assinatura - Aparece em todas as páginas */}
           {isExpired && subscription?.trial_end_date && location.pathname !== '/app/planos' && (
             <div className="mb-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-lg animate-pulse">
