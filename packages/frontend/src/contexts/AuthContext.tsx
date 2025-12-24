@@ -3,6 +3,7 @@ import { authApi } from '../services/api';
 import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { App, URLOpenListenerEvent } from '@capacitor/app';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
 interface User {
   id: string;
@@ -35,6 +36,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Verificar autenticação no carregamento inicial
   useEffect(() => {
     let isMounted = true;
+
+    // Inicializar Google Auth no mobile
+    if (Capacitor.isNativePlatform()) {
+      GoogleAuth.initialize({
+        clientId: '1098694424138-qjfccuom1cbg68u4r1l4nnfmn4bjbsv9.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      });
+    }
 
     const initAuth = async () => {
       // Verificar se já tem sessão do Supabase (para OAuth)
@@ -252,24 +262,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isProcessingOAuth.current = false;
     hasProcessedSession.current = false;
 
-    const redirectUrl = Capacitor.isNativePlatform()
-      ? 'com.gurudodindin.app://login-callback'
-      : `${window.location.origin}/auth/callback`;
+    // No mobile, usar Google Sign-In nativo (abre dentro do app)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        isProcessingOAuth.current = true;
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+        // Login nativo com Google
+        const googleUser = await GoogleAuth.signIn();
+        console.log('📱 Google native sign-in:', googleUser);
+
+        // Usar o idToken para autenticar com Supabase
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: googleUser.authentication.idToken,
+        });
+
+        if (error) {
+          console.error('Supabase auth error:', error);
+          throw new Error(error.message);
+        }
+
+        if (data.session?.user) {
+          hasProcessedSession.current = true;
+
+          // Sincronizar com backend
+          const response = await authApi.oauthCallback({
+            provider_id: data.session.user.id,
+            email: data.session.user.email || googleUser.email || '',
+            name: data.session.user.user_metadata?.full_name ||
+                  googleUser.name ||
+                  googleUser.givenName ||
+                  data.session.user.email?.split('@')[0] || 'Usuário',
+            avatar_url: data.session.user.user_metadata?.avatar_url ||
+                        googleUser.imageUrl,
+            provider: 'google',
+          });
+
+          localStorage.setItem('token', data.session.access_token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          setUser(response.data.user);
+
+          if (response.data.isNewUser) {
+            localStorage.setItem('oauth_new_user', 'true');
+          }
+        }
+      } catch (error: any) {
+        console.error('Google native login error:', error);
+        isProcessingOAuth.current = false;
+        throw new Error(error.message || 'Erro ao fazer login com Google');
+      } finally {
+        isProcessingOAuth.current = false;
+      }
+    } else {
+      // No web, usar OAuth redirect normal
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      console.error('Google login error:', error);
-      throw new Error(error.message);
+      if (error) {
+        console.error('Google login error:', error);
+        throw new Error(error.message);
+      }
     }
   };
 

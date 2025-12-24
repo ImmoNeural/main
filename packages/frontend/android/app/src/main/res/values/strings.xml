@@ -4,4 +4,6 @@
     <string name="title_activity_main">Guru do Dindin</string>
     <string name="package_name">com.gurudodindin.app</string>
     <string name="custom_url_scheme">com.gurudodindin.app</string>
+    <!-- Google Sign-In Web Client ID (from Google Cloud Console) -->
+    <string name="server_client_id">1098694424138-qjfccuom1cbg68u4r1l4nnfmn4bjbsv9.apps.googleusercontent.com</string>
 </resources>
