@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       SocialLogin.initialize({
         google: {
           webClientId: '1052845276050-cl9ic8288m776q01fjlqo7b3q91ljvut.apps.googleusercontent.com',
-          mode: 'offline',
         },
       }).catch(err => console.log('SocialLogin init error:', err));
     }
