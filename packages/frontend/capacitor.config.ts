@@ -14,7 +14,7 @@ const config: CapacitorConfig = {
   plugins: {
     SocialLogin: {
       google: {
-        webClientId: '1052845276050-cl9ic8288m776q01fjlqo7b3q91ljvut.apps.googleusercontent.com',
+        webClientId: '1052845276050-b4s3ccf30hunbgg4ulqcsn8e7sgpj6et.apps.googleusercontent.com',
       },
     },
   },

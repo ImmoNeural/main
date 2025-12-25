@@ -5,5 +5,5 @@
     <string name="package_name">com.gurudodindin.app</string>
     <string name="custom_url_scheme">com.gurudodindin.app</string>
     <!-- Google Sign-In Web Client ID (from Google Cloud Console) -->
-    <string name="server_client_id">1052845276050-cl9ic8288m776q01fjlqo7b3q91ljvut.apps.googleusercontent.com</string>
+    <string name="server_client_id">1052845276050-b4s3ccf30hunbgg4ulqcsn8e7sgpj6et.apps.googleusercontent.com</string>
 </resources>
