@@ -250,7 +250,7 @@ const Layout = () => {
         </div>
 
         {/* Navigation icons */}
-        <div className="flex-1 flex flex-col items-center space-y-2 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center space-y-2 overflow-y-auto pt-4">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
