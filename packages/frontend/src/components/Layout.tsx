@@ -239,7 +239,7 @@ const Layout = () => {
       </div>
 
       {/* Left Sidebar Navigation - Mobile apenas (apenas ícones) */}
-      <nav className="lg:hidden fixed left-0 top-0 bottom-0 w-14 bg-gradient-to-b from-primary-800 to-primary-700 border-r border-primary-600 z-50 flex flex-col items-center pt-10 pb-4">
+      <nav className="lg:hidden fixed left-0 top-0 bottom-0 w-14 bg-gradient-to-b from-primary-800 to-primary-700 border-r border-primary-600 z-50 flex flex-col items-center pt-14 pb-4">
         {/* Logo pequeno no topo */}
         <div className="mb-4 pb-3 border-b border-primary-600 w-full flex justify-center">
           <img
