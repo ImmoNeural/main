@@ -9,6 +9,7 @@ const CustomTooltip = ({
   step,
   backProps,
   primaryProps,
+  skipProps,
   tooltipProps,
   size,
 }: TooltipRenderProps) => (
@@ -21,6 +22,21 @@ const CustomTooltip = ({
       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
     }}
   >
+    {/* Header with note and close button */}
+    <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+      <span className="text-[10px] text-gray-400 italic">
+        Os valores usados neste tutorial são simulados
+      </span>
+      <button
+        {...skipProps}
+        className="text-gray-400 hover:text-gray-600 transition-colors p-1 -mr-1 -mt-1"
+        title="Fechar tutorial"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </button>
+    </div>
     {step.content}
     {/* Step counter - above buttons on mobile for better visibility */}
     <div className="text-xs text-gray-400 text-center mt-3 mb-2 sm:hidden">
@@ -596,7 +612,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       callback={handleJoyrideCallback}
       continuous
       showProgress={false}
-      showSkipButton={false}
+      showSkipButton={true}
       disableScrolling={false}
       disableOverlayClose={true}
       spotlightClicks={false}
