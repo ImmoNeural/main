@@ -9,10 +9,13 @@ import {
   Zap,
   Crown,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  ExternalLink
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { subscriptionApi } from '../services/api';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 interface Plan {
   id: string;
@@ -34,6 +37,9 @@ const Plans = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+
+  // Detectar se está no app mobile
+  const isNativeApp = Capacitor.isNativePlatform();
   const [processingPayment, setProcessingPayment] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -245,6 +251,18 @@ const Plans = () => {
       return;
     }
 
+    // No app mobile, redirecionar para o site para evitar comissão do Google
+    if (Capacitor.isNativePlatform()) {
+      const plansUrl = 'https://gurudodindin.com.br/planos';
+      try {
+        await Browser.open({ url: plansUrl });
+      } catch (error) {
+        console.error('Error opening browser:', error);
+        window.open(plansUrl, '_blank');
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       const { data } = await subscriptionApi.createSubscription(plan.type, 'monthly');
@@ -282,6 +300,16 @@ const Plans = () => {
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Comece a organizar suas finanças hoje. Planos mensais com 7 dias grátis!
             </p>
+
+            {/* Aviso para usuários do app mobile */}
+            {isNativeApp && (
+              <div className="mt-4 max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800 flex items-center justify-center gap-2">
+                  <ExternalLink className="w-4 h-4" />
+                  Para sua segurança, o pagamento será realizado pelo nosso site
+                </p>
+              </div>
+            )}
 
             {/* Status da Assinatura */}
             {processingPayment && (
@@ -457,13 +485,13 @@ const Plans = () => {
                       </>
                     ) : (isOnTrial && currentPlan === plan.type) ? (
                       <>
-                        <CreditCard className="w-5 h-5" />
-                        <span>Fazer Upgrade</span>
+                        {isNativeApp ? <ExternalLink className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
+                        <span>{isNativeApp ? 'Fazer Upgrade no Site' : 'Fazer Upgrade'}</span>
                       </>
                     ) : (
                       <>
-                        <CreditCard className="w-5 h-5" />
-                        <span>Assinar Agora</span>
+                        {isNativeApp ? <ExternalLink className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
+                        <span>{isNativeApp ? 'Assinar no Site' : 'Assinar Agora'}</span>
                       </>
                     )}
                   </button>
