@@ -51,10 +51,11 @@ export class PluggyService {
 
   /**
    * Obtém ou renova a API Key
+   * Cache reduzido para 1 hora para evitar problemas com keys inválidas
    */
-  private async getApiKey(): Promise<string> {
-    // Se já temos uma API Key válida, retorna ela
-    if (this.apiKey && Date.now() < this.apiKeyExpiresAt) {
+  private async getApiKey(forceRefresh: boolean = false): Promise<string> {
+    // Se forceRefresh=true, ignorar cache e buscar nova key
+    if (!forceRefresh && this.apiKey && Date.now() < this.apiKeyExpiresAt) {
       console.log('[Pluggy] ✅ Using cached API Key');
       return this.apiKey;
     }
@@ -68,8 +69,8 @@ export class PluggyService {
       });
 
       this.apiKey = response.data.apiKey as string;
-      // API Key do Pluggy não expira, mas vamos renovar a cada 24h por segurança
-      this.apiKeyExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
+      // Cache reduzido para 1 hora (antes era 24h)
+      this.apiKeyExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
 
       console.log('[Pluggy] ✅ API Key obtained successfully');
       return this.apiKey;
@@ -79,6 +80,15 @@ export class PluggyService {
       console.error('[Pluggy] ❌ Headers:', JSON.stringify(error.response?.headers || {}));
       throw new Error('Failed to authenticate with Pluggy: ' + (error.response?.data?.message || error.message));
     }
+  }
+
+  /**
+   * Invalida o cache da API Key (usado quando recebemos 403)
+   */
+  private invalidateApiKey(): void {
+    console.log('[Pluggy] 🔄 Invalidating cached API Key');
+    this.apiKey = null;
+    this.apiKeyExpiresAt = 0;
   }
 
   /**
@@ -218,6 +228,7 @@ export class PluggyService {
   /**
    * Obtém informações do Item após autorização
    * Inclui retry para casos onde o item ainda não está disponível
+   * Se receber 403 (API Key inválida), invalida cache e tenta com nova key
    */
   async getItem(itemId: string, retries: number = 5): Promise<any> {
     console.log(`[Pluggy] 📦 ====== GET ITEM START ======`);
@@ -225,6 +236,7 @@ export class PluggyService {
     console.log(`[Pluggy] 📦 Max retries: ${retries}`);
 
     let lastError: any = null;
+    let hasTriedFreshKey = false;
 
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
@@ -260,6 +272,17 @@ export class PluggyService {
         console.error(`[Pluggy] ❌ Error: ${errorMessage}`);
         console.error(`[Pluggy] ❌ Status code: ${statusCode}`);
         console.error(`[Pluggy] ❌ Error code: ${error.code || 'N/A'}`);
+
+        // Se for erro 403 (API Key inválida), invalidar cache e tentar com nova key
+        if (statusCode === 403 && !hasTriedFreshKey) {
+          console.log(`[Pluggy] 🔄 API Key invalid (403), refreshing and retrying...`);
+          this.invalidateApiKey();
+          hasTriedFreshKey = true;
+          // Buscar nova API Key imediatamente
+          await this.getApiKey(true);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
 
         // Se for erro 404 (item não encontrado), pode ser que ainda não foi criado
         // Aguardar e tentar novamente
