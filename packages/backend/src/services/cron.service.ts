@@ -30,123 +30,160 @@ function getSupabase(): SupabaseClient {
 
 /**
  * Sincroniza transações de uma conta específica
- * (Versão simplificada sem depender de bank.routes.ts)
+ * UPSERT: Atualiza existentes (status, amount) e insere novas
+ * Importante para cartões de crédito onde transações PENDING viram POSTED
  */
-async function syncAccountTransactions(account: any, currentAccountBalance?: number): Promise<number> {
+async function syncAccountTransactions(account: any, currentAccountBalance?: number): Promise<{ inserted: number; updated: number }> {
   try {
     const { PluggyService } = await import('./providers/pluggy.service');
     const pluggyService = new PluggyService();
 
-    // Buscar transações dos últimos 30 dias (para cron diário, não precisa de mais)
+    // Buscar transações dos últimos 60 dias (cartão de crédito pode ter faturas pendentes antigas)
     const transactions = await pluggyService.getTransactions(
       account.access_token,
       account.provider_account_id,
-      30 // Últimos 30 dias
+      60 // Últimos 60 dias para pegar faturas de cartão
     );
 
     if (transactions.length === 0) {
-      return 0;
+      return { inserted: 0, updated: 0 };
     }
 
-    // Buscar IDs existentes para evitar duplicatas
+    console.log(`[Cron] 📊 Fetched ${transactions.length} transactions from Pluggy`);
+
+    // Buscar transações existentes para comparar
     const providerTransactionIds = transactions.map(t => t.transaction_id);
     const { data: existingTransactions } = await getSupabase()
       .from('transactions')
-      .select('transaction_id')
+      .select('id, transaction_id, status, amount, description')
       .eq('account_id', account.id)
       .in('transaction_id', providerTransactionIds);
 
-    const existingIds = new Set(
-      (existingTransactions || []).map((t: any) => t.transaction_id)
+    const existingMap = new Map(
+      (existingTransactions || []).map((t: any) => [t.transaction_id, t])
     );
-
-    // Filtrar apenas novas
-    const newTransactions = transactions.filter(t => !existingIds.has(t.transaction_id));
-
-    if (newTransactions.length === 0) {
-      return 0;
-    }
 
     // Detectar se é cartão de crédito
     const isCreditCard = account.account_type === 'card';
 
-    // Mapear para formato do banco de dados
-    let transactionsToInsert = newTransactions.map(t => {
+    // Separar em novas e para atualizar
+    const newTransactions: any[] = [];
+    const transactionsToUpdate: any[] = [];
+
+    for (const t of transactions) {
       let amount = t.transaction_amount.amount;
 
-      // Cartão de crédito: inverter valores positivos para negativos
+      // Cartão de crédito: inverter valores positivos para negativos (gastos)
       if (isCreditCard && amount > 0) {
         amount = -Math.abs(amount);
       }
 
-      // Usar remittance_information como descrição (conforme OpenBankingTransaction)
       const description = t.remittance_information || '';
-      // Merchant: creditor para receitas, debtor para despesas
       const merchant = t.creditor_name || t.debtor_name || description;
 
-      return {
-        user_id: account.user_id,
-        account_id: account.id,
-        transaction_id: t.transaction_id,
-        date: new Date(t.booking_date).getTime(), // Timestamp em ms
-        description: description,
-        merchant: merchant,
-        amount: amount,
-        currency: t.transaction_amount.currency,
-        category: 'Não Categorizado',
-        type: amount < 0 ? 'debit' : 'credit',
-        // Usar balance_after do Pluggy se disponível
-        balance_after: t.balance_after_transaction?.amount as number | undefined,
-        reference: description,
-        status: 'completed',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    });
+      // Mapear status do Pluggy: POSTED = completed, PENDING = pending
+      const pluggyStatus = t.status === 'BOOK' ? 'completed' : 'pending';
 
-    // Calcular balance_after se Pluggy não forneceu e temos o saldo atual da conta
-    const hasPluggyBalance = transactionsToInsert.some(t => t.balance_after !== undefined && t.balance_after !== null);
+      const existing = existingMap.get(t.transaction_id);
 
-    if (!hasPluggyBalance && currentAccountBalance !== undefined) {
-      console.log(`[Cron] 💰 Calculating balance_after from current account balance: R$ ${currentAccountBalance.toFixed(2)}`);
+      if (existing) {
+        // Transação já existe - verificar se precisa atualizar
+        const needsUpdate =
+          existing.status !== pluggyStatus ||
+          Math.abs(existing.amount - amount) > 0.01 || // Comparar com tolerância
+          existing.description !== description;
 
-      // Ordenar por data decrescente (mais recente primeiro)
-      transactionsToInsert.sort((a, b) => b.date - a.date);
-
-      // Calcular balance_after: a transação mais recente tem balance_after = saldo atual
-      // Cada transação anterior: balance_after = balance_after_seguinte - amount_seguinte
-      let runningBalance = currentAccountBalance;
-
-      for (let i = 0; i < transactionsToInsert.length; i++) {
-        transactionsToInsert[i].balance_after = runningBalance;
-        // Para a próxima iteração, subtraímos o amount desta transação
-        runningBalance = runningBalance - transactionsToInsert[i].amount;
+        if (needsUpdate) {
+          transactionsToUpdate.push({
+            id: existing.id,
+            status: pluggyStatus,
+            amount: amount,
+            description: description,
+            merchant: merchant,
+            updated_at: new Date().toISOString(),
+          });
+        }
+      } else {
+        // Transação nova
+        newTransactions.push({
+          user_id: account.user_id,
+          account_id: account.id,
+          transaction_id: t.transaction_id,
+          date: new Date(t.booking_date).getTime(),
+          description: description,
+          merchant: merchant,
+          amount: amount,
+          currency: t.transaction_amount.currency,
+          category: 'Não Categorizado',
+          type: amount < 0 ? 'debit' : 'credit',
+          balance_after: t.balance_after_transaction?.amount as number | undefined,
+          reference: description,
+          status: pluggyStatus,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
-
-      console.log(`[Cron] 💰 Calculated balance_after for ${transactionsToInsert.length} transactions`);
-    } else if (hasPluggyBalance) {
-      console.log(`[Cron] 💰 Using balance_after from Pluggy API`);
     }
 
-    // Inserir em batches
+    console.log(`[Cron] 📊 New: ${newTransactions.length}, To update: ${transactionsToUpdate.length}`);
+
+    // Calcular balance_after para novas transações se necessário
+    const hasPluggyBalance = newTransactions.some(t => t.balance_after !== undefined && t.balance_after !== null);
+
+    if (!hasPluggyBalance && currentAccountBalance !== undefined && newTransactions.length > 0) {
+      console.log(`[Cron] 💰 Calculating balance_after from current balance: R$ ${currentAccountBalance.toFixed(2)}`);
+
+      newTransactions.sort((a, b) => b.date - a.date);
+      let runningBalance = currentAccountBalance;
+
+      for (let i = 0; i < newTransactions.length; i++) {
+        newTransactions[i].balance_after = runningBalance;
+        runningBalance = runningBalance - newTransactions[i].amount;
+      }
+    }
+
+    // Inserir novas transações em batches
     const BATCH_SIZE = 100;
     let totalInserted = 0;
 
-    for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
-      const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < newTransactions.length; i += BATCH_SIZE) {
+      const batch = newTransactions.slice(i, i + BATCH_SIZE);
       const { error } = await getSupabase()
         .from('transactions')
         .insert(batch);
 
       if (!error) {
         totalInserted += batch.length;
+      } else {
+        console.error(`[Cron] ❌ Error inserting batch:`, error.message);
       }
     }
 
-    return totalInserted;
+    // Atualizar transações existentes
+    let totalUpdated = 0;
+
+    for (const update of transactionsToUpdate) {
+      const { id, ...updateData } = update;
+      const { error } = await getSupabase()
+        .from('transactions')
+        .update(updateData)
+        .eq('id', id);
+
+      if (!error) {
+        totalUpdated++;
+      } else {
+        console.error(`[Cron] ❌ Error updating transaction ${id}:`, error.message);
+      }
+    }
+
+    if (totalUpdated > 0) {
+      console.log(`[Cron] 🔄 Updated ${totalUpdated} existing transactions (PENDING -> POSTED or amount changes)`);
+    }
+
+    return { inserted: totalInserted, updated: totalUpdated };
   } catch (error: any) {
     console.error(`[Cron] ❌ Error syncing account ${account.id}:`, error.message);
-    return 0;
+    return { inserted: 0, updated: 0 };
   }
 }
 
@@ -181,7 +218,8 @@ async function syncAllBankAccounts(): Promise<void> {
 
     let successCount = 0;
     let errorCount = 0;
-    let totalTransactions = 0;
+    let totalInserted = 0;
+    let totalUpdated = 0;
 
     // Processar cada conta sequencialmente (para não sobrecarregar a API)
     for (const account of accounts) {
@@ -218,8 +256,9 @@ async function syncAllBankAccounts(): Promise<void> {
         }
 
         // 4. Sincronizar transações (passar saldo atual para calcular balance_after)
-        const transactionCount = await syncAccountTransactions(account, updatedBalance);
-        totalTransactions += transactionCount;
+        const syncResult = await syncAccountTransactions(account, updatedBalance);
+        totalInserted += syncResult.inserted;
+        totalUpdated += syncResult.updated;
 
         // 5. Atualizar last_sync_at, saldo E limite de crédito
         const updateData: any = {
@@ -236,7 +275,10 @@ async function syncAllBankAccounts(): Promise<void> {
           .update(updateData)
           .eq('id', account.id);
 
-        console.log(`[Cron] ✅ Account ${account.bank_name}: ${transactionCount} new transactions, balance R$ ${updatedBalance.toFixed(2)}${creditLimit ? ` (limit: R$ ${creditLimit.toFixed(2)})` : ''}`);
+        const syncSummary = syncResult.inserted > 0 || syncResult.updated > 0
+          ? `${syncResult.inserted} new, ${syncResult.updated} updated`
+          : 'no changes';
+        console.log(`[Cron] ✅ Account ${account.bank_name}: ${syncSummary}, balance R$ ${updatedBalance.toFixed(2)}${creditLimit ? ` (limit: R$ ${creditLimit.toFixed(2)})` : ''}`);
         successCount++;
 
         // Pequeno delay entre contas para não sobrecarregar
@@ -253,7 +295,7 @@ async function syncAllBankAccounts(): Promise<void> {
     console.log('[Cron] 🔄 ========================================');
     console.log(`[Cron] ✅ Accounts synced successfully: ${successCount}`);
     console.log(`[Cron] ❌ Accounts with errors: ${errorCount}`);
-    console.log(`[Cron] 📊 Total new transactions: ${totalTransactions}`);
+    console.log(`[Cron] 📊 Transactions - New: ${totalInserted}, Updated: ${totalUpdated}`);
     console.log(`[Cron] 📋 Timestamp: ${new Date().toISOString()}`);
 
   } catch (error: any) {
