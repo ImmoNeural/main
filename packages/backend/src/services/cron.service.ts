@@ -38,12 +38,27 @@ async function syncAccountTransactions(account: any, currentAccountBalance?: num
     const { PluggyService } = await import('./providers/pluggy.service');
     const pluggyService = new PluggyService();
 
-    // Buscar transações dos últimos 60 dias (cartão de crédito pode ter faturas pendentes antigas)
-    const transactions = await pluggyService.getTransactions(
-      account.access_token,
-      account.provider_account_id,
-      60 // Últimos 60 dias para pegar faturas de cartão
-    );
+    // Detectar se é cartão de crédito
+    const isCreditCard = account.account_type === 'card';
+
+    // Buscar transações dos últimos 60 dias
+    // Para cartões de crédito, usar método especial que inclui fatura aberta
+    let transactions;
+
+    if (isCreditCard) {
+      console.log(`[Cron] 💳 Using getAllCreditCardTransactions to include open bill transactions`);
+      transactions = await pluggyService.getAllCreditCardTransactions(
+        account.access_token,
+        account.provider_account_id,
+        60 // Últimos 60 dias para pegar faturas de cartão
+      );
+    } else {
+      transactions = await pluggyService.getTransactions(
+        account.access_token,
+        account.provider_account_id,
+        60 // Últimos 60 dias
+      );
+    }
 
     if (transactions.length === 0) {
       return { inserted: 0, updated: 0 };
@@ -62,9 +77,6 @@ async function syncAccountTransactions(account: any, currentAccountBalance?: num
     const existingMap = new Map(
       (existingTransactions || []).map((t: any) => [t.transaction_id, t])
     );
-
-    // Detectar se é cartão de crédito
-    const isCreditCard = account.account_type === 'card';
 
     // Separar em novas e para atualizar
     const newTransactions: any[] = [];

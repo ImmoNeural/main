@@ -1216,11 +1216,27 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
   console.log(`[Sync] Fetching transactions for account ${accountId} (provider: ${account.provider_account_id})`);
 
   // Buscar transações do provedor
-  let transactions = await openBankingService.getTransactions(
-    accessToken,
-    account.provider_account_id,
-    daysToSync
-  );
+  // Para cartões de crédito, usar método especial que inclui fatura aberta
+  let transactions;
+
+  if (isCreditCard) {
+    // Importar PluggyService para usar método especial de cartão de crédito
+    const { PluggyService } = await import('../services/providers/pluggy.service');
+    const pluggyService = new PluggyService();
+
+    console.log(`[Sync] 💳 Using getAllCreditCardTransactions to include open bill transactions`);
+    transactions = await pluggyService.getAllCreditCardTransactions(
+      accessToken,
+      account.provider_account_id,
+      daysToSync
+    );
+  } else {
+    transactions = await openBankingService.getTransactions(
+      accessToken,
+      account.provider_account_id,
+      daysToSync
+    );
+  }
 
   console.log(`[Sync] Found ${transactions.length} transactions from provider`);
 

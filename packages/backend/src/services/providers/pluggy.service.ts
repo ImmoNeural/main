@@ -689,6 +689,129 @@ export class PluggyService {
   }
 
   /**
+   * Busca faturas de cartão de crédito (incluindo fatura aberta)
+   * Endpoint: GET /bills
+   * Retorna transações da fatura aberta (dezembro) que podem não aparecer no /transactions
+   */
+  async getCreditCardBills(accountId: string): Promise<any[]> {
+    try {
+      const apiKey = await this.getApiKey();
+
+      console.log(`[Pluggy] 📋 Fetching credit card bills for account ${accountId}`);
+
+      const response = await this.client.get('/bills', {
+        headers: {
+          'X-API-KEY': apiKey,
+        },
+        params: {
+          accountId,
+        },
+      });
+
+      const bills = response.data.results || [];
+      console.log(`[Pluggy] ✅ Found ${bills.length} credit card bills`);
+
+      // Log info das faturas
+      for (const bill of bills) {
+        console.log(`[Pluggy] 📋 Bill: ${bill.id} | Due: ${bill.dueDate} | Status: ${bill.state || 'unknown'} | Total: R$ ${bill.totalAmount || 0}`);
+      }
+
+      return bills;
+    } catch (error: any) {
+      console.error(`[Pluggy] ❌ Error fetching credit card bills:`, error.response?.data || error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Busca transações de uma fatura específica de cartão de crédito
+   * Endpoint: GET /bills/{billId}/transactions ou transações com billId filter
+   */
+  async getCreditCardBillTransactions(accountId: string, billId: string): Promise<OpenBankingTransaction[]> {
+    try {
+      const apiKey = await this.getApiKey();
+
+      console.log(`[Pluggy] 📋 Fetching transactions for bill ${billId}`);
+
+      // Tentar buscar transações do bill diretamente
+      // Pluggy pode ter transações com billId no endpoint /transactions
+      const response = await this.client.get('/transactions', {
+        headers: {
+          'X-API-KEY': apiKey,
+        },
+        params: {
+          accountId,
+          billId, // Filtrar por fatura específica
+          pageSize: 500,
+        },
+      });
+
+      const transactions = response.data.results || [];
+      console.log(`[Pluggy] ✅ Found ${transactions.length} transactions for bill ${billId}`);
+
+      return transactions.map((t: any) => this.mapTransaction(t));
+    } catch (error: any) {
+      console.error(`[Pluggy] ❌ Error fetching bill transactions:`, error.response?.data || error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Busca todas as transações de cartão de crédito (incluindo fatura aberta)
+   * Combina transações do endpoint /transactions com transações de faturas abertas
+   */
+  async getAllCreditCardTransactions(
+    itemId: string,
+    accountId: string,
+    days: number = 90
+  ): Promise<OpenBankingTransaction[]> {
+    console.log(`[Pluggy] 💳 Fetching ALL credit card transactions (including open bill)`);
+
+    // 1. Buscar transações normais
+    const regularTransactions = await this.getTransactions(itemId, accountId, days);
+    console.log(`[Pluggy] 📊 Regular transactions: ${regularTransactions.length}`);
+
+    // 2. Buscar faturas do cartão
+    const bills = await this.getCreditCardBills(accountId);
+
+    // 3. Identificar fatura aberta (estado OPEN ou sem data de pagamento)
+    const openBill = bills.find(b =>
+      b.state === 'OPEN' ||
+      b.state === 'FUTURE' ||
+      !b.paymentDate
+    );
+
+    if (openBill) {
+      console.log(`[Pluggy] 📋 Found open/future bill: ${openBill.id} (due: ${openBill.dueDate})`);
+
+      // Buscar transações da fatura aberta
+      const openBillTransactions = await this.getCreditCardBillTransactions(accountId, openBill.id);
+
+      if (openBillTransactions.length > 0) {
+        console.log(`[Pluggy] 💳 Open bill transactions: ${openBillTransactions.length}`);
+
+        // Combinar sem duplicatas (usando transaction_id)
+        const existingIds = new Set(regularTransactions.map(t => t.transaction_id));
+        const newTransactions = openBillTransactions.filter(t => !existingIds.has(t.transaction_id));
+
+        if (newTransactions.length > 0) {
+          console.log(`[Pluggy] ✨ Adding ${newTransactions.length} new transactions from open bill`);
+          regularTransactions.push(...newTransactions);
+        }
+      }
+    } else {
+      console.log(`[Pluggy] ℹ️ No open/future bill found`);
+    }
+
+    // Ordenar por data (mais recentes primeiro)
+    regularTransactions.sort((a, b) =>
+      new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime()
+    );
+
+    return regularTransactions;
+  }
+
+  /**
    * Atualiza um Item (sincroniza dados)
    */
   async updateItem(itemId: string): Promise<void> {
