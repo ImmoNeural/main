@@ -556,10 +556,28 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
 
     console.log('🎯 Joyride callback:', { action, index, status, type, totalSteps });
 
-    // Primeiro: verificar se o status indica término
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      console.log('✅ Tutorial completed via status:', status);
-      // Marcar como finalizando e chamar onFinish
+    // Verificar se o status indica término legítimo (apenas no último passo)
+    if (status === STATUS.FINISHED) {
+      // Só finalizar se realmente estamos no último passo
+      if (index === totalSteps - 1) {
+        console.log('✅ Tutorial completed via FINISHED status at last step');
+        setIsFinishing(true);
+        setShowTour(false);
+        setStepIndex(0);
+        onFinishRef.current();
+        return;
+      } else {
+        // Se FINISHED veio em passo intermediário, provavelmente target não foi encontrado
+        // Tentar avançar para o próximo passo
+        console.log('⚠️ FINISHED status at step', index, '- target may not exist, advancing to next step');
+        goToStep(index + 1);
+        return;
+      }
+    }
+
+    // Verificar se usuário pulou o tutorial
+    if (status === STATUS.SKIPPED) {
+      console.log('⏭️ Tutorial skipped by user');
       setIsFinishing(true);
       setShowTour(false);
       setStepIndex(0);

@@ -70,10 +70,10 @@ export const useOnboarding = (): UseOnboardingReturn => {
   // 2. Tutorial não foi completado nem pulado
   const showOnboarding = goalsCompleted && !isCompleted && !isSkipped;
 
-  // Mostrar dados demo apenas se:
-  // 1. Tutorial está ativo
-  // 2. Usuário não tem dados reais importados
-  const shouldShowDemoData = showOnboarding && !hasRealData;
+  // Mostrar dados demo SEMPRE durante o tutorial
+  // Isso garante uma experiência consistente para todos os usuários
+  // independente de terem dados reais ou não
+  const shouldShowDemoData = showOnboarding;
 
   const completeGoals = useCallback(() => {
     localStorage.setItem(GOALS_COMPLETED_KEY, 'true');
