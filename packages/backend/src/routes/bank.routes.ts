@@ -1209,8 +1209,9 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
     const now = new Date();
     const daysSinceLastSync = Math.ceil((now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Para cartões de crédito, buscar pelo menos 60 dias para pegar faturas pendentes
-    const minDays = isCreditCard ? 60 : 7;
+    // Mínimo 60 dias para todas as contas (cartão e conta corrente)
+    // Isso garante cobertura adequada e evita problemas de duplicação
+    const minDays = 60;
     daysToSync = Math.max(Math.min(daysSinceLastSync + 1, 365), minDays);
 
     console.log(`[Sync] Incremental sync: fetching last ${daysToSync} days (since ${lastSyncDate.toISOString()})`);
