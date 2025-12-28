@@ -516,62 +516,96 @@ export class PluggyService {
 
   /**
    * Busca transações de uma conta (com paginação automática)
+   * Inclui retry automático para erros 401/403 (token expirado)
    */
   async getTransactions(
     itemId: string,
     accountId: string,
     days: number = 90
   ): Promise<OpenBankingTransaction[]> {
-    try {
-      const apiKey = await this.getApiKey();
+    let hasTriedFreshKey = false;
+    let lastError: any = null;
 
-      // Calcular data inicial
-      const dateTo = new Date();
-      const dateFrom = new Date();
-      dateFrom.setDate(dateFrom.getDate() - days);
+    // Tentar até 2 vezes (1 normal + 1 com fresh API key)
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const apiKey = await this.getApiKey(hasTriedFreshKey);
 
-      // Buscar TODAS as transações com paginação automática
-      let allTransactions: any[] = [];
-      let page = 1;
-      let hasMore = true;
-      const pageSize = 500; // Máximo por página no Pluggy
+        // Calcular data inicial
+        const dateTo = new Date();
+        const dateFrom = new Date();
+        dateFrom.setDate(dateFrom.getDate() - days);
 
-      while (hasMore) {
-        const response = await this.client.get('/transactions', {
-          headers: {
-            'X-API-KEY': apiKey,
-          },
-          params: {
-            accountId,
-            from: dateFrom.toISOString().split('T')[0],
-            to: dateTo.toISOString().split('T')[0],
-            pageSize,
-            page,
-          },
-        });
+        console.log(`[Pluggy] 📊 Fetching transactions for account ${accountId} (attempt ${attempt}/2)`);
+        console.log(`[Pluggy] 📊 Date range: ${dateFrom.toISOString().split('T')[0]} to ${dateTo.toISOString().split('T')[0]}`);
 
-        const transactions = response.data.results || [];
-        allTransactions = allTransactions.concat(transactions);
+        // Buscar TODAS as transações com paginação automática
+        let allTransactions: any[] = [];
+        let page = 1;
+        let hasMore = true;
+        const pageSize = 500; // Máximo por página no Pluggy
 
-        // Verificar se há mais páginas
-        const total = response.data.total || 0;
-        hasMore = allTransactions.length < total;
-        page++;
+        while (hasMore) {
+          const response = await this.client.get('/transactions', {
+            headers: {
+              'X-API-KEY': apiKey,
+            },
+            params: {
+              accountId,
+              from: dateFrom.toISOString().split('T')[0],
+              to: dateTo.toISOString().split('T')[0],
+              pageSize,
+              page,
+            },
+          });
 
-        // Segurança: limitar a 100 páginas (50.000 transações)
-        if (page > 100) {
-          break;
+          const transactions = response.data.results || [];
+          allTransactions = allTransactions.concat(transactions);
+
+          // Verificar se há mais páginas
+          const total = response.data.total || 0;
+          hasMore = allTransactions.length < total;
+          page++;
+
+          // Segurança: limitar a 100 páginas (50.000 transações)
+          if (page > 100) {
+            break;
+          }
         }
-      }
 
-      return allTransactions
-        .map((transaction: any) => this.mapTransaction(transaction))
-        .sort((a: OpenBankingTransaction, b: OpenBankingTransaction) =>
-          new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime()
-        );
-    } catch (error) {
-      throw new Error('Failed to fetch transactions');
+        console.log(`[Pluggy] ✅ Fetched ${allTransactions.length} transactions from Pluggy`);
+
+        return allTransactions
+          .map((transaction: any) => this.mapTransaction(transaction))
+          .sort((a: OpenBankingTransaction, b: OpenBankingTransaction) =>
+            new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime()
+          );
+      } catch (error: any) {
+        lastError = error;
+        const statusCode = error.response?.status;
+        const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+
+        console.error(`[Pluggy] ❌ Error fetching transactions (attempt ${attempt}/2)`);
+        console.error(`[Pluggy] ❌ Status: ${statusCode}, Message: ${errorMessage}`);
+
+        // Se for erro 401 ou 403 (API Key inválida), invalidar cache e tentar com nova key
+        if ((statusCode === 401 || statusCode === 403) && !hasTriedFreshKey) {
+          console.log(`[Pluggy] 🔄 API Key invalid (${statusCode}), refreshing and retrying...`);
+          this.invalidateApiKey();
+          hasTriedFreshKey = true;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+
+        // Para outros erros ou se já tentou com fresh key, não tentar novamente
+        break;
+      }
     }
+
+    // Todas as tentativas falharam
+    const errorMessage = lastError?.response?.data?.message || lastError?.message || 'Unknown error';
+    console.error(`[Pluggy] ❌ All attempts to fetch transactions failed: ${errorMessage}`);
+    throw new Error(`Failed to fetch transactions: ${errorMessage}`);
   }
 
   /**
