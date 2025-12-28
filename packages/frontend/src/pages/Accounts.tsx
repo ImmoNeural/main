@@ -65,8 +65,9 @@ const getBankColor = (bankName: string): string => {
 };
 
 // Componente de ícone do banco
-const BankIcon = ({ bankName, isActive, size = 'normal' }: { bankName: string; isActive: boolean; size?: 'normal' | 'large' }) => {
-  const logo = getBankLogo(bankName);
+const BankIcon = ({ bankName, isActive, size = 'normal', logoUrl }: { bankName: string; isActive: boolean; size?: 'normal' | 'large'; logoUrl?: string | null }) => {
+  // Prioridade: 1) logo_url do Pluggy, 2) logo estático local, 3) iniciais
+  const logo = logoUrl || getBankLogo(bankName);
   const initials = bankName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
   const gradientColor = getBankColor(bankName);
 
@@ -368,7 +369,7 @@ const Accounts = () => {
 
               {/* Ícone e nome do banco */}
               <div className="flex items-center gap-4 pr-20">
-                <BankIcon bankName={account.bank_name} isActive={isActive} size="large" />
+                <BankIcon bankName={account.bank_name} isActive={isActive} size="large" logoUrl={account.logo_url} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-gray-900 text-lg truncate">{account.bank_name}</h3>

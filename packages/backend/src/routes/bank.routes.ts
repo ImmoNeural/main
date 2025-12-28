@@ -549,10 +549,13 @@ router.post('/callback', async (req: Request, res: Response) => {
     console.log('[Bank] 🔄 Calling exchangeCodeForToken (quickMode=true)...');
     const tokenResponse = await openBankingService.exchangeCodeForToken(code, state, true);
     const itemStatus = (tokenResponse as any).item_status;
+    const connectorLogoUrl = (tokenResponse as any).connector_logo_url;
+    const connectorName = (tokenResponse as any).connector_name;
 
     console.log(`[Bank] ✅ Token exchange completed`);
     console.log(`[Bank] ✅ Item status: ${itemStatus || 'unknown'}`);
     console.log(`[Bank] ✅ Access token: ${tokenResponse.access_token}`);
+    console.log(`[Bank] ✅ Connector logo: ${connectorLogoUrl || 'N/A'}`);
 
     // Buscar contas do usuário com retry
     // Se o item ainda está sincronizando, tentar algumas vezes
@@ -717,6 +720,7 @@ router.post('/callback', async (req: Request, res: Response) => {
             consent_expires_at: toISOString(now + 90 * 24 * 60 * 60 * 1000),
             connected_at: toISOString(now),
             status: 'active',
+            logo_url: connectorLogoUrl || null, // Atualizar logo do banco
             updated_at: toISOString(now),
           })
           .eq('id', accountId);
@@ -794,6 +798,7 @@ router.post('/callback', async (req: Request, res: Response) => {
             connected_at: toISOString(bankAccount.connected_at),
             status: bankAccount.status,
             provider_account_id: bankAccount.provider_account_id,
+            logo_url: connectorLogoUrl || null, // Logo do banco vindo do Pluggy
             created_at: toISOString(bankAccount.created_at),
             updated_at: toISOString(bankAccount.updated_at),
           });

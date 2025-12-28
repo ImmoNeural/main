@@ -352,6 +352,8 @@ export class PluggyService {
         console.log(`[Pluggy] ✅ Item ${itemId} found (quickMode)`);
         console.log(`[Pluggy] ✅ Status: ${item.status}`);
         console.log(`[Pluggy] ✅ Execution status: ${item.executionStatus || 'N/A'}`);
+        console.log(`[Pluggy] ✅ Connector: ${item.connector?.name || 'N/A'}`);
+        console.log(`[Pluggy] ✅ Connector logo: ${item.connector?.imageUrl || 'N/A'}`);
         console.log(`[Pluggy] ✅ ====== EXCHANGE CODE FOR TOKEN SUCCESS (QUICK) ======`);
 
         return {
@@ -359,9 +361,11 @@ export class PluggyService {
           refresh_token: itemId,
           expires_in: 7776000, // 90 dias
           token_type: 'Bearer',
-          // Adicionar info extra sobre status
+          // Adicionar info extra sobre status e connector
           item_status: item.status,
-        } as OpenBankingTokenResponse & { item_status?: string };
+          connector_logo_url: item.connector?.imageUrl || null,
+          connector_name: item.connector?.name || null,
+        } as OpenBankingTokenResponse & { item_status?: string; connector_logo_url?: string; connector_name?: string };
       }
 
       // Modo normal: aguarda o item ficar pronto
@@ -376,6 +380,8 @@ export class PluggyService {
 
       console.log(`[Pluggy] ✅ Item ${itemId} is ready!`);
       console.log(`[Pluggy] ✅ Final status: ${item.status}`);
+      console.log(`[Pluggy] ✅ Connector: ${item.connector?.name || 'N/A'}`);
+      console.log(`[Pluggy] ✅ Connector logo: ${item.connector?.imageUrl || 'N/A'}`);
       console.log(`[Pluggy] ✅ ====== EXCHANGE CODE FOR TOKEN SUCCESS ======`);
 
       return {
@@ -383,7 +389,10 @@ export class PluggyService {
         refresh_token: itemId,
         expires_in: 7776000, // 90 dias
         token_type: 'Bearer',
-      };
+        // Adicionar info extra sobre connector
+        connector_logo_url: item.connector?.imageUrl || null,
+        connector_name: item.connector?.name || null,
+      } as OpenBankingTokenResponse & { connector_logo_url?: string; connector_name?: string };
     } catch (error: any) {
       console.error(`[Pluggy] ❌ ====== EXCHANGE CODE FOR TOKEN ERROR ======`);
       console.error(`[Pluggy] ❌ Item ID: ${itemId}`);

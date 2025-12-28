@@ -8,6 +8,7 @@ export interface BankAccount {
   balance: number;
   currency: string;
   credit_limit?: number; // Limite de crédito (cartão) ou cheque especial (conta corrente)
+  logo_url?: string | null; // URL do logo do banco (do Pluggy)
   connected_at: number;
   last_sync_at?: number;
   status: 'active' | 'expired' | 'disconnected';
