@@ -310,6 +310,11 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
             Aqui você visualiza <strong>todas as suas transações</strong>,
             pode filtrá-las por categoria, tipo e período.
           </p>
+          <div className="mt-3 bg-amber-50 rounded-lg p-3 border border-amber-200">
+            <p className="text-xs text-amber-800">
+              <strong>🔍 Detecção de Duplicatas:</strong> Transações que parecem duplicadas aparecem com uma <span className="bg-amber-200 px-1 rounded">marcação amarela</span> para você verificar.
+            </p>
+          </div>
         </div>
       ),
       placement: 'center',
@@ -456,6 +461,11 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
           <p className="text-gray-600 text-sm">
             Gerencie suas <strong>contas conectadas</strong> via Open Finance. Sincronize, visualize saldos e conecte múltiplos bancos.
           </p>
+          <div className="mt-3 bg-red-50 rounded-lg p-3 border border-red-200">
+            <p className="text-xs text-red-800">
+              <strong>⚠️ Alerta de Saldo Negativo:</strong> Você receberá um email automaticamente quando sua conta ficar com saldo negativo.
+            </p>
+          </div>
         </div>
       ),
       placement: 'auto',
