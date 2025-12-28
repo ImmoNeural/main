@@ -20,6 +20,8 @@ const CustomTooltip = ({
       padding: '16px',
       borderRadius: 16,
       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      maxHeight: '85vh',
+      overflowY: 'auto',
     }}
   >
     {/* Header with note and close button */}
@@ -360,14 +362,16 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
         <div>
           <h3 className="font-bold text-gray-900 mb-2">🏷️ Categorização Manual</h3>
           <p className="text-gray-600 text-sm">
-            Você também pode <strong>alterar a categoria manualmente</strong> clicando no dropdown.
+            Você também pode <strong>alterar a categoria manualmente</strong> clicando no dropdown de cada transação.
           </p>
-          <p className="text-xs text-primary-600 mt-2 font-medium">
-            💡 O sistema sugere aplicar a mesma mudança em transações similares!
-          </p>
+          <div className="mt-3 bg-primary-50 rounded-lg p-2 border border-primary-100">
+            <p className="text-xs text-primary-700">
+              💡 <strong>Dica:</strong> O sistema sugere aplicar a mesma mudança em transações similares!
+            </p>
+          </div>
         </div>
       ),
-      placement: 'bottom',
+      placement: 'auto',
     },
     // Passo 11 (índice 10): Página de orçamentos
     {
