@@ -260,6 +260,13 @@ export class PluggyService {
         if (item.error) {
           console.log(`[Pluggy] 📦 Item error: ${JSON.stringify(item.error)}`);
         }
+        // Log statusDetail e warnings (pode explicar transações faltando)
+        if (item.statusDetail) {
+          console.log(`[Pluggy] 📦 Status detail: ${JSON.stringify(item.statusDetail)}`);
+        }
+        if (item.productWarnings && item.productWarnings.length > 0) {
+          console.log(`[Pluggy] ⚠️ Product warnings: ${JSON.stringify(item.productWarnings)}`);
+        }
         console.log(`[Pluggy] ✅ ====== GET ITEM SUCCESS ======`);
 
         return item;
@@ -558,6 +565,11 @@ export class PluggyService {
               page,
             },
           });
+
+          // Log warnings se existirem (pode explicar porque transações não são retornadas)
+          if (response.data.warnings && response.data.warnings.length > 0) {
+            console.log(`[Pluggy] ⚠️ API Warnings:`, JSON.stringify(response.data.warnings));
+          }
 
           const transactions = response.data.results || [];
           allTransactions = allTransactions.concat(transactions);
