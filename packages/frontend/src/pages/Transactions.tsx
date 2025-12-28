@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock, Copy } from 'lucide-react';
 import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category, BankAccount } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
@@ -495,6 +495,41 @@ const Transactions = () => {
 
   // Transações filtradas (coluna de saldo removida por segurança)
   const filteredTransactions = filteredTransactionsRaw;
+
+  // Detectar possíveis duplicatas (mesma data + mesmo valor + mesma descrição, mas IDs diferentes)
+  const possibleDuplicates = useMemo(() => {
+    const duplicateIds = new Set<string>();
+
+    // Criar um mapa para agrupar transações por chave (data + valor + descrição)
+    const groupedTransactions = new Map<string, Transaction[]>();
+
+    for (const transaction of filteredTransactions) {
+      // Criar chave única: data (apenas dia) + valor absoluto + descrição normalizada
+      const dateKey = format(new Date(transaction.date), 'yyyy-MM-dd');
+      const amountKey = Math.abs(transaction.amount).toFixed(2);
+      const descKey = (transaction.description || transaction.merchant || '').toLowerCase().trim();
+      const key = `${dateKey}|${amountKey}|${descKey}`;
+
+      if (!groupedTransactions.has(key)) {
+        groupedTransactions.set(key, []);
+      }
+      groupedTransactions.get(key)!.push(transaction);
+    }
+
+    // Marcar transações que aparecem mais de uma vez
+    for (const [, group] of groupedTransactions) {
+      if (group.length > 1) {
+        // Verificar se os IDs são diferentes (confirma que são transações distintas)
+        const uniqueIds = new Set(group.map(t => t.transaction_id || t.id));
+        if (uniqueIds.size > 1) {
+          // São transações diferentes com mesmos dados - marcar como possíveis duplicatas
+          group.forEach(t => duplicateIds.add(t.id));
+        }
+      }
+    }
+
+    return duplicateIds;
+  }, [filteredTransactions]);
 
   // Calcular transações dos últimos 12 meses COMPLETOS (para cards de resumo e breakdown)
   // Lógica: 12 meses = mês atual + 11 meses anteriores
@@ -1317,7 +1352,10 @@ const Transactions = () => {
               {filteredTransactions.map(transaction => {
                 const isUncategorized = !transaction.category || transaction.category === 'Não Categorizado';
                 const isReceita = transaction.type === 'credit';
-                const rowBgClass = isUncategorized ? 'bg-gray-100' : (isReceita ? 'hover:bg-green-50' : 'hover:bg-red-50');
+                const isPossibleDuplicate = possibleDuplicates.has(transaction.id);
+                const rowBgClass = isPossibleDuplicate
+                  ? 'bg-amber-50 hover:bg-amber-100'
+                  : (isUncategorized ? 'bg-gray-100' : (isReceita ? 'hover:bg-green-50' : 'hover:bg-red-50'));
                 const valueClass = isReceita ? 'text-green-500' : 'text-red-500';
 
                 return (
@@ -1331,7 +1369,29 @@ const Transactions = () => {
                           <CategoryIconSmall category={transaction.category || 'Não Categorizado'} className="w-3 h-3 sm:w-4 sm:h-4" />
                         </div>
                         <div className="min-w-0 flex-1 overflow-hidden">
-                          <div className="font-semibold text-xs sm:text-sm text-gray-800 truncate">{transaction.merchant || transaction.description}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-xs sm:text-sm text-gray-800 truncate">{transaction.merchant || transaction.description}</span>
+                            {isPossibleDuplicate && (
+                              <div className="relative group flex-shrink-0">
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-medium border border-amber-200 cursor-help">
+                                  <Copy className="w-3 h-3" />
+                                  <span className="hidden sm:inline">Duplicata?</span>
+                                </div>
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-lg min-w-[200px] max-w-[280px]">
+                                  <div className="font-semibold mb-1">⚠️ Possível duplicata</div>
+                                  <div className="text-gray-300 text-[11px] leading-relaxed">
+                                    Existe outra transação com mesma data, valor e descrição.
+                                    <br /><br />
+                                    <span className="text-amber-300">Os IDs são diferentes</span>, então foram enviadas como transações distintas pelo banco.
+                                    <br /><br />
+                                    Verifique no extrato do banco se é um lançamento duplicado.
+                                  </div>
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           {transaction.reference && (
                             <div className="text-xs text-gray-500 truncate">{transaction.reference}</div>
                           )}
