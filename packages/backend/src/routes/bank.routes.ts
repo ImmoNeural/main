@@ -1169,13 +1169,12 @@ router.delete('/accounts/:accountId', async (req: Request, res: Response) => {
  *
  * Estratégia de otimização:
  * 1. Sincronização incremental: busca apenas transações desde last_sync_at
- * 2. Verificação em lote: busca todos transaction_ids existentes de uma vez
- * 3. Bulk insert: insere todas as novas transações em uma única operação
+ * 2. UPSERT: Atualiza transações existentes (status, amount) E insere novas
+ * 3. Bulk operations: operações em lote para melhor performance
  *
- * Performance:
- * - Antes: N queries (1 por transação) = 1000 transações = 1000 queries
- * - Depois: 3 queries fixas (account + existing + bulk insert) = 3 queries
- * - Melhoria: ~333x mais rápido para 1000 transações
+ * IMPORTANTE para cartões de crédito:
+ * - Transações PENDING viram POSTED quando a fatura é paga
+ * - Precisamos ATUALIZAR as existentes, não só inserir novas
  */
 async function syncTransactions(accountId: string, accessToken: string, forceFullSync: boolean = false, currentAccountBalance?: number): Promise<number> {
   // Buscar dados da conta incluindo last_sync_at, user_id E account_type
@@ -1205,8 +1204,9 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
     const now = new Date();
     const daysSinceLastSync = Math.ceil((now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Adicionar 1 dia extra para garantir que não perdemos nenhuma transação
-    daysToSync = Math.min(daysSinceLastSync + 1, 365);
+    // Para cartões de crédito, buscar pelo menos 60 dias para pegar faturas pendentes
+    const minDays = isCreditCard ? 60 : 7;
+    daysToSync = Math.max(Math.min(daysSinceLastSync + 1, 365), minDays);
 
     console.log(`[Sync] Incremental sync: fetching last ${daysToSync} days (since ${lastSyncDate.toISOString()})`);
   } else {
@@ -1255,93 +1255,106 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
     console.log(`[Sync] 💳 ${transactions.length} transações de cartão processadas (valores invertidos para negativos)`);
   }
 
-  // OTIMIZAÇÃO: Buscar todos os transaction_ids existentes de uma só vez
+  // UPSERT: Buscar transações existentes para comparar (incluindo status e amount)
   const providerTransactionIds = transactions.map(t => t.transaction_id);
 
   const { data: existingTransactions } = await supabase
     .from('transactions')
-    .select('transaction_id')
+    .select('id, transaction_id, status, amount, description')
     .eq('account_id', accountId)
     .in('transaction_id', providerTransactionIds);
 
-  // Criar Set para lookup O(1)
-  const existingIds = new Set(
-    (existingTransactions || []).map((t: any) => t.transaction_id)
+  // Criar Map para lookup O(1)
+  const existingMap = new Map(
+    (existingTransactions || []).map((t: any) => [t.transaction_id, t])
   );
 
-  console.log(`[Sync] ${existingIds.size} transactions already exist in database`);
+  console.log(`[Sync] ${existingMap.size} transactions already exist in database`);
 
-  // Filtrar apenas transações novas
-  const newTransactions = transactions.filter(t => !existingIds.has(t.transaction_id));
-
-  console.log(`[Sync] ${newTransactions.length} new transactions to insert`);
-
-  if (newTransactions.length === 0) {
-    return 0;
-  }
-
-  // Preparar dados para bulk insert
+  // Separar em novas transações e transações para atualizar
+  const newTransactions: any[] = [];
+  const transactionsToUpdate: any[] = [];
   const now = Date.now();
-  let transactionsToInsert = newTransactions.map(trans => {
+
+  for (const trans of transactions) {
     const amount = trans.transaction_amount.amount;
     const description = trans.remittance_information || '';
     const merchant = trans.creditor_name || trans.debtor_name || '';
 
-    // Categorizar automaticamente
-    const categorization = categorizationService.categorizeTransaction(description, merchant);
+    // Mapear status do Pluggy: BOOK = completed, PDNG = pending
+    const pluggyStatus = trans.status === 'BOOK' ? 'completed' : 'pending';
 
-    return {
-      id: uuidv4(),
-      user_id: account.user_id, // Adicionar user_id para queries mais eficientes
-      account_id: accountId,
-      transaction_id: trans.transaction_id,
-      date: new Date(trans.booking_date).getTime(), // BIGINT em ms
-      amount,
-      currency: trans.transaction_amount.currency,
-      description,
-      merchant,
-      category: categorization.category,
-      type: amount < 0 ? 'debit' : 'credit',
-      // Usar balance_after_transaction do Pluggy se disponível
-      balance_after: trans.balance_after_transaction?.amount as number | undefined,
-      reference: trans.remittance_information,
-      status: 'completed',
-      created_at: toISOString(now), // TIMESTAMPTZ
-      updated_at: toISOString(now), // TIMESTAMPTZ
-    };
-  });
+    const existing = existingMap.get(trans.transaction_id);
+
+    if (existing) {
+      // Transação já existe - verificar se precisa atualizar
+      const needsUpdate =
+        existing.status !== pluggyStatus ||
+        Math.abs(existing.amount - amount) > 0.01 || // Comparar com tolerância
+        existing.description !== description;
+
+      if (needsUpdate) {
+        transactionsToUpdate.push({
+          id: existing.id,
+          status: pluggyStatus,
+          amount: amount,
+          description: description,
+          merchant: merchant,
+          updated_at: toISOString(now),
+        });
+      }
+    } else {
+      // Transação nova - preparar para inserção
+      const categorization = categorizationService.categorizeTransaction(description, merchant);
+
+      newTransactions.push({
+        id: uuidv4(),
+        user_id: account.user_id,
+        account_id: accountId,
+        transaction_id: trans.transaction_id,
+        date: new Date(trans.booking_date).getTime(),
+        amount,
+        currency: trans.transaction_amount.currency,
+        description,
+        merchant,
+        category: categorization.category,
+        type: amount < 0 ? 'debit' : 'credit',
+        balance_after: trans.balance_after_transaction?.amount as number | undefined,
+        reference: trans.remittance_information,
+        status: pluggyStatus,
+        created_at: toISOString(now),
+        updated_at: toISOString(now),
+      });
+    }
+  }
+
+  console.log(`[Sync] 📊 New: ${newTransactions.length}, To update: ${transactionsToUpdate.length}`);
 
   // Calcular balance_after se Pluggy não forneceu e temos o saldo atual da conta
-  const hasPluggyBalance = transactionsToInsert.some(t => t.balance_after !== undefined && t.balance_after !== null);
+  const hasPluggyBalance = newTransactions.some(t => t.balance_after !== undefined && t.balance_after !== null);
 
-  if (!hasPluggyBalance && currentAccountBalance !== undefined) {
+  if (!hasPluggyBalance && currentAccountBalance !== undefined && newTransactions.length > 0) {
     console.log(`[Sync] 💰 Calculating balance_after from current account balance: R$ ${currentAccountBalance.toFixed(2)}`);
 
-    // Ordenar por data decrescente (mais recente primeiro)
-    transactionsToInsert.sort((a, b) => b.date - a.date);
-
-    // Calcular balance_after: a transação mais recente tem balance_after = saldo atual
-    // Cada transação anterior: balance_after = balance_after_seguinte - amount_seguinte
+    newTransactions.sort((a, b) => b.date - a.date);
     let runningBalance = currentAccountBalance;
 
-    for (let i = 0; i < transactionsToInsert.length; i++) {
-      transactionsToInsert[i].balance_after = runningBalance;
-      // Para a próxima iteração, subtraímos o amount desta transação
-      runningBalance = runningBalance - transactionsToInsert[i].amount;
+    for (let i = 0; i < newTransactions.length; i++) {
+      newTransactions[i].balance_after = runningBalance;
+      runningBalance = runningBalance - newTransactions[i].amount;
     }
 
-    console.log(`[Sync] 💰 Calculated balance_after for ${transactionsToInsert.length} transactions`);
+    console.log(`[Sync] 💰 Calculated balance_after for ${newTransactions.length} transactions`);
   } else if (hasPluggyBalance) {
     console.log(`[Sync] 💰 Using balance_after from Pluggy API`);
   }
 
-  // OTIMIZAÇÃO: Bulk insert - inserir todas as transações de uma vez
-  // Dividir em batches de 1000 para evitar limites do Supabase
+  // INSERIR novas transações em batches
   const BATCH_SIZE = 1000;
   let totalInserted = 0;
 
-  for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
-    const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < newTransactions.length; i += BATCH_SIZE) {
+    const batch = newTransactions.slice(i, i + BATCH_SIZE);
 
     const { error: insertError } = await supabase
       .from('transactions')
@@ -1355,9 +1368,30 @@ async function syncTransactions(accountId: string, accessToken: string, forceFul
     }
   }
 
-  console.log(`[Sync] Successfully inserted ${totalInserted} new transactions`);
+  // ATUALIZAR transações existentes
+  let totalUpdated = 0;
 
-  return totalInserted;
+  for (const update of transactionsToUpdate) {
+    const { id, ...updateData } = update;
+    const { error: updateError } = await supabase
+      .from('transactions')
+      .update(updateData)
+      .eq('id', id);
+
+    if (!updateError) {
+      totalUpdated++;
+    } else {
+      console.error(`[Sync] Error updating transaction ${id}:`, updateError);
+    }
+  }
+
+  if (totalUpdated > 0) {
+    console.log(`[Sync] 🔄 Updated ${totalUpdated} existing transactions (PENDING -> POSTED or amount changes)`);
+  }
+
+  console.log(`[Sync] ✅ Successfully processed: ${totalInserted} inserted, ${totalUpdated} updated`);
+
+  return totalInserted + totalUpdated;
 }
 
 export default router;
