@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
+import { emailService } from '../services/email.service';
 
 const router = Router();
 
@@ -329,6 +330,42 @@ router.post('/fix-credit-card-transactions', adminMiddleware, async (req: Reques
   } catch (error) {
     console.error('[Admin] Error fixing credit card transactions:', error);
     res.status(500).json({ error: 'Failed to fix credit card transactions' });
+  }
+});
+
+/**
+ * POST /api/admin/test-negative-balance-email
+ * Envia um email de teste de saldo negativo (apenas para admins)
+ * Body: { email: string } - email para enviar o teste
+ */
+router.post('/test-negative-balance-email', adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email é obrigatório' });
+    }
+
+    console.log(`[Admin] 📧 Enviando email de teste de saldo negativo para: ${email}`);
+
+    const sent = await emailService.sendTestNegativeBalanceAlert(email);
+
+    if (sent) {
+      console.log(`[Admin] ✅ Email de teste enviado com sucesso para ${email}`);
+      res.json({
+        success: true,
+        message: `Email de teste enviado para ${email}`,
+      });
+    } else {
+      console.log(`[Admin] ❌ Falha ao enviar email de teste para ${email}`);
+      res.status(500).json({
+        success: false,
+        error: 'Falha ao enviar email - verifique as configurações do Resend',
+      });
+    }
+  } catch (error: any) {
+    console.error('[Admin] Error sending test email:', error);
+    res.status(500).json({ error: 'Failed to send test email: ' + error.message });
   }
 });
 

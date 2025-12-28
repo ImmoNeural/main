@@ -342,6 +342,149 @@ Gerenciar: https://gurudodindin.com.br/app/planos
 
     return this.sendEmail({ to, subject, html, text });
   }
+  /**
+   * Email de alerta de saldo negativo
+   * Enviado quando uma conta bancária fica com saldo negativo
+   */
+  async sendNegativeBalanceAlert(
+    to: string,
+    userName: string,
+    accountName: string,
+    currentBalance: number,
+    previousBalance?: number
+  ): Promise<boolean> {
+    const formattedCurrentBalance = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(currentBalance);
+
+    const formattedPreviousBalance = previousBalance !== undefined
+      ? new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(previousBalance)
+      : null;
+
+    const subject = `Atenção: Saldo negativo em ${accountName}`;
+    const preheader = `Sua conta ${accountName} está com saldo de ${formattedCurrentBalance}. Confira no Guru do Dindin.`;
+
+    const content = `
+      <tr>
+        <td style="padding: 35px;">
+          <!-- Alert Icon -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+            <tr>
+              <td align="center">
+                <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius: 50%; display: inline-block; text-align: center; line-height: 70px;">
+                  <span style="font-size: 35px;">⚠️</span>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <h2 style="color: #dc2626; margin: 0 0 15px 0; font-size: 20px; text-align: center;">
+            Saldo Negativo Detectado
+          </h2>
+
+          <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0; text-align: center;">
+            Olá, ${userName || 'usuário'}! Identificamos que sua conta <strong>${accountName}</strong> está com saldo negativo.
+          </p>
+
+          <!-- Balance Box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius: 12px; margin: 20px 0; border: 1px solid #fecaca;">
+            <tr>
+              <td style="padding: 25px; text-align: center;">
+                <p style="color: #991b1b; font-size: 12px; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 1px;">
+                  Saldo Atual
+                </p>
+                <p style="color: #dc2626; font-size: 32px; font-weight: bold; margin: 0;">
+                  ${formattedCurrentBalance}
+                </p>
+                ${formattedPreviousBalance ? `
+                <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
+                  Saldo anterior: ${formattedPreviousBalance}
+                </p>
+                ` : ''}
+              </td>
+            </tr>
+          </table>
+
+          <!-- Tips Box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fffbeb; border-radius: 10px; margin: 20px 0; border: 1px solid #fde68a;">
+            <tr>
+              <td style="padding: 18px;">
+                <p style="color: #92400e; font-size: 13px; font-weight: bold; margin: 0 0 10px 0;">
+                  💡 Dicas do Guru:
+                </p>
+                <ul style="color: #78350f; font-size: 12px; margin: 0; padding-left: 18px; line-height: 1.8;">
+                  <li>Verifique suas despesas recentes</li>
+                  <li>Confira se há cobranças inesperadas</li>
+                  <li>Considere transferir fundos de outra conta</li>
+                  <li>Evite juros do cheque especial se possível</li>
+                </ul>
+              </td>
+            </tr>
+          </table>
+
+          <!-- CTA Button -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+            <tr>
+              <td align="center">
+                <a href="https://gurudodindin.com.br/app/transactions"
+                   style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-size: 14px; font-weight: bold;">
+                  Ver Minhas Transações
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <p style="color: #9ca3af; font-size: 11px; text-align: center; margin: 20px 0 0 0;">
+            Este alerta é enviado automaticamente quando detectamos saldo negativo em sua conta durante a sincronização diária.
+          </p>
+        </td>
+      </tr>
+    `;
+
+    const html = getEmailTemplate(content, preheader);
+
+    const text = `
+⚠️ ALERTA: Saldo Negativo Detectado
+
+Olá, ${userName || 'usuário'}!
+
+Identificamos que sua conta ${accountName} está com saldo negativo.
+
+Saldo Atual: ${formattedCurrentBalance}
+${formattedPreviousBalance ? `Saldo Anterior: ${formattedPreviousBalance}` : ''}
+
+Dicas do Guru:
+- Verifique suas despesas recentes
+- Confira se há cobranças inesperadas
+- Considere transferir fundos de outra conta
+- Evite juros do cheque especial se possível
+
+Acesse: https://gurudodindin.com.br/app/transactions
+
+---
+© ${new Date().getFullYear()} Guru do Dindin. Todos os direitos reservados.
+    `;
+
+    return this.sendEmail({ to, subject, html, text });
+  }
+
+  /**
+   * Enviar email de teste de saldo negativo
+   * Usado apenas para testes manuais
+   */
+  async sendTestNegativeBalanceAlert(to: string): Promise<boolean> {
+    return this.sendNegativeBalanceAlert(
+      to,
+      'Thiago',
+      'Itaú Conta Corrente',
+      -523.47,
+      1250.00
+    );
+  }
 }
 
 export const emailService = new EmailService();

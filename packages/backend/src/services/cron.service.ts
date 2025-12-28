@@ -9,6 +9,7 @@ import cron from 'node-cron';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import openBankingService from './openBanking.service';
 import type { OpenBankingTransaction } from '../types';
+import { emailService } from './email.service';
 
 // Lazy initialization do Supabase (evita erro de variáveis não carregadas)
 let _supabase: SupabaseClient | null = null;
@@ -209,11 +210,19 @@ async function syncAllBankAccounts(): Promise<void> {
   console.log('[Cron] 🔄 ========================================');
   console.log(`[Cron] 📋 Timestamp: ${new Date().toISOString()}`);
 
+  // Lista de contas que ficaram negativas para enviar alertas
+  const negativeBalanceAlerts: Array<{
+    userId: string;
+    accountName: string;
+    previousBalance: number;
+    newBalance: number;
+  }> = [];
+
   try {
-    // Buscar todas as contas com access_token válido
+    // Buscar todas as contas com access_token válido (incluindo saldo atual para comparar)
     const { data: accounts, error } = await getSupabase()
       .from('bank_accounts')
-      .select('id, user_id, bank_name, access_token, provider_account_id, account_type')
+      .select('id, user_id, bank_name, access_token, provider_account_id, account_type, balance')
       .not('access_token', 'is', null);
 
     if (error) {
@@ -287,6 +296,18 @@ async function syncAllBankAccounts(): Promise<void> {
           .update(updateData)
           .eq('id', account.id);
 
+        // 6. Verificar se saldo ficou negativo (era positivo/zero e agora é negativo)
+        const previousBalance = account.balance || 0;
+        if (previousBalance >= 0 && updatedBalance < 0) {
+          console.log(`[Cron] ⚠️ NEGATIVE BALANCE DETECTED: ${account.bank_name} went from R$ ${previousBalance.toFixed(2)} to R$ ${updatedBalance.toFixed(2)}`);
+          negativeBalanceAlerts.push({
+            userId: account.user_id,
+            accountName: account.bank_name,
+            previousBalance: previousBalance,
+            newBalance: updatedBalance
+          });
+        }
+
         const syncSummary = syncResult.inserted > 0 || syncResult.updated > 0
           ? `${syncResult.inserted} new, ${syncResult.updated} updated`
           : 'no changes';
@@ -309,6 +330,42 @@ async function syncAllBankAccounts(): Promise<void> {
     console.log(`[Cron] ❌ Accounts with errors: ${errorCount}`);
     console.log(`[Cron] 📊 Transactions - New: ${totalInserted}, Updated: ${totalUpdated}`);
     console.log(`[Cron] 📋 Timestamp: ${new Date().toISOString()}`);
+
+    // Enviar alertas de saldo negativo
+    if (negativeBalanceAlerts.length > 0) {
+      console.log(`[Cron] 📧 Sending ${negativeBalanceAlerts.length} negative balance alerts...`);
+
+      for (const alert of negativeBalanceAlerts) {
+        try {
+          // Buscar email e nome do usuário
+          const { data: profile } = await getSupabase()
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', alert.userId)
+            .single();
+
+          if (profile?.email) {
+            const sent = await emailService.sendNegativeBalanceAlert(
+              profile.email,
+              profile.full_name || 'usuário',
+              alert.accountName,
+              alert.newBalance,
+              alert.previousBalance
+            );
+
+            if (sent) {
+              console.log(`[Cron] ✅ Negative balance alert sent to ${profile.email} for ${alert.accountName}`);
+            } else {
+              console.log(`[Cron] ⚠️ Failed to send negative balance alert to ${profile.email}`);
+            }
+          } else {
+            console.log(`[Cron] ⚠️ No email found for user ${alert.userId}`);
+          }
+        } catch (emailError: any) {
+          console.error(`[Cron] ❌ Error sending negative balance alert:`, emailError.message);
+        }
+      }
+    }
 
   } catch (error: any) {
     console.error('[Cron] ❌ ========================================');
