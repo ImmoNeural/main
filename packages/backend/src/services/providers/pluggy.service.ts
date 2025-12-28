@@ -575,6 +575,27 @@ export class PluggyService {
 
         console.log(`[Pluggy] ✅ Fetched ${allTransactions.length} transactions from Pluggy`);
 
+        // DEBUG: Mostrar distribuição de datas das transações
+        if (allTransactions.length > 0) {
+          const dateDistribution: Record<string, number> = {};
+          for (const t of allTransactions) {
+            const date = t.date?.split('T')[0] || 'unknown';
+            const month = date.substring(0, 7); // YYYY-MM
+            dateDistribution[month] = (dateDistribution[month] || 0) + 1;
+          }
+          console.log(`[Pluggy] 📅 Transaction date distribution:`, JSON.stringify(dateDistribution));
+
+          // Mostrar as 5 transações mais recentes
+          const sorted = [...allTransactions].sort((a, b) =>
+            new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
+          );
+          console.log(`[Pluggy] 📊 Most recent 5 transactions:`);
+          for (let i = 0; i < Math.min(5, sorted.length); i++) {
+            const t = sorted[i];
+            console.log(`[Pluggy]   ${i + 1}. ${t.date?.split('T')[0]} | ${t.description?.substring(0, 40)} | R$ ${t.amount}`);
+          }
+        }
+
         return allTransactions
           .map((transaction: any) => this.mapTransaction(transaction))
           .sort((a: OpenBankingTransaction, b: OpenBankingTransaction) =>
