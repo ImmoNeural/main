@@ -357,7 +357,7 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
     },
     // Passo 10 (índice 9): Categorização manual
     {
-      target: '[data-tour="category-dropdown"]',
+      target: '[data-tour^="category-dropdown"]', // Matches category-dropdown and category-dropdown-mobile
       content: (
         <div>
           <h3 className="font-bold text-gray-900 mb-2">🏷️ Categorização Manual</h3>
