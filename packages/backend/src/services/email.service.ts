@@ -487,21 +487,40 @@ Acesse: https://gurudodindin.com.br/app/transactions
   }
 
   /**
-   * Email com tutorial/guia de uso do app
+   * Email de convite para teste Alpha do app
    */
   async sendTutorialEmail(to: string, userName: string = 'usuário'): Promise<boolean> {
-    const subject = '📚 Tutorial: Como usar o Guru do Dindin';
-    const preheader = 'Aprenda a organizar suas finanças em poucos passos!';
+    const subject = '🎉 Obrigado por participar do Teste Alpha - Guru do Dindin';
+    const preheader = 'Você foi convidado para testar o Guru do Dindin! Instale e mantenha o app por 14 dias.';
 
     const content = `
       <tr>
         <td style="padding: 35px;">
           <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; text-align: center;">
-            Bem-vindo ao Guru do Dindin!
+            🎉 Obrigado por Testar o Guru do Dindin!
           </h2>
 
+          <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0; text-align: center;">
+            Olá, ${userName}! Muito obrigado por aceitar participar do nosso <strong>Teste Closed Alpha</strong> na Google Play Store.
+          </p>
+
+          <!-- Alpha Test Info Box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border-radius: 12px; margin: 20px 0; border: 1px solid #fde68a;">
+            <tr>
+              <td style="padding: 20px;">
+                <h3 style="color: #92400e; margin: 0 0 10px 0; font-size: 15px;">📋 O que você precisa fazer:</h3>
+                <ul style="color: #78350f; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                  <li><strong>Instalar o app</strong> pelo link abaixo</li>
+                  <li><strong>Manter instalado por 14 dias</strong> (requisito do Google)</li>
+                  <li>Não precisa usar ativamente, mas se quiser testar, fique à vontade!</li>
+                  <li>Se possível, nos dê <strong>feedbacks</strong> sobre sua experiência</li>
+                </ul>
+              </td>
+            </tr>
+          </table>
+
           <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 25px 0; text-align: center;">
-            Olá, ${userName}! Preparamos este guia rápido para você aproveitar ao máximo o app.
+            Abaixo está um guia rápido caso queira explorar o app:
           </p>
 
           <!-- PASSO 1 -->
@@ -659,16 +678,16 @@ Acesse: https://gurudodindin.com.br/app/transactions
           <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
             <tr>
               <td align="center">
-                <a href="https://gurudodindin.com.br/app/dashboard"
+                <a href="https://play.google.com/store/apps/details?id=com.gurudodindin.app"
                    style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-size: 14px; font-weight: bold;">
-                  Acessar o App Agora
+                  📲 Instalar o App na Play Store
                 </a>
               </td>
             </tr>
           </table>
 
           <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 20px 0 0 0;">
-            Dúvidas? Responda este email ou acesse nosso suporte.
+            Dúvidas ou feedbacks? Responda este email diretamente - sua opinião é muito importante!
           </p>
         </td>
       </tr>
@@ -677,32 +696,41 @@ Acesse: https://gurudodindin.com.br/app/transactions
     const html = getEmailTemplate(content, preheader);
 
     const text = `
-TUTORIAL: Como usar o Guru do Dindin
+🎉 OBRIGADO POR PARTICIPAR DO TESTE ALPHA - GURU DO DINDIN
 
-Olá, ${userName}! Preparamos este guia rápido para você aproveitar ao máximo o app.
+Olá, ${userName}!
+
+Muito obrigado por aceitar participar do nosso Teste Closed Alpha na Google Play Store.
+
+📋 O QUE VOCÊ PRECISA FAZER:
+- Instalar o app pelo link abaixo
+- Manter instalado por 14 dias (requisito do Google)
+- Não precisa usar ativamente, mas se quiser testar, fique à vontade!
+- Se possível, nos dê feedbacks sobre sua experiência
+
+📲 INSTALAR O APP:
+https://play.google.com/store/apps/details?id=com.gurudodindin.app
+
+---
+
+GUIA RÁPIDO (opcional):
 
 1. 🏦 CONECTE SUAS CONTAS BANCÁRIAS
 Vá em Configurações → Conexões Bancárias e conecte suas contas via Open Finance.
 
 2. 📊 VEJA SEU DASHBOARD
-O Dashboard mostra uma visão geral das suas finanças: saldo total, receitas, despesas e gráficos.
+O Dashboard mostra uma visão geral das suas finanças.
 
 3. 🏷️ CATEGORIZE SUAS TRANSAÇÕES
-Na página Transações, clique em qualquer transação para categorizar. O Guru aprende com suas escolhas!
+Na página Transações, clique em qualquer transação para categorizar.
 
 4. 📈 ANALISE SEUS GASTOS
 Use os filtros para ver gastos por período, categoria ou conta.
 
 5. 🔔 RECEBA ALERTAS IMPORTANTES
-O Guru te avisa quando seu saldo ficar negativo ou quando detectar transações duplicadas.
+O Guru te avisa quando seu saldo ficar negativo ou detectar transações duplicadas.
 
-RECURSOS ESPECIAIS:
-- 🔄 Sincronização Automática
-- 🔍 Detecção de Duplicadas
-- 🤖 Categorização Inteligente
-- 📱 Acesse de Qualquer Lugar
-
-Acesse: https://gurudodindin.com.br/app/dashboard
+Dúvidas ou feedbacks? Responda este email diretamente!
 
 ---
 © ${new Date().getFullYear()} Guru do Dindin. Todos os direitos reservados.
