@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1052845276050-o5r6lpi6osebg5h3mt6q05lla7qvrt1d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gurudodindin.app",
+            "certificate_hash": "ad67929c975437f3a150ec1d6787dd74e6d0f182"
+          }
+        },
+        {
           "client_id": "1052845276050-b4s3ccf30hunbgg4ulqcsn8e7sgpj6et.apps.googleusercontent.com",
           "client_type": 3
         }
