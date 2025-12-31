@@ -369,4 +369,40 @@ router.post('/test-negative-balance-email', adminMiddleware, async (req: Request
   }
 });
 
+/**
+ * POST /api/admin/send-tutorial-email
+ * Envia um email com o tutorial do app (apenas para admins)
+ * Body: { email: string, userName?: string } - email para enviar e nome do usuário
+ */
+router.post('/send-tutorial-email', adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { email, userName } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email é obrigatório' });
+    }
+
+    console.log(`[Admin] 📧 Enviando email de tutorial para: ${email}`);
+
+    const sent = await emailService.sendTutorialEmail(email, userName || 'usuário');
+
+    if (sent) {
+      console.log(`[Admin] ✅ Email de tutorial enviado com sucesso para ${email}`);
+      res.json({
+        success: true,
+        message: `Email de tutorial enviado para ${email}`,
+      });
+    } else {
+      console.log(`[Admin] ❌ Falha ao enviar email de tutorial para ${email}`);
+      res.status(500).json({
+        success: false,
+        error: 'Falha ao enviar email - verifique as configurações do Resend',
+      });
+    }
+  } catch (error: any) {
+    console.error('[Admin] Error sending tutorial email:', error);
+    res.status(500).json({ error: 'Failed to send tutorial email: ' + error.message });
+  }
+});
+
 export default router;

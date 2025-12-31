@@ -485,6 +485,231 @@ Acesse: https://gurudodindin.com.br/app/transactions
       1250.00
     );
   }
+
+  /**
+   * Email com tutorial/guia de uso do app
+   */
+  async sendTutorialEmail(to: string, userName: string = 'usuário'): Promise<boolean> {
+    const subject = '📚 Tutorial: Como usar o Guru do Dindin';
+    const preheader = 'Aprenda a organizar suas finanças em poucos passos!';
+
+    const content = `
+      <tr>
+        <td style="padding: 35px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; text-align: center;">
+            Bem-vindo ao Guru do Dindin!
+          </h2>
+
+          <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 25px 0; text-align: center;">
+            Olá, ${userName}! Preparamos este guia rápido para você aproveitar ao máximo o app.
+          </p>
+
+          <!-- PASSO 1 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+            <tr>
+              <td style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-radius: 12px; padding: 20px; border-left: 4px solid #3b82f6;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50" valign="top">
+                      <div style="width: 40px; height: 40px; background: #3b82f6; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: bold; font-size: 18px;">1</div>
+                    </td>
+                    <td valign="top">
+                      <h3 style="color: #1e40af; margin: 0 0 8px 0; font-size: 16px;">🏦 Conecte suas Contas Bancárias</h3>
+                      <p style="color: #4b5563; font-size: 13px; margin: 0; line-height: 1.5;">
+                        Vá em <strong>Configurações → Conexões Bancárias</strong> e conecte suas contas via Open Finance.
+                        Seus dados são sincronizados automaticamente e com total segurança.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- PASSO 2 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+            <tr>
+              <td style="background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); border-radius: 12px; padding: 20px; border-left: 4px solid #22c55e;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50" valign="top">
+                      <div style="width: 40px; height: 40px; background: #22c55e; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: bold; font-size: 18px;">2</div>
+                    </td>
+                    <td valign="top">
+                      <h3 style="color: #166534; margin: 0 0 8px 0; font-size: 16px;">📊 Veja seu Dashboard</h3>
+                      <p style="color: #4b5563; font-size: 13px; margin: 0; line-height: 1.5;">
+                        O <strong>Dashboard</strong> mostra uma visão geral das suas finanças: saldo total,
+                        receitas, despesas e gráficos de evolução. Tudo em um só lugar!
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- PASSO 3 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+            <tr>
+              <td style="background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border-radius: 12px; padding: 20px; border-left: 4px solid #f59e0b;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50" valign="top">
+                      <div style="width: 40px; height: 40px; background: #f59e0b; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: bold; font-size: 18px;">3</div>
+                    </td>
+                    <td valign="top">
+                      <h3 style="color: #92400e; margin: 0 0 8px 0; font-size: 16px;">🏷️ Categorize suas Transações</h3>
+                      <p style="color: #4b5563; font-size: 13px; margin: 0; line-height: 1.5;">
+                        Na página <strong>Transações</strong>, clique em qualquer transação para categorizar.
+                        O Guru aprende com suas escolhas e categoriza automaticamente transações similares!
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- PASSO 4 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+            <tr>
+              <td style="background: linear-gradient(135deg, #fce7f3 0%, #fdf2f8 100%); border-radius: 12px; padding: 20px; border-left: 4px solid #ec4899;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50" valign="top">
+                      <div style="width: 40px; height: 40px; background: #ec4899; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: bold; font-size: 18px;">4</div>
+                    </td>
+                    <td valign="top">
+                      <h3 style="color: #9d174d; margin: 0 0 8px 0; font-size: 16px;">📈 Analise seus Gastos</h3>
+                      <p style="color: #4b5563; font-size: 13px; margin: 0; line-height: 1.5;">
+                        Use os <strong>filtros</strong> para ver gastos por período, categoria ou conta.
+                        Identifique onde você mais gasta e tome decisões melhores!
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- PASSO 5 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+            <tr>
+              <td style="background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%); border-radius: 12px; padding: 20px; border-left: 4px solid #6366f1;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50" valign="top">
+                      <div style="width: 40px; height: 40px; background: #6366f1; border-radius: 50%; text-align: center; line-height: 40px; color: white; font-weight: bold; font-size: 18px;">5</div>
+                    </td>
+                    <td valign="top">
+                      <h3 style="color: #4338ca; margin: 0 0 8px 0; font-size: 16px;">🔔 Receba Alertas Importantes</h3>
+                      <p style="color: #4b5563; font-size: 13px; margin: 0; line-height: 1.5;">
+                        O Guru te avisa quando seu <strong>saldo ficar negativo</strong> ou quando detectar
+                        <strong>transações duplicadas</strong>. Fique sempre no controle!
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Recursos Box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;">
+            <tr>
+              <td style="padding: 20px;">
+                <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 15px; text-align: center;">
+                  ✨ Recursos Especiais
+                </h3>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50%" style="padding: 8px; vertical-align: top;">
+                      <p style="margin: 0; font-size: 12px; color: #4b5563;">
+                        <strong style="color: #0284c7;">🔄 Sincronização Automática</strong><br>
+                        Suas transações são atualizadas diariamente
+                      </p>
+                    </td>
+                    <td width="50%" style="padding: 8px; vertical-align: top;">
+                      <p style="margin: 0; font-size: 12px; color: #4b5563;">
+                        <strong style="color: #0284c7;">🔍 Detecção de Duplicadas</strong><br>
+                        Identificamos transações repetidas
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="50%" style="padding: 8px; vertical-align: top;">
+                      <p style="margin: 0; font-size: 12px; color: #4b5563;">
+                        <strong style="color: #0284c7;">🤖 Categorização Inteligente</strong><br>
+                        IA que aprende com você
+                      </p>
+                    </td>
+                    <td width="50%" style="padding: 8px; vertical-align: top;">
+                      <p style="margin: 0; font-size: 12px; color: #4b5563;">
+                        <strong style="color: #0284c7;">📱 Acesse de Qualquer Lugar</strong><br>
+                        Web e aplicativo mobile
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- CTA Button -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+            <tr>
+              <td align="center">
+                <a href="https://gurudodindin.com.br/app/dashboard"
+                   style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-size: 14px; font-weight: bold;">
+                  Acessar o App Agora
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 20px 0 0 0;">
+            Dúvidas? Responda este email ou acesse nosso suporte.
+          </p>
+        </td>
+      </tr>
+    `;
+
+    const html = getEmailTemplate(content, preheader);
+
+    const text = `
+TUTORIAL: Como usar o Guru do Dindin
+
+Olá, ${userName}! Preparamos este guia rápido para você aproveitar ao máximo o app.
+
+1. 🏦 CONECTE SUAS CONTAS BANCÁRIAS
+Vá em Configurações → Conexões Bancárias e conecte suas contas via Open Finance.
+
+2. 📊 VEJA SEU DASHBOARD
+O Dashboard mostra uma visão geral das suas finanças: saldo total, receitas, despesas e gráficos.
+
+3. 🏷️ CATEGORIZE SUAS TRANSAÇÕES
+Na página Transações, clique em qualquer transação para categorizar. O Guru aprende com suas escolhas!
+
+4. 📈 ANALISE SEUS GASTOS
+Use os filtros para ver gastos por período, categoria ou conta.
+
+5. 🔔 RECEBA ALERTAS IMPORTANTES
+O Guru te avisa quando seu saldo ficar negativo ou quando detectar transações duplicadas.
+
+RECURSOS ESPECIAIS:
+- 🔄 Sincronização Automática
+- 🔍 Detecção de Duplicadas
+- 🤖 Categorização Inteligente
+- 📱 Acesse de Qualquer Lugar
+
+Acesse: https://gurudodindin.com.br/app/dashboard
+
+---
+© ${new Date().getFullYear()} Guru do Dindin. Todos os direitos reservados.
+    `;
+
+    return this.sendEmail({ to, subject, html, text });
+  }
 }
 
 export const emailService = new EmailService();
