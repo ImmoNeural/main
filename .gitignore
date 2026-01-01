@@ -47,3 +47,6 @@ packages/frontend/android/app/build/
 packages/frontend/android/build/
 packages/frontend/android/local.properties
 packages/frontend/android/.idea/
+
+# Google Services (contains API keys)
+packages/frontend/android/app/google-services.json
