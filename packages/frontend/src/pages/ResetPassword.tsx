@@ -15,12 +15,38 @@ const ResetPassword = () => {
 
   useEffect(() => {
     // Verificar se há um token de recuperação na URL
+    // Supabase pode enviar como hash (#access_token=) ou query (?token=)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const type = hashParams.get('type');
+    const queryParams = new URLSearchParams(window.location.search);
+
+    // Tentar obter token de ambos os formatos
+    const accessToken = hashParams.get('access_token') || queryParams.get('token');
+    const type = hashParams.get('type') || queryParams.get('type');
 
     if (!accessToken || type !== 'recovery') {
       setError('Link de recuperação inválido ou expirado. Por favor, solicite um novo.');
+    } else {
+      // Se temos um token válido via query param, precisamos verificar a sessão
+      // O Supabase PKCE flow requer que verifiquemos o token
+      const verifyToken = async () => {
+        try {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: accessToken,
+            type: 'recovery',
+          });
+          if (error) {
+            console.error('Token verification error:', error);
+            setError('Link de recuperação inválido ou expirado. Por favor, solicite um novo.');
+          }
+        } catch (err) {
+          console.error('Error verifying token:', err);
+        }
+      };
+
+      // Só verificar se veio como query param (novo formato)
+      if (queryParams.get('token')) {
+        verifyToken();
+      }
     }
   }, []);
 
