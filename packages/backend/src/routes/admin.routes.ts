@@ -446,4 +446,82 @@ router.post('/send-openfinance-email', adminMiddleware, async (req: Request, res
   }
 });
 
+/**
+ * POST /api/admin/send-openfinance-email-all
+ * Envia email de Open Finance para TODOS os usuários cadastrados (apenas para admins)
+ * Body: { simple?: boolean } - se deve usar versão simples (default: false para versão colorida)
+ */
+router.post('/send-openfinance-email-all', adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { simple } = req.body;
+    const useSimple = simple === true; // Por padrão, usar versão colorida para envio em massa
+
+    console.log(`[Admin] 📧 Buscando todos os usuários para enviar email de Open Finance (${useSimple ? 'simples' : 'colorido'})...`);
+
+    // Buscar todos os usuários do Supabase Auth usando service role
+    const { data: users, error: fetchError } = await supabase.auth.admin.listUsers();
+
+    if (fetchError) {
+      console.error('[Admin] Erro ao buscar usuários:', fetchError);
+      return res.status(500).json({ error: 'Erro ao buscar usuários: ' + fetchError.message });
+    }
+
+    if (!users || users.users.length === 0) {
+      return res.json({ success: true, message: 'Nenhum usuário encontrado', sent: 0, failed: 0 });
+    }
+
+    console.log(`[Admin] 📧 Encontrados ${users.users.length} usuários`);
+
+    let sent = 0;
+    let failed = 0;
+    const results: any[] = [];
+
+    for (const user of users.users) {
+      if (!user.email) continue;
+
+      // Pegar nome do usuário dos metadados
+      const userName = user.user_metadata?.name ||
+                       user.user_metadata?.full_name ||
+                       user.email.split('@')[0];
+
+      try {
+        const emailSent = useSimple
+          ? await emailService.sendOpenFinanceEmailSimple(user.email, userName)
+          : await emailService.sendOpenFinanceEmail(user.email, userName);
+
+        if (emailSent) {
+          sent++;
+          results.push({ email: user.email, status: 'sent' });
+          console.log(`[Admin] ✅ Enviado para ${user.email}`);
+        } else {
+          failed++;
+          results.push({ email: user.email, status: 'failed' });
+          console.log(`[Admin] ❌ Falha ao enviar para ${user.email}`);
+        }
+      } catch (err: any) {
+        failed++;
+        results.push({ email: user.email, status: 'error', error: err.message });
+        console.error(`[Admin] ❌ Erro ao enviar para ${user.email}:`, err.message);
+      }
+
+      // Aguardar 500ms entre emails para não sobrecarregar
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`[Admin] 📧 Envio concluído: ${sent} enviados, ${failed} falharam`);
+
+    res.json({
+      success: true,
+      message: `Envio concluído: ${sent} enviados, ${failed} falharam`,
+      total: users.users.length,
+      sent,
+      failed,
+      results
+    });
+  } catch (error: any) {
+    console.error('[Admin] Error sending Open Finance email to all:', error);
+    res.status(500).json({ error: 'Failed to send emails: ' + error.message });
+  }
+});
+
 export default router;
