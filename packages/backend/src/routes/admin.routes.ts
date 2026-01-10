@@ -405,4 +405,40 @@ router.post('/send-tutorial-email', adminMiddleware, async (req: Request, res: R
   }
 });
 
+/**
+ * POST /api/admin/send-openfinance-email
+ * Envia um email explicando Open Finance e como conectar banco (apenas para admins)
+ * Body: { email: string, userName?: string } - email para enviar e nome do usuário
+ */
+router.post('/send-openfinance-email', adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { email, userName } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email é obrigatório' });
+    }
+
+    console.log(`[Admin] 📧 Enviando email de Open Finance para: ${email}`);
+
+    const sent = await emailService.sendOpenFinanceEmail(email, userName || 'usuário');
+
+    if (sent) {
+      console.log(`[Admin] ✅ Email de Open Finance enviado com sucesso para ${email}`);
+      res.json({
+        success: true,
+        message: `Email de Open Finance enviado para ${email}`,
+      });
+    } else {
+      console.log(`[Admin] ❌ Falha ao enviar email de Open Finance para ${email}`);
+      res.status(500).json({
+        success: false,
+        error: 'Falha ao enviar email - verifique as configurações do Resend',
+      });
+    }
+  } catch (error: any) {
+    console.error('[Admin] Error sending Open Finance email:', error);
+    res.status(500).json({ error: 'Failed to send Open Finance email: ' + error.message });
+  }
+});
+
 export default router;

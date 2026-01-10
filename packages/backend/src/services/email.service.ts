@@ -738,6 +738,244 @@ Dúvidas ou feedbacks? Responda este email diretamente!
 
     return this.sendEmail({ to, subject, html, text });
   }
+  /**
+   * Email explicando Open Finance e como conectar banco
+   */
+  async sendOpenFinanceEmail(to: string, userName: string = 'usuário'): Promise<boolean> {
+    const subject = '🏦 Conecte seu banco em segundos com Open Finance - Guru do Dindin';
+    const preheader = 'Descubra como é fácil e seguro conectar suas contas bancárias automaticamente!';
+
+    const content = `
+      <tr>
+        <td style="padding: 35px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; text-align: center;">
+            🏦 Conecte seu Banco em Segundos!
+          </h2>
+
+          <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0; text-align: center;">
+            Olá, <strong>${userName}</strong>! Você sabia que pode conectar suas contas bancárias automaticamente no Guru do Dindin?
+          </p>
+
+          <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 25px 0; text-align: center;">
+            Com o <strong>Open Finance</strong>, seus dados financeiros são sincronizados automaticamente, de forma <strong>100% segura</strong> e regulamentada pelo <strong>Banco Central</strong>.
+          </p>
+
+          <!-- O que é Open Finance -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-radius: 12px; margin: 20px 0; border: 1px solid #bfdbfe;">
+            <tr>
+              <td style="padding: 20px;">
+                <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">🔐 O que é Open Finance?</h3>
+                <p style="color: #4b5563; font-size: 13px; margin: 0; line-height: 1.6;">
+                  Open Finance é um sistema criado pelo <strong>Banco Central do Brasil</strong> que permite que você compartilhe seus dados bancários de forma segura entre instituições financeiras autorizadas. <strong>Você tem total controle</strong> sobre quais dados compartilhar e pode revogar o acesso a qualquer momento.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <h3 style="color: #1f2937; margin: 25px 0 15px 0; font-size: 16px; text-align: center;">
+            📱 Como funciona? É muito simples!
+          </h3>
+
+          <!-- Passo 1 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+            <tr>
+              <td style="background-color: #f0f9ff; border-radius: 10px; padding: 15px; border-left: 4px solid #0284c7;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="45" valign="top">
+                      <div style="width: 35px; height: 35px; background: #0284c7; border-radius: 50%; text-align: center; line-height: 35px; color: white; font-weight: bold; font-size: 16px;">1</div>
+                    </td>
+                    <td valign="top">
+                      <h4 style="color: #0369a1; margin: 0 0 5px 0; font-size: 14px;">Consentimento</h4>
+                      <p style="color: #4b5563; font-size: 12px; margin: 0; line-height: 1.5;">
+                        No Guru do Dindin, você escolhe quais bancos quer conectar e quais dados compartilhar.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Passo 2 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+            <tr>
+              <td style="background-color: #f0fdf4; border-radius: 10px; padding: 15px; border-left: 4px solid #22c55e;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="45" valign="top">
+                      <div style="width: 35px; height: 35px; background: #22c55e; border-radius: 50%; text-align: center; line-height: 35px; color: white; font-weight: bold; font-size: 16px;">2</div>
+                    </td>
+                    <td valign="top">
+                      <h4 style="color: #166534; margin: 0 0 5px 0; font-size: 14px;">Redirecionamento</h4>
+                      <p style="color: #4b5563; font-size: 12px; margin: 0; line-height: 1.5;">
+                        Você é direcionado para o app/site oficial do seu banco para autorizar a conexão.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Passo 3 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+            <tr>
+              <td style="background-color: #fffbeb; border-radius: 10px; padding: 15px; border-left: 4px solid #f59e0b;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="45" valign="top">
+                      <div style="width: 35px; height: 35px; background: #f59e0b; border-radius: 50%; text-align: center; line-height: 35px; color: white; font-weight: bold; font-size: 16px;">3</div>
+                    </td>
+                    <td valign="top">
+                      <h4 style="color: #92400e; margin: 0 0 5px 0; font-size: 14px;">Autenticação</h4>
+                      <p style="color: #4b5563; font-size: 12px; margin: 0; line-height: 1.5;">
+                        Faça login no seu banco normalmente (com sua senha de sempre). Nós nunca vemos sua senha!
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Passo 4 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+            <tr>
+              <td style="background-color: #fdf2f8; border-radius: 10px; padding: 15px; border-left: 4px solid #ec4899;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="45" valign="top">
+                      <div style="width: 35px; height: 35px; background: #ec4899; border-radius: 50%; text-align: center; line-height: 35px; color: white; font-weight: bold; font-size: 16px;">4</div>
+                    </td>
+                    <td valign="top">
+                      <h4 style="color: #9d174d; margin: 0 0 5px 0; font-size: 14px;">Confirmação</h4>
+                      <p style="color: #4b5563; font-size: 12px; margin: 0; line-height: 1.5;">
+                        Você confirma no próprio banco que autoriza o compartilhamento dos seus dados.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Passo 5 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+            <tr>
+              <td style="background-color: #f5f3ff; border-radius: 10px; padding: 15px; border-left: 4px solid #8b5cf6;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="45" valign="top">
+                      <div style="width: 35px; height: 35px; background: #8b5cf6; border-radius: 50%; text-align: center; line-height: 35px; color: white; font-weight: bold; font-size: 16px;">5</div>
+                    </td>
+                    <td valign="top">
+                      <h4 style="color: #6d28d9; margin: 0 0 5px 0; font-size: 14px;">Redirecionamento de volta</h4>
+                      <p style="color: #4b5563; font-size: 12px; margin: 0; line-height: 1.5;">
+                        Você volta para o Guru do Dindin e a conexão é finalizada automaticamente.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Passo 6 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+            <tr>
+              <td style="background-color: #ecfdf5; border-radius: 10px; padding: 15px; border-left: 4px solid #10b981;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="45" valign="top">
+                      <div style="width: 35px; height: 35px; background: #10b981; border-radius: 50%; text-align: center; line-height: 35px; color: white; font-weight: bold; font-size: 16px;">✓</div>
+                    </td>
+                    <td valign="top">
+                      <h4 style="color: #047857; margin: 0 0 5px 0; font-size: 14px;">Pronto! Efetivação</h4>
+                      <p style="color: #4b5563; font-size: 12px; margin: 0; line-height: 1.5;">
+                        Suas transações são sincronizadas automaticamente. Sem digitar nada manualmente! 🎉
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Segurança Box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); border-radius: 12px; margin: 20px 0; border: 1px solid #bbf7d0;">
+            <tr>
+              <td style="padding: 20px;">
+                <h3 style="color: #166534; margin: 0 0 10px 0; font-size: 15px;">🛡️ Segurança garantida:</h3>
+                <ul style="color: #4b5563; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                  <li>Regulamentado pelo <strong>Banco Central</strong></li>
+                  <li>Seus dados são <strong>criptografados</strong></li>
+                  <li><strong>Nunca pedimos</strong> sua senha do banco</li>
+                  <li>Você pode <strong>desconectar</strong> a qualquer momento</li>
+                  <li>Mais de <strong>800 bancos</strong> disponíveis</li>
+                </ul>
+              </td>
+            </tr>
+          </table>
+
+          <!-- CTA Button -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+            <tr>
+              <td align="center">
+                <a href="https://gurudodindin.com.br/app/connect-bank"
+                   style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(2, 132, 199, 0.3);">
+                  🏦 Conectar Meu Banco Agora
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 20px 0 0 0;">
+            Leva menos de 2 minutos! Experimente e veja suas transações aparecerem automaticamente.
+          </p>
+        </td>
+      </tr>
+    `;
+
+    const html = getEmailTemplate(content, preheader);
+
+    const text = `
+🏦 CONECTE SEU BANCO EM SEGUNDOS!
+
+Olá, ${userName}!
+
+Você sabia que pode conectar suas contas bancárias automaticamente no Guru do Dindin?
+
+Com o Open Finance, seus dados financeiros são sincronizados automaticamente, de forma 100% segura e regulamentada pelo Banco Central.
+
+🔐 O QUE É OPEN FINANCE?
+Open Finance é um sistema criado pelo Banco Central do Brasil que permite que você compartilhe seus dados bancários de forma segura entre instituições financeiras autorizadas.
+
+📱 COMO FUNCIONA:
+1. Consentimento - No Guru do Dindin, você escolhe quais bancos conectar
+2. Redirecionamento - Você é direcionado para o app/site do seu banco
+3. Autenticação - Faça login no seu banco normalmente
+4. Confirmação - Autorize o compartilhamento no seu banco
+5. Volta - Você retorna para o Guru do Dindin
+6. Pronto! - Suas transações são sincronizadas automaticamente
+
+🛡️ SEGURANÇA GARANTIDA:
+- Regulamentado pelo Banco Central
+- Seus dados são criptografados
+- Nunca pedimos sua senha do banco
+- Você pode desconectar a qualquer momento
+- Mais de 800 bancos disponíveis
+
+👉 CONECTAR AGORA: https://gurudodindin.com.br/app/connect-bank
+
+Leva menos de 2 minutos!
+
+---
+© ${new Date().getFullYear()} Guru do Dindin. Todos os direitos reservados.
+    `;
+
+    return this.sendEmail({ to, subject, html, text });
+  }
 }
 
 export const emailService = new EmailService();
