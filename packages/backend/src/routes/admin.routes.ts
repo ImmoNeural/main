@@ -408,19 +408,24 @@ router.post('/send-tutorial-email', adminMiddleware, async (req: Request, res: R
 /**
  * POST /api/admin/send-openfinance-email
  * Envia um email explicando Open Finance e como conectar banco (apenas para admins)
- * Body: { email: string, userName?: string } - email para enviar e nome do usuário
+ * Body: { email: string, userName?: string, simple?: boolean } - email para enviar, nome do usuário, e se deve usar versão simples
  */
 router.post('/send-openfinance-email', adminMiddleware, async (req: Request, res: Response) => {
   try {
-    const { email, userName } = req.body;
+    const { email, userName, simple } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: 'email é obrigatório' });
     }
 
-    console.log(`[Admin] 📧 Enviando email de Open Finance para: ${email}`);
+    // Por padrão, usar versão simples (melhor deliverability)
+    const useSimple = simple !== false;
 
-    const sent = await emailService.sendOpenFinanceEmail(email, userName || 'usuário');
+    console.log(`[Admin] 📧 Enviando email de Open Finance (${useSimple ? 'simples' : 'marketing'}) para: ${email}`);
+
+    const sent = useSimple
+      ? await emailService.sendOpenFinanceEmailSimple(email, userName || 'usuário')
+      : await emailService.sendOpenFinanceEmail(email, userName || 'usuário');
 
     if (sent) {
       console.log(`[Admin] ✅ Email de Open Finance enviado com sucesso para ${email}`);

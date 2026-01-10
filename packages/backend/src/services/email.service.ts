@@ -10,6 +10,7 @@ if (!resend) {
 
 // Email de origem (configurar no Resend dashboard)
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Guru do Dindin <noreply@gurudodindin.com.br>';
+const FROM_EMAIL_PERSONAL = 'Thiago do Guru do Dindin <thiago@gurudodindin.com.br>';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'suporte@gurudodindin.com.br';
 
 // URL do logo branco para emails (hospedado no site)
@@ -20,7 +21,22 @@ interface SendEmailParams {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
 }
+
+// Template SIMPLES para emails pessoais (melhor deliverability)
+const getSimpleEmailTemplate = (content: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333;">
+  ${content}
+</body>
+</html>
+`;
 
 // Template base do email com estilo azul do login
 const getEmailTemplate = (content: string, preheader: string = '') => `
@@ -108,7 +124,7 @@ class EmailService {
 
     try {
       const { data, error } = await resend.emails.send({
-        from: FROM_EMAIL,
+        from: params.from || FROM_EMAIL,
         to: params.to,
         subject: params.subject,
         html: params.html,
@@ -975,6 +991,91 @@ Leva menos de 2 minutos!
     `;
 
     return this.sendEmail({ to, subject, html, text });
+  }
+
+  /**
+   * Email SIMPLES sobre Open Finance (melhor deliverability - vai para Inbox)
+   * Versão mais pessoal, sem formatação pesada de marketing
+   */
+  async sendOpenFinanceEmailSimple(to: string, userName: string = 'usuário'): Promise<boolean> {
+    const subject = 'Como conectar seu banco no Guru do Dindin';
+
+    const html = getSimpleEmailTemplate(`
+      <p>Oi ${userName}!</p>
+
+      <p>Tudo bem? Aqui é o Thiago, do Guru do Dindin.</p>
+
+      <p>Queria te contar uma coisa legal: você pode conectar suas contas bancárias automaticamente no app, sem precisar digitar nada manualmente. Isso se chama <strong>Open Finance</strong>.</p>
+
+      <p><strong>Como funciona?</strong></p>
+
+      <p>É bem simples e leva menos de 2 minutos:</p>
+
+      <ol>
+        <li>No app, vá em Contas e clique em "Conectar Banco"</li>
+        <li>Escolha seu banco na lista (tem mais de 800 disponíveis)</li>
+        <li>Você vai ser redirecionado para o site/app oficial do seu banco</li>
+        <li>Faça login normalmente e autorize o compartilhamento</li>
+        <li>Pronto! Suas transações aparecem automaticamente</li>
+      </ol>
+
+      <p><strong>É seguro?</strong></p>
+
+      <p>Sim! O Open Finance é regulamentado pelo Banco Central. A gente nunca vê sua senha do banco - você faz login diretamente no site oficial do seu banco. E você pode desconectar a qualquer momento.</p>
+
+      <p>Se quiser testar agora, é só acessar:<br>
+      <a href="https://gurudodindin.com.br/app/connect-bank">https://gurudodindin.com.br/app/connect-bank</a></p>
+
+      <p>Qualquer dúvida, é só responder esse email!</p>
+
+      <p>Abraço,<br>
+      <strong>Thiago</strong><br>
+      Guru do Dindin</p>
+
+      <p style="color: #999; font-size: 12px; margin-top: 30px;">
+        PS: Para garantir que nossos emails cheguem na sua caixa de entrada, adicione thiago@gurudodindin.com.br aos seus contatos.
+      </p>
+    `);
+
+    const text = `
+Oi ${userName}!
+
+Tudo bem? Aqui é o Thiago, do Guru do Dindin.
+
+Queria te contar uma coisa legal: você pode conectar suas contas bancárias automaticamente no app, sem precisar digitar nada manualmente. Isso se chama Open Finance.
+
+COMO FUNCIONA?
+
+É bem simples e leva menos de 2 minutos:
+
+1. No app, vá em Contas e clique em "Conectar Banco"
+2. Escolha seu banco na lista (tem mais de 800 disponíveis)
+3. Você vai ser redirecionado para o site/app oficial do seu banco
+4. Faça login normalmente e autorize o compartilhamento
+5. Pronto! Suas transações aparecem automaticamente
+
+É SEGURO?
+
+Sim! O Open Finance é regulamentado pelo Banco Central. A gente nunca vê sua senha do banco - você faz login diretamente no site oficial do seu banco. E você pode desconectar a qualquer momento.
+
+Se quiser testar agora: https://gurudodindin.com.br/app/connect-bank
+
+Qualquer dúvida, é só responder esse email!
+
+Abraço,
+Thiago
+Guru do Dindin
+
+PS: Para garantir que nossos emails cheguem na sua caixa de entrada, adicione thiago@gurudodindin.com.br aos seus contatos.
+    `;
+
+    return this.sendEmail({
+      to,
+      subject,
+      html,
+      text,
+      from: FROM_EMAIL_PERSONAL
+    });
   }
 }
 
