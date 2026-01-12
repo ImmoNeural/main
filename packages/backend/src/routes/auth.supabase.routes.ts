@@ -124,9 +124,21 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // Enviar email de boas-vindas (assíncrono, não bloqueia)
-    emailService.sendWelcomeEmail(email, name).catch((err) => {
-      console.error('⚠️ Error sending welcome email:', err);
-    });
+    // IMPORTANTE: Usar flag no metadata para evitar envios duplicados
+    const userMetadata = data.user.user_metadata || {};
+    if (!userMetadata.welcome_email_sent) {
+      // Marcar que email foi enviado ANTES de enviar (para evitar race conditions)
+      await supabase.auth.admin.updateUserById(data.user.id, {
+        user_metadata: { ...userMetadata, welcome_email_sent: true, welcome_email_sent_at: new Date().toISOString() }
+      });
+
+      emailService.sendWelcomeEmail(email, name).catch((err) => {
+        console.error('⚠️ Error sending welcome email:', err);
+      });
+      console.log('📧 Welcome email queued for:', email);
+    } else {
+      console.log('📧 Welcome email already sent for:', email, '- skipping');
+    }
 
     res.status(201).json({
       message: trialCreated
@@ -273,10 +285,24 @@ router.post('/oauth-callback', async (req: Request, res: Response) => {
         console.error('⚠️ Error creating trial:', trialError);
       }
 
-      // Send welcome email for new users
-      emailService.sendWelcomeEmail(email, name).catch((err) => {
-        console.error('⚠️ Error sending welcome email:', err);
-      });
+      // Send welcome email for new users (com proteção contra duplicatas)
+      // Verificar se email já foi enviado
+      const { data: userCheck } = await supabase.auth.admin.getUserById(provider_id);
+      const existingMetadata = userCheck?.user?.user_metadata || {};
+
+      if (!existingMetadata.welcome_email_sent) {
+        // Marcar que email foi enviado ANTES de enviar (para evitar race conditions)
+        await supabase.auth.admin.updateUserById(provider_id, {
+          user_metadata: { ...existingMetadata, welcome_email_sent: true, welcome_email_sent_at: new Date().toISOString() }
+        });
+
+        emailService.sendWelcomeEmail(email, name).catch((err) => {
+          console.error('⚠️ Error sending welcome email:', err);
+        });
+        console.log('📧 Welcome email queued for OAuth user:', email);
+      } else {
+        console.log('📧 Welcome email already sent for OAuth user:', email, '- skipping');
+      }
     } else {
       console.log('👤 Existing OAuth user:', email);
     }
