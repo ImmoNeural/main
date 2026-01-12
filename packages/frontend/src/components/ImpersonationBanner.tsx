@@ -1,25 +1,47 @@
 import { useState, useEffect } from 'react';
 import { X, User } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 /**
  * Banner que aparece quando admin está impersonando outro usuário
  * Mostra informações do usuário e permite parar a impersonação
+ * Só mostra se o admin logado for o mesmo que iniciou a impersonação
  */
 const ImpersonationBanner = () => {
   const [impersonatedUserId, setImpersonatedUserId] = useState<string | null>(null);
   const [impersonatedUserName, setImpersonatedUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    // Verificar se está impersonando
-    const userId = localStorage.getItem('impersonate_user_id');
-    const userName = localStorage.getItem('impersonate_user_name');
-    setImpersonatedUserId(userId);
-    setImpersonatedUserName(userName);
+    const checkImpersonation = async () => {
+      // Verificar se está impersonando
+      const userId = localStorage.getItem('impersonate_user_id');
+      const userName = localStorage.getItem('impersonate_user_name');
+      const adminId = localStorage.getItem('impersonate_admin_id');
+
+      // Se há impersonação, verificar se o usuário atual é o admin que iniciou
+      if (userId && adminId) {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // Se o usuário logado não for o admin que iniciou a impersonação, limpar
+        if (!user || user.id !== adminId) {
+          localStorage.removeItem('impersonate_user_id');
+          localStorage.removeItem('impersonate_user_name');
+          localStorage.removeItem('impersonate_admin_id');
+          setImpersonatedUserId(null);
+          setImpersonatedUserName(null);
+          return;
+        }
+      }
+
+      setImpersonatedUserId(userId);
+      setImpersonatedUserName(userName);
+    };
+
+    checkImpersonation();
 
     // Listener para mudanças no localStorage
     const handleStorageChange = () => {
-      setImpersonatedUserId(localStorage.getItem('impersonate_user_id'));
-      setImpersonatedUserName(localStorage.getItem('impersonate_user_name'));
+      checkImpersonation();
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -34,6 +56,7 @@ const ImpersonationBanner = () => {
   const stopImpersonation = () => {
     localStorage.removeItem('impersonate_user_id');
     localStorage.removeItem('impersonate_user_name');
+    localStorage.removeItem('impersonate_admin_id');
     setImpersonatedUserId(null);
     setImpersonatedUserName(null);
 

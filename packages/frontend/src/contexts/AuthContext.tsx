@@ -379,6 +379,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
+    // Limpar dados de impersonação
+    localStorage.removeItem('impersonate_user_id');
+    localStorage.removeItem('impersonate_user_name');
+    localStorage.removeItem('impersonate_admin_id');
+
     setUser(null);
 
     // Chamar endpoint de logout (opcional)

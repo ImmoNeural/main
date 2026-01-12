@@ -53,12 +53,13 @@ const AdminTransactions = () => {
 
   // Função para iniciar impersonação
   const startImpersonation = () => {
-    if (!userId) return;
+    if (!userId || !user?.id) return;
 
     console.log('🎭 Iniciando impersonação do usuário:', userId);
 
     localStorage.setItem('impersonate_user_id', userId);
     localStorage.setItem('impersonate_user_name', userInfo?.name || userInfo?.email || 'Usuário');
+    localStorage.setItem('impersonate_admin_id', user.id); // Salvar qual admin iniciou a impersonação
 
     // Redirecionar para o dashboard (reload completo para garantir que o header seja enviado)
     window.location.href = '/app/dashboard';
