@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { App, URLOpenListenerEvent } from '@capacitor/app';
 import { SocialLogin } from '@capgo/capacitor-social-login';
+import { trackSignupConversion } from '../components/GoogleAnalytics';
 
 interface User {
   id: string;
@@ -189,6 +190,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 // Marcar se é novo usuário para redirecionar corretamente
                 if (response.data.isNewUser) {
                   localStorage.setItem('oauth_new_user', 'true');
+                  // Rastrear conversão do Google Ads para novo usuário OAuth
+                  trackSignupConversion();
                 }
 
                 if (isMounted) {
@@ -313,6 +316,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               if (response.data.isNewUser) {
                 localStorage.setItem('oauth_new_user', 'true');
+                // Rastrear conversão do Google Ads para novo usuário OAuth (mobile)
+                trackSignupConversion();
               }
             }
           }

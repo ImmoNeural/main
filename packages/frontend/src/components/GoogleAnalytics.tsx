@@ -5,6 +5,9 @@ interface GoogleAnalyticsProps {
   measurementId: string;
 }
 
+// Google Ads Conversion ID
+const GOOGLE_ADS_ID = 'AW-17732520157';
+
 // Declare gtag global function
 declare global {
   interface Window {
@@ -16,6 +19,22 @@ declare global {
     dataLayer?: any[];
   }
 }
+
+/**
+ * Dispara evento de conversão do Google Ads para inscrição/cadastro
+ */
+export const trackSignupConversion = () => {
+  if (window.gtag) {
+    window.gtag('event', 'conversion', {
+      'send_to': `${GOOGLE_ADS_ID}/QV2ZCMv7tOIbEN2Rw4dC`,
+      'value': 1.0,
+      'currency': 'EUR'
+    });
+    console.log('📊 Google Ads conversion tracked: Signup');
+  } else {
+    console.warn('⚠️ gtag not available for conversion tracking');
+  }
+};
 
 const GoogleAnalytics = ({ measurementId }: GoogleAnalyticsProps) => {
   const location = useLocation();
@@ -37,6 +56,7 @@ const GoogleAnalytics = ({ measurementId }: GoogleAnalyticsProps) => {
           page_path: window.location.pathname,
           send_page_view: true
         });
+        gtag('config', '${GOOGLE_ADS_ID}');
       `;
       document.head.appendChild(script2);
     }

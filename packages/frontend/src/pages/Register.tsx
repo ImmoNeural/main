@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { validatePassword } from '../utils/passwordValidation';
 import SEO from '../components/SEO';
+import { trackSignupConversion } from '../components/GoogleAnalytics';
 
 // Ícones SVG do Google e Facebook
 const GoogleIcon = () => (
@@ -86,6 +87,9 @@ const Register = () => {
     try {
       const response = await register(name, email, password);
       setSuccess(true);
+
+      // Rastrear conversão do Google Ads
+      trackSignupConversion();
 
       // Mostrar mensagem personalizada do backend (inclui info sobre trial)
       const message = response?.data?.message || 'Conta criada com sucesso! Você ganhou 7 dias grátis para testar.';
