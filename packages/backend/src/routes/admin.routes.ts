@@ -524,4 +524,102 @@ router.post('/send-openfinance-email-all', adminMiddleware, async (req: Request,
   }
 });
 
+/**
+ * POST /api/admin/send-connect-bank-email
+ * Envia email atraente para convencer usuário a conectar banco via Open Finance
+ * Body: { email: string, userName?: string }
+ */
+router.post('/send-connect-bank-email', adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { email, userName } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email é obrigatório' });
+    }
+
+    console.log(`[Admin] 📧 Enviando email "Conectar Banco" para: ${email}`);
+
+    const sent = await emailService.sendConnectBankEmail(email, userName || 'usuário');
+
+    if (sent) {
+      console.log(`[Admin] ✅ Email "Conectar Banco" enviado com sucesso para ${email}`);
+      res.json({
+        success: true,
+        message: `Email enviado para ${email}`,
+      });
+    } else {
+      console.log(`[Admin] ❌ Falha ao enviar email para ${email}`);
+      res.status(500).json({
+        success: false,
+        error: 'Falha ao enviar email - verifique as configurações do Resend',
+      });
+    }
+  } catch (error: any) {
+    console.error('[Admin] Error sending connect bank email:', error);
+    res.status(500).json({ error: 'Failed to send email: ' + error.message });
+  }
+});
+
+/**
+ * POST /api/admin/send-connect-bank-email-bulk
+ * Envia email "Conectar Banco" para múltiplos usuários
+ * Body: { users: Array<{name: string, email: string}> }
+ */
+router.post('/send-connect-bank-email-bulk', adminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { users } = req.body;
+
+    if (!users || !Array.isArray(users) || users.length === 0) {
+      return res.status(400).json({ error: 'users array é obrigatório' });
+    }
+
+    console.log(`[Admin] 📧 Enviando email "Conectar Banco" para ${users.length} usuários...`);
+
+    let sent = 0;
+    let failed = 0;
+    const results: any[] = [];
+
+    for (const user of users) {
+      if (!user.email) continue;
+
+      const userName = user.name || user.email.split('@')[0];
+
+      try {
+        const emailSent = await emailService.sendConnectBankEmail(user.email, userName);
+
+        if (emailSent) {
+          sent++;
+          results.push({ email: user.email, name: userName, status: 'sent' });
+          console.log(`[Admin] ✅ Enviado para ${user.email}`);
+        } else {
+          failed++;
+          results.push({ email: user.email, name: userName, status: 'failed' });
+          console.log(`[Admin] ❌ Falha ao enviar para ${user.email}`);
+        }
+      } catch (err: any) {
+        failed++;
+        results.push({ email: user.email, name: userName, status: 'error', error: err.message });
+        console.error(`[Admin] ❌ Erro ao enviar para ${user.email}:`, err.message);
+      }
+
+      // Aguardar 500ms entre emails para não sobrecarregar
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`[Admin] 📧 Envio concluído: ${sent} enviados, ${failed} falharam`);
+
+    res.json({
+      success: true,
+      message: `Envio concluído: ${sent} enviados, ${failed} falharam`,
+      total: users.length,
+      sent,
+      failed,
+      results
+    });
+  } catch (error: any) {
+    console.error('[Admin] Error sending connect bank emails:', error);
+    res.status(500).json({ error: 'Failed to send emails: ' + error.message });
+  }
+});
+
 export default router;

@@ -1077,6 +1077,203 @@ PS: Para garantir que nossos emails cheguem na sua caixa de entrada, adicione th
       from: FROM_EMAIL_PERSONAL
     });
   }
+
+  /**
+   * Email ATRAENTE para convencer usuário a conectar banco via Open Finance
+   * Versão visual com imagens e design profissional
+   */
+  async sendConnectBankEmail(to: string, userName: string = 'usuário'): Promise<boolean> {
+    const subject = '🔐 Conecte seu banco em 2 minutos e veja a mágica acontecer!';
+    const preheader = 'Suas transações aparecem automaticamente. Seguro, rápido e aprovado pelo Banco Central.';
+
+    const content = `
+      <tr>
+        <td style="padding: 35px;">
+          <!-- Hero Section -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            <img src="https://img.icons8.com/3d-fluency/94/bank-building.png" alt="Banco" width="80" height="80" style="margin-bottom: 15px;">
+            <h2 style="color: #1f2937; margin: 0 0 10px 0; font-size: 24px; line-height: 1.3;">
+              ${userName}, suas finanças no piloto automático!
+            </h2>
+            <p style="color: #6b7280; font-size: 15px; margin: 0;">
+              Conecte seu banco e nunca mais digite uma transação manualmente
+            </p>
+          </div>
+
+          <!-- Benefícios Grid -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+            <tr>
+              <td width="33%" style="text-align: center; padding: 10px;">
+                <img src="https://img.icons8.com/3d-fluency/94/time-machine.png" alt="Tempo" width="50" height="50">
+                <p style="color: #1f2937; font-size: 13px; font-weight: bold; margin: 8px 0 4px 0;">2 minutos</p>
+                <p style="color: #6b7280; font-size: 11px; margin: 0;">para conectar</p>
+              </td>
+              <td width="33%" style="text-align: center; padding: 10px;">
+                <img src="https://img.icons8.com/3d-fluency/94/combo-chart.png" alt="Automático" width="50" height="50">
+                <p style="color: #1f2937; font-size: 13px; font-weight: bold; margin: 8px 0 4px 0;">Automático</p>
+                <p style="color: #6b7280; font-size: 11px; margin: 0;">atualiza sozinho</p>
+              </td>
+              <td width="33%" style="text-align: center; padding: 10px;">
+                <img src="https://img.icons8.com/3d-fluency/94/bank-cards.png" alt="Bancos" width="50" height="50">
+                <p style="color: #1f2937; font-size: 13px; font-weight: bold; margin: 8px 0 4px 0;">+800 bancos</p>
+                <p style="color: #6b7280; font-size: 11px; margin: 0;">disponíveis</p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Segurança Box com selo do Banco Central -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 16px; margin: 25px 0; border: 2px solid #10b981;">
+            <tr>
+              <td style="padding: 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="60" valign="top">
+                      <img src="https://img.icons8.com/3d-fluency/94/shield.png" alt="Segurança" width="50" height="50">
+                    </td>
+                    <td valign="top">
+                      <h3 style="color: #065f46; margin: 0 0 8px 0; font-size: 16px;">
+                        🏦 100% Seguro e Regulamentado
+                      </h3>
+                      <p style="color: #047857; font-size: 13px; margin: 0; line-height: 1.5;">
+                        O Open Finance é uma iniciativa oficial do <strong>Banco Central do Brasil</strong>.
+                        Nós <strong>nunca</strong> vemos sua senha - você faz login direto no site do seu banco.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Como Funciona -->
+          <h3 style="color: #1f2937; margin: 25px 0 15px 0; font-size: 18px; text-align: center;">
+            ⚡ Como funciona? Super simples!
+          </h3>
+
+          <!-- Steps -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="40" valign="top">
+                      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 50%; text-align: center; line-height: 32px; color: white; font-weight: bold; font-size: 14px;">1</div>
+                    </td>
+                    <td valign="middle">
+                      <p style="color: #1f2937; font-size: 14px; margin: 0;"><strong>Clique em "Conectar Banco"</strong> no app</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="40" valign="top">
+                      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 50%; text-align: center; line-height: 32px; color: white; font-weight: bold; font-size: 14px;">2</div>
+                    </td>
+                    <td valign="middle">
+                      <p style="color: #1f2937; font-size: 14px; margin: 0;"><strong>Escolha seu banco</strong> na lista (Itaú, Bradesco, Nubank, Inter...)</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="40" valign="top">
+                      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 50%; text-align: center; line-height: 32px; color: white; font-weight: bold; font-size: 14px;">3</div>
+                    </td>
+                    <td valign="middle">
+                      <p style="color: #1f2937; font-size: 14px; margin: 0;"><strong>Autorize no app do banco</strong> (você é redirecionado)</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 0;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="40" valign="top">
+                      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; text-align: center; line-height: 32px; color: white; font-weight: bold; font-size: 14px;">✓</div>
+                    </td>
+                    <td valign="middle">
+                      <p style="color: #059669; font-size: 14px; margin: 0; font-weight: bold;">Pronto! Suas transações aparecem automaticamente 🎉</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Depoimento/Social Proof -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border-radius: 12px; margin: 25px 0; border-left: 4px solid #0284c7;">
+            <tr>
+              <td style="padding: 18px;">
+                <p style="color: #475569; font-size: 14px; font-style: italic; margin: 0 0 8px 0; line-height: 1.5;">
+                  "Conectei minha conta do Nubank e do Itaú em 3 minutos. Agora vejo todas as minhas transações num lugar só, sem digitar nada!"
+                </p>
+                <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                  — Usuário do Guru do Dindin
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- CTA Button -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td align="center">
+                <a href="https://gurudodindin.com.br/app/connect-bank"
+                   style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #06b6d4 100%); color: #ffffff; text-decoration: none; padding: 18px 50px; border-radius: 12px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+                  🏦 Conectar Meu Banco Agora
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 20px 0 0 0;">
+            Leva menos de 2 minutos • Você pode desconectar a qualquer momento
+          </p>
+        </td>
+      </tr>
+    `;
+
+    const html = getEmailTemplate(content, preheader);
+
+    const text = `
+${userName}, suas finanças no piloto automático!
+
+Conecte seu banco e nunca mais digite uma transação manualmente.
+
+✅ 2 minutos para conectar
+✅ Atualiza automaticamente
+✅ +800 bancos disponíveis
+
+🔐 100% SEGURO E REGULAMENTADO
+O Open Finance é uma iniciativa oficial do Banco Central do Brasil.
+Nós nunca vemos sua senha - você faz login direto no site do seu banco.
+
+COMO FUNCIONA:
+1. Clique em "Conectar Banco" no app
+2. Escolha seu banco na lista (Itaú, Bradesco, Nubank, Inter...)
+3. Autorize no app do banco (você é redirecionado)
+4. Pronto! Suas transações aparecem automaticamente 🎉
+
+👉 CONECTAR AGORA: https://gurudodindin.com.br/app/connect-bank
+
+Leva menos de 2 minutos • Você pode desconectar a qualquer momento
+
+Abraço,
+Equipe Guru do Dindin
+    `;
+
+    return this.sendEmail({ to, subject, html, text });
+  }
 }
 
 export const emailService = new EmailService();
