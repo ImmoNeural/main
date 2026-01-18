@@ -338,8 +338,8 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-blue-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-fade-in overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[95vh] sm:max-h-[85vh] flex flex-col shadow-2xl transform transition-all animate-slide-up my-auto">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-blue-900/80 backdrop-blur-sm flex items-center justify-center sm:justify-center z-50 pl-16 pr-2 py-2 sm:p-4 animate-fade-in overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[95vh] sm:max-h-[85vh] flex flex-col shadow-2xl transform transition-all animate-slide-up my-auto ml-auto sm:ml-0 sm:mx-auto">
         {/* Header com gradiente */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-t-2xl px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between shadow-lg flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -445,9 +445,11 @@ const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModal
                   <textarea
                     value={csvContent}
                     onChange={(e) => setCsvContent(e.target.value)}
-                    placeholder='Data,Descricao,Credito,Debito
-10/11/2025,PIX ENVIADO,-39.99
-30/10/2025,PAGAMENTO,0,53.51'
+                    placeholder='Data,Descricao,Credito (R$),Debito (R$),Saldo (R$)
+10/11/2025,PIX ENVIADO HOSTGATOR,,"-39,99","2.411,71"
+30/10/2025,DEBITO TITULO CAPITALIZACAO,,"-53,51","2.451,69"
+16/10/2025,DEBITO NETFLIX,,"-59,90","2.505,19"
+13/10/2025,PAGAMENTO BOLETO,,"-410,00","2.565,05"'
                     rows={6}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-xs sm:text-sm bg-gray-50 hover:bg-white"
                   />
