@@ -10,7 +10,7 @@
     "migrate": "tsx src/db/migrate.ts"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.81.0",
