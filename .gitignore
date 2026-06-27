@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
+# NOTE: package-lock.json is intentionally committed to guarantee
+# deterministic installs (pins TypeScript 5.9.3) and bust build caches.
 
 # Build outputs
 dist/
