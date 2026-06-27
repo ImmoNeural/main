@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock, Copy } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock, Copy, Wallet } from 'lucide-react';
 import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category, BankAccount } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
@@ -825,17 +825,17 @@ const Transactions = () => {
       return acc;
     }, {} as Record<string, number>);
 
-    // Cores para as categorias (usando cores vibrantes)
+    // Cores para as categorias (usando tokens do design system)
     const categoryColors: Record<string, string> = {
       'Moradia': 'bg-red-500',
-      'Alimentação': 'bg-yellow-500',
-      'Contas': 'bg-green-500',
-      'Entretenimento': 'bg-blue-500',
-      'Transporte': 'bg-indigo-500',
-      'Educação': 'bg-purple-500',
-      'Saúde': 'bg-pink-500',
-      'Compras': 'bg-orange-500',
-      'Supermercado': 'bg-lime-500',
+      'Alimentação': 'bg-amber-500',
+      'Contas': 'bg-accent-500',
+      'Entretenimento': 'bg-primary-500',
+      'Transporte': 'bg-primary-600',
+      'Educação': 'bg-primary-400',
+      'Saúde': 'bg-red-400',
+      'Compras': 'bg-amber-600',
+      'Supermercado': 'bg-accent-400',
     };
 
     const data = Object.entries(categoriesMap)
@@ -843,7 +843,7 @@ const Transactions = () => {
         name,
         value,
         percentage: total > 0 ? (value / total) * 100 : 0,
-        color: categoryColors[name] || 'bg-gray-500'
+        color: categoryColors[name] || 'bg-slate-400'
       }))
       .sort((a, b) => b.value - a.value);
 
@@ -864,19 +864,21 @@ const Transactions = () => {
       <div className="space-y-6">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-          <div className="flex-1 w-full sm:w-auto">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2">Transações</h1>
-            <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-4">{filteredTransactions.length} transações encontradas</p>
+        <div className="page-header">
+          <div className="page-header__titles flex-col items-start gap-3">
+            <div>
+              <h1 className="page-title">Transações</h1>
+              <p className="page-subtitle">{filteredTransactions.length} transações encontradas</p>
+            </div>
 
             {/* Botões de ação - lado esquerdo */}
-            <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 md:gap-3">
+            <div className="flex items-center flex-wrap gap-2">
               <button
                 onClick={() => setShowImportModal(true)}
-                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
+                className="btn-secondary flex items-center gap-2"
                 title="Importar transações manualmente (CSV ou individual)"
               >
-                <Upload className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                <Upload className="w-4 h-4" />
                 <span className="hidden sm:inline">Importar</span>
                 <span className="sm:hidden">Import</span>
               </button>
@@ -885,36 +887,30 @@ const Transactions = () => {
                   <>
                     <button
                       disabled
-                      className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium bg-gray-400 text-white opacity-60 cursor-not-allowed"
+                      className="btn-secondary flex items-center gap-2 opacity-60 cursor-not-allowed"
                     >
-                      <Lock className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                      <Lock className="w-4 h-4" />
                       <span className="hidden sm:inline">Categorizar</span>
                       <span className="sm:hidden">Cat</span>
                     </button>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
                       Disponível apenas nos planos Conectado ou Conectado Plus
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
                     </div>
                   </>
                 ) : (
                   <>
                     <button
                       onClick={handleRecategorizeAI}
-                      className={`flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed ${
-                        isAILoading
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-700 animate-pulse'
-                          : canUseAI
-                            ? 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700'
-                            : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'
-                      }`}
+                      className={`btn-primary flex items-center gap-2 disabled:cursor-not-allowed ${isAILoading ? 'animate-pulse' : ''}`}
                       disabled={isAILoading || isLoading}
                       title={canUseAI ? "Usar IA para categorizar transações" : "Categorização automática (sem IA)"}
                       data-tour="categorize-btn"
                     >
                       {isAILoading ? (
-                        <Loader2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Sparkles className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                        <Sparkles className="w-4 h-4" />
                       )}
                       <span className="hidden sm:inline">{isAILoading ? 'Categorizando...' : 'Categorizar'}</span>
                       <span className="sm:hidden">{isAILoading ? '...' : 'Cat'}</span>
@@ -928,14 +924,14 @@ const Transactions = () => {
                     )}
                     {/* Barra de progresso */}
                     {isAILoading && (
-                      <div className="absolute -bottom-12 left-0 right-0 w-48 sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10">
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <div className="card absolute -bottom-12 left-0 right-0 w-48 sm:w-64 p-2 z-10">
+                        <div className="flex justify-between text-xs text-slate-600 dark:text-slate-300 mb-1">
                           <span className="truncate max-w-[140px] sm:max-w-[200px]">{aiProgressText}</span>
                           <span className="font-semibold">{Math.round(aiProgress)}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div className="progress-track">
                           <div
-                            className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300 ease-out"
+                            className="progress-fill bg-primary-500"
                             style={{ width: `${aiProgress}%` }}
                           />
                         </div>
@@ -946,48 +942,48 @@ const Transactions = () => {
               </div>
               <button
                 onClick={handleResetCategories}
-                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                className="btn-secondary flex items-center gap-2 text-amber-600 hover:text-amber-700 border-amber-200"
                 disabled={isLoading}
                 title="Reseta todas para 'Não Categorizado'"
               >
-                <RotateCcw className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                <RotateCcw className="w-4 h-4" />
                 <span className="hidden sm:inline">Resetar</span>
               </button>
               <button
                 onClick={exportToCSV}
-                className="btn-secondary flex items-center space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
+                className="btn-secondary flex items-center gap-2"
                 title="Exportar para CSV"
               >
-                <Download className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-                <span className="hidden sm:inline text-xs sm:text-sm font-medium">CSV</span>
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline font-medium">CSV</span>
               </button>
               <button
                 onClick={loadData}
-                className="btn-secondary flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
+                className="btn-secondary flex items-center gap-2"
                 disabled={isLoading}
               >
-                <RefreshCw className={`w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">Atualizar</span>
               </button>
               <button
                 onClick={handleDeleteAll}
-                className="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-1.5 sm:py-2"
+                className="btn-danger flex items-center gap-2"
                 disabled={isLoading}
                 title={activeAccountId ? "Apagar transações desta conta (IRREVERSÍVEL)" : "Apagar TODAS as transações (IRREVERSÍVEL)"}
               >
-                <Trash2 className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+                <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:inline">{activeAccountId ? 'Apagar Conta' : 'Apagar Todas'}</span>
                 <span className="sm:hidden">Apagar</span>
               </button>
             </div>
           </div>
 
-          <div className="w-full sm:w-auto mt-3 sm:mt-0">
+          <div className="page-header__actions w-full sm:w-auto">
             <button
               onClick={() => setShowImportModal(true)}
-              className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2"
+              className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
             >
-              <PlusCircle className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+              <PlusCircle className="w-4 h-4" />
               <span>Importar Transações</span>
             </button>
           </div>
@@ -996,54 +992,65 @@ const Transactions = () => {
         {/* Resumo Financeiro (Cards) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8 lg:mb-10">
           {/* Total de Receitas */}
-          <div className="p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl bg-green-50">
+          <div className="stat-tile">
             <div className="flex justify-between items-start">
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600">Receitas</h3>
-              <ChevronUp className="w-4 sm:w-5 h-4 sm:h-5 text-green-500" />
+              <h3 className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">Receitas</h3>
+              <span className="icon-chip-sm bg-accent-50 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300">
+                <ChevronUp className="w-4 h-4" />
+              </span>
             </div>
-            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-green-600">
+            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-accent-600 dark:text-accent-400">
               {formatCurrency(currentMonthIncome)}
             </p>
-            <p className={`mt-0.5 sm:mt-1 text-xs ${incomeChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`mt-0.5 sm:mt-1 text-xs ${incomeChange >= 0 ? 'text-accent-600 dark:text-accent-400' : 'text-red-600 dark:text-red-400'}`}>
               {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs Mês Passado
             </p>
           </div>
 
           {/* Total de Despesas */}
-          <div className="p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl bg-red-50">
+          <div className="stat-tile">
             <div className="flex justify-between items-start">
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600">Despesas</h3>
-              <ChevronDown className="w-4 sm:w-5 h-4 sm:h-5 text-red-500" />
+              <h3 className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">Despesas</h3>
+              <span className="icon-chip-sm bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-300">
+                <ChevronDown className="w-4 h-4" />
+              </span>
             </div>
-            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-red-600">
+            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-red-600 dark:text-red-400">
               {formatCurrency(currentMonthExpense)}
             </p>
-            <p className={`mt-0.5 sm:mt-1 text-xs ${expenseChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`mt-0.5 sm:mt-1 text-xs ${expenseChange <= 0 ? 'text-accent-600 dark:text-accent-400' : 'text-red-600 dark:text-red-400'}`}>
               {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs Mês Passado
             </p>
           </div>
 
           {/* Saldo Líquido */}
-          <div className={`p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl ${currentMonthBalance >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
+          <div className="stat-tile">
             <div className="flex justify-between items-start">
-              <h3 className="text-xs sm:text-sm font-medium text-gray-600">Saldo</h3>
-              <DollarSign className={`w-4 sm:w-5 h-4 sm:h-5 ${currentMonthBalance >= 0 ? 'text-blue-500' : 'text-red-500'}`} />
+              <h3 className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">Saldo</h3>
+              <span className={`icon-chip-sm ${currentMonthBalance >= 0 ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300' : 'bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-300'}`}>
+                <DollarSign className="w-4 h-4" />
+              </span>
             </div>
-            <p className={`mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl ${currentMonthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            <p className={`mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl ${currentMonthBalance >= 0 ? 'text-primary-600 dark:text-primary-400' : 'text-red-600 dark:text-red-400'}`}>
               {formatCurrency(currentMonthBalance)}
             </p>
-            <p className={`mt-0.5 sm:mt-1 text-xs ${balanceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`mt-0.5 sm:mt-1 text-xs ${balanceChange >= 0 ? 'text-accent-600 dark:text-accent-400' : 'text-red-600 dark:text-red-400'}`}>
               {balanceChange >= 0 ? '+' : ''}{balanceChange.toFixed(1)}% vs Mês Passado
             </p>
           </div>
 
           {/* Saldo Inicial */}
-          <div className="p-3 sm:p-4 lg:p-6 rounded-xl lg:rounded-2xl shadow-md lg:shadow-xl transition duration-300 hover:shadow-xl lg:hover:shadow-2xl bg-gradient-to-br from-indigo-50 to-purple-50">
+          <div className="stat-tile">
             <div className="flex justify-between items-start">
-              <h3 className="text-xs sm:text-sm font-medium text-indigo-600">💰 Inicial ({getStartDateLabel()})</h3>
-              <ArrowUp className="w-4 sm:w-5 h-4 sm:h-5 text-indigo-500" />
+              <h3 className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
+                <span className="icon-chip-sm bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+                  <Wallet className="w-4 h-4" />
+                </span>
+                <span>Inicial ({getStartDateLabel()})</span>
+              </h3>
+              <ArrowUp className="w-4 sm:w-5 h-4 sm:h-5 text-primary-500" />
             </div>
-            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-indigo-700">
+            <p className="mt-1 sm:mt-2 font-extrabold text-lg sm:text-2xl lg:text-3xl text-primary-700 dark:text-primary-300">
               {initialBalance !== null && initialBalance !== undefined
                 ? formatCurrency(initialBalance)
                 : 'N/D'}
@@ -1056,33 +1063,36 @@ const Transactions = () => {
 
           {/* Painel Esquerdo: Distribuição de Despesas */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center flex-wrap">
-                <PieChart className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-blue-600 flex-shrink-0" />
+            <div className="card p-4 sm:p-6">
+              <h3 className="card-title mb-4 sm:mb-6 flex-wrap">
+                <span className="icon-chip-sm bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+                  <PieChart className="w-4 h-4" />
+                </span>
                 <span className="break-words">Distribuição de Despesas</span>
-                <span className="text-sm sm:text-base w-full sm:w-auto sm:ml-2 text-gray-600">(Total: {formatCurrency(expenseDistribution.total)})</span>
+                <span className="text-sm font-normal w-full sm:w-auto text-slate-500 dark:text-slate-400">(Total: {formatCurrency(expenseDistribution.total)})</span>
               </h3>
 
               {expenseDistribution.data.length > 0 ? (
-                <div className="flex flex-col space-y-2 sm:space-y-3">
+                <div className="list-divider">
                   {expenseDistribution.data.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <span className={`w-4 h-4 sm:w-5 sm:h-5 ${item.color} rounded-full flex-shrink-0`}></span>
-                      <div className="flex-1 min-w-0 text-xs sm:text-sm text-gray-700 truncate">
+                    <div key={index} className="flex items-center gap-2 py-2">
+                      <span className={`w-3 h-3 ${item.color} rounded-full flex-shrink-0`}></span>
+                      <div className="flex-1 min-w-0 text-xs sm:text-sm text-slate-700 dark:text-slate-200 truncate">
                         {item.name}
                       </div>
-                      <div className="text-xs sm:text-sm font-semibold text-gray-800 text-right whitespace-nowrap">
+                      <div className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 text-right whitespace-nowrap">
                         {item.percentage.toFixed(1)}%
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-500 text-right whitespace-nowrap w-20 sm:w-28">
+                      <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 text-right whitespace-nowrap w-20 sm:w-28">
                         {formatCurrency(item.value)}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-gray-500 mt-2 text-center py-6">
-                  Nenhuma despesa para exibir no gráfico neste período.
+                <div className="empty-state">
+                  <PieChart className="w-8 h-8 mb-2" />
+                  <p className="text-sm">Nenhuma despesa para exibir no gráfico neste período.</p>
                 </div>
               )}
             </div>
@@ -1092,28 +1102,28 @@ const Transactions = () => {
           <div className="lg:col-span-3 flex flex-col gap-6">
 
             {/* Seletor de Período */}
-            <div className="p-4 bg-white rounded-xl shadow-md border border-gray-200">
+            <div className="card p-4">
               <div className="flex items-center justify-between">
                 <button
                   onClick={handlePreviousMonth}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  className="seg-btn"
                   title="Mês anterior"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
 
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-800">
+                  <div className="text-lg font-bold text-slate-800 dark:text-white">
                     {format(currentPeriod, 'MMMM', { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())}
                   </div>
-                  <span className="block text-xs text-gray-500">
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">
                     {format(currentPeriod, 'yyyy')}
                   </span>
                 </div>
 
                 <button
                   onClick={handleNextMonth}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  className="seg-btn"
                   title="Próximo mês"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -1122,18 +1132,18 @@ const Transactions = () => {
             </div>
 
             {/* Barra de Busca Consolidada */}
-            <div className="p-4 bg-white rounded-xl shadow-md border border-gray-200" data-tour="transactions-filters">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Busca e Filtros</h3>
+            <div className="card p-4" data-tour="transactions-filters">
+              <h3 className="section-title mb-3">Busca e Filtros</h3>
 
               {/* Campo de Busca por Texto */}
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
                 <input
                   type="text"
                   placeholder="Buscar transações..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="input pl-10"
                 />
               </div>
 
@@ -1143,12 +1153,12 @@ const Transactions = () => {
                 <div className="space-y-4">
                   {/* Filtro de Categorias */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Categorias</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Categorias</label>
                     <div className="relative">
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                        className="input appearance-none pr-8"
                       >
                         <option value="">Todas categorias</option>
                         {categories.map((cat) => (
@@ -1157,56 +1167,56 @@ const Transactions = () => {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
                   </div>
 
                   {/* Filtro de Tipo de Custo */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Custo</label>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Tipo de Custo</label>
                     <div className="relative">
                       <select
                         value={selectedCostType}
                         onChange={(e) => setSelectedCostType(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition appearance-none bg-white pr-8"
+                        className="input appearance-none pr-8"
                       >
                         <option value="">Todos os tipos</option>
                         <option value="Fixos">🔧 Fixos</option>
                         <option value="Variáveis">🛒 Variáveis</option>
                         <option value="Investimentos">📈 Investimentos</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
                   </div>
                 </div>
 
                 {/* Coluna Direita: Tipo de Transação (Radio Buttons) */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Transação</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Tipo de Transação</label>
                   <div className="space-y-2">
-                    <label className="flex items-center p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                    <label className="flex items-center p-2 border border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                       <input
                         type="radio"
                         name="transactionType"
                         value=""
                         checked={selectedType === ''}
                         onChange={(e) => setSelectedType(e.target.value)}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                       />
-                      <span className="ml-2 text-xs text-gray-700">Todas</span>
+                      <span className="ml-2 text-xs text-slate-700 dark:text-slate-200">Todas</span>
                     </label>
-                    <label className="flex items-center p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition">
+                    <label className="flex items-center p-2 border border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-accent-50 dark:hover:bg-accent-900/20 transition">
                       <input
                         type="radio"
                         name="transactionType"
                         value="credit"
                         checked={selectedType === 'credit'}
                         onChange={(e) => setSelectedType(e.target.value)}
-                        className="w-4 h-4 text-green-600 focus:ring-green-500"
+                        className="w-4 h-4 text-accent-600 focus:ring-accent-500"
                       />
-                      <span className="ml-2 text-xs text-gray-700 font-medium">💰 Receitas</span>
+                      <span className="ml-2 text-xs text-slate-700 dark:text-slate-200 font-medium">💰 Receitas</span>
                     </label>
-                    <label className="flex items-center p-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-red-50 transition">
+                    <label className="flex items-center p-2 border border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                       <input
                         type="radio"
                         name="transactionType"
@@ -1215,7 +1225,7 @@ const Transactions = () => {
                         onChange={(e) => setSelectedType(e.target.value)}
                         className="w-4 h-4 text-red-600 focus:ring-red-500"
                       />
-                      <span className="ml-2 text-xs text-gray-700 font-medium">💸 Despesas</span>
+                      <span className="ml-2 text-xs text-slate-700 dark:text-slate-200 font-medium">💸 Despesas</span>
                     </label>
                   </div>
                 </div>
@@ -1308,24 +1318,24 @@ const Transactions = () => {
         )} */}
 
         {/* Tabela de Transações */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+        <div className="table-card">
           <div className="w-full">
-            <table className="w-full divide-y divide-gray-200 table-fixed">
-              <thead className="bg-gray-50">
+            <table className="data-table table-fixed">
+              <thead>
                 <tr>
-                  <th scope="col" className="w-[50px] sm:w-20 px-1 sm:px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
+                  <th scope="col" className="w-[50px] sm:w-20">
                     Data
                   </th>
-                  <th scope="col" className="px-1 sm:px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
+                  <th scope="col">
                     Descrição
                   </th>
-                  <th scope="col" className="hidden md:table-cell w-32 lg:w-40 px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
+                  <th scope="col" className="hidden md:table-cell w-32 lg:w-40">
                     Categoria
                   </th>
-                  <th scope="col" className="hidden sm:table-cell w-20 px-2 py-2 text-left text-xs font-semibold text-gray-600 uppercase">
+                  <th scope="col" className="hidden sm:table-cell w-20">
                     Tipo
                   </th>
-                  <th scope="col" className="w-[90px] sm:w-28 px-1 sm:px-2 py-2 text-right text-xs font-semibold text-gray-600 uppercase">
+                  <th scope="col" className="w-[90px] sm:w-28 !text-right">
                     Valor
                   </th>
                 </tr>
@@ -1336,57 +1346,57 @@ const Transactions = () => {
                 const isReceita = transaction.type === 'credit';
                 const isPossibleDuplicate = possibleDuplicates.has(transaction.id);
                 const rowBgClass = isPossibleDuplicate
-                  ? 'bg-amber-50 hover:bg-amber-100'
-                  : (isUncategorized ? 'bg-gray-100' : (isReceita ? 'hover:bg-green-50' : 'hover:bg-red-50'));
-                const valueClass = isReceita ? 'text-green-500' : 'text-red-500';
+                  ? '[&>td]:bg-amber-50 dark:[&>td]:bg-amber-900/15'
+                  : (isUncategorized ? '[&>td]:bg-slate-50 dark:[&>td]:bg-slate-800/40' : '');
+                const valueClass = isReceita ? 'text-accent-600 dark:text-accent-400' : 'text-red-600 dark:text-red-400';
 
                 return (
-                  <tr key={transaction.id} className={`border-b border-gray-100 transition-all duration-150 ${rowBgClass}`}>
-                    <td className="px-1 sm:px-2 py-2 text-xs font-medium text-gray-500 whitespace-nowrap">
+                  <tr key={transaction.id} className={rowBgClass}>
+                    <td className="!px-1 sm:!px-2 !py-2 text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       {format(new Date(transaction.date), 'dd/MM/yy')}
                     </td>
-                    <td className="px-1 sm:px-2 py-2">
+                    <td className="!px-1 sm:!px-2 !py-2">
                       <div className="flex items-center gap-1 sm:gap-2">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-white shadow-sm flex-shrink-0">
+                        <span className="icon-chip-sm bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                           <CategoryIconSmall category={transaction.category || 'Não Categorizado'} className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </div>
+                        </span>
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-xs sm:text-sm text-gray-800 truncate">{transaction.merchant || transaction.description}</span>
+                            <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">{transaction.merchant || transaction.description}</span>
                             {isPossibleDuplicate && (
                               <div className="relative group flex-shrink-0">
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-medium border border-amber-200 cursor-help">
+                                <div className="badge badge-warning cursor-help">
                                   <Copy className="w-3 h-3" />
                                   <span className="hidden sm:inline">Duplicata?</span>
                                 </div>
                                 {/* Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-lg min-w-[200px] max-w-[280px]">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-lg min-w-[200px] max-w-[280px]">
                                   <div className="font-semibold mb-1">⚠️ Possível duplicata</div>
-                                  <div className="text-gray-300 text-[11px] leading-relaxed">
+                                  <div className="text-slate-300 text-xs leading-relaxed">
                                     Existe outra transação com mesma data, valor e descrição.
                                     <br /><br />
                                     <span className="text-amber-300">Os IDs são diferentes</span>, então foram enviadas como transações distintas pelo banco.
                                     <br /><br />
                                     Verifique no extrato do banco se é um lançamento duplicado.
                                   </div>
-                                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-slate-900"></div>
                                 </div>
                               </div>
                             )}
                           </div>
                           {transaction.reference && (
-                            <div className="text-xs text-gray-500 truncate">{transaction.reference}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{transaction.reference}</div>
                           )}
                           {/* Mostrar categoria em mobile */}
                           <div className="md:hidden mt-1 flex items-center space-x-1" data-tour="category-dropdown-mobile">
                             {isUncategorized && (
-                              <AlertCircle className="w-3 h-3 text-orange-600 flex-shrink-0" />
+                              <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                             )}
                             <select
                               value={transaction.subcategory ? `${transaction.category}::${transaction.subcategory}` : transaction.category || ''}
                               onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                              className={`text-xs border rounded px-1 py-0.5 focus:outline-none focus:ring-1 max-w-[100px] truncate ${
-                                isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
+                              className={`text-xs border rounded-lg px-1 py-0.5 focus:outline-none focus:ring-1 max-w-[100px] truncate ${
+                                isUncategorized ? 'border-slate-400 bg-slate-100 text-slate-900 font-semibold focus:ring-slate-500 dark:bg-slate-700 dark:text-white dark:border-slate-500' : 'border-slate-300 bg-white text-slate-900 focus:ring-primary-500 dark:bg-slate-800 dark:text-white dark:border-slate-600'
                               }`}
                             >
                               {/* Opção "Não Categorizado" sempre primeiro */}
@@ -1419,7 +1429,7 @@ const Transactions = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="hidden md:table-cell px-2 py-2">
+                    <td className="hidden md:table-cell !px-2 !py-2">
                       <div className="flex items-center space-x-1" data-tour="category-dropdown">
                         {/* Ícone da categoria */}
                         {!isUncategorized && transaction.category && (
@@ -1428,13 +1438,13 @@ const Transactions = () => {
                           </div>
                         )}
                         {isUncategorized && (
-                          <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                         )}
                         <select
                           value={transaction.subcategory ? `${transaction.category}::${transaction.subcategory}` : transaction.category || ''}
                           onChange={(e) => handleUpdateCategory(transaction.id, e.target.value)}
-                          className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 w-full ${
-                            isUncategorized ? 'border-gray-400 bg-gray-100 text-gray-900 font-semibold focus:ring-gray-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'
+                          className={`text-xs border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 w-full ${
+                            isUncategorized ? 'border-slate-400 bg-slate-100 text-slate-900 font-semibold focus:ring-slate-500 dark:bg-slate-700 dark:text-white dark:border-slate-500' : 'border-slate-300 bg-white text-slate-900 focus:ring-primary-500 dark:bg-slate-800 dark:text-white dark:border-slate-600'
                           }`}
                         >
                           {/* Opção "Não Categorizado" sempre primeiro */}
@@ -1465,18 +1475,12 @@ const Transactions = () => {
                         </select>
                       </div>
                     </td>
-                    <td className="hidden sm:table-cell px-2 py-2">
-                      <span
-                        className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
-                          transaction.type === 'credit'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
+                    <td className="hidden sm:table-cell !px-2 !py-2">
+                      <span className={`badge ${transaction.type === 'credit' ? 'badge-success' : 'badge-danger'}`}>
                         {transaction.type === 'credit' ? 'Rec' : 'Desp'}
                       </span>
                     </td>
-                    <td className={`px-1 sm:px-2 py-2 text-xs sm:text-sm font-semibold text-right whitespace-nowrap ${valueClass}`}>
+                    <td className={`!px-1 sm:!px-2 !py-2 text-xs sm:text-sm font-semibold !text-right whitespace-nowrap ${valueClass}`}>
                       {isReceita ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                     </td>
                   </tr>
@@ -1484,8 +1488,11 @@ const Transactions = () => {
               })}
               {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-4 sm:p-8 text-center text-sm sm:text-base text-gray-500">
-                    Nenhuma transação encontrada para o termo de busca.
+                  <td colSpan={5}>
+                    <div className="empty-state">
+                      <Search className="w-8 h-8 mb-2" />
+                      <p className="text-sm">Nenhuma transação encontrada para o termo de busca.</p>
+                    </div>
                   </td>
                 </tr>
               )}

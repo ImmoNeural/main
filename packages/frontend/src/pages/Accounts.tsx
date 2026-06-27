@@ -46,21 +46,30 @@ const getBankLogo = (bankName: string): string | null => {
   return null;
 };
 
-// Função para obter cor do banco
-const getBankColor = (bankName: string): string => {
+// Tint pairs permitidos para o icon-chip do banco
+const BANK_TINTS = [
+  'bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300',
+  'bg-accent-50 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300',
+  'bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-300',
+  'bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300',
+  'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+];
+
+// Função para obter a tint do banco (rotação determinística pelo nome)
+const getBankTint = (bankName: string): string => {
   const name = bankName.toLowerCase();
-  if (name.includes('nubank')) return 'from-purple-500 to-purple-600';
-  if (name.includes('itau') || name.includes('itaú')) return 'from-orange-500 to-orange-600';
-  if (name.includes('bradesco')) return 'from-red-500 to-red-600';
-  if (name.includes('santander')) return 'from-red-600 to-red-700';
-  if (name.includes('caixa')) return 'from-blue-600 to-blue-700';
-  if (name.includes('brasil') || name.includes('bb')) return 'from-yellow-500 to-yellow-600';
-  if (name.includes('inter')) return 'from-orange-500 to-orange-600';
-  if (name.includes('c6')) return 'from-gray-800 to-black';
-  if (name.includes('original')) return 'from-green-500 to-green-600';
-  if (name.includes('neon')) return 'from-cyan-500 to-cyan-600';
-  if (name.includes('next')) return 'from-green-400 to-green-500';
-  return 'from-primary-500 to-primary-600';
+  if (name.includes('nubank')) return BANK_TINTS[0];
+  if (name.includes('itau') || name.includes('itaú')) return BANK_TINTS[3];
+  if (name.includes('bradesco')) return BANK_TINTS[2];
+  if (name.includes('santander')) return BANK_TINTS[2];
+  if (name.includes('caixa')) return BANK_TINTS[0];
+  if (name.includes('brasil') || name.includes('bb')) return BANK_TINTS[3];
+  if (name.includes('inter')) return BANK_TINTS[3];
+  if (name.includes('c6')) return BANK_TINTS[4];
+  if (name.includes('original')) return BANK_TINTS[1];
+  if (name.includes('neon')) return BANK_TINTS[0];
+  if (name.includes('next')) return BANK_TINTS[1];
+  return BANK_TINTS[0];
 };
 
 // Componente de ícone do banco
@@ -68,21 +77,21 @@ const BankIcon = ({ bankName, isActive, size = 'normal', logoUrl }: { bankName: 
   // Prioridade: 1) logo_url do Pluggy, 2) logo estático local, 3) iniciais
   const logo = logoUrl || getBankLogo(bankName);
   const initials = bankName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-  const gradientColor = getBankColor(bankName);
+  const tint = getBankTint(bankName);
 
-  const sizeClasses = size === 'large' ? 'w-16 h-16' : 'w-12 h-12';
+  const sizeClasses = size === 'large' ? 'w-16 h-16 rounded-2xl' : 'icon-chip-lg';
   const textSize = size === 'large' ? 'text-xl' : 'text-base';
 
   if (logo) {
     return (
-      <div className={`${sizeClasses} rounded-2xl overflow-hidden bg-white shadow-md flex items-center justify-center p-2 ${isActive ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
+      <div className={`${sizeClasses} icon-chip overflow-hidden bg-white dark:bg-slate-700 p-2 ${isActive ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
         <img
           src={logo}
           alt={bankName}
           className="w-full h-full object-contain"
           onError={(e) => {
             e.currentTarget.style.display = 'none';
-            e.currentTarget.parentElement!.innerHTML = `<span class="${textSize} font-bold text-gray-700">${initials}</span>`;
+            e.currentTarget.parentElement!.innerHTML = `<span class="${textSize} font-bold text-slate-700">${initials}</span>`;
           }}
         />
       </div>
@@ -90,8 +99,8 @@ const BankIcon = ({ bankName, isActive, size = 'normal', logoUrl }: { bankName: 
   }
 
   return (
-    <div className={`${sizeClasses} rounded-2xl bg-gradient-to-br ${gradientColor} shadow-lg flex items-center justify-center ${isActive ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
-      <span className={`${textSize} font-bold text-white`}>{initials}</span>
+    <div className={`${sizeClasses} icon-chip ${tint} ${isActive ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
+      <span className={`${textSize} font-bold`}>{initials}</span>
     </div>
   );
 };
@@ -255,7 +264,7 @@ const Accounts = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
+        <div className="spinner w-8 h-8" />
       </div>
     );
   }
@@ -264,27 +273,39 @@ const Accounts = () => {
     <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4" data-tour="accounts-page-content">
       <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Contas Bancárias</h1>
-          <p className="text-sm sm:text-base text-gray-500 mt-1">Gerencie suas contas conectadas</p>
+      <div className="page-header">
+        <div className="page-header__titles">
+          <div>
+            <h1 className="page-title">Contas Bancárias</h1>
+            <p className="page-subtitle mt-1">Gerencie suas contas conectadas</p>
+          </div>
         </div>
-        <Link to="/app/transactions" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
-          <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
-          <span className="text-sm sm:text-base">Importar Transações</span>
-        </Link>
+        <div className="page-header__actions">
+          <Link to="/app/transactions" className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center">
+            <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
+            <span>Importar Transações</span>
+          </Link>
+        </div>
       </div>
 
       {/* No accounts message */}
       {accounts.length === 0 && (
-        <div className="card text-center py-12">
-          <Wallet className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Nenhuma conta conectada
-          </h3>
-          <p className="text-gray-500">
-            Conecte sua conta bancária para começar a rastrear seus gastos
-          </p>
+        <div className="card">
+          <div className="empty-state">
+            <div className="icon-chip icon-chip-lg bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 mb-4">
+              <Wallet className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              Nenhuma conta conectada
+            </h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-5">
+              Conecte sua conta bancária para começar a rastrear seus gastos
+            </p>
+            <Link to="/app/transactions" className="btn-primary inline-flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              <span>Importar Transações</span>
+            </Link>
+          </div>
         </div>
       )}
 
@@ -295,22 +316,16 @@ const Accounts = () => {
           return (
           <div
             key={account.id}
-            className={`relative bg-white rounded-3xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl ${
-              isActive ? 'ring-2 ring-primary-500' : 'hover:-translate-y-1'
+            className={`card card-interactive relative overflow-hidden p-0 ${
+              isActive ? 'ring-2 ring-primary-500' : ''
             }`}
           >
-            {/* Header com gradiente */}
-            <div className={`relative px-6 pt-6 pb-4 ${isActive ? 'bg-gradient-to-br from-primary-50 to-green-50' : 'bg-gradient-to-br from-gray-50 to-white'}`}>
+            {/* Header */}
+            <div className={`relative px-6 pt-6 pb-4 ${isActive ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-slate-50 dark:bg-slate-800/60'}`}>
               {/* Badge de status */}
               <div className="absolute top-4 right-4">
-                <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${
-                    isActive
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {isActive && <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />}
+                <span className={`badge ${isActive ? 'badge-success' : 'badge-neutral'}`}>
+                  {isActive && <span className="w-1.5 h-1.5 bg-accent-500 rounded-full animate-pulse" />}
                   {isActive ? 'Ativo' : 'Inativo'}
                 </span>
               </div>
@@ -320,15 +335,15 @@ const Accounts = () => {
                 <BankIcon bankName={account.bank_name} isActive={isActive} size="large" logoUrl={account.logo_url} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-gray-900 text-lg truncate">{account.bank_name}</h3>
-                    {isActive && <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />}
+                    <h3 className="font-bold text-slate-900 dark:text-white text-lg truncate">{account.bank_name}</h3>
+                    {isActive && <CheckCircle className="w-5 h-5 text-accent-600 dark:text-accent-400 flex-shrink-0" />}
                   </div>
-                  <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5 truncate">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
                     <CreditCard className="w-4 h-4 flex-shrink-0" />
                     <span className="truncate">{account.account_type || 'Conta Corrente'}</span>
                   </p>
                   {isActive && (
-                    <p className="text-xs text-primary-600 font-medium mt-1">
+                    <p className="text-xs text-primary-600 dark:text-primary-300 font-medium mt-1">
                       Banco Ativo no Dashboard
                     </p>
                   )}
@@ -342,25 +357,25 @@ const Accounts = () => {
               {account.account_type !== 'card' ? (
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Saldo</p>
+                    <p className="section-label">Saldo</p>
                     {account.credit_limit && account.credit_limit > 0 && (
-                      <p className="text-xs text-gray-500">
-                        Limite: <span className="font-semibold text-gray-700">{formatCurrency(account.credit_limit)}</span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Limite: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(account.credit_limit)}</span>
                       </p>
                     )}
                   </div>
-                  <p className={`text-3xl font-bold ${account.balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                  <p className={`text-3xl font-bold ${account.balance >= 0 ? 'text-accent-600 dark:text-accent-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrency(account.balance)}
                   </p>
                   {/* Mostrar saldo disponível quando houver limite e saldo negativo */}
                   {account.credit_limit && account.credit_limit > 0 && account.balance < 0 && (
-                    <p className="text-xs text-amber-600 mt-1">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                       Disponível no limite: <span className="font-semibold">{formatCurrency(account.credit_limit + account.balance)}</span>
                     </p>
                   )}
                   {/* Mostrar saldo total disponível quando houver limite e saldo positivo */}
                   {account.credit_limit && account.credit_limit > 0 && account.balance >= 0 && (
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="text-xs text-accent-600 dark:text-accent-400 mt-1">
                       Total disponível: <span className="font-semibold">{formatCurrency(account.credit_limit + account.balance)}</span>
                     </p>
                   )}
@@ -368,18 +383,18 @@ const Accounts = () => {
               ) : (
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Cartão de Crédito</p>
+                    <p className="section-label">Cartão de Crédito</p>
                     {account.credit_limit && account.credit_limit > 0 && (
-                      <p className="text-xs text-gray-500">
-                        Limite: <span className="font-semibold text-gray-700">{formatCurrency(account.credit_limit)}</span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Limite: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(account.credit_limit)}</span>
                       </p>
                     )}
                   </div>
-                  <p className="text-lg font-semibold text-purple-600">
+                  <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
                     Fatura: {formatCurrency(Math.abs(account.balance))}
                   </p>
                   {account.credit_limit && account.credit_limit > 0 && (
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="text-xs text-accent-600 dark:text-accent-400 mt-1">
                       Disponível: <span className="font-semibold">{formatCurrency(account.credit_limit - Math.abs(account.balance))}</span>
                     </p>
                   )}
@@ -389,10 +404,10 @@ const Accounts = () => {
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-start gap-2">
-                  <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <Clock className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-xs text-gray-400">Última sync</p>
-                    <p className="text-gray-700 font-medium">
+                    <p className="text-xs text-slate-400">Última sync</p>
+                    <p className="text-slate-700 dark:text-slate-200 font-medium">
                       {account.last_sync_at
                         ? format(new Date(account.last_sync_at), 'dd/MM HH:mm')
                         : 'Nunca'}
@@ -400,10 +415,10 @@ const Accounts = () => {
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <Calendar className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-xs text-gray-400">Conectada em</p>
-                    <p className="text-gray-700 font-medium">
+                    <p className="text-xs text-slate-400">Conectada em</p>
+                    <p className="text-slate-700 dark:text-slate-200 font-medium">
                       {format(new Date(account.connected_at), 'dd/MM/yyyy')}
                     </p>
                   </div>
@@ -417,7 +432,7 @@ const Accounts = () => {
               {!isActive && (
                 <button
                   onClick={() => setActiveAccount(account.id)}
-                  className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                  className="btn-primary w-full flex items-center justify-center gap-2"
                 >
                   <CheckCircle className="w-5 h-5" />
                   <span>Usar no Dashboard</span>
@@ -429,7 +444,7 @@ const Accounts = () => {
                 <button
                   onClick={() => handleSync(account.id)}
                   disabled={syncing === account.id}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
                   title="Sincronizar transações"
                 >
                   <RefreshCw className={`w-5 h-5 ${syncing === account.id ? 'animate-spin' : ''}`} />
@@ -437,7 +452,7 @@ const Accounts = () => {
                 </button>
                 <button
                   onClick={() => handleDelete(account.id)}
-                  className="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-3 px-4 rounded-xl flex items-center justify-center transition-all"
+                  className="btn-danger flex items-center justify-center"
                   title="Desconectar e remover conta"
                 >
                   <Trash2 className="w-5 h-5" />
@@ -451,21 +466,19 @@ const Accounts = () => {
 
       {/* Info box */}
       {accounts.length > 0 && (
-        <div className="card bg-blue-50 border border-blue-200">
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-blue-900 mb-1">
-                Sobre a sincronização e gerenciamento de dados
-              </h3>
-              <p className="text-sm text-blue-800">
-                <strong>Sincronização inteligente:</strong> O sistema busca apenas transações novas desde a última sincronização, economizando tempo e recursos.
-                <br />
-                <strong>Validade:</strong> O acesso via Open Finance é válido por 90 dias. Após esse período, basta reconectar a conta.
-                <br />
-                <strong>⚠️ Deletar conta:</strong> Ao clicar no ícone de lixeira, a conta e TODAS as transações associadas serão deletadas permanentemente. Você pode reimportar o CSV ou reconectar via Open Finance para recriar a conta.
-              </p>
-            </div>
+        <div className="info-card">
+          <AlertCircle className="w-5 h-5 text-primary-600 dark:text-primary-300 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+              Sobre a sincronização e gerenciamento de dados
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              <strong>Sincronização inteligente:</strong> O sistema busca apenas transações novas desde a última sincronização, economizando tempo e recursos.
+              <br />
+              <strong>Validade:</strong> O acesso via Open Finance é válido por 90 dias. Após esse período, basta reconectar a conta.
+              <br />
+              <strong>Deletar conta:</strong> Ao clicar no ícone de lixeira, a conta e TODAS as transações associadas serão deletadas permanentemente. Você pode reimportar o CSV ou reconectar via Open Finance para recriar a conta.
+            </p>
           </div>
         </div>
       )}

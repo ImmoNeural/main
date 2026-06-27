@@ -4,7 +4,7 @@ import { transactionApi, budgetApi, preferencesApi, PreferenceItem } from '../se
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowLeft, Edit, Upload } from 'lucide-react';
+import { ArrowLeft, Edit, Upload, BarChart3, Calendar } from 'lucide-react';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import {
   BarChart,
@@ -348,11 +348,9 @@ export default function BudgetDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando detalhes...</p>
-        </div>
+      <div className="empty-state min-h-screen">
+        <div className="spinner mb-4"></div>
+        <p className="text-slate-500 dark:text-slate-400">Carregando detalhes...</p>
       </div>
     );
   }
@@ -368,44 +366,48 @@ export default function BudgetDetails() {
   const remainingAmount = Math.max(0, currentMonthData.budget - currentMonthData.spent);
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen pb-20 lg:pb-6">
-      {/* Header */}
-      <div className="max-w-6xl mx-auto mb-6">
-        <div className="flex justify-between items-start mb-4">
-          <Link
-            to="/app/budgets"
-            className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 text-sm font-medium"
-          >
-            <ArrowLeft className="w-4 h-4" /> Voltar para Budgets
-          </Link>
+    <div className="p-4 sm:p-6 bg-slate-50 dark:bg-slate-900 min-h-screen pb-20 lg:pb-6">
+      <div className="max-w-6xl mx-auto">
+        <Link
+          to="/app/budgets"
+          className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 text-sm font-medium mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" /> Voltar para Budgets
+        </Link>
 
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="btn-primary flex items-center space-x-2"
-            title="Importar transações CSV"
-          >
-            <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-sm sm:text-base">Importar CSV</span>
-          </button>
-        </div>
+        {/* Header */}
+        <div className="page-header">
+          <div className="page-header__titles">
+            <span className="icon-chip-lg bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-2xl">
+              {categoryInfo.icon}
+            </span>
+            <div className="min-w-0">
+              <h1 className="page-title">{decodeURIComponent(categoryName!)}</h1>
+              <p className="page-subtitle">{categoryInfo.type}</p>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-4 mb-2">
-          <span className="text-5xl">{categoryInfo.icon}</span>
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-800">{decodeURIComponent(categoryName!)}</h1>
-            <p className="text-sm text-gray-500">{categoryInfo.type}</p>
+          <div className="page-header__actions">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="btn-secondary flex items-center gap-2"
+              title="Importar transações CSV"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Importar CSV</span>
+            </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Card Resumo do Mês */}
-        <div className="card p-6" style={{ borderTop: `4px solid ${categoryInfo.color}` }}>
+        <div className="card p-6 border-t-2 border-primary-500">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="section-title">
               {currentMonthData.monthLabel || format(new Date(), 'MMMM/yy', { locale: ptBR })}
             </h2>
-            <span className="text-sm font-semibold text-gray-600">
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
               Budget: R$ {currentMonthData.budget.toFixed(2).replace('.', ',')}
             </span>
           </div>
@@ -413,26 +415,26 @@ export default function BudgetDetails() {
           {/* Barra de Status */}
           <div className="mb-4">
             <div className="flex justify-between text-sm font-bold mb-2">
-              <span style={{ color: isExceeded ? '#FF9800' : '#4CAF50' }}>
-                {isExceeded
-                  ? `Excedido R$ ${excessAmount.toFixed(2).replace('.', ',')}`
-                  : `R$ ${remainingAmount.toFixed(2).replace('.', ',')} disponível`}
-              </span>
-              <span className="text-gray-600">
+              {isExceeded ? (
+                <span className="badge badge-warning">
+                  Excedido R$ {excessAmount.toFixed(2).replace('.', ',')}
+                </span>
+              ) : (
+                <span className="badge badge-success">
+                  R$ {remainingAmount.toFixed(2).replace('.', ',')} disponível
+                </span>
+              )}
+              <span className="text-slate-600 dark:text-slate-300">
                 Gasto: R$ {currentMonthData.spent.toFixed(2).replace('.', ',')}
               </span>
             </div>
 
-            <div className="relative h-4 rounded-full bg-gray-200 overflow-hidden">
+            <div className="progress-track h-4">
               <div
-                className="absolute h-full rounded-full transition-all duration-500"
-                style={{
-                  width: isExceeded ? '100%' : `${Math.min(percentage, 100)}%`,
-                  backgroundColor: isExceeded ? '#FF9800' : '#4CAF50',
-                  boxShadow: isExceeded ? '0 0 10px rgba(255, 152, 0, 0.7)' : 'none',
-                }}
+                className={`progress-fill ${isExceeded ? 'bg-amber-500' : 'bg-accent-500'}`}
+                style={{ width: isExceeded ? '100%' : `${Math.min(percentage, 100)}%` }}
               >
-                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
                   {percentage.toFixed(0)}%
                 </div>
               </div>
@@ -440,15 +442,15 @@ export default function BudgetDetails() {
           </div>
 
           {/* Budget Value com edição */}
-          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
             {!isEditingBudget ? (
               <>
                 <div>
-                  <span className="text-sm text-gray-600">Valor do Budget:</span>
-                  <p className="text-2xl font-bold" style={{ color: categoryInfo.color }}>
+                  <span className="text-sm text-slate-600 dark:text-slate-300">Valor do Budget:</span>
+                  <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                     R$ {suggestedBudget.toFixed(2).replace('.', ',')}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-slate-400 mt-1">
                     {isCustomBudget
                       ? '✏️ Valor definido por você'
                       : '📝 Clique no lápis para definir seu budget'}
@@ -456,10 +458,11 @@ export default function BudgetDetails() {
                 </div>
                 <button
                   onClick={handleBudgetEdit}
-                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition"
+                  className="btn-secondary flex items-center gap-2"
                   title="Editar budget"
                 >
-                  <Edit className="w-5 h-5 text-gray-600" />
+                  <Edit className="w-4 h-4" />
+                  <span>Editar</span>
                 </button>
               </>
             ) : (
@@ -468,19 +471,19 @@ export default function BudgetDetails() {
                   type="number"
                   value={customBudget || ''}
                   onChange={(e) => setCustomBudget(Number(e.target.value))}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="input flex-1"
                   placeholder="Digite o valor do budget"
                   autoFocus
                 />
                 <button
                   onClick={handleBudgetSave}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+                  className="btn-primary"
                 >
                   Salvar
                 </button>
                 <button
                   onClick={() => setIsEditingBudget(false)}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                  className="btn-secondary"
                 >
                   Cancelar
                 </button>
@@ -491,8 +494,11 @@ export default function BudgetDetails() {
 
         {/* Card Gráfico - Últimos 12 Meses */}
         <div className="card p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            📊 Últimos 12 Meses (em Reais R$)
+          <h2 className="section-title flex items-center gap-2.5 mb-4">
+            <span className="icon-chip-sm bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+              <BarChart3 className="w-4 h-4" />
+            </span>
+            Últimos 12 Meses (em Reais R$)
           </h2>
 
           <ResponsiveContainer width="100%" height={400}>
@@ -519,53 +525,68 @@ export default function BudgetDetails() {
 
         {/* Card Lista dos Meses Anteriores */}
         <div className="card p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">📅 Histórico Mensal</h2>
+          <h2 className="section-title flex items-center gap-2.5 mb-4">
+            <span className="icon-chip-sm bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+              <Calendar className="w-4 h-4" />
+            </span>
+            Histórico Mensal
+          </h2>
 
-          <div className="space-y-3">
-            {monthlyData.slice().reverse().map((monthData) => {
-              const isExceededMonth = monthData.spent > monthData.budget;
-              const percentageMonth = monthData.budget > 0 ? (monthData.spent / monthData.budget) * 100 : 0;
-              const excessMonth = Math.max(0, monthData.spent - monthData.budget);
-              const remainingMonth = Math.max(0, monthData.budget - monthData.spent);
+          {monthlyData.length === 0 ? (
+            <div className="empty-state">
+              <span className="icon-chip-lg bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 mb-3">
+                <BarChart3 className="w-6 h-6" />
+              </span>
+              <p className="text-slate-500 dark:text-slate-400 mb-2">Nenhum histórico disponível ainda.</p>
+              <Link to="/app/transactions" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                Adicionar transações
+              </Link>
+            </div>
+          ) : (
+            <div className="list-divider">
+              {monthlyData.slice().reverse().map((monthData) => {
+                const isExceededMonth = monthData.spent > monthData.budget;
+                const percentageMonth = monthData.budget > 0 ? (monthData.spent / monthData.budget) * 100 : 0;
+                const excessMonth = Math.max(0, monthData.spent - monthData.budget);
+                const remainingMonth = Math.max(0, monthData.budget - monthData.spent);
 
-              return (
-                <div
-                  key={monthData.month}
-                  className="p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-bold text-gray-800">{monthData.monthLabel}</h3>
-                    <span className="text-sm text-gray-600">
-                      Gasto: R$ {monthData.spent.toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-
-                  <div className="mb-2">
-                    <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span style={{ color: isExceededMonth ? '#FF9800' : '#4CAF50' }}>
-                        {isExceededMonth
-                          ? `Excedido R$ ${excessMonth.toFixed(2).replace('.', ',')}`
-                          : `R$ ${remainingMonth.toFixed(2).replace('.', ',')} disponível`}
-                      </span>
-                      <span className="text-gray-500">
-                        Budget: R$ {monthData.budget.toFixed(2).replace('.', ',')}
+                return (
+                  <div key={monthData.month} className="list-row flex-col items-stretch">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-slate-900 dark:text-white">{monthData.monthLabel}</h3>
+                      <span className="text-sm text-slate-600 dark:text-slate-300">
+                        Gasto: R$ {monthData.spent.toFixed(2).replace('.', ',')}
                       </span>
                     </div>
 
-                    <div className="relative h-2 rounded-full bg-gray-200 overflow-hidden">
-                      <div
-                        className="absolute h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: isExceededMonth ? '100%' : `${Math.min(percentageMonth, 100)}%`,
-                          backgroundColor: isExceededMonth ? '#FF9800' : '#4CAF50',
-                        }}
-                      ></div>
+                    <div>
+                      <div className="flex justify-between text-xs font-semibold mb-1">
+                        {isExceededMonth ? (
+                          <span className="badge badge-warning">
+                            Excedido R$ {excessMonth.toFixed(2).replace('.', ',')}
+                          </span>
+                        ) : (
+                          <span className="badge badge-success">
+                            R$ {remainingMonth.toFixed(2).replace('.', ',')} disponível
+                          </span>
+                        )}
+                        <span className="text-slate-500 dark:text-slate-400">
+                          Budget: R$ {monthData.budget.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+
+                      <div className="progress-track">
+                        <div
+                          className={`progress-fill ${isExceededMonth ? 'bg-amber-500' : 'bg-accent-500'}`}
+                          style={{ width: isExceededMonth ? '100%' : `${Math.min(percentageMonth, 100)}%` }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

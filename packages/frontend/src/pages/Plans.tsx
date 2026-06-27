@@ -289,97 +289,95 @@ const Plans = () => {
         keywords="planos, assinatura, preços, guru do dindin"
       />
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Container principal */}
         <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
           {/* Título */}
           <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
               Escolha o Plano Perfeito
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
               Comece a organizar suas finanças hoje. Planos mensais com 7 dias grátis!
             </p>
 
             {/* Aviso para usuários do app mobile */}
             {isNativeApp && (
-              <div className="mt-4 max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800 flex items-center justify-center gap-2">
-                  <ExternalLink className="w-4 h-4" />
-                  Para sua segurança, o pagamento será realizado pelo nosso site
-                </p>
+              <div className="info-card mt-4 max-w-2xl mx-auto justify-center">
+                <ExternalLink className="w-4 h-4 flex-shrink-0 mt-0.5 text-primary-600 dark:text-primary-300" />
+                <span>Para sua segurança, o pagamento será realizado pelo nosso site</span>
               </div>
             )}
 
             {/* Status da Assinatura */}
             {processingPayment && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-primary-50 to-pink-50 border-2 border-primary-200 rounded-xl p-4 shadow-md">
-                <div className="flex items-center justify-center space-x-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary-600" />
-                  <p className="text-center text-primary-800 font-semibold">
+              <div className="info-card mt-6 max-w-2xl mx-auto flex-col items-center text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary-600 dark:text-primary-300" />
+                  <p className="font-semibold text-primary-700 dark:text-primary-300">
                     Processando seu pagamento...
                   </p>
                 </div>
-                <p className="text-center text-primary-600 text-sm mt-1">
+                <p className="text-sm mt-1">
                   Aguarde enquanto confirmamos sua assinatura
                 </p>
               </div>
             )}
             {/* Mensagem de Trial/Pending Ativo (AMARELA) */}
             {!processingPayment && !initializing && (isOnTrial || isPending) && daysRemaining > 0 && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-4 shadow-md">
-                <p className="text-center text-yellow-900 font-semibold">
+              <div className="card mt-6 max-w-2xl mx-auto bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/40">
+                <p className="text-center text-amber-900 dark:text-amber-300 font-semibold">
                   🎉 Período de teste ativo! Restam {daysRemaining} dia{daysRemaining !== 1 ? 's' : ''} grátis
                 </p>
-                <p className="text-center text-yellow-700 text-sm mt-1">
+                <p className="text-center text-amber-700 dark:text-amber-400 text-sm mt-1">
                   Aproveite para testar todas as funcionalidades. Depois escolha seu plano!
                 </p>
               </div>
             )}
             {/* Mensagem de Trial Expirado (VERMELHA) - Só mostra se trial expirou */}
             {!processingPayment && !initializing && !isActive && daysRemaining === 0 && trialEndDate && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
-                <p className="text-center text-red-800 font-bold text-lg">
+              <div className="card mt-6 max-w-2xl mx-auto bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/40">
+                <p className="text-center text-red-700 dark:text-red-400 font-bold text-lg">
                   ⏰ Seu trial de 7 dias expirou!
                 </p>
-                <p className="text-center text-red-700 text-base mt-2">
+                <p className="text-center text-red-700 dark:text-red-400 text-base mt-2">
                   Para continuar aproveitando todas as funcionalidades, escolha um plano abaixo.
                 </p>
-                <p className="text-center text-red-600 text-sm mt-2 font-semibold">
+                <p className="text-center text-red-600 dark:text-red-400 text-sm mt-2 font-semibold">
                   💡 Todas as suas contas e transações estão salvas e voltarão quando você assinar!
                 </p>
               </div>
             )}
             {/* Mensagem Sem Plano (VERMELHA) - Só mostra se NÃO tem dias restantes */}
             {!processingPayment && !initializing && !isActive && daysRemaining < 0 && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 shadow-md">
-                <p className="text-center text-red-800 font-bold text-lg">
+              <div className="card mt-6 max-w-2xl mx-auto bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/40">
+                <p className="text-center text-red-700 dark:text-red-400 font-bold text-lg">
                   ⚠️ Você não possui um plano ativo
                 </p>
-                <p className="text-center text-red-700 text-base mt-2">
+                <p className="text-center text-red-700 dark:text-red-400 text-base mt-2">
                   Escolha um plano abaixo para continuar usando o Guru do Dindin
                 </p>
-                <p className="text-center text-red-600 text-sm mt-2 font-semibold">
+                <p className="text-center text-red-600 dark:text-red-400 text-sm mt-2 font-semibold">
                   💡 Todas as suas contas e transações estão salvas e voltarão quando você assinar!
                 </p>
               </div>
             )}
             {!processingPayment && isActive && (
-              <div className="mt-6 max-w-2xl mx-auto bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-md">
-                <p className="text-center text-green-800 font-semibold">
+              <div className="card mt-6 max-w-2xl mx-auto bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-900/40">
+                <p className="text-center text-accent-700 dark:text-accent-400 font-semibold">
                   ✅ Plano ativo: {currentPlan === 'manual' ? 'Manual' : currentPlan === 'conectado' ? 'Conectado' : 'Conectado Plus'}
                 </p>
-                <p className="text-center text-green-600 text-sm mt-1">
+                <p className="text-center text-accent-600 dark:text-accent-400 text-sm mt-1">
                   Você pode fazer upgrade para outro plano a qualquer momento
                 </p>
                 {endDate && (
-                  <p className="text-center text-green-600 text-xs mt-1">
+                  <p className="text-center text-accent-600 dark:text-accent-400 text-xs mt-1">
                     Próxima cobrança: {new Date(endDate).toLocaleDateString('pt-BR')}
                   </p>
                 )}
                 <button
                   onClick={() => setShowCancelConfirm(true)}
-                  className="mt-3 mx-auto block text-sm text-red-600 hover:text-red-700 underline"
+                  className="mt-3 mx-auto block text-sm text-red-600 dark:text-red-400 hover:text-red-700 underline"
                 >
                   Cancelar assinatura
                 </button>
@@ -391,7 +389,7 @@ const Plans = () => {
               <div className="mt-3 text-center">
                 <button
                   onClick={() => setShowCancelConfirm(true)}
-                  className="text-sm text-gray-500 hover:text-red-600 underline"
+                  className="text-sm text-slate-500 dark:text-slate-400 hover:text-red-600 underline"
                 >
                   Cancelar trial (não será cobrado)
                 </button>
@@ -405,17 +403,16 @@ const Plans = () => {
               <div
                 key={plan.id}
                 className={`
-                  relative bg-white rounded-2xl shadow-2xl overflow-hidden
-                  transform transition-all duration-300 hover:scale-105 hover:shadow-3xl
-                  ${plan.popular ? 'ring-4 ring-yellow-400' : ''}
+                  card card-interactive relative overflow-hidden p-0 flex flex-col
+                  ${plan.popular ? 'border-primary-500' : ''}
                   animate-slide-up
                 `}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {/* Badge Popular */}
                 {plan.popular && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-4 py-1 rounded-bl-xl font-bold text-sm flex items-center space-x-1 shadow-lg">
-                    <Star className="w-4 h-4 fill-current" />
+                  <div className="absolute top-0 right-0 badge badge-primary rounded-none rounded-bl-2xl">
+                    <Star className="w-3.5 h-3.5 fill-current" />
                     <span>MAIS POPULAR</span>
                   </div>
                 )}
@@ -424,26 +421,26 @@ const Plans = () => {
                 <div className="p-6 flex flex-col h-full">
                   {/* Ícone e Nome */}
                   <div className="mb-6">
-                    <div className="bg-gradient-to-br from-primary-500 to-primary-600 text-white w-16 h-16 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                    <div className="icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300 mb-4">
                       {plan.icon}
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                    <p className="text-gray-600 text-sm">{plan.description}</p>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{plan.name}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">{plan.description}</p>
                   </div>
 
                   {/* Preço Mensal */}
                   <div className="mb-6">
                     <div className="flex items-baseline mb-2">
-                      <span className="text-4xl font-extrabold text-primary-600">
+                      <span className="text-4xl font-extrabold text-primary-600 dark:text-primary-400">
                         R$ {plan.monthlyPrice.toFixed(2)}
                       </span>
-                      <span className="ml-2 text-gray-600">/mês</span>
+                      <span className="ml-2 text-slate-600 dark:text-slate-400">/mês</span>
                     </div>
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mt-3">
-                      <p className="text-sm text-green-800 font-medium">
+                    <div className="rounded-2xl bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-900/40 p-3 mt-3">
+                      <p className="text-sm text-accent-700 dark:text-accent-400 font-medium">
                         🎉 7 dias grátis para testar!
                       </p>
-                      <p className="text-xs text-green-700 mt-1">
+                      <p className="text-xs text-accent-600 dark:text-accent-400 mt-1">
                         Cancele a qualquer momento nos primeiros 7 dias e não será cobrado.
                       </p>
                     </div>
@@ -454,8 +451,8 @@ const Plans = () => {
                     <ul className="space-y-3">
                       {plan.features.map((feature, idx) => (
                         <li key={idx} className="flex items-start space-x-2">
-                          <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-700 text-sm">{feature}</span>
+                          <Check className="w-5 h-5 text-accent-600 dark:text-accent-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-slate-700 dark:text-slate-300 text-sm">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -465,16 +462,7 @@ const Plans = () => {
                   <button
                     onClick={() => handleSelectPlan(plan)}
                     disabled={loading || (isActive && currentPlan === plan.type)}
-                    className={`
-                      w-full py-3 px-4 rounded-lg font-semibold transition-all
-                      flex items-center justify-center space-x-2
-                      ${plan.popular
-                        ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800'
-                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                      }
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                      transform active:scale-95
-                    `}
+                    className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'} disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -497,12 +485,12 @@ const Plans = () => {
                   </button>
 
                   {(isActive && currentPlan === plan.type) && (
-                    <p className="text-center text-sm text-green-600 mt-2 font-medium">
+                    <p className="text-center text-sm text-accent-600 dark:text-accent-400 mt-2 font-medium">
                       ✓ Você está neste plano
                     </p>
                   )}
                   {(isOnTrial && currentPlan === plan.type) && (
-                    <p className="text-center text-sm text-blue-600 mt-2 font-medium">
+                    <p className="text-center text-sm text-primary-600 dark:text-primary-400 mt-2 font-medium">
                       🎉 Plano de teste ativo - Faça upgrade para continuar após o trial
                     </p>
                   )}
@@ -512,48 +500,54 @@ const Plans = () => {
           </div>
 
           {/* Info sobre 7 dias grátis */}
-          <div className="max-w-4xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg mb-6">
-            <h3 className="text-xl font-bold mb-3 text-center text-blue-900 flex items-center justify-center gap-2">
+          <div className="card max-w-4xl mx-auto bg-primary-50/60 dark:bg-primary-900/15 border-primary-100 dark:border-primary-900/30 mb-6">
+            <h3 className="text-xl font-bold mb-3 text-center text-primary-700 dark:text-primary-300 flex items-center justify-center gap-2">
               <Shield className="w-6 h-6" />
               Garantia de 7 Dias Grátis
             </h3>
             <div className="text-center space-y-2">
-              <p className="text-blue-800 font-medium">
+              <p className="text-slate-700 dark:text-slate-200 font-medium">
                 Experimente qualquer plano por 7 dias sem compromisso.
               </p>
-              <p className="text-blue-700 text-sm">
+              <p className="text-slate-600 dark:text-slate-300 text-sm">
                 Se você cancelar dentro dos primeiros 7 dias, <strong>não será cobrado</strong>. Sem perguntas, sem burocracia.
               </p>
-              <p className="text-blue-600 text-xs">
+              <p className="text-slate-500 dark:text-slate-400 text-xs">
                 Após o período de teste, a cobrança será realizada automaticamente via cartão de crédito.
               </p>
             </div>
           </div>
 
           {/* Informações Adicionais */}
-          <div className="max-w-4xl mx-auto bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-            <h3 className="text-xl font-bold mb-4 text-center text-gray-900">Por que escolher o Guru do Dindin?</h3>
+          <div className="card max-w-4xl mx-auto">
+            <h3 className="text-xl font-bold mb-4 text-center text-slate-900 dark:text-white">Por que escolher o Guru do Dindin?</h3>
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <div>
-                <Shield className="w-8 h-8 mx-auto mb-2 text-primary-600" />
-                <p className="font-semibold mb-1 text-gray-900">100% Seguro</p>
-                <p className="text-sm text-gray-600">Seus dados protegidos com criptografia</p>
+                <div className="icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300 mx-auto mb-2">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <p className="font-semibold mb-1 text-slate-900 dark:text-white">100% Seguro</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Seus dados protegidos com criptografia</p>
               </div>
               <div>
-                <Star className="w-8 h-8 mx-auto mb-2 text-primary-600" />
-                <p className="font-semibold mb-1 text-gray-900">Suporte Dedicado</p>
-                <p className="text-sm text-gray-600">Equipe pronta para ajudar você</p>
+                <div className="icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300 mx-auto mb-2">
+                  <Star className="w-6 h-6" />
+                </div>
+                <p className="font-semibold mb-1 text-slate-900 dark:text-white">Suporte Dedicado</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Equipe pronta para ajudar você</p>
               </div>
               <div>
-                <Zap className="w-8 h-8 mx-auto mb-2 text-primary-600" />
-                <p className="font-semibold mb-1 text-gray-900">Cancele quando quiser</p>
-                <p className="text-sm text-gray-600">Sem fidelidade ou multas</p>
+                <div className="icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300 mx-auto mb-2">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <p className="font-semibold mb-1 text-slate-900 dark:text-white">Cancele quando quiser</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Sem fidelidade ou multas</p>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-8 text-center text-gray-500 text-sm">
+          <div className="mt-8 text-center text-slate-500 dark:text-slate-400 text-sm">
             <p>© 2025 Guru do Dindin. Todos os direitos reservados.</p>
           </div>
         </div>
@@ -561,20 +555,20 @@ const Plans = () => {
         {/* Modal de Confirmação de Cancelamento */}
         {showCancelConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-slide-up">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
-                <AlertTriangle className="w-8 h-8 text-red-600" />
+            <div className="card max-w-md w-full animate-scale-in">
+              <div className="icon-chip-lg bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-300 mx-auto mb-4">
+                <AlertTriangle className="w-6 h-6" />
               </div>
 
-              <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-center text-slate-900 dark:text-white mb-2">
                 Cancelar {isOnTrial || isPending ? 'Trial' : 'Assinatura'}?
               </h3>
 
-              <p className="text-center text-gray-600 mb-4">
+              <p className="text-center text-slate-600 dark:text-slate-400 mb-4">
                 {isOnTrial || isPending ? (
                   <>
                     Você está no período de teste gratuito. Se cancelar agora,
-                    <strong className="text-green-600"> não será cobrado</strong>.
+                    <strong className="text-accent-600 dark:text-accent-400"> não será cobrado</strong>.
                   </>
                 ) : (
                   <>
@@ -584,8 +578,8 @@ const Plans = () => {
                 )}
               </p>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-yellow-800">
+              <div className="rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 p-3 mb-4">
+                <p className="text-sm text-amber-800 dark:text-amber-300">
                   <strong>⚠️ Atenção:</strong> Suas contas bancárias conectadas serão
                   desativadas, mas seus dados serão mantidos caso você volte.
                 </p>
@@ -595,14 +589,14 @@ const Plans = () => {
                 <button
                   onClick={() => setShowCancelConfirm(false)}
                   disabled={canceling}
-                  className="flex-1 py-3 px-4 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  className="flex-1 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Manter {isOnTrial || isPending ? 'Trial' : 'Assinatura'}
                 </button>
                 <button
                   onClick={handleCancelSubscription}
                   disabled={canceling}
-                  className="flex-1 py-3 px-4 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 btn-danger disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {canceling ? (
                     <>
@@ -620,38 +614,6 @@ const Plans = () => {
             </div>
           </div>
         )}
-
-        <style>{`
-          @keyframes fade-in {
-            from {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          @keyframes slide-up {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          .animate-fade-in {
-            animation: fade-in 0.6s ease-out;
-          }
-
-          .animate-slide-up {
-            animation: slide-up 0.6s ease-out both;
-          }
-        `}</style>
       </div>
     </>
   );

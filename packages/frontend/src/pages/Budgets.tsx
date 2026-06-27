@@ -4,7 +4,7 @@ import { transactionApi, budgetApi, preferencesApi, PreferenceItem } from '../se
 import type { Transaction } from '../types';
 import { startOfMonth, subMonths, format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Settings, Info, Upload, Wallet } from 'lucide-react';
+import { ArrowRight, TrendingUp, ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Settings, Info, Upload, Wallet, Target, BarChart3, ClipboardList } from 'lucide-react';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { getDemoTransactions } from '../utils/demoData';
@@ -120,12 +120,12 @@ const BudgetBar: React.FC<{ totalBudget: number; totalSpent: number; compact?: b
     return (
       <div className="mt-3 mb-2">
         <div className="flex items-center justify-between text-xs mb-1">
-          <span className="text-gray-400">Sem budget definido</span>
-          <span className="text-gray-600 font-semibold">
+          <span className="text-slate-400">Sem budget definido</span>
+          <span className="text-slate-600 dark:text-slate-300 font-semibold">
             Gasto: R$ {totalSpent.toFixed(2).replace('.', ',')}
           </span>
         </div>
-        <div className="h-2 rounded-full bg-gray-100"></div>
+        <div className="progress-track"></div>
       </div>
     );
   }
@@ -135,35 +135,29 @@ const BudgetBar: React.FC<{ totalBudget: number; totalSpent: number; compact?: b
   const excessAmount = Math.max(0, totalSpent - totalBudget);
   const remainingAmount = Math.max(0, totalBudget - totalSpent);
 
-  const barColor = isExceeded ? '#FF9800' : '#4CAF50';
   const statusText = isExceeded
     ? `Excedido R$ ${excessAmount.toFixed(2).replace('.', ',')}`
     : `R$ ${remainingAmount.toFixed(2).replace('.', ',')} disponível`;
-  const textColor = isExceeded ? '#FF9800' : '#4CAF50';
   const fillWidth = isExceeded ? '100%' : `${percentage}%`;
 
   return (
     <div className={compact ? "mt-2 mb-1" : "mt-3 mb-2"}>
-      <div className={`flex justify-between ${compact ? 'text-[10px]' : 'text-xs'} font-bold mb-1`}>
-        <span style={{ color: textColor }}>{statusText}</span>
-        <span className="text-gray-500">
+      <div className={`flex justify-between text-xs font-bold mb-1`}>
+        <span className={isExceeded ? 'text-amber-600 dark:text-amber-400' : 'text-accent-600 dark:text-accent-400'}>{statusText}</span>
+        <span className="text-slate-500">
           Budget: R$ {totalBudget.toFixed(2).replace('.', ',')}
         </span>
       </div>
 
-      <div className="relative h-2 rounded-full bg-gray-200 overflow-hidden">
+      <div className="progress-track">
         <div
-          className="absolute h-full rounded-full transition-all duration-500"
-          style={{
-            width: fillWidth,
-            backgroundColor: barColor,
-            boxShadow: isExceeded ? '0 0 8px rgba(255, 152, 0, 0.7)' : 'none',
-          }}
+          className={`progress-fill ${isExceeded ? 'bg-amber-500' : 'bg-accent-500'}`}
+          style={{ width: fillWidth }}
         ></div>
       </div>
 
       {!compact && (
-        <div className="text-[10px] text-gray-400 mt-1">
+        <div className="text-xs text-slate-400 mt-1">
           Gasto: R$ {totalSpent.toFixed(2).replace('.', ',')} {totalBudget > 0 && `(${percentage.toFixed(0)}%)`}
         </div>
       )}
@@ -185,20 +179,20 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
   // Alertas baseados na regra 50/30/20
   const alerts = [];
   if (fixedPercent > 50) {
-    alerts.push({ type: 'Custos Fixos', limit: '50%', current: `${fixedPercent.toFixed(0)}%`, color: '#F44336' });
+    alerts.push({ type: 'Custos Fixos', limit: '50%', current: `${fixedPercent.toFixed(0)}%`, dotClass: 'bg-red-500' });
   }
   if (variablePercent > 30) {
-    alerts.push({ type: 'Custos Variáveis', limit: '30%', current: `${variablePercent.toFixed(0)}%`, color: '#FF9800' });
+    alerts.push({ type: 'Custos Variáveis', limit: '30%', current: `${variablePercent.toFixed(0)}%`, dotClass: 'bg-amber-500' });
   }
   if (investmentPercent > 20) {
-    alerts.push({ type: 'Investimentos', limit: '20%', current: `${investmentPercent.toFixed(0)}%`, color: '#2196F3' });
+    alerts.push({ type: 'Investimentos', limit: '20%', current: `${investmentPercent.toFixed(0)}%`, dotClass: 'bg-primary-500' });
   }
 
   // Dados para a tabela
   const tableData = [
-    { label: 'Custos Fixos', budget: summary.fixedBudget, spent: summary.fixedSpent, color: '#3F51B5', icon: '🔧' },
-    { label: 'Custos Variáveis', budget: summary.variableBudget, spent: summary.variableSpent, color: '#FF9800', icon: '🛒' },
-    { label: 'Custo com Investimentos', budget: summary.investmentsBudget, spent: summary.investmentsSpent, color: '#2196F3', icon: '📈' },
+    { label: 'Custos Fixos', budget: summary.fixedBudget, spent: summary.fixedSpent, icon: '🔧' },
+    { label: 'Custos Variáveis', budget: summary.variableBudget, spent: summary.variableSpent, icon: '🛒' },
+    { label: 'Custo com Investimentos', budget: summary.investmentsBudget, spent: summary.investmentsSpent, icon: '📈' },
   ];
 
   // Dados para o gráfico de barras
@@ -235,21 +229,24 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
   const monthLabel = format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="card p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-t-4 border-primary-600" data-tour="financial-summary">
-      <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
-        📊 Resumo Financeiro - {monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}
+    <div className="card p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 border-t-2 border-primary-500" data-tour="financial-summary">
+      <h2 className="section-title text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-4 flex items-center gap-2.5">
+        <span className="icon-chip icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+          <BarChart3 className="w-5 h-5" />
+        </span>
+        Resumo Financeiro - {monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}
       </h2>
 
       {/* Salário */}
-      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white dark:bg-slate-700 rounded-xl shadow-sm border-l-4 border-green-500">
+      <div className="stat-tile mb-4 sm:mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl sm:text-2xl">💰</span>
+            <div className="icon-chip icon-chip-lg bg-accent-50 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300">
+              <Wallet className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium">Salário / Receitas</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600 dark:text-green-400">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Salário / Receitas</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-accent-600 dark:text-accent-400">
                 R$ {summary.salary.toFixed(2).replace('.', ',')}
               </p>
             </div>
@@ -260,12 +257,12 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       {/* Grid: Tabela + Gráfico */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Visão Geral - Design Profissional */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl lg:rounded-2xl shadow-md border border-gray-200 dark:border-slate-600 p-3 sm:p-4 lg:p-6">
-          <div className="flex items-center gap-2 mb-3 sm:mb-5">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg sm:text-2xl">📋</span>
-            </div>
-            <h3 className="font-bold text-gray-800 dark:text-gray-100 text-base sm:text-lg lg:text-xl">Visão Geral</h3>
+        <div className="card p-3 sm:p-4 lg:p-6">
+          <div className="card-title mb-3 sm:mb-5">
+            <span className="icon-chip bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+              <ClipboardList className="w-5 h-5" />
+            </span>
+            <span className="text-base sm:text-lg lg:text-xl">Visão Geral</span>
           </div>
 
           {/* Grid de 3 colunas x 3 linhas (Mobile: stack vertical) */}
@@ -281,29 +278,25 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
               return (
                 <div key={item.label} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start sm:items-center">
                   {/* Coluna 1: Gasto */}
-                  <div className="bg-blue-50 dark:bg-slate-700 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-100 dark:border-slate-600 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="stat-tile">
                     <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-600 flex items-center justify-center shadow-sm border border-gray-100 dark:border-slate-500 flex-shrink-0">
-                        <span className="text-lg sm:text-2xl">{item.icon}</span>
-                      </div>
-                      <p className="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">{item.label}</p>
+                      <span className="icon-chip bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300 text-lg sm:text-xl">{item.icon}</span>
+                      <p className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">{item.label}</p>
                     </div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Gasto</p>
-                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-blue-600 dark:text-blue-300">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5 sm:mb-1">Gasto</p>
+                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-primary-600 dark:text-primary-300">
                       R$ {item.spent.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
 
                   {/* Coluna 2: Budget */}
-                  <div className="bg-purple-50 dark:bg-slate-700 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-100 dark:border-slate-600 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="stat-tile">
                     <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-600 flex items-center justify-center shadow-sm border border-gray-100 dark:border-slate-500 flex-shrink-0">
-                        <span className="text-lg sm:text-2xl">{item.icon}</span>
-                      </div>
-                      <p className="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">{item.label}</p>
+                      <span className="icon-chip bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-lg sm:text-xl">{item.icon}</span>
+                      <p className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">{item.label}</p>
                     </div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Budget</p>
-                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-purple-600 dark:text-purple-300">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5 sm:mb-1">Budget</p>
+                    <p className="text-base sm:text-lg lg:text-xl font-extrabold text-slate-700 dark:text-slate-200">
                       R$ {item.budget.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
@@ -312,24 +305,16 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
                   <div className="flex flex-col justify-center">
                     {/* Texto de Status acima da barra */}
                     <div className="mb-1 sm:mb-2">
-                      <p className={`text-xs sm:text-sm font-bold ${isOver ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      <p className={`text-xs sm:text-sm font-bold ${isOver ? 'text-amber-600 dark:text-amber-400' : 'text-accent-600 dark:text-accent-400'}`}>
                         {statusText}
                       </p>
                     </div>
 
                     {/* Barra de Progresso */}
-                    <div className="relative h-6 sm:h-8 rounded-lg bg-gray-100 dark:bg-slate-600 overflow-hidden border border-gray-200 dark:border-slate-500">
+                    <div className="progress-track h-6 sm:h-8 rounded-lg">
                       <div
-                        className="absolute h-full rounded-lg transition-all duration-500"
-                        style={{
-                          width: isOver ? '100%' : `${percentage}%`,
-                          background: isOver
-                            ? 'linear-gradient(135deg, #FB923C 0%, #F97316 100%)'
-                            : 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
-                          boxShadow: isOver
-                            ? '0 0 8px rgba(251, 146, 60, 0.3)'
-                            : '0 0 8px rgba(16, 185, 129, 0.3)',
-                        }}
+                        className={`progress-fill rounded-lg ${isOver ? 'bg-amber-500' : 'bg-accent-500'}`}
+                        style={{ width: isOver ? '100%' : `${percentage}%` }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-xs sm:text-sm font-extrabold text-white drop-shadow-md">
@@ -344,37 +329,32 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
           </div>
 
           {/* Linha de Subtotais */}
-          <div className="border-t-2 border-gray-200 dark:border-slate-600 pt-3 sm:pt-5">
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-3 sm:pt-5">
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {/* Total Gasto */}
-              <div className="bg-blue-500 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-5 shadow-md text-center transform hover:scale-105 transition-transform">
-                <p className="text-[10px] sm:text-xs font-bold text-blue-50 mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider">Total Gasto</p>
+              <div className="bg-primary-600 rounded-2xl p-2 sm:p-3 lg:p-5 text-center">
+                <p className="text-xs font-bold text-white/80 mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider">Total Gasto</p>
                 <p className="text-sm sm:text-lg lg:text-2xl font-extrabold text-white break-words">
                   R$ {(summary.fixedSpent + summary.variableSpent + summary.investmentsSpent).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Budget */}
-              <div className="bg-purple-500 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-5 shadow-md text-center transform hover:scale-105 transition-transform">
-                <p className="text-[10px] sm:text-xs font-bold text-purple-50 mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider">Total Budget</p>
+              <div className="bg-slate-700 rounded-2xl p-2 sm:p-3 lg:p-5 text-center">
+                <p className="text-xs font-bold text-white/80 mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider">Total Budget</p>
                 <p className="text-sm sm:text-lg lg:text-2xl font-extrabold text-white break-words">
                   R$ {(summary.fixedBudget + summary.variableBudget + summary.investmentsBudget).toFixed(2).replace('.', ',')}
                 </p>
               </div>
 
               {/* Total Diferença */}
-              <div className={`rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-5 shadow-md text-center transform hover:scale-105 transition-transform ${
+              <div className={`rounded-2xl p-2 sm:p-3 lg:p-5 text-center ${
                 (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                 (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
-                  ? 'bg-orange-500'
-                  : 'bg-emerald-500'
+                  ? 'bg-amber-600'
+                  : 'bg-accent-600'
               }`}>
-                <p className={`text-[10px] sm:text-xs font-bold mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider ${
-                  (summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
-                  (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0
-                    ? 'text-orange-50'
-                    : 'text-emerald-50'
-                }`}>Diferença</p>
+                <p className="text-xs font-bold text-white/80 mb-1 sm:mb-2 uppercase tracking-wide sm:tracking-wider">Diferença</p>
                 <p className="text-sm sm:text-lg lg:text-2xl font-extrabold text-white break-words">
                   {((summary.fixedBudget + summary.variableBudget + summary.investmentsBudget) -
                     (summary.fixedSpent + summary.variableSpent + summary.investmentsSpent) < 0)
@@ -391,20 +371,20 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
         </div>
 
         {/* Gráfico de Barras - Design Profissional */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-gray-200 dark:border-slate-600 p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-              <span className="text-2xl">📊</span>
-            </div>
-            <h3 className="font-bold text-gray-800 dark:text-gray-100 text-xl">Budget vs Gastos</h3>
+        <div className="card p-6">
+          <div className="card-title mb-5">
+            <span className="icon-chip bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+              <BarChart3 className="w-5 h-5" />
+            </span>
+            <span className="text-xl">Budget vs Gastos</span>
           </div>
-          <div className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 border border-gray-100 dark:border-slate-600">
+          <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                 <defs>
                   <linearGradient id="budgetGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.85} />
-                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.7} />
+                    <stop offset="0%" stopColor="#94A3B8" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#64748B" stopOpacity={0.7} />
                   </linearGradient>
                   <linearGradient id="gastoGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#60A5FA" stopOpacity={0.85} />
@@ -472,25 +452,29 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
       </div>
 
       {/* Saldo Disponível */}
-      <div className={`p-3 sm:p-4 lg:p-5 rounded-xl shadow-lg ${isNegative ? 'bg-red-100 border-l-4 border-red-500' : 'bg-green-100 border-l-4 border-green-500'}`}>
+      <div className={`stat-tile border-l-2 ${isNegative ? 'border-red-500' : 'border-accent-500'}`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
           <div className="flex items-center gap-2 sm:gap-3">
             {isNegative ? (
-              <TrendingDown className="w-8 h-8 sm:w-10 sm:h-10 text-red-600 flex-shrink-0" />
+              <span className="icon-chip icon-chip-lg bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-300">
+                <TrendingDown className="w-5 h-5" />
+              </span>
             ) : (
-              <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 flex-shrink-0" />
+              <span className="icon-chip icon-chip-lg bg-accent-50 text-accent-600 dark:bg-accent-900/40 dark:text-accent-300">
+                <TrendingUp className="w-5 h-5" />
+              </span>
             )}
             <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-700">Saldo Disponível no Mês</p>
-              <p className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isNegative ? 'text-red-700' : 'text-green-700'}`}>
+              <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">Saldo Disponível no Mês</p>
+              <p className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isNegative ? 'text-red-600 dark:text-red-400' : 'text-accent-600 dark:text-accent-400'}`}>
                 {isNegative ? '-' : ''}R$ {Math.abs(balance).toFixed(2).replace('.', ',')}
               </p>
             </div>
           </div>
           {!isNegative && (
             <div className="text-left sm:text-right w-full sm:w-auto">
-              <p className="text-xs text-gray-600">Percentual do salário</p>
-              <p className="text-xl sm:text-2xl font-bold text-green-600">
+              <p className="text-xs text-slate-500 dark:text-slate-400">Percentual do salário</p>
+              <p className="text-xl sm:text-2xl font-bold text-accent-600 dark:text-accent-400">
                 {summary.salary > 0 ? ((balance / summary.salary) * 100).toFixed(0) : 0}%
               </p>
             </div>
@@ -500,19 +484,21 @@ const FinancialSummary: React.FC<{ summary: MonthSummary; selectedMonth: Date }>
 
       {/* Alertas da Regra 50/30/20 */}
       {alerts.length > 0 && (
-        <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-amber-50 rounded-xl border-l-4 border-amber-500">
+        <div className="mt-3 sm:mt-4 p-3 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/15 border border-amber-100 dark:border-amber-900/30">
           <div className="flex items-start gap-2 sm:gap-3">
-            <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 flex-shrink-0 mt-1" />
+            <span className="icon-chip bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300">
+              <AlertTriangle className="w-5 h-5" />
+            </span>
             <div className="flex-1">
-              <h4 className="font-bold text-amber-800 mb-2 text-sm sm:text-base">⚠️ Atenção: Regra 50/30/20</h4>
-              <p className="text-xs sm:text-sm text-amber-700 mb-2">
+              <h4 className="font-bold text-amber-700 dark:text-amber-300 mb-2 text-sm sm:text-base">Atenção: Regra 50/30/20</h4>
+              <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-400 mb-2">
                 A distribuição ideal do salário é: <strong>50% Fixos, 30% Variáveis, 20% Investimentos</strong>
               </p>
               <div className="space-y-1">
                 {alerts.map((alert, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: alert.color }}></span>
-                    <span className="text-amber-800">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${alert.dotClass}`}></span>
+                    <span className="text-amber-700 dark:text-amber-300">
                       <strong>{alert.type}</strong>: {alert.current} (limite: {alert.limit})
                     </span>
                   </div>
@@ -1507,8 +1493,8 @@ export default function Budgets() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando budgets...</p>
+          <div className="spinner w-12 h-12 mx-auto mb-4"></div>
+          <p className="text-slate-500 dark:text-slate-400">Carregando budgets...</p>
         </div>
       </div>
     );
@@ -1520,61 +1506,60 @@ export default function Budgets() {
     <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4" data-tour="budgets-page">
       <header className="mb-4 sm:mb-6 lg:mb-8">
         {/* Banner de Preferências */}
-        <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm text-blue-800">
-                <strong>Dica:</strong> Personalize quais categorias são <strong>custos fixos</strong> ou <strong>variáveis</strong> nas suas preferências.
-              </p>
-              <Link
-                to="/app/preferences"
-                className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 mt-1 transition-colors"
-                data-tour="budget-config"
-              >
-                <Settings className="w-4 h-4" />
-                Configurar Preferências
-              </Link>
-            </div>
+        <div className="info-card mb-4">
+          <Info className="w-5 h-5 text-primary-600 dark:text-primary-300 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p>
+              <strong>Dica:</strong> Personalize quais categorias são <strong>custos fixos</strong> ou <strong>variáveis</strong> nas suas preferências.
+            </p>
+            <Link
+              to="/app/preferences"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-300 hover:text-primary-700 dark:hover:text-primary-200 mt-1 transition-colors"
+              data-tour="budget-config"
+            >
+              <Settings className="w-4 h-4" />
+              Configurar Preferências
+            </Link>
           </div>
         </div>
 
-        {/* Título e Botão Conectar Banco */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3 sm:mb-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 flex items-center gap-2">
-              🎯 Budgets por Categoria
-            </h1>
-            <p className="text-xs sm:text-sm lg:text-base text-gray-500 mt-1 sm:mt-2">
-              Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
-            </p>
+        {/* Título e Ações */}
+        <div className="page-header">
+          <div className="page-header__titles">
+            <span className="icon-chip icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+              <Target className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="page-title">Budgets por Categoria</h1>
+              <p className="page-subtitle">
+                Orçamentos sugeridos baseados na média dos últimos meses. Clique em uma categoria para ver detalhes.
+              </p>
+            </div>
           </div>
-          <Link to="/app/transactions" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
-            <Wallet className="w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-sm sm:text-base">Importar Transações</span>
-          </Link>
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="btn-secondary flex items-center space-x-2 w-full sm:w-auto justify-center"
-            title="Importar transações CSV"
-          >
-            <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-sm sm:text-base">Importar CSV</span>
-          </button>
+          <div className="page-header__actions">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="btn-primary flex items-center gap-2"
+              title="Importar transações CSV"
+            >
+              <Upload className="w-4 sm:w-5 h-4 sm:h-5" />
+              <span className="text-sm sm:text-base">Importar CSV</span>
+            </button>
+          </div>
         </div>
 
         {/* Seletor de Mês - Centralizado em mobile */}
         <div className="flex justify-center sm:justify-end">
-          <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-lg shadow-md p-1.5 sm:p-2">
+          <div className="segmented">
             <button
               onClick={handlePreviousMonth}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition"
+              className="seg-btn"
               title="Mês anterior"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <div className="px-3 sm:px-4 py-1.5 sm:py-2 text-center min-w-[120px] sm:min-w-[140px]">
-              <p className="text-xs sm:text-sm font-bold text-gray-800">
+            <div className="px-3 sm:px-4 text-center min-w-[120px] sm:min-w-[140px]">
+              <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                 {format(selectedMonth, 'MMMM yyyy', { locale: ptBR }).charAt(0).toUpperCase() +
                  format(selectedMonth, 'MMMM yyyy', { locale: ptBR }).slice(1)}
               </p>
@@ -1582,12 +1567,10 @@ export default function Budgets() {
             <button
               onClick={handleNextMonth}
               disabled={isCurrentMonth}
-              className={`p-1.5 sm:p-2 rounded-lg transition ${
-                isCurrentMonth ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-100'
-              }`}
+              className={`seg-btn ${isCurrentMonth ? 'opacity-40 cursor-not-allowed' : ''}`}
               title={isCurrentMonth ? 'Mês atual' : 'Próximo mês'}
             >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
@@ -1602,25 +1585,23 @@ export default function Budgets() {
           {costTypes.map((costType, costTypeIndex) => (
             <section key={costType}>
               <h2
-                className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 pb-2 border-b-2 text-gray-700"
-                style={{
-                  borderColor:
-                    costType === 'Despesas Fixas'
-                      ? '#3F51B5'
-                      : costType === 'Despesas Variáveis'
-                      ? '#FF9800'
-                      : costType === 'Movimentações (Despesas)'
-                      ? '#F44336'
-                      : '#4CAF50',
-                }}
+                className={`text-xl sm:text-2xl font-bold mb-4 sm:mb-6 pb-2 border-b text-slate-700 dark:text-slate-200 ${
+                  costType === 'Despesas Fixas'
+                    ? 'border-primary-600'
+                    : costType === 'Despesas Variáveis'
+                    ? 'border-amber-500'
+                    : costType === 'Movimentações (Despesas)'
+                    ? 'border-red-500'
+                    : 'border-accent-500'
+                }`}
               >
                 {costType}
-                <span className="text-xs sm:text-sm font-medium ml-2 sm:ml-3 text-gray-500">
+                <span className="text-xs sm:text-sm font-medium ml-2 sm:ml-3 text-slate-500">
                   ({Object.keys(categoryData[costType]).length} Categorias Principais)
                 </span>
                 {costType === 'Movimentações (Receitas)' && (
-                  <span className="block text-xs font-normal text-gray-500 mt-1">
-                    💡 Receitas não têm budget pois são entradas de dinheiro
+                  <span className="block text-xs font-normal text-slate-500 mt-1">
+                    Receitas não têm budget pois são entradas de dinheiro
                   </span>
                 )}
               </h2>
@@ -1642,18 +1623,17 @@ export default function Budgets() {
                     <Link
                       key={`${categoryName}-${tipoCusto}`}
                       to={categoryPath}
-                      className="block bg-white rounded-2xl shadow-xl border-t-4 p-4 sm:p-5 transform hover:scale-[1.02] transition duration-300 cursor-pointer hover:shadow-2xl"
-                      style={{ borderTopColor: data.color }}
+                      className="card card-interactive block p-4 sm:p-5 border-t-2 border-primary-500"
                       onClick={() => {
                         console.log(`🖱️ [BUDGETS CLICK] ${categoryName} (${tipoCusto}) -> ${categoryPath}`);
                       }}
                     >
                       <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                        <span className="text-2xl sm:text-3xl">{data.icon}</span>
-                        <h3 className="text-base sm:text-lg font-bold text-gray-900 uppercase tracking-wider flex-1">
+                        <span className="icon-chip bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-xl sm:text-2xl">{data.icon}</span>
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white uppercase tracking-wider flex-1">
                           {categoryName}
                         </h3>
-                        <ArrowRight className="w-4 h-4 text-gray-400" />
+                        <ArrowRight className="w-4 h-4 text-slate-400" />
                       </div>
 
                       {/* Mostrar BudgetBar apenas para categorias que não são Receitas */}
@@ -1661,31 +1641,31 @@ export default function Budgets() {
                         <BudgetBar totalBudget={data.totalBudget} totalSpent={data.totalSpent} />
                       ) : (
                         <div className="mt-3 mb-2">
-                          <div className="text-sm font-bold text-green-600">
-                            💰 R$ {data.totalSpent.toFixed(2).replace('.', ',')}
+                          <div className="text-sm font-bold text-accent-600 dark:text-accent-400">
+                            R$ {data.totalSpent.toFixed(2).replace('.', ',')}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">Total de receitas no mês</p>
+                          <p className="text-xs text-slate-500 mt-1">Total de receitas no mês</p>
                         </div>
                       )}
 
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-700 mb-2">
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">
                           {data.subcategories.length} subcategoria{data.subcategories.length !== 1 ? 's' : ''}:
                         </p>
-                        <ul className="text-[10px] text-gray-500 space-y-1">
+                        <ul className="text-xs text-slate-500 space-y-1">
                           {data.subcategories.slice(0, 3).map((sub, idx) => (
                             <li key={idx} className="flex items-start gap-1">
-                              <span className="text-gray-400">•</span>
+                              <span className="text-slate-400">•</span>
                               <span className="flex-1">
                                 {sub.subcategory}
-                                <span className="text-gray-400 italic ml-1">
+                                <span className="text-slate-400 italic ml-1">
                                   ({sub.note.split('.')[0]})
                                 </span>
                               </span>
                             </li>
                           ))}
                           {data.subcategories.length > 3 && (
-                            <li className="text-gray-400 italic">
+                            <li className="text-slate-400 italic">
                               +{data.subcategories.length - 3} mais...
                             </li>
                           )}
@@ -1699,23 +1679,27 @@ export default function Budgets() {
           ))}
 
           {costTypes.length === 0 && (
-            <div className="text-center py-12">
-              <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum dado disponível</h3>
-              <p className="text-gray-500 mb-4">
-                Importe suas transações para começar a gerenciar seus budgets.
-              </p>
-              <Link
-                to="/app/transactions"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
-              >
-                Importar Transações <ArrowRight className="w-4 h-4" />
-              </Link>
+            <div className="card">
+              <div className="empty-state">
+                <span className="icon-chip icon-chip-lg bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 mb-4">
+                  <TrendingUp className="w-6 h-6" />
+                </span>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">Nenhum dado disponível</h3>
+                <p className="text-slate-500 mb-4">
+                  Importe suas transações para começar a gerenciar seus budgets.
+                </p>
+                <Link
+                  to="/app/transactions"
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  Importar Transações <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           )}
         </main>
 
-        <footer className="max-w-6xl mx-auto mt-8 sm:mt-12 text-center text-xs text-gray-400">
+        <footer className="max-w-6xl mx-auto mt-8 sm:mt-12 text-center text-xs text-slate-400">
           <p>Budgets calculados automaticamente com base no histórico de transações.</p>
         </footer>
       </div>

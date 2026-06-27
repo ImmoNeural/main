@@ -223,7 +223,7 @@ export const Preferences = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="spinner w-12 h-12"></div>
       </div>
     );
   }
@@ -231,44 +231,46 @@ export const Preferences = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto" data-tour="preferences-page">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Settings className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Preferências</h1>
+      <div className="page-header">
+        <div className="page-header__titles">
+          <span className="icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+            <Settings className="w-6 h-6" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="page-title">Preferências</h1>
+            <p className="page-subtitle">
+              Configure se cada subcategoria de despesa é um <strong>custo fixo</strong> (recorrente) ou <strong>variável</strong> (esporádico).
+            </p>
+          </div>
         </div>
-        <p className="text-gray-600">
-          Configure se cada subcategoria de despesa é um <strong>custo fixo</strong> (recorrente) ou <strong>variável</strong> (esporádico).
-        </p>
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-800">
-            <p className="font-semibold mb-1">Como funciona:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li><strong>Custo Fixo:</strong> Despesas recorrentes como mensalidades, assinaturas, planos de saúde</li>
-              <li><strong>Custo Variável:</strong> Despesas que variam como compras, alimentação, lazer</li>
-              <li><strong>Categoria Híbrida:</strong> Quando uma categoria tem subcategorias fixas E variáveis, ela aparecerá nas duas seções na página de Budgets</li>
-            </ul>
-          </div>
+      <div className="info-card mb-6">
+        <AlertCircle className="w-5 h-5 text-primary-600 dark:text-primary-300 mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="font-semibold mb-1 text-slate-900 dark:text-white">Como funciona:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li><strong>Custo Fixo:</strong> Despesas recorrentes como mensalidades, assinaturas, planos de saúde</li>
+            <li><strong>Custo Variável:</strong> Despesas que variam como compras, alimentação, lazer</li>
+            <li><strong>Categoria Híbrida:</strong> Quando uma categoria tem subcategorias fixas E variáveis, ela aparecerá nas duas seções na página de Budgets</li>
+          </ul>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600" />
-          <p className="text-red-800">{error}</p>
+        <div className="card p-4 mb-6 flex items-center gap-3 border-red-200 dark:border-red-900/40">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+          <p className="text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {/* Success Message */}
       {saveSuccess && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          <p className="text-green-800">Preferências salvas com sucesso!</p>
+        <div className="card p-4 mb-6 flex items-center gap-3 border-accent-200 dark:border-accent-900/40">
+          <CheckCircle className="w-5 h-5 text-accent-600 dark:text-accent-400 flex-shrink-0" />
+          <p className="text-accent-600 dark:text-accent-400">Preferências salvas com sucesso!</p>
         </div>
       )}
 
@@ -283,53 +285,45 @@ export const Preferences = () => {
           const hasFixo = tipos.includes('fixo');
           const hasVariavel = tipos.includes('variavel');
           const categoryStatus = hasFixo && hasVariavel ? 'Híbrido' : hasFixo ? 'Fixo' : 'Variável';
-          const statusColor = hasFixo && hasVariavel ? 'bg-purple-100 text-purple-800' : hasFixo ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';
+          const statusBadge = hasFixo && hasVariavel ? 'badge-warning' : hasFixo ? 'badge-primary' : 'badge-success';
 
           return (
-            <div key={category} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div key={category} className="card overflow-hidden p-0">
               {/* Category Header */}
-              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">{category}</h2>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+              <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <h2 className="card-title">{category}</h2>
+                <span className={`badge ${statusBadge}`}>
                   {categoryStatus}
                 </span>
               </div>
 
               {/* Subcategories */}
-              <div className="divide-y divide-gray-100">
+              <div className="list-divider px-3 sm:px-4">
                 {subcategories.map((config) => {
                   const key = `${config.category}|${config.subcategory}`;
                   const currentTipo = preferences[key] || config.defaultTipo;
 
                   return (
-                    <div key={key} className="px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
+                    <div key={key} className="py-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <span className="text-xl sm:text-2xl flex-shrink-0">{config.icon}</span>
+                        <span className="icon-chip bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-lg sm:text-xl">{config.icon}</span>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{config.subcategory}</p>
-                          <p className="text-xs sm:text-sm text-gray-500 truncate">{config.description}</p>
+                          <p className="font-medium text-slate-900 dark:text-white text-sm sm:text-base truncate">{config.subcategory}</p>
+                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">{config.description}</p>
                         </div>
                       </div>
 
                       {/* Toggle Buttons */}
-                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                      <div className="segmented flex-shrink-0">
                         <button
                           onClick={() => handleTipoChange(config.category, config.subcategory, 'fixo')}
-                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                            currentTipo === 'fixo'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
+                          className={`seg-btn ${currentTipo === 'fixo' ? 'seg-btn-active is-primary' : ''}`}
                         >
                           Fixo
                         </button>
                         <button
                           onClick={() => handleTipoChange(config.category, config.subcategory, 'variavel')}
-                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                            currentTipo === 'variavel'
-                              ? 'bg-orange-500 text-white'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
+                          className={`seg-btn ${currentTipo === 'variavel' ? 'seg-btn-active is-accent' : ''}`}
                         >
                           <span className="hidden sm:inline">Variável</span>
                           <span className="sm:hidden">Var</span>
@@ -349,11 +343,11 @@ export const Preferences = () => {
         <button
           onClick={savePreferences}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="btn-primary"
         >
           {saving ? (
             <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <div className="spinner w-5 h-5 border-white/40 border-t-white"></div>
               Salvando...
             </>
           ) : (
