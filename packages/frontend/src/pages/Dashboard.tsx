@@ -6,7 +6,6 @@ import type { DashboardStats, CategoryStats, WeeklyStats, Transaction, BankAccou
 import { CategoryIcon } from '../components/CategoryIcons';
 import { BudgetRadarChart } from '../components/BudgetRadarChart';
 import ImportTransactionsModal from '../components/ImportTransactionsModal';
-import { useAuth } from '../contexts/AuthContext';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { getDemoStats, getDemoCategoryStats, getDemoMonthlyStats, getDemoTransactions } from '../utils/demoData';
 import {
@@ -23,20 +22,6 @@ import {
 } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { getAllCategoryColors } from '../utils/colors';
-
-// Função para obter saudação baseada na hora do dia
-const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return 'Bom dia';
-  if (hour >= 12 && hour < 18) return 'Boa tarde';
-  return 'Boa noite';
-};
-
-// Função para obter o primeiro nome
-const getFirstName = (fullName: string | undefined) => {
-  if (!fullName) return '';
-  return fullName.split(' ')[0];
-};
 
 // Componente para estado vazio dos gráficos
 const EmptyChartState = ({ message = "Você ainda não tem dados" }: { message?: string }) => (
@@ -85,8 +70,6 @@ const Dashboard = () => {
 
   // Get subscription info for plan-based restrictions
 
-  // Get user info for greeting
-  const { user } = useAuth();
 
   // Check if tutorial is active for demo data
   const { showOnboarding, shouldShowDemoData } = useOnboarding();
@@ -663,130 +646,120 @@ const Dashboard = () => {
   return (
     <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
       <div className="space-y-6">
-      {/* Header with Greeting */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">
-              {getGreeting()}, {getFirstName(user?.name) || 'usuário'}! 👋
-            </h1>
-            <p className="text-gray-500 mt-1">Visão geral dos seus gastos</p>
-          </div>
-          {/* Period selector, refresh and action buttons - all on same line */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <select
-              value={period}
-              onChange={(e) => setPeriod(Number(e.target.value))}
-              className="input text-xs sm:text-sm"
-              data-tour="period-selector"
-            >
-              <option value={30}>1 mês</option>
-              <option value={60}>2 meses</option>
-              <option value={90}>3 meses</option>
-              <option value={180}>6 meses</option>
-              <option value={365}>12 meses</option>
-            </select>
-            <button onClick={loadDashboardData} className="btn-primary p-2 sm:p-3 flex-shrink-0">
-              <RefreshCw className="w-4 sm:w-5 h-4 sm:h-5" />
-            </button>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="btn-secondary flex items-center justify-center space-x-2 text-xs sm:text-sm px-3 py-2 sm:py-2.5"
-              title="Importar transações CSV"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Importar CSV</span>
-            </button>
-          </div>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Visão geral</h2>
+          <p className="text-sm text-slate-400">Acompanhe seus gastos e receitas no período</p>
+        </div>
+        {/* Period selector, refresh and action buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(Number(e.target.value))}
+            className="input !w-auto !py-2 text-sm font-medium"
+            data-tour="period-selector"
+          >
+            <option value={30}>1 mês</option>
+            <option value={60}>2 meses</option>
+            <option value={90}>3 meses</option>
+            <option value={180}>6 meses</option>
+            <option value={365}>12 meses</option>
+          </select>
+          <button onClick={loadDashboardData} className="btn-secondary !px-3" title="Atualizar dados">
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="btn-primary"
+            title="Importar transações CSV"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Importar CSV</span>
+          </button>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6" data-tour="stats-cards">
-        <div className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">Saldo total hoje</p>
-                {activeAccount?.credit_limit && activeAccount.credit_limit > 0 && (
-                  <p className="text-xs text-gray-400 ml-2">
-                    Limite: {formatCurrency(activeAccount.credit_limit)}
-                  </p>
-                )}
-              </div>
-              <p className={`text-xl sm:text-2xl font-bold mt-1 ${(stats?.total_balance || 0) >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+        {/* Saldo total hoje */}
+        <div className="card !p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-label">Saldo total hoje</p>
+              <p className={`text-2xl font-bold mt-2 tabular-nums ${(stats?.total_balance || 0) >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-600'}`}>
                 {formatCurrency(stats?.total_balance || 0)}
               </p>
-              {/* Mostrar disponível quando houver limite */}
               {activeAccount?.credit_limit && activeAccount.credit_limit > 0 && (
-                <p className={`text-xs mt-1 ${(stats?.total_balance || 0) < 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                  {(stats?.total_balance || 0) < 0
-                    ? `Disponível: ${formatCurrency(activeAccount.credit_limit + (stats?.total_balance || 0))}`
-                    : `Total disponível: ${formatCurrency(activeAccount.credit_limit + (stats?.total_balance || 0))}`
-                  }
+                <p className={`text-xs mt-1.5 font-medium ${(stats?.total_balance || 0) < 0 ? 'text-amber-600' : 'text-accent-600'}`}>
+                  Disponível: {formatCurrency(activeAccount.credit_limit + (stats?.total_balance || 0))}
                 </p>
               )}
             </div>
-            <div className="p-3 bg-primary-100 rounded-full">
-              <Wallet className="w-6 h-6 text-primary-600" />
+            <div className="p-2.5 bg-primary-50 text-primary-600 rounded-xl flex-shrink-0">
+              <Wallet className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        <div className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Receitas (desde {getStartDateLabel()})</p>
-              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
+        {/* Receitas */}
+        <div className="card !p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-label">Receitas · desde {getStartDateLabel()}</p>
+              <p className="text-2xl font-bold text-accent-600 mt-2 tabular-nums">
                 {formatCurrency(stats?.total_income || 0)}
               </p>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+            <div className="p-2.5 bg-accent-50 text-accent-600 rounded-xl flex-shrink-0">
+              <TrendingUp className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        <div className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Despesas (desde {getStartDateLabel()})</p>
-              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
+        {/* Despesas */}
+        <div className="card !p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-label">Despesas · desde {getStartDateLabel()}</p>
+              <p className="text-2xl font-bold text-red-600 mt-2 tabular-nums">
                 {formatCurrency(stats?.total_expenses || 0)}
               </p>
             </div>
-            <div className="p-3 bg-red-100 rounded-full">
-              <TrendingDown className="w-6 h-6 text-red-600" />
+            <div className="p-2.5 bg-red-50 text-red-600 rounded-xl flex-shrink-0">
+              <TrendingDown className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        <div className="card hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-600 font-semibold">💰 Saldo inicial em {getStartDateLabel()}</p>
-              <p className="text-xl sm:text-2xl font-bold text-blue-700 mt-1">
+        {/* Saldo inicial — destaque */}
+        <div className="card !p-5 bg-gradient-to-br from-primary-50 to-primary-100/40 !border-primary-200/70">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-label !text-primary-500">Saldo inicial · {getStartDateLabel()}</p>
+              <p className="text-2xl font-bold text-primary-700 mt-2 tabular-nums">
                 {stats?.initial_balance !== null && stats?.initial_balance !== undefined
                   ? formatCurrency(stats.initial_balance)
                   : 'Não definido'}
               </p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
+            <div className="p-2.5 bg-white text-primary-600 rounded-xl flex-shrink-0 shadow-sm">
+              <TrendingUp className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        <div className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Transações</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+        {/* Transações */}
+        <div className="card !p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-label">Transações</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2 tabular-nums">
                 {stats?.transaction_count || 0}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-full">
-              <Receipt className="w-6 h-6 text-gray-600" />
+            <div className="p-2.5 bg-slate-100 text-slate-600 rounded-xl flex-shrink-0">
+              <Receipt className="w-5 h-5" />
             </div>
           </div>
         </div>
@@ -1158,10 +1131,12 @@ const Dashboard = () => {
       <BudgetRadarChart />
 
       {/* Recent Transactions */}
-      <div ref={transactionsRef} className="card">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-primary-600" />
+      <div ref={transactionsRef} className="card !p-5 sm:!p-6">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+            <span className="p-1.5 bg-primary-50 text-primary-600 rounded-lg">
+              <Receipt className="w-4 h-4" />
+            </span>
             {getTransactionsTitle()}
           </h2>
           <Link
@@ -1173,32 +1148,32 @@ const Dashboard = () => {
           </Link>
         </div>
         {recentTransactions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-10 text-slate-400">
             <p className="text-sm">Nenhuma transação encontrada neste período</p>
           </div>
         ) : (
-          <div className="space-y-3 min-h-[200px]">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {recentTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition bg-white shadow-sm"
+                className="flex items-center gap-3 sm:gap-4 py-3 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
               >
                 <CategoryIcon category={transaction.category || 'Outros'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-gray-800 truncate">
+                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
                       {transaction.merchant || transaction.description}
                     </span>
                     <span
-                      className={`text-sm font-bold ${
-                        transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                      className={`text-sm font-bold tabular-nums flex-shrink-0 ${
+                        transaction.type === 'credit' ? 'text-accent-600' : 'text-red-600'
                       }`}
                     >
                       {transaction.type === 'credit' ? '+' : '-'}
                       {formatCurrency(Math.abs(transaction.amount))}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-400 mt-0.5">
                     {format(new Date(transaction.date), 'dd/MM/yyyy')} • {transaction.category}
                   </p>
                 </div>
