@@ -16,10 +16,12 @@ services:
         value: 3001
       - key: OPEN_BANKING_PROVIDER
         value: pluggy
+      # Segredos NÃO ficam no arquivo. Configure no painel do Render
+      # (Environment) — sync:false faz o Render solicitar/preservar o valor.
       - key: PLUGGY_CLIENT_ID
-        value: 7015037f-203b-4f6c-9f9c-ca154f2c203d
+        sync: false
       - key: PLUGGY_CLIENT_SECRET
-        value: 95d02985-474e-4067-a708-81949ac095b0
+        sync: false
       - key: PLUGGY_BASE_URL
         value: https://api.pluggy.ai
       - key: JWT_SECRET
@@ -35,6 +37,6 @@ services:
       - key: SUPABASE_ANON_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoa3ZlbnlheGtrcXpjc2Z5anZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MTI0MzEsImV4cCI6MjA3ODI4ODQzMX0.IYDBpAbEF4VHzPmq_xEtlH1TnOk5o2Zp1eoleXao3po
       - key: SUPABASE_SERVICE_ROLE_KEY
-        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoa3ZlbnlheGtrcXpjc2Z5anZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjcxMjQzMSwiZXhwIjoyMDc4Mjg4NDMxfQ.Fp0u41-mSU1cQGKmw_4DHeV208HNXORQdbWPt_vLZ3E
+        sync: false
     healthCheckPath: /api/health
     autoDeploy: true

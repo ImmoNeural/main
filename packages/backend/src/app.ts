@@ -105,7 +105,9 @@ app.get('/api/diagnose/user/:userId/accounts', async (req, res) => {
   const { userId } = req.params;
   const { admin_key } = req.query;
 
-  const validAdminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // SECURITY: usa SOMENTE uma chave dedicada (nunca a service-role key).
+  // Se ADMIN_API_KEY não estiver configurada, estas rotas ficam desativadas (fail-closed).
+  const validAdminKey = process.env.ADMIN_API_KEY;
   if (!admin_key || admin_key !== validAdminKey) {
     return res.status(401).json({ error: 'Invalid or missing admin_key' });
   }
@@ -142,7 +144,9 @@ app.post('/api/diagnose/accounts/:accountId/force-sync', async (req, res) => {
   const { accountId } = req.params;
   const { admin_key, days = 60 } = req.query;
 
-  const validAdminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // SECURITY: usa SOMENTE uma chave dedicada (nunca a service-role key).
+  // Se ADMIN_API_KEY não estiver configurada, estas rotas ficam desativadas (fail-closed).
+  const validAdminKey = process.env.ADMIN_API_KEY;
   if (!admin_key || admin_key !== validAdminKey) {
     return res.status(401).json({ error: 'Invalid or missing admin_key' });
   }
@@ -278,7 +282,9 @@ app.get('/api/bank/accounts/:accountId/diagnose', async (req, res) => {
   const { days = 30, admin_key } = req.query;
 
   // Verificar admin_key
-  const validAdminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // SECURITY: usa SOMENTE uma chave dedicada (nunca a service-role key).
+  // Se ADMIN_API_KEY não estiver configurada, estas rotas ficam desativadas (fail-closed).
+  const validAdminKey = process.env.ADMIN_API_KEY;
   if (!admin_key || admin_key !== validAdminKey) {
     return res.status(401).json({ error: 'Invalid or missing admin_key' });
   }
