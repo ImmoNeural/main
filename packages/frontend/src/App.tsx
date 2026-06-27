@@ -10,7 +10,6 @@ import Accounts from './pages/Accounts';
 import Budgets from './pages/Budgets';
 import BudgetDetails from './pages/BudgetDetails';
 import Preferences from './pages/Preferences';
-import ConnectBank from './pages/ConnectBank';
 import Plans from './pages/Plans';
 import AdminTransactions from './pages/admin/AdminTransactions';
 import Login from './pages/Login';
@@ -165,7 +164,6 @@ function App() {
               <Route path="budgets" element={<Budgets />} />
               <Route path="budgets/:categoryName/:tipoCusto" element={<BudgetDetails />} />
               <Route path="preferences" element={<Preferences />} />
-              <Route path="connect-bank" element={<ConnectBank />} />
               <Route path="planos" element={<Plans />} />
               {/* Admin routes */}
               <Route path="admin/transactions" element={<AdminTransactions />} />

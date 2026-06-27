@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock, Copy } from 'lucide-react';
@@ -13,7 +12,6 @@ import { useOnboarding } from '../hooks/useOnboarding';
 import { getDemoTransactions } from '../utils/demoData';
 
 const Transactions = () => {
-  const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
@@ -985,29 +983,13 @@ const Transactions = () => {
           </div>
 
           <div className="w-full sm:w-auto mt-3 sm:mt-0">
-            {isManualPlan ? (
-              <div className="relative group">
-                <button
-                  disabled
-                  className="btn-secondary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2 opacity-60 cursor-not-allowed"
-                >
-                  <Lock className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
-                  <span>Conectar Banco</span>
-                </button>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
-                  Disponível apenas nos planos Conectado ou Conectado Plus
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => navigate('/app/connect-bank')}
-                className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2"
-              >
-                <PlusCircle className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
-                <span>Conectar Banco</span>
-              </button>
-            )}
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-xs sm:text-sm lg:text-base px-3 sm:px-4 py-2"
+            >
+              <PlusCircle className="w-3.5 sm:w-4 lg:w-5 h-3.5 sm:h-4 lg:h-5" />
+              <span>Importar Transações</span>
+            </button>
           </div>
         </div>
 

@@ -72,8 +72,8 @@ const Login = () => {
         const accountsResponse = await bankApi.getAccounts();
 
         if (!accountsResponse.data || accountsResponse.data.length === 0) {
-          // Primeiro acesso: redirecionar para conectar banco
-          navigate('/app/connect-bank');
+          // Primeiro acesso: ir direto ao dashboard
+          navigate('/app/dashboard');
           return;
         }
       } catch (accountsError) {

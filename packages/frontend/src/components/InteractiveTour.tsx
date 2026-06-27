@@ -284,19 +284,19 @@ const InteractiveTour = ({ run, onFinish }: InteractiveTourProps) => {
       placement: 'bottom',
       // Permitir scroll para que o gráfico fique visível
     },
-    // Passo 6 (índice 5): Botão de conectar banco
+    // Passo 6 (índice 5): Importar transações
     {
-      target: '[data-tour="connect-bank-btn"]',
+      target: '[data-tour="transactions-page"]',
       content: (
         <div>
-          <h3 className="font-bold text-gray-900 mb-2">🏦 Conectar Banco</h3>
+          <h3 className="font-bold text-gray-900 mb-2">📥 Importe suas Transações</h3>
           <p className="text-gray-600 text-sm">
-            Conecte sua conta bancária via <strong>Open Finance</strong> para importar transações automaticamente.
+            Na página de <strong>Transações</strong> você importa o extrato do seu banco em CSV para começar.
           </p>
           <ul className="text-xs text-gray-500 mt-2 space-y-1">
-            <li>• Seguro e regulamentado pelo Banco Central</li>
-            <li>• Suas credenciais não são armazenadas</li>
-            <li>• Sincronização automática de transações</li>
+            <li>• Baixe o extrato em CSV no seu banco</li>
+            <li>• Clique em "Importar Transações"</li>
+            <li>• Categorização automática por IA</li>
           </ul>
         </div>
       ),

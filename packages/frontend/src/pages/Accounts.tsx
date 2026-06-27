@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Wallet, RefreshCw, Trash2, AlertCircle, CheckCircle, Plus, CreditCard, Clock, Calendar, Lock } from 'lucide-react';
+import { Wallet, RefreshCw, Trash2, AlertCircle, CheckCircle, Plus, CreditCard, Clock, Calendar } from 'lucide-react';
 import { bankApi } from '../services/api';
 import type { BankAccount } from '../types';
-import { useSubscription } from '../hooks/useSubscription';
 import { useOnboarding } from '../hooks/useOnboarding';
 
 // Mapa de logos de bancos brasileiros conhecidos
@@ -105,27 +104,6 @@ const Accounts = () => {
 
   // Check if tutorial is active - skip API calls during tutorial
   const { showOnboarding } = useOnboarding();
-
-  // Get subscription info for plan-based restrictions
-  const { planType, isTrialActive } = useSubscription();
-
-  // Determine if Open Finance connection is allowed based on plan
-  // Durante trial, acesso total como Conectado Plus
-  const isManualPlan = planType === 'manual' && !isTrialActive;
-  const isConectadoPlan = planType === 'conectado' && !isTrialActive;
-  const isConectadoPlusPlan = planType === 'conectado_plus' || isTrialActive; // Trial = Conectado Plus
-
-  // Get max allowed accounts based on plan
-  const getMaxAccounts = () => {
-    if (isTrialActive) return 4; // Trial = Conectado Plus
-    if (isManualPlan) return 0;
-    if (isConectadoPlan) return 3;
-    if (isConectadoPlusPlan) return 4;
-    return 0; // Default: no accounts allowed
-  };
-
-  const maxAccounts = getMaxAccounts();
-  const canConnectMore = (isTrialActive || !isManualPlan) && accounts.length < maxAccounts;
 
   useEffect(() => {
     // Durante tutorial, pular chamadas de API e mostrar estado vazio rapidamente
@@ -291,40 +269,10 @@ const Accounts = () => {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Contas Bancárias</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Gerencie suas contas conectadas</p>
         </div>
-        {isManualPlan ? (
-          <div className="relative group">
-            <button
-              disabled
-              className="btn-secondary flex items-center space-x-2 w-full sm:w-auto justify-center opacity-60 cursor-not-allowed"
-            >
-              <Lock className="w-4 sm:w-5 h-4 sm:h-5" />
-              <span className="text-sm sm:text-base">Conectar Banco</span>
-            </button>
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
-              Disponível apenas nos planos Conectado ou Conectado Plus
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-            </div>
-          </div>
-        ) : !canConnectMore && accounts.length > 0 ? (
-          <div className="relative group">
-            <button
-              disabled
-              className="btn-secondary flex items-center space-x-2 w-full sm:w-auto justify-center opacity-60 cursor-not-allowed"
-            >
-              <Lock className="w-4 sm:w-5 h-4 sm:h-5" />
-              <span className="text-sm sm:text-base">Conectar Banco</span>
-            </button>
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
-              Limite de {maxAccounts} contas atingido. Faça upgrade para conectar mais.
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-            </div>
-          </div>
-        ) : (
-          <Link to="/app/connect-bank" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
-            <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-sm sm:text-base">Conectar Banco</span>
-          </Link>
-        )}
+        <Link to="/app/transactions" className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center">
+          <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
+          <span className="text-sm sm:text-base">Importar Transações</span>
+        </Link>
       </div>
 
       {/* No accounts message */}

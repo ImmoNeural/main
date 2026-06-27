@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { authApi, bankApi } from '../services/api';
+import { authApi } from '../services/api';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -49,28 +49,15 @@ const AuthCallback = () => {
         // Keep using the Supabase token (already set)
         localStorage.setItem('user', JSON.stringify(userData));
 
-        // Check if user has bank accounts
-        try {
-          const accountsResponse = await bankApi.getAccounts();
-          const hasAccounts = accountsResponse.data && accountsResponse.data.length > 0;
-
-          if (isNewUser) {
-            // New user: clear onboarding flags and go to goals
-            localStorage.removeItem('guru_onboarding_completed');
-            localStorage.removeItem('guru_onboarding_skipped');
-            localStorage.removeItem('notifications_asked');
-            navigate('/onboarding/goals');
-          } else if (!hasAccounts) {
-            // Existing user without accounts: go to connect bank
-            navigate('/app/connect-bank');
-          } else {
-            // Existing user with accounts: go to dashboard
-            navigate('/app/dashboard');
-          }
-        } catch (accountsError) {
-          console.warn('Could not check accounts:', accountsError);
-          // Default to dashboard on error
-          navigate(isNewUser ? '/onboarding/goals' : '/app/dashboard');
+        // Route based on whether this is a new user (bank connection feature removed)
+        if (isNewUser) {
+          // New user: clear onboarding flags and go to goals
+          localStorage.removeItem('guru_onboarding_completed');
+          localStorage.removeItem('guru_onboarding_skipped');
+          localStorage.removeItem('notifications_asked');
+          navigate('/onboarding/goals');
+        } else {
+          navigate('/app/dashboard');
         }
       } catch (err: any) {
         console.error('OAuth callback error:', err);
