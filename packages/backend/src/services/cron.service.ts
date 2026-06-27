@@ -377,6 +377,37 @@ async function syncAllBankAccounts(): Promise<void> {
 }
 
 /**
+ * Keep-alive: mantém o serviço (ex: Render free) acordado fazendo um
+ * auto-ping no próprio /api/health a cada 10 minutos. O Render dorme após
+ * ~15 min sem tráfego de entrada; este ping conta como tráfego e evita isso.
+ *
+ * Usa RENDER_EXTERNAL_URL (injetada automaticamente pelo Render) ou SELF_URL.
+ * Em ambiente local (sem essas variáveis) o keep-alive fica desativado.
+ */
+function initKeepAlive(): void {
+  const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL;
+
+  if (!baseUrl) {
+    console.log('[KeepAlive] ⏭️  Desativado (sem RENDER_EXTERNAL_URL/SELF_URL) — normal em ambiente local');
+    return;
+  }
+
+  const healthUrl = `${baseUrl.replace(/\/$/, '')}/api/health`;
+
+  // A cada 10 minutos (mantém sempre abaixo dos ~15 min de inatividade)
+  cron.schedule('*/10 * * * *', async () => {
+    try {
+      const res = await fetch(healthUrl, { method: 'GET' });
+      console.log(`[KeepAlive] 🏓 Ping ${healthUrl} → ${res.status}`);
+    } catch (error: any) {
+      console.error('[KeepAlive] ⚠️ Ping falhou:', error?.message || error);
+    }
+  });
+
+  console.log(`[KeepAlive] ✅ Ativado — auto-ping em ${healthUrl} a cada 10 min`);
+}
+
+/**
  * Inicializa todos os cron jobs
  */
 export function initCronJobs(): void {
@@ -391,6 +422,9 @@ export function initCronJobs(): void {
   }, {
     timezone: 'America/Sao_Paulo' // Horário de Brasília
   });
+
+  // Keep-alive para não deixar o Render dormir
+  initKeepAlive();
 
   console.log('[Cron] ✅ Cron jobs initialized:');
   console.log('[Cron]    - Daily bank sync: 7:00 AM (America/Sao_Paulo)');
