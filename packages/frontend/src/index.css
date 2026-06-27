@@ -150,6 +150,121 @@ h1, h2, h3, h4 {
   .section-label {
     @apply text-xs font-semibold uppercase tracking-wider text-slate-400;
   }
+
+  /* ───────────────────────────────────────────────────────────
+     UNIFIED DESIGN SYSTEM — shared primitives used by every page.
+     Goal: one consistent professional language (cards, tables,
+     icon chips, badges, empty states, segmented controls).
+     ─────────────────────────────────────────────────────────── */
+
+  /* Page toolbar (title + actions row at the top of a page) */
+  .page-toolbar {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5;
+  }
+  .section-title {
+    @apply text-lg font-bold text-slate-900 dark:text-white tracking-tight;
+  }
+  .section-subtitle {
+    @apply text-sm text-slate-400;
+  }
+
+  /* Card heading: an icon chip + a title, used consistently across cards */
+  .card-title {
+    @apply flex items-center gap-2.5 text-base font-bold text-slate-900 dark:text-white;
+  }
+
+  /* Icon chip — soft tinted rounded square (replaces colored circles).
+     Apply a color pair on top, e.g. `icon-chip bg-primary-50 text-primary-600`. */
+  .icon-chip {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0;
+  }
+  .icon-chip-sm {
+    @apply w-7 h-7 rounded-lg;
+  }
+  .icon-chip-lg {
+    @apply w-11 h-11 rounded-2xl;
+  }
+
+  /* Data table — professional, rounded container with quiet grid lines */
+  .table-card {
+    @apply overflow-x-auto rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-800;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04), 0 4px 16px -2px rgba(16, 24, 40, 0.08);
+  }
+  .data-table {
+    @apply w-full text-sm border-separate border-spacing-0;
+  }
+  .data-table thead th {
+    @apply text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap;
+  }
+  .data-table tbody td {
+    @apply px-4 py-3 border-b border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200;
+  }
+  .data-table tbody tr {
+    @apply transition-colors;
+  }
+  .data-table tbody tr:hover td {
+    @apply bg-slate-50/70 dark:bg-slate-800/50;
+  }
+  .data-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* List row — for div-based "tables" (icon + content + value) */
+  .list-row {
+    @apply flex items-center gap-3 py-3 px-2 -mx-2 rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50;
+  }
+  .list-divider {
+    @apply divide-y divide-slate-100 dark:divide-slate-800;
+  }
+
+  /* Badges / status pills */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-primary { @apply bg-primary-50 text-primary-700; }
+  .badge-success { @apply bg-accent-50 text-accent-700; }
+  .badge-danger  { @apply bg-red-50 text-red-600; }
+  .badge-warning { @apply bg-amber-50 text-amber-700; }
+  .badge-neutral { @apply bg-slate-100 text-slate-600; }
+  .dark .badge-primary { @apply bg-primary-900/30 text-primary-300; }
+  .dark .badge-success { @apply bg-accent-900/30 text-accent-300; }
+  .dark .badge-danger  { @apply bg-red-900/30 text-red-300; }
+  .dark .badge-warning { @apply bg-amber-900/30 text-amber-300; }
+  .dark .badge-neutral { @apply bg-slate-700 text-slate-300; }
+
+  /* Empty state */
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center py-12 px-4 text-slate-400;
+  }
+
+  /* Segmented control (e.g. month selector, view toggles) */
+  .segmented {
+    @apply inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70;
+  }
+  .seg-btn {
+    @apply inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors hover:text-slate-900 dark:hover:text-white;
+  }
+  .seg-btn-active {
+    @apply bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    @apply relative h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden;
+  }
+  .progress-fill {
+    @apply absolute inset-y-0 left-0 rounded-full transition-all duration-500;
+  }
+
+  /* Info / tip card — uses the brand tint instead of ad-hoc blue */
+  .info-card {
+    @apply flex items-start gap-3 p-4 rounded-2xl bg-primary-50/60 dark:bg-primary-900/15 border border-primary-100 dark:border-primary-900/30 text-sm text-slate-600 dark:text-slate-300;
+  }
+
+  /* Compact stat tile */
+  .stat-tile {
+    @apply rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-800 p-4;
+  }
 }
 
 /* Dark mode text overrides */
