@@ -235,7 +235,7 @@ export const transactionApi = {
       errors?: string[];
       account_id: string;
       message: string;
-    }>('/transactions/import', data),
+    }>('/transactions/import', data, { timeout: 300000 }), // 5 min: importações grandes (vários anos de CSV)
 };
 
 // Dashboard APIs

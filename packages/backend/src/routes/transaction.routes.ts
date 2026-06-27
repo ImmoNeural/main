@@ -1308,8 +1308,8 @@ router.post('/import', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No transactions to import' });
     }
 
-    if (importedTransactions.length > 5000) {
-      return res.status(400).json({ error: `Máximo de 5000 transações por importação. Você está tentando importar ${importedTransactions.length}. Divida em arquivos menores.` });
+    if (importedTransactions.length > 20000) {
+      return res.status(400).json({ error: `Máximo de 20000 transações por importação. Você está tentando importar ${importedTransactions.length}. Divida em arquivos menores.` });
     }
 
     // 💰 DETECTAR SALDOS ESPECIAIS DO CSV
