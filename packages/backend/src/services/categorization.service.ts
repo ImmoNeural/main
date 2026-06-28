@@ -27,7 +27,13 @@
  * - Reconhecimento de padrões (PIX, TED, DOC, Boleto, CNPJ/CPF)
  * - Score de confiança
  * - Aprendizado contínuo via histórico do usuário
+ *
+ * 🌍 MULTI-PAÍS: além do Brasil, suporta a base alemã (GERMAN_CATEGORY_RULES).
+ *   O país é escolhido na importação ('BR' = padrão, 'DE' = Alemanha).
  */
+import { GERMAN_CATEGORY_RULES } from './categorization.germany';
+
+export type CategorizationCountry = 'BR' | 'DE';
 
 // Tipos para histórico do usuário (exportado para uso em outros módulos)
 export interface UserCategorizationHistory {
@@ -55,7 +61,7 @@ export interface ThreeLayerCategorizationResult {
   layer: 0 | 1 | 2 | 3;
 }
 
-interface CategoryRule {
+export interface CategoryRule {
   category: string;
   subcategory?: string;
   keywords: string[];
@@ -957,6 +963,12 @@ export function normalizeToCategory(categoryOrSubcategory: string): string {
  */
 class CategorizationService {
   private rules: CategoryRule[] = BRAZILIAN_CATEGORY_RULES;
+  private germanRules: CategoryRule[] = GERMAN_CATEGORY_RULES;
+
+  /** Retorna o conjunto de regras estáticas do país selecionado (BR = padrão). */
+  private getRulesForCountry(country: CategorizationCountry = 'BR'): CategoryRule[] {
+    return country === 'DE' ? this.germanRules : this.rules;
+  }
 
   /**
    * 🎯 Categoriza uma transação usando IA
@@ -971,7 +983,8 @@ class CategorizationService {
   categorizeTransaction(
     description: string,
     merchant?: string,
-    amount?: number
+    amount?: number,
+    country: CategorizationCountry = 'BR'
   ): {
     category: string;
     subcategory: string;
@@ -992,8 +1005,8 @@ class CategorizationService {
       matchedBy: string;
     } | null = null;
 
-    // Ordenar regras por prioridade
-    const sortedRules = [...this.rules].sort((a, b) => b.priority - a.priority);
+    // Ordenar regras por prioridade (do país selecionado: BR padrão ou DE)
+    const sortedRules = [...this.getRulesForCountry(country)].sort((a, b) => b.priority - a.priority);
 
     for (const rule of sortedRules) {
       let score = 0;
@@ -1585,7 +1598,8 @@ class CategorizationService {
     merchant?: string | null,
     amount?: number | null,
     userHistory?: UserCategorizationHistory[],
-    externalSearchResults?: ExternalSearchResult
+    externalSearchResults?: ExternalSearchResult,
+    country: CategorizationCountry = 'BR'
   ): {
     category: string;
     subcategory: string;
@@ -1598,7 +1612,7 @@ class CategorizationService {
     // ═══════════════════════════════════════════════════════════════════════
     // CAMADA 1: Regras Estáticas
     // ═══════════════════════════════════════════════════════════════════════
-    const layer1Result = this.categorizeTransaction(description, merchant || undefined, amount || undefined);
+    const layer1Result = this.categorizeTransaction(description, merchant || undefined, amount || undefined, country);
 
     if (layer1Result.confidence >= 80) {
       return {

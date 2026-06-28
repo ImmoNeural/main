@@ -1297,8 +1297,10 @@ router.post('/import', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { transactions: importedTransactions, account_id } = req.body;
+    // País para a base de categorização: 'BR' (padrão) ou 'DE' (Alemanha)
+    const country: 'BR' | 'DE' = req.body.country === 'DE' ? 'DE' : 'BR';
 
-    console.log(`📥 [Import] User ${user_id} importing ${importedTransactions?.length || 0} transactions`);
+    console.log(`📥 [Import] User ${user_id} importing ${importedTransactions?.length || 0} transactions (country: ${country})`);
 
     if (!importedTransactions || !Array.isArray(importedTransactions)) {
       return res.status(400).json({ error: 'transactions array is required' });
@@ -1589,7 +1591,7 @@ router.post('/import', async (req: Request, res: Response) => {
 
       // 🔍 CASO 2: Não tem categoria nem subcategoria → classificar automaticamente
       if (!category || !subcategory) {
-        const categorization = categorizationService.categorizeTransaction(description, merchant);
+        const categorization = categorizationService.categorizeTransaction(description, merchant, undefined, country);
         // Só usa a categoria automática se não tiver no CSV E não foi inferida
         if (!category) {
           category = categorization.category;

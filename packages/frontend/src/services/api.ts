@@ -228,6 +228,7 @@ export const transactionApi = {
       currency?: string;
     }>;
     account_id?: string;
+    country?: 'BR' | 'DE';
   }) =>
     api.post<{
       success: boolean;
