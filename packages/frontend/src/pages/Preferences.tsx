@@ -304,7 +304,7 @@ export const Preferences = () => {
                   const currentTipo = preferences[key] || config.defaultTipo;
 
                   return (
-                    <div key={key} className="py-3 flex items-center justify-between gap-2">
+                    <div key={key} className="list-row justify-between">
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <span className="icon-chip bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-lg sm:text-xl">{config.icon}</span>
                         <div className="min-w-0">

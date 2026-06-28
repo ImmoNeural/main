@@ -91,7 +91,7 @@ const BankIcon = ({ bankName, isActive, size = 'normal', logoUrl }: { bankName: 
           className="w-full h-full object-contain"
           onError={(e) => {
             e.currentTarget.style.display = 'none';
-            e.currentTarget.parentElement!.innerHTML = `<span class="${textSize} font-bold text-slate-700">${initials}</span>`;
+            e.currentTarget.parentElement!.innerHTML = `<span class="${textSize} font-bold text-slate-700 dark:text-slate-200">${initials}</span>`;
           }}
         />
       </div>

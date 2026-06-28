@@ -292,14 +292,21 @@ const Plans = () => {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Container principal */}
         <div className="max-w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-          {/* Título */}
+          {/* Cabeçalho da página */}
+          <div className="page-header">
+            <div className="page-header__titles">
+              <span className="icon-chip icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+                <CreditCard className="w-6 h-6" />
+              </span>
+              <div className="min-w-0">
+                <h1 className="page-title">Planos &amp; Assinatura</h1>
+                <p className="page-subtitle">Comece a organizar suas finanças hoje · 7 dias grátis</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Avisos e status */}
           <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
-              Escolha o Plano Perfeito
-            </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-              Comece a organizar suas finanças hoje. Planos mensais com 7 dias grátis!
-            </p>
 
             {/* Aviso para usuários do app mobile */}
             {isNativeApp && (

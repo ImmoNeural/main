@@ -175,8 +175,14 @@ h1, h2, h3, h4 {
 
   /* Icon chip — soft tinted rounded square (replaces colored circles).
      Apply a color pair on top, e.g. `icon-chip bg-primary-50 text-primary-600`. */
+  /* All chip sizes carry the centering so the size modifiers work standalone */
+  .icon-chip,
+  .icon-chip-sm,
+  .icon-chip-lg {
+    @apply inline-flex items-center justify-center flex-shrink-0;
+  }
   .icon-chip {
-    @apply inline-flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0;
+    @apply w-9 h-9 rounded-xl;
   }
   .icon-chip-sm {
     @apply w-7 h-7 rounded-lg;

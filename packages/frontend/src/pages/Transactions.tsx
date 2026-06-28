@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { format, subMonths, startOfMonth, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Upload, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock, Copy, Wallet } from 'lucide-react';
+import { Search, Download, AlertCircle, RefreshCw, ArrowUp, ChevronDown, ChevronUp, Receipt, Trash2, DollarSign, PieChart, ChevronLeft, ChevronRight, PlusCircle, Sparkles, RotateCcw, Loader2, Lock, Copy, Wallet } from 'lucide-react';
 import { transactionApi, bankApi } from '../services/api';
 import type { Transaction, Category, BankAccount } from '../types';
 import BulkRecategorizeModal from '../components/BulkRecategorizeModal';
@@ -865,126 +865,101 @@ const Transactions = () => {
 
         {/* Header */}
         <div className="page-header">
-          <div className="page-header__titles flex-col items-start gap-3">
-            <div>
+          <div className="page-header__titles">
+            <span className="icon-chip icon-chip-lg bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+              <Receipt className="w-6 h-6" />
+            </span>
+            <div className="min-w-0">
               <h1 className="page-title">Transações</h1>
               <p className="page-subtitle">{filteredTransactions.length} transações encontradas</p>
             </div>
-
-            {/* Botões de ação - lado esquerdo */}
-            <div className="flex items-center flex-wrap gap-2">
-              <button
-                onClick={() => setShowImportModal(true)}
-                className="btn-secondary flex items-center gap-2"
-                title="Importar transações manualmente (CSV ou individual)"
-              >
-                <Upload className="w-4 h-4" />
-                <span className="hidden sm:inline">Importar</span>
-                <span className="sm:hidden">Import</span>
-              </button>
-              <div className="relative group">
-                {isManualPlan ? (
-                  <>
-                    <button
-                      disabled
-                      className="btn-secondary flex items-center gap-2 opacity-60 cursor-not-allowed"
-                    >
-                      <Lock className="w-4 h-4" />
-                      <span className="hidden sm:inline">Categorizar</span>
-                      <span className="sm:hidden">Cat</span>
-                    </button>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
-                      Disponível apenas nos planos Conectado ou Conectado Plus
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleRecategorizeAI}
-                      className={`btn-primary flex items-center gap-2 disabled:cursor-not-allowed ${isAILoading ? 'animate-pulse' : ''}`}
-                      disabled={isAILoading || isLoading}
-                      title={canUseAI ? "Usar IA para categorizar transações" : "Categorização automática (sem IA)"}
-                      data-tour="categorize-btn"
-                    >
-                      {isAILoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      <span className="hidden sm:inline">{isAILoading ? 'Categorizando...' : 'Categorizar'}</span>
-                      <span className="sm:hidden">{isAILoading ? '...' : 'Cat'}</span>
-                    </button>
-                    {/* Tooltip for Conectado plan (no AI) */}
-                    {isConectadoPlan && !isAILoading && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-amber-600 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
-                        IA desabilitada - Apenas categorização por regras
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-amber-600"></div>
-                      </div>
-                    )}
-                    {/* Barra de progresso */}
-                    {isAILoading && (
-                      <div className="card absolute -bottom-12 left-0 right-0 w-48 sm:w-64 p-2 z-10">
-                        <div className="flex justify-between text-xs text-slate-600 dark:text-slate-300 mb-1">
-                          <span className="truncate max-w-[140px] sm:max-w-[200px]">{aiProgressText}</span>
-                          <span className="font-semibold">{Math.round(aiProgress)}%</span>
-                        </div>
-                        <div className="progress-track">
-                          <div
-                            className="progress-fill bg-primary-500"
-                            style={{ width: `${aiProgress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-              <button
-                onClick={handleResetCategories}
-                className="btn-secondary flex items-center gap-2 text-amber-600 hover:text-amber-700 border-amber-200"
-                disabled={isLoading}
-                title="Reseta todas para 'Não Categorizado'"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span className="hidden sm:inline">Resetar</span>
-              </button>
-              <button
-                onClick={exportToCSV}
-                className="btn-secondary flex items-center gap-2"
-                title="Exportar para CSV"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline font-medium">CSV</span>
-              </button>
-              <button
-                onClick={loadData}
-                className="btn-secondary flex items-center gap-2"
-                disabled={isLoading}
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Atualizar</span>
-              </button>
-              <button
-                onClick={handleDeleteAll}
-                className="btn-danger flex items-center gap-2"
-                disabled={isLoading}
-                title={activeAccountId ? "Apagar transações desta conta (IRREVERSÍVEL)" : "Apagar TODAS as transações (IRREVERSÍVEL)"}
-              >
-                <Trash2 className="w-4 h-4" />
-                <span className="hidden sm:inline">{activeAccountId ? 'Apagar Conta' : 'Apagar Todas'}</span>
-                <span className="sm:hidden">Apagar</span>
-              </button>
-            </div>
           </div>
 
-          <div className="page-header__actions w-full sm:w-auto">
+          <div className="page-header__actions flex-wrap">
+            <div className="relative group">
+              {isManualPlan ? (
+                <>
+                  <button disabled className="btn-secondary opacity-60 cursor-not-allowed">
+                    <Lock className="w-4 h-4" />
+                    <span className="hidden sm:inline">Categorizar</span>
+                    <span className="sm:hidden">Cat</span>
+                  </button>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                    Disponível apenas nos planos Conectado ou Conectado Plus
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleRecategorizeAI}
+                    className={`btn-primary disabled:cursor-not-allowed ${isAILoading ? 'animate-pulse' : ''}`}
+                    disabled={isAILoading || isLoading}
+                    title={canUseAI ? "Usar IA para categorizar transações" : "Categorização automática (sem IA)"}
+                    data-tour="categorize-btn"
+                  >
+                    {isAILoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span className="hidden sm:inline">{isAILoading ? 'Categorizando...' : 'Categorizar'}</span>
+                    <span className="sm:hidden">{isAILoading ? '...' : 'Cat'}</span>
+                  </button>
+                  {isConectadoPlan && !isAILoading && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-amber-600 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 shadow-lg">
+                      IA desabilitada - Apenas categorização por regras
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-amber-600"></div>
+                    </div>
+                  )}
+                  {isAILoading && (
+                    <div className="card absolute -bottom-12 left-0 right-0 w-48 sm:w-64 p-2 z-10">
+                      <div className="flex justify-between text-xs text-slate-600 dark:text-slate-300 mb-1">
+                        <span className="truncate max-w-[140px] sm:max-w-[200px]">{aiProgressText}</span>
+                        <span className="font-semibold">{Math.round(aiProgress)}%</span>
+                      </div>
+                      <div className="progress-track">
+                        <div className="progress-fill bg-primary-500" style={{ width: `${aiProgress}%` }} />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <button
+              onClick={handleResetCategories}
+              className="btn-secondary text-amber-600 hover:text-amber-700"
+              disabled={isLoading}
+              title="Reseta todas para 'Não Categorizado'"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="hidden sm:inline">Resetar</span>
+            </button>
+            <button onClick={exportToCSV} className="btn-secondary" title="Exportar para CSV">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline font-medium">CSV</span>
+            </button>
+            <button onClick={loadData} className="btn-secondary" disabled={isLoading}>
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Atualizar</span>
+            </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
+              className="btn-primary"
+              title="Importar transações (CSV ou individual)"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Importar Transações</span>
+              <span className="hidden sm:inline">Importar</span>
+            </button>
+            <button
+              onClick={handleDeleteAll}
+              className="btn-danger"
+              disabled={isLoading}
+              title={activeAccountId ? "Apagar transações desta conta (IRREVERSÍVEL)" : "Apagar TODAS as transações (IRREVERSÍVEL)"}
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">{activeAccountId ? 'Apagar Conta' : 'Apagar Todas'}</span>
+              <span className="sm:hidden">Apagar</span>
             </button>
           </div>
         </div>
