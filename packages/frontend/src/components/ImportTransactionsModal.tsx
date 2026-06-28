@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Upload, FileText, Info, Check, AlertCircle, Download, Sparkles } from 'lucide-react';
 import { transactionApi } from '../services/api';
 import { useOnboarding } from '../hooks/useOnboarding';
+import { useCountry } from '../contexts/CountryContext';
 
 interface ImportTransactionsModalProps {
   onClose: () => void;
@@ -11,7 +12,7 @@ interface ImportTransactionsModalProps {
 const ImportTransactionsModal = ({ onClose, onSuccess }: ImportTransactionsModalProps) => {
   const { markHasRealData } = useOnboarding();
   const [importMode, setImportMode] = useState<'csv' | 'manual'>('csv');
-  const [country, setCountry] = useState<'BR' | 'DE'>('BR');
+  const { country, setCountry } = useCountry();
   const [csvContent, setCsvContent] = useState('');
   const [manualTransaction, setManualTransaction] = useState({
     date: new Date().toISOString().split('T')[0],

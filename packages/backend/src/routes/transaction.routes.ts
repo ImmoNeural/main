@@ -392,8 +392,9 @@ router.get('/categories/list', (req: Request, res: Response) => {
 router.post('/recategorize', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
+    const country: 'BR' | 'DE' = req.body.country === 'DE' ? 'DE' : 'BR';
 
-    console.log('🤖 Iniciando recategorização automática para user:', user_id);
+    console.log('🤖 Iniciando recategorização automática para user:', user_id, 'country:', country);
 
     // Buscar todas as transações do usuário
     const { data: transactions, error } = await supabase
@@ -432,7 +433,8 @@ router.post('/recategorize', async (req: Request, res: Response) => {
       const categorization = categorizationService.categorizeTransaction(
         transaction.description || '',
         transaction.merchant || '',
-        transaction.amount
+        transaction.amount,
+        country
       );
 
       categorizationResults.push({
@@ -561,8 +563,9 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
   try {
     const user_id = req.userId!;
     const { only_uncategorized = true } = req.body; // Por padrão, só recategoriza "Não Categorizado"
+    const country: 'BR' | 'DE' = req.body.country === 'DE' ? 'DE' : 'BR';
 
-    console.log('🤖 Iniciando recategorização com IA (3 camadas) para user:', user_id);
+    console.log('🤖 Iniciando recategorização com IA (3 camadas) para user:', user_id, 'country:', country);
 
     // Check if user has Plus plan (required for Layer 3 - ChatGPT)
     const { data: subscription } = await supabase
@@ -673,7 +676,8 @@ router.post('/recategorize-ai', async (req: Request, res: Response) => {
       const layer1Result = categorizationService.categorizeTransaction(
         description,
         merchant,
-        transaction.amount
+        transaction.amount,
+        country
       );
 
       if (layer1Result.confidence >= 80) {
@@ -1209,7 +1213,7 @@ router.post('/debug-categorization', async (req: Request, res: Response) => {
   console.log('🐛 ===============================================\n');
 
   try {
-    const { description, merchant, amount, transactionId } = req.body;
+    const { description, merchant, amount, transactionId, country } = req.body;
     const user_id = req.userId!;
 
     console.log('🐛 Parâmetros recebidos:');
@@ -1218,6 +1222,7 @@ router.post('/debug-categorization', async (req: Request, res: Response) => {
     console.log('   Description:', description);
     console.log('   Merchant:', merchant);
     console.log('   Amount:', amount);
+    console.log('   Country:', country || 'BR');
 
     // Se foi passado um ID de transação, buscar os dados dela
     let actualDescription = description;
@@ -1244,7 +1249,8 @@ router.post('/debug-categorization', async (req: Request, res: Response) => {
     const result = categorizationService.categorizeTransaction(
       actualDescription || '',
       actualMerchant || '',
-      actualAmount
+      actualAmount,
+      country === 'DE' ? 'DE' : 'BR'
     );
 
     // Preparar resposta detalhada

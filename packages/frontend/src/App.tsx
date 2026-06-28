@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { CountryProvider } from './contexts/CountryContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -103,8 +104,9 @@ function App() {
 
   return (
     <ThemeProvider>
-      <HelmetProvider>
-        <AuthProvider>
+      <CountryProvider>
+        <HelmetProvider>
+          <AuthProvider>
           <BrowserRouter>
           {/* Google Analytics */}
           <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
@@ -175,6 +177,7 @@ function App() {
           </BrowserRouter>
         </AuthProvider>
       </HelmetProvider>
+      </CountryProvider>
     </ThemeProvider>
   );
 }

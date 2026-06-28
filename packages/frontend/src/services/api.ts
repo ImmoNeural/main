@@ -154,10 +154,10 @@ export const transactionApi = {
   getCategories: () =>
     api.get<Category[]>('/transactions/categories/list'),
 
-  recategorizeAll: () =>
-    api.post<{ success: boolean; total: number; updated: number; unchanged: number; categorized: number; uncategorized: number; message: string }>('/transactions/recategorize'),
+  recategorizeAll: (country: 'BR' | 'DE' = 'BR') =>
+    api.post<{ success: boolean; total: number; updated: number; unchanged: number; categorized: number; uncategorized: number; message: string }>('/transactions/recategorize', { country }),
 
-  recategorizeAI: (onlyUncategorized: boolean = true) =>
+  recategorizeAI: (onlyUncategorized: boolean = true, country: 'BR' | 'DE' = 'BR') =>
     api.post<{
       success: boolean;
       total: number;
@@ -168,7 +168,7 @@ export const transactionApi = {
       uncategorized: number;
       updated: number;
       message: string;
-    }>('/transactions/recategorize-ai', { only_uncategorized: onlyUncategorized }),
+    }>('/transactions/recategorize-ai', { only_uncategorized: onlyUncategorized, country }),
 
   resetCategories: (accountId?: string) =>
     api.post<{ success: boolean; updated: number; message: string }>(
@@ -194,7 +194,7 @@ export const transactionApi = {
       params: accountId ? { account_id: accountId } : undefined,
     }),
 
-  debugCategorization: (params: { description?: string; merchant?: string; amount?: number; transactionId?: string }) =>
+  debugCategorization: (params: { description?: string; merchant?: string; amount?: number; transactionId?: string; country?: 'BR' | 'DE' }) =>
     api.post<{
       input: {
         description: string;

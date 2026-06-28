@@ -9,6 +9,7 @@ import ImportTransactionsModal from '../components/ImportTransactionsModal';
 import { CategoryIconSmall } from '../components/CategoryIcons';
 import { useSubscription } from '../hooks/useSubscription';
 import { useOnboarding } from '../hooks/useOnboarding';
+import { useCountry } from '../contexts/CountryContext';
 import { getDemoTransactions } from '../utils/demoData';
 
 const Transactions = () => {
@@ -33,6 +34,7 @@ const Transactions = () => {
   // Get subscription info for plan-based restrictions
   // Durante trial, acesso total como Conectado Plus
   const { planType, isTrialActive } = useSubscription();
+  const { country } = useCountry();
 
   // Plan-based feature flags
   // Durante trial, usuário tem acesso total (como Conectado Plus)
@@ -329,7 +331,7 @@ const Transactions = () => {
 
     try {
       console.log('🤖 Iniciando recategorização com IA (3 camadas)...');
-      const response = await transactionApi.recategorizeAI(true);
+      const response = await transactionApi.recategorizeAI(true, country);
 
       // Backend respondeu, completar progresso
       clearInterval(progressInterval);
