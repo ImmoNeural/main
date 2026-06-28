@@ -135,7 +135,7 @@ const Layout = () => {
                     }`}
                   title="Brasil"
                 >
-                  <span className="text-base">🇧🇷</span>
+                  <svg className="w-4 h-3 rounded-sm flex-shrink-0" viewBox="0 0 16 12"><rect width="16" height="12" fill="#009b3a"/><polygon points="8,1.2 14.8,6 8,10.8 1.2,6" fill="#fedf00"/><circle cx="8" cy="6" r="3.2" fill="#002776"/></svg>
                   <span>BR</span>
                 </button>
                 <button
@@ -147,7 +147,7 @@ const Layout = () => {
                     }`}
                   title="Alemanha"
                 >
-                  <span className="text-base">🇩🇪</span>
+                  <svg className="w-4 h-3 rounded-sm flex-shrink-0" viewBox="0 0 16 12"><rect y="0" width="16" height="4" fill="#000"/><rect y="4" width="16" height="4" fill="#dd0000"/><rect y="8" width="16" height="4" fill="#ffce00"/></svg>
                   <span>DE</span>
                 </button>
               </div>
@@ -158,7 +158,10 @@ const Layout = () => {
               className="w-full flex items-center justify-center p-2.5 text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors"
               title={country === 'BR' ? 'Mudar para Alemanha' : 'Mudar para Brasil'}
             >
-              <span className="text-lg">{country === 'BR' ? '🇧🇷' : '🇩🇪'}</span>
+              {country === 'BR'
+                ? <svg className="w-5 h-4 rounded-sm" viewBox="0 0 16 12"><rect width="16" height="12" fill="#009b3a"/><polygon points="8,1.2 14.8,6 8,10.8 1.2,6" fill="#fedf00"/><circle cx="8" cy="6" r="3.2" fill="#002776"/></svg>
+                : <svg className="w-5 h-4 rounded-sm" viewBox="0 0 16 12"><rect y="0" width="16" height="4" fill="#000"/><rect y="4" width="16" height="4" fill="#dd0000"/><rect y="8" width="16" height="4" fill="#ffce00"/></svg>
+              }
             </button>
           )}
         </div>
@@ -300,7 +303,10 @@ const Layout = () => {
             className="flex items-center justify-center w-10 h-10 rounded-xl text-slate-400 hover:bg-white/[0.06] hover:text-white transition-all duration-200"
             title={country === 'BR' ? 'Brasil (mudar para Alemanha)' : 'Alemanha (mudar para Brasil)'}
           >
-            <span className="text-base">{country === 'BR' ? '🇧🇷' : '🇩🇪'}</span>
+            {country === 'BR'
+              ? <svg className="w-5 h-4 rounded-sm" viewBox="0 0 16 12"><rect width="16" height="12" fill="#009b3a"/><polygon points="8,1.2 14.8,6 8,10.8 1.2,6" fill="#fedf00"/><circle cx="8" cy="6" r="3.2" fill="#002776"/></svg>
+              : <svg className="w-5 h-4 rounded-sm" viewBox="0 0 16 12"><rect y="0" width="16" height="4" fill="#000"/><rect y="4" width="16" height="4" fill="#dd0000"/><rect y="8" width="16" height="4" fill="#ffce00"/></svg>
+            }
           </button>
           <button onClick={toggleTheme} className="flex items-center justify-center w-10 h-10 rounded-xl text-slate-400 hover:bg-white/[0.06] hover:text-white transition-all duration-200" title={isDark ? 'Modo claro' : 'Modo escuro'}>
             {isDark ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
